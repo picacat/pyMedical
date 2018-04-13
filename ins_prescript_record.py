@@ -10,7 +10,7 @@ from libs import strings
 from classes import table_widget
 
 
-# 樣板 2018.01.31
+# 輸入健保處方 2018.04.14
 class InsPrescriptRecord(QtWidgets.QMainWindow):
     # 初始化
     def __init__(self, parent=None, *args):
