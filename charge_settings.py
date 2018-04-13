@@ -11,7 +11,7 @@ from classes import table_widget
 from dialog import dialog_input_regist
 
 
-# 樣板 2018.01.31
+# 收費設定 2018.04.14
 class Charge(QtWidgets.QMainWindow):
     # 初始化
     def __init__(self, parent=None, *args):
