@@ -1,0 +1,277 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>WaitingListWindow</class>
+ <widget class="QMainWindow" name="WaitingListWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1115</width>
+    <height>865</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>醫師看診作業</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QHBoxLayout" name="horizontalLayout">
+    <item>
+     <layout class="QGridLayout" name="gridLayout">
+      <property name="leftMargin">
+       <number>5</number>
+      </property>
+      <property name="topMargin">
+       <number>10</number>
+      </property>
+      <property name="rightMargin">
+       <number>5</number>
+      </property>
+      <item row="1" column="0">
+       <widget class="QGroupBox" name="groupBox_reserve">
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>300</height>
+         </size>
+        </property>
+        <property name="title">
+         <string>預約未報到名單</string>
+        </property>
+        <layout class="QGridLayout" name="gridLayout_2">
+         <item row="1" column="1">
+          <widget class="QPlainTextEdit" name="plainTextEdit_medical_record"/>
+         </item>
+         <item row="0" column="1">
+          <widget class="QLabel" name="label">
+           <property name="text">
+            <string>上次病歷摘要</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0">
+          <widget class="QTableWidget" name="tableWidget_reserve_list"/>
+         </item>
+         <item row="0" column="0">
+          <widget class="QLabel" name="label_2">
+           <property name="text">
+            <string>預約名單</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item row="0" column="1" rowspan="2">
+       <widget class="QGroupBox" name="groupBox_statistics">
+        <property name="maximumSize">
+         <size>
+          <width>400</width>
+          <height>16777215</height>
+         </size>
+        </property>
+        <property name="title">
+         <string>病歷統計</string>
+        </property>
+        <layout class="QVBoxLayout" name="verticalLayout">
+         <item>
+          <widget class="QTableWidget" name="tableWidget_statistics_list">
+           <column>
+            <property name="text">
+             <string>統計類別</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>數值</string>
+            </property>
+           </column>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QTabWidget" name="tabWidget_waiting_list">
+        <property name="currentIndex">
+         <number>0</number>
+        </property>
+        <widget class="QWidget" name="tabWidgetPage1">
+         <attribute name="title">
+          <string>候診名單</string>
+         </attribute>
+         <layout class="QVBoxLayout" name="verticalLayout_2">
+          <item>
+           <widget class="QTableWidget" name="tableWidget_waiting_list">
+            <property name="editTriggers">
+             <set>QAbstractItemView::NoEditTriggers</set>
+            </property>
+            <property name="selectionMode">
+             <enum>QAbstractItemView::SingleSelection</enum>
+            </property>
+            <property name="selectionBehavior">
+             <enum>QAbstractItemView::SelectRows</enum>
+            </property>
+            <column>
+             <property name="text">
+              <string>WaitKey</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>CaseKey</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>病歷號碼</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>病患姓名</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>性別</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>年齡</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>診號</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>時間</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>候時</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>門診</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>掛號類別</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>負擔類別</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>就醫類別</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>初複診</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>健保卡序</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>療程</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>推拿師父</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>備註</string>
+             </property>
+            </column>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="tab">
+         <attribute name="title">
+          <string>已就診名單</string>
+         </attribute>
+        </widget>
+       </widget>
+      </item>
+     </layout>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <widget class="QToolBar" name="toolBar">
+   <property name="windowTitle">
+    <string>toolBar</string>
+   </property>
+   <property name="toolButtonStyle">
+    <enum>Qt::ToolButtonTextUnderIcon</enum>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="action_medical_record"/>
+   <addaction name="separator"/>
+   <addaction name="action_close"/>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1115</width>
+     <height>26</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menu">
+    <property name="title">
+     <string>檔案</string>
+    </property>
+   </widget>
+   <addaction name="menu"/>
+  </widget>
+  <action name="action_medical_record">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/edit-select-all.svg</normaloff>../icons/edit-select-all.svg</iconset>
+   </property>
+   <property name="text">
+    <string>病歷登錄</string>
+   </property>
+   <property name="toolTip">
+    <string>病歷登錄</string>
+   </property>
+  </action>
+  <action name="action_close">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/application-exit.svg</normaloff>../icons/application-exit.svg</iconset>
+   </property>
+   <property name="text">
+    <string>關閉視窗</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

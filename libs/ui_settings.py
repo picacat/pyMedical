@@ -1,0 +1,69 @@
+import os
+from PyQt5 import QtWidgets, QtCore
+from PyQt5.QtWidgets import QMessageBox, QPushButton
+from PyQt5.uic import loadUi
+from classes import db
+
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname("__file__")))
+
+UI_PATH = "ui"
+CONFIG_FILE = "pymedical.conf"
+UI_PY_MEDICAL = "pymedical.ui"
+UI_TEMPLATE = "template.ui"
+UI_REGISTRATION = "registration.ui"
+UI_WAITING_LIST = "waiting_list.ui"
+UI_MEDICAL_RECORD = "medical_record.ui"
+UI_DIALOG_PATIENT = "dialog_patient.ui"
+UI_MEDICAL_RECORD_LIST = "medical_record_list.ui"
+UI_DIALOG_MEDICAL_RECORD_LIST = "dialog_medical_record_list.ui"
+UI_INS_PRESCRIPT_RECORD = "ins_prescript_record.ui"
+UI_DIALOG_PATIENT_LIST = "dialog_patient_list.ui"
+UI_PATIENT_LIST = "patient_list.ui"
+UI_PATIENT = "patient.ui"
+UI_RETURN_CARD = "return_card.ui"
+UI_DIALOG_SETTINGS = "dialog_settings.ui"
+UI_CHARGE_SETTINGS = "charge_settings.ui"
+UI_DIALOG_INPUT_REGIST = "dialog_input_regist.ui"
+
+THEME = ['Fusion', 'Windows', 'Cleanlooks', 'gtk2', 'motif', 'plastic', 'cde', 'qt5-ct-style']
+WIN32_THEME = ['Fusion', 'Windows', 'WindowsXP', 'WindowsVista']
+
+
+# 載入 ui 檔
+def load_ui_file(ui_file, self):
+    try:
+        return loadUi(os.path.join(BASE_DIR, UI_PATH, ui_file), self)
+    except:
+        msg_box = QMessageBox()
+        msg_box.setIcon(QMessageBox.Warning)
+        msg_box.setWindowTitle('找不到ui檔')
+        msg_box.setText("<font size='4' color='red'><b>找不到 {0}, 請檢查檔案是否存在.</b></font>".format(ui_file))
+        msg_box.setInformativeText("請與本公司聯繫, 並告知上面的訊息.")
+        msg_box.addButton(QPushButton("確定"), QMessageBox.YesRole)
+        msg_box.exec_()
+
+        return None
+
+
+# 設定 comboBox item
+def set_combo_box(combobox, items, *args):
+    for arg in args:
+        combobox.addItem(arg)
+
+    for item in items:
+        combobox.addItem(item)
+
+
+# 設定輸入文字補全
+def set_completer(database, sql, field, widget):
+    rows = database.select_record(sql)
+    completer_list = []
+    for row in rows:
+        completer_list.append(row[field])
+
+    model = QtCore.QStringListModel()
+    model.setStringList(completer_list)
+    completer = QtWidgets.QCompleter()
+    completer.setModel(model)
+    widget.setCompleter(completer)
+

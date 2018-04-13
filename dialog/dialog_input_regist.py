@@ -1,0 +1,86 @@
+#!/usr/bin/env python3
+# 病歷查詢 2014.09.22
+#coding: utf-8
+
+from PyQt5 import QtWidgets
+import datetime
+from libs import ui_settings
+from libs import system
+from libs import nhi
+
+
+# 主視窗
+class DialogInputRegist(QtWidgets.QDialog):
+    # 初始化
+    def __init__(self, parent=None, *args):
+        super(DialogInputRegist, self).__init__(parent)
+        self.parent = parent
+        self.database = args[0]
+        self.system_settings = args[1]
+        try:
+            self.charge_settings_key = args[2]
+        except IndexError:
+            self.charge_settings_key = None
+
+        self.ui = None
+
+        self._set_ui()
+        self._set_signal()
+        if self.charge_settings_key is not None:
+            self._edit_charge_settings()
+
+    # 解構
+    def __del__(self):
+        self.close_all()
+
+    # 關閉
+    def close_all(self):
+        pass
+
+    # 設定GUI
+    def _set_ui(self):
+        self.ui = ui_settings.load_ui_file(ui_settings.UI_DIALOG_INPUT_REGIST, self)
+        self.setFixedSize(self.size())  # non resizable dialog
+        system.set_css(self)
+        self._set_combo_box()
+        self.setFixedSize(self.size()) # non resizable dialog
+        self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setText('確定')
+        self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Cancel).setText('取消')
+        self.ui.lineEdit_item_name.setFocus()
+
+    # 設定信號
+    def _set_signal(self):
+        self.ui.buttonBox.accepted.connect(self.accepted_button_clicked)
+
+    # 設定comboBox
+    def _set_combo_box(self):
+        ui_settings.set_combo_box(self.ui.comboBox_ins_type, nhi.INS_TYPE, '不分類')
+        ui_settings.set_combo_box(self.ui.comboBox_share_type, nhi.SHARE_TYPE, '不分類')
+        ui_settings.set_combo_box(self.ui.comboBox_treat_type, nhi.REGIST_FEE_TREAT_TYPE, '不分類')
+
+    def _edit_charge_settings(self):
+        sql = 'SELECT * FROM charge_settings where ChargeSettingsKey = {0}'.format(self.charge_settings_key)
+        row_data = self.database.select_record(sql)[0]
+        self.ui.lineEdit_item_name.setText(row_data['ItemName'])
+        self.ui.comboBox_ins_type.setCurrentText(row_data['InsType'])
+        self.ui.comboBox_share_type.setCurrentText(row_data['ShareType'])
+        self.ui.comboBox_treat_type.setCurrentText(row_data['TreatType'])
+        self.ui.spinBox_amount.setValue(row_data['Amount'])
+        self.ui.lineEdit_remark.setText(row_data['Remark'])
+
+    def accepted_button_clicked(self):
+        if self.charge_settings_key is None:
+            return
+
+        fields = ['ItemName', 'InsType', 'ShareType', 'TreatType', 'Amount', 'Remark']
+        data = (
+            self.ui.lineEdit_item_name.text(),
+            self.ui.comboBox_ins_type.currentText(),
+            self.ui.comboBox_share_type.currentText(),
+            self.ui.comboBox_treat_type.currentText(),
+            self.ui.spinBox_amount.value(),
+            self.ui.lineEdit_remark.text()
+        )
+        
+        self.database.update_record('charge_settings', fields, 'ChargeSettingsKey',
+                                    self.charge_settings_key, data)
