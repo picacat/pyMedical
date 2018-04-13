@@ -83,7 +83,7 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
 
     # 增加處方
     def add_medicine(self):
-        row_count = self.ui.tableWidget_prescript.row_count()
+        row_count = self.tableWidget_prescript.row_count()
         if row_count <= 0:
             self._insert_row(row_count)
             return
