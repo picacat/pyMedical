@@ -81,7 +81,7 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
             if rec['InsCode'] == '':
                 self.ui.tableWidget_prescript.item(rec_no, column).setForeground(QtGui.QColor('blue'))
 
-    # 增加處方
+    # 增加處方資料
     def add_medicine(self):
         row_count = self.tableWidget_prescript.row_count()
         if row_count <= 0:
