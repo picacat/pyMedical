@@ -52,7 +52,7 @@ class TableWidget:
         self.table_widget.setFocus(True)
 
     def row_count(self):
-        return number.get_integer(self.db_row_count)
+        return self.table_widget.rowCount()
 
     # 取得欄位內容 by index no
     def field_value(self, field_index):
