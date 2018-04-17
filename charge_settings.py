@@ -50,6 +50,9 @@ class Charge(QtWidgets.QMainWindow):
         self.ui.toolButton_regist_fee_edit.clicked.connect(self._regist_fee_edit)
         self.ui.tableWidget_regist_fee.doubleClicked.connect(self._regist_fee_edit)
         self.ui.toolButton_discount_add.clicked.connect(self._discount_add)
+        self.ui.toolButton_discount_delete.clicked.connect(self._discount_delete)
+        self.ui.toolButton_discount_edit.clicked.connect(self._discount_edit)
+        self.ui.tableWidget_discount.doubleClicked.connect(self._discount_edit)
 
     # 設定欄位寬度
     def _set_table_width(self):
@@ -233,6 +236,31 @@ class Charge(QtWidgets.QMainWindow):
             self.ui.tableWidget_discount.setCurrentCell(current_row, 3)
 
         dialog.close_all()
+
+    def _discount_delete(self):
+        msg_box = QMessageBox()
+        msg_box.setIcon(QMessageBox.Warning)
+        msg_box.setWindowTitle('刪除掛號費優待資料')
+        msg_box.setText("<font size='4' color='red'><b>確定刪除此筆掛號費優待資料?</b></font>")
+        msg_box.setInformativeText("注意！資料刪除後, 將無法回復!")
+        msg_box.addButton(QPushButton("取消"), QMessageBox.NoRole)
+        msg_box.addButton(QPushButton("確定"), QMessageBox.YesRole)
+        delete_record = msg_box.exec_()
+        if not delete_record:
+            return
+
+        key = self.table_widget_discount.field_value(0)
+        self.database.delete_record('charge_settings', 'ChargeSettingsKey', key)
+        self.ui.tableWidget_discount.removeRow(self.ui.tableWidget_discount.currentRow())
+
+    def _discount_edit(self):
+        key = self.table_widget_discount.field_value(0)
+        dialog = dialog_input_discount.DialogInputDiscount(self, self.database, self.system_settings, key)
+        dialog.exec_()
+        dialog.close_all()
+        sql = 'SELECT * FROM charge_settings WHERE ChargeSettingsKey = {0}'.format(key)
+        row_data = self.database.select_record(sql)[0]
+        self._set_discount_data(self.ui.tableWidget_discount.currentRow(), row_data)
 
 
 # 主程式
