@@ -21,7 +21,7 @@ module_dict = {
     '病歷統計': Template,
     '病患查詢': PatientList,
     '病患資料': Patient,
-    '收費設定': Charge,
+    '收費設定': ChargeSettings,
     '診察資料': Template,
     '處方資料': Template,
 }

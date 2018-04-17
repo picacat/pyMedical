@@ -23,6 +23,8 @@ UI_PATIENT = "patient.ui"
 UI_RETURN_CARD = "return_card.ui"
 UI_DIALOG_SETTINGS = "dialog_settings.ui"
 UI_CHARGE_SETTINGS = "charge_settings.ui"
+UI_CHARGE_SETTINGS_REGIST = "charge_settings_regist.ui"
+UI_CHARGE_SETTINGS_SHARE = "charge_settings_share.ui"
 UI_DIALOG_INPUT_REGIST = "dialog_input_regist.ui"
 UI_DIALOG_INPUT_DISCOUNT = "dialog_input_discount.ui"
 
