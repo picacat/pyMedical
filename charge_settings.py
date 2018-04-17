@@ -38,6 +38,8 @@ class Charge(QtWidgets.QMainWindow):
         self.ui = ui_settings.load_ui_file(ui_settings.UI_CHARGE_SETTINGS, self)
         self.table_widget_regist_fee = table_widget.TableWidget(self.ui.tableWidget_regist_fee, self.database)
         self.table_widget_regist_fee.set_column_hidden([0, 1])
+        self.table_widget_discount = table_widget.TableWidget(self.ui.tableWidget_discount, self.database)
+        self.table_widget_discount.set_column_hidden([0, 1])
         self._set_table_width()
 
     # 設定信號
@@ -50,9 +52,22 @@ class Charge(QtWidgets.QMainWindow):
 
     # 設定欄位寬度
     def _set_table_width(self):
-        width = [60, 60, 300, 100, 120, 120, 100, 370]
-        self.table_widget_regist_fee.set_table_heading_width(width)
+        regist_fee_width = [60, 60, 300, 100, 120, 120, 100, 370]
+        self.table_widget_regist_fee.set_table_heading_width(regist_fee_width)
+        discount_width = [60, 60, 150, 80, 200]
+        self.table_widget_discount.set_table_heading_width(discount_width)
 
+    # 主程式控制關閉此分頁
+    def close_tab(self):
+        current_tab = self.parent.ui.tabWidget_window.currentIndex()
+        self.parent.close_tab(current_tab)
+
+    # 關閉分頁
+    def close_charge_settings(self):
+        self.close_all()
+        self.close_tab()
+
+    # 掛號費 ************************************************************************************************************
     def _regist_fee_add(self):
         dialog = dialog_input_regist.DialogInputRegist(self, self.database, self.system_settings)
         result = dialog.exec_()
@@ -105,6 +120,7 @@ class Charge(QtWidgets.QMainWindow):
 
     def _read_charge(self):
         self._read_regist_fee()
+        self._read_discount()
 
     def _read_regist_fee(self):
         sql = 'SELECT * FROM charge_settings WHERE ChargeType = "掛號費" ORDER BY ChargeSettingsKey'
@@ -137,6 +153,7 @@ class Charge(QtWidgets.QMainWindow):
         data = [
             ('掛號費', '健保基本掛號費', '健保', '不分類', '不分類', 0, None),
             ('掛號費', '自費基本掛號費', '自費', '不分類', '不分類', 0, None),
+            ('掛號費', '欠卡費', '健保', '不分類', '不分類', 0, None),
             ('掛號費', '健保一般內科一般掛號費', '健保', '基層醫療', '內科', 0, None),
             ('掛號費', '健保一般傷科首次掛號費', '健保', '基層醫療', '傷科首次', 0, None),
             ('掛號費', '健保一般傷科療程掛號費', '健保', '基層醫療', '傷科療程', 0, None),
@@ -158,16 +175,42 @@ class Charge(QtWidgets.QMainWindow):
 
         self._read_regist_fee()
 
-    # 主程式控制關閉此分頁
-    def close_tab(self):
-        current_tab = self.parent.ui.tabWidget_window.currentIndex()
-        self.parent.close_tab(current_tab)
+    # 掛號費優待 *********************************************************************************************************
+    def _read_discount(self):
+        sql = 'SELECT * FROM charge_settings WHERE ChargeType = "掛號費優待" ORDER BY ChargeSettingsKey'
+        self.table_widget_discount.set_db_data(sql, self._set_discount_data)
+        row_count = self.table_widget_discount.row_count()
+        if row_count <= 0:
+            self._set_discount_basic_data()
 
-    # 關閉分頁
-    def close_charge_settings(self):
-        self.close_all()
-        self.close_tab()
+    def _set_discount_data(self, rec_no, rec):
+        discount_rec = [
+            str(rec['ChargeSettingsKey']),
+            strings.xstr(rec['ChargeType']),
+            strings.xstr(rec['ItemName']),
+            strings.xstr(rec['Amount']),
+            strings.xstr(rec['Remark']),
+        ]
 
+        for column in range(0, self.ui.tableWidget_discount.columnCount()):
+            self.ui.tableWidget_discount.setItem(rec_no, column, QtWidgets.QTableWidgetItem(discount_rec[column]))
+            if column in [3]:
+                self.ui.tableWidget_discount.item(rec_no, column).setTextAlignment(
+                    QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+
+    def _set_discount_basic_data(self):
+        fields = ['ChargeType', 'ItemName', 'InsType', 'ShareType', 'TreatType',
+                  'Amount', 'Remark']
+        data = [
+            ('掛號費優待', '年長病患', None, None, None, 0, None),
+            ('掛號費優待', '殘障病患', None, None, None, 0, None),
+            ('掛號費優待', '本院員工', None, None, None, 0, None),
+        ]
+
+        for rec in data:
+            self.database.insert_record('charge_settings', fields, rec)
+
+        self._read_discount()
 
 # 主程式
 def main():

@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS charge_settings
 	InsType		    	VARCHAR(10),	# 門診類別: 健保, 自費
 	ShareType		VARCHAR(20),	# 負擔類別: 一般, 榮民, 福保, 重大傷病...
 	TreatType   		VARCHAR(20),	# 療程: 內科, 首次, 療程
+	InsCode			VARCHAR(20),	# 健保代碼
 	Amount	   		INT,		# 金額
 	Remark	    		VARCHAR(200),	# 備註
 	TimeStamp		TIMESTAMP,	# 上次異動日期
