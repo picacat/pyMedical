@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import QMessageBox, QPushButton
 from libs import ui_settings
 from libs import strings
 from classes import table_widget
-from dialog import dialog_input_regist, dialog_input_discount
+from dialog import dialog_input_share
 
 
 # 收費設定 2018.04.14
@@ -108,11 +108,11 @@ class ChargeSettingsShare(QtWidgets.QMainWindow):
                     QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
 
     def _diag_share_add(self):
-        dialog = dialog_input_regist.DialogInputRegist(self, self.database, self.system_settings)
+        dialog = dialog_input_share.DialogInputShare(self, self.database, self.system_settings, None, '門診負擔')
         result = dialog.exec_()
         if result != 0:
-            current_row = self.ui.tableWidget_regist_fee.rowCount()
-            self.ui.tableWidget_regist_fee.insertRow(current_row)
+            current_row = self.ui.tableWidget_diag_share.rowCount()
+            self.ui.tableWidget_diag_share.insertRow(current_row)
             fields = ['ChargeType', 'ItemName', 'InsType', 'ShareType', 'TreatType',
                       'Amount', 'Remark']
             data = (
@@ -128,18 +128,18 @@ class ChargeSettingsShare(QtWidgets.QMainWindow):
             sql = 'SELECT * FROM charge_settings WHERE ChargeType = "門診負擔" ORDER BY ChargeSettingsKey desc limit 1'
             row_data = self.database.select_record(sql)[0]
             self._set_diag_share_data(current_row, row_data)
-            self.ui.tableWidget_regist_fee.setCurrentCell(current_row, 3)
+            self.ui.tableWidget_diag_share.setCurrentCell(current_row, 3)
 
         dialog.close_all()
 
     def _diag_share_edit(self):
-        key = self.table_widget_regist_fee.field_value(0)
-        dialog = dialog_input_regist.DialogInputRegist(self, self.database, self.system_settings, key)
+        key = self.table_widget_diag_share.field_value(0)
+        dialog = dialog_input_share.DialogInputShare(self, self.database, self.system_settings, key, '門診負擔')
         dialog.exec_()
         dialog.close_all()
         sql = 'SELECT * FROM charge_settings WHERE ChargeSettingsKey = {0}'.format(key)
         row_data = self.database.select_record(sql)[0]
-        self._set_diag_share_data(self.ui.tableWidget_regist_fee.currentRow(), row_data)
+        self._set_diag_share_data(self.ui.tableWidget_diag_share.currentRow(), row_data)
 
     def _diag_share_delete(self):
         msg_box = QMessageBox()
@@ -153,9 +153,9 @@ class ChargeSettingsShare(QtWidgets.QMainWindow):
         if not delete_record:
             return
 
-        key = self.table_widget_regist_fee.field_value(0)
+        key = self.table_widget_diag_share.field_value(0)
         self.database.delete_record('charge_settings', 'ChargeSettingsKey', key)
-        self.ui.tableWidget_regist_fee.removeRow(self.ui.tableWidget_regist_fee.currentRow())
+        self.ui.tableWidget_diag_share.removeRow(self.ui.tableWidget_diag_share.currentRow())
 
     # 藥品負擔 **********************************************************************************************************
     def _read_drug_share(self):
@@ -193,11 +193,11 @@ class ChargeSettingsShare(QtWidgets.QMainWindow):
                     QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
 
     def _drug_share_add(self):
-        dialog = dialog_input_discount.DialogInputDiscount(self, self.database, self.system_settings)
+        dialog = dialog_input_share.DialogInputDiscount(self, self.database, self.system_settings, None, '藥品負擔')
         result = dialog.exec_()
         if result != 0:
-            current_row = self.ui.tableWidget_discount.rowCount()
-            self.ui.tableWidget_discount.insertRow(current_row)
+            current_row = self.ui.tableWidget_drug_share.rowCount()
+            self.ui.tableWidget_drug_share.insertRow(current_row)
             fields = ['ChargeType', 'ItemName', 'Amount', 'Remark']
             data = (
                 '藥品負擔',
@@ -209,7 +209,7 @@ class ChargeSettingsShare(QtWidgets.QMainWindow):
             sql = 'SELECT * FROM charge_settings WHERE ChargeType = "藥品負擔" ORDER BY ChargeSettingsKey desc limit 1'
             row_data = self.database.select_record(sql)[0]
             self._set_drug_share_data(current_row, row_data)
-            self.ui.tableWidget_discount.setCurrentCell(current_row, 3)
+            self.ui.tableWidget_drug_share.setCurrentCell(current_row, 3)
 
         dialog.close_all()
 
@@ -225,18 +225,18 @@ class ChargeSettingsShare(QtWidgets.QMainWindow):
         if not delete_record:
             return
 
-        key = self.table_widget_discount.field_value(0)
+        key = self.table_widget_drug_share.field_value(0)
         self.database.delete_record('charge_settings', 'ChargeSettingsKey', key)
-        self.ui.tableWidget_discount.removeRow(self.ui.tableWidget_discount.currentRow())
+        self.ui.tableWidget_drug_share.removeRow(self.ui.tableWidget_drug_share.currentRow())
 
     def _drug_share_edit(self):
-        key = self.table_widget_discount.field_value(0)
-        dialog = dialog_input_discount.DialogInputDiscount(self, self.database, self.system_settings, key)
+        key = self.table_widget_drug_share.field_value(0)
+        dialog = dialog_input_share.DialogInputShare(self, self.database, self.system_settings, key, '藥品負擔')
         dialog.exec_()
         dialog.close_all()
         sql = 'SELECT * FROM charge_settings WHERE ChargeSettingsKey = {0}'.format(key)
         row_data = self.database.select_record(sql)[0]
-        self._set_drug_share_data(self.ui.tableWidget_discount.currentRow(), row_data)
+        self._set_drug_share_data(self.ui.tableWidget_drug_share.currentRow(), row_data)
 
 
 # 主程式

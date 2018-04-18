@@ -27,6 +27,7 @@ UI_CHARGE_SETTINGS_REGIST = "charge_settings_regist.ui"
 UI_CHARGE_SETTINGS_SHARE = "charge_settings_share.ui"
 UI_DIALOG_INPUT_REGIST = "dialog_input_regist.ui"
 UI_DIALOG_INPUT_DISCOUNT = "dialog_input_discount.ui"
+UI_DIALOG_INPUT_SHARE = "dialog_input_share.ui"
 
 THEME = ['Fusion', 'Windows', 'Cleanlooks', 'gtk2', 'motif', 'plastic', 'cde', 'qt5-ct-style']
 WIN32_THEME = ['Fusion', 'Windows', 'WindowsXP', 'WindowsVista']

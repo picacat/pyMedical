@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>Dialog_medical_record_list</class>
- <widget class="QDialog" name="Dialog_medical_record_list">
+ <class>Dialog_input_regist</class>
+ <widget class="QDialog" name="Dialog_input_regist">
   <property name="windowModality">
    <enum>Qt::NonModal</enum>
   </property>
@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>421</width>
-    <height>308</height>
+    <height>328</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -168,7 +168,7 @@
   <connection>
    <sender>buttonBox</sender>
    <signal>accepted()</signal>
-   <receiver>Dialog_medical_record_list</receiver>
+   <receiver>Dialog_input_regist</receiver>
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -184,7 +184,7 @@
   <connection>
    <sender>buttonBox</sender>
    <signal>rejected()</signal>
-   <receiver>Dialog_medical_record_list</receiver>
+   <receiver>Dialog_input_regist</receiver>
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
