@@ -59,6 +59,7 @@ class DialogInputShare(QtWidgets.QDialog):
         sql = 'SELECT * FROM charge_settings where ChargeSettingsKey = {0}'.format(self.charge_settings_key)
         row_data = self.database.select_record(sql)[0]
         self.ui.lineEdit_item_name.setText(row_data['ItemName'])
+        self.ui.lineEdit_ins_code.setText(row_data['InsCode'])
         self.ui.spinBox_amount.setValue(row_data['Amount'])
         self.ui.lineEdit_remark.setText(row_data['Remark'])
 
@@ -66,9 +67,10 @@ class DialogInputShare(QtWidgets.QDialog):
         if self.charge_settings_key is None:
             return
 
-        fields = ['ItemName', 'Amount', 'Remark']
+        fields = ['ItemName', 'InsCode', 'Amount', 'Remark']
         data = (
             self.ui.lineEdit_item_name.text(),
+            self.ui.lineEdit_ins_code.text(),
             self.ui.spinBox_amount.value(),
             self.ui.lineEdit_remark.text()
         )

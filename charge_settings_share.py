@@ -113,14 +113,11 @@ class ChargeSettingsShare(QtWidgets.QMainWindow):
         if result != 0:
             current_row = self.ui.tableWidget_diag_share.rowCount()
             self.ui.tableWidget_diag_share.insertRow(current_row)
-            fields = ['ChargeType', 'ItemName', 'InsType', 'ShareType', 'TreatType',
-                      'Amount', 'Remark']
+            fields = ['ChargeType', 'ItemName', 'InsCode', 'Amount', 'Remark']
             data = (
                 '門診負擔',
                 dialog.ui.lineEdit_item_name.text(),
-                dialog.ui.comboBox_ins_type.currentText(),
-                dialog.ui.comboBox_share_type.currentText(),
-                dialog.ui.comboBox_treat_type.currentText(),
+                dialog.ui.lineEdit_ins_code.text(),
                 dialog.ui.spinBox_amount.value(),
                 dialog.ui.lineEdit_remark.text()
             )
@@ -193,15 +190,16 @@ class ChargeSettingsShare(QtWidgets.QMainWindow):
                     QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
 
     def _drug_share_add(self):
-        dialog = dialog_input_share.DialogInputDiscount(self, self.database, self.system_settings, None, '藥品負擔')
+        dialog = dialog_input_share.DialogInputShare(self, self.database, self.system_settings, None, '藥品負擔')
         result = dialog.exec_()
         if result != 0:
             current_row = self.ui.tableWidget_drug_share.rowCount()
             self.ui.tableWidget_drug_share.insertRow(current_row)
-            fields = ['ChargeType', 'ItemName', 'Amount', 'Remark']
+            fields = ['ChargeType', 'ItemName', 'InsCode', 'Amount', 'Remark']
             data = (
                 '藥品負擔',
                 dialog.ui.lineEdit_item_name.text(),
+                dialog.ui.lineEdit_ins_code.text(),
                 dialog.ui.spinBox_amount.value(),
                 dialog.ui.lineEdit_remark.text()
             )
