@@ -55,7 +55,7 @@ class ChargeSettingsShare(QtWidgets.QMainWindow):
 
     # 設定欄位寬度
     def _set_table_width(self):
-        diag_share_width = [60, 60, 300, 100, 120, 250]
+        diag_share_width = [60, 60, 220, 150, 100, 100, 200]
         self.table_widget_diag_share.set_table_heading_width(diag_share_width)
         self.table_widget_drug_share.set_table_heading_width(diag_share_width)
 
@@ -82,9 +82,19 @@ class ChargeSettingsShare(QtWidgets.QMainWindow):
             self._set_diag_share_basic_data()
 
     def _set_diag_share_basic_data(self):
-        fields = ['ChargeType', 'ItemName', 'InsCode', 'Amount', 'Remark']
+        fields = ['ChargeType', 'ItemName', 'ShareType', 'InsCode', 'Amount', 'Remark']
         data = [
-            ('門診負擔', '中醫基層院所一般門診負擔', 'S10', 50, None),
+            ('門診負擔', '一般門診', '基層醫療', 'S10', 50, None),
+            ('門診負擔', '重大傷病', '重大傷病', '001', 0, None),
+            ('門診負擔', '低收入戶門診', '低收入戶', '003', 0, None),
+            ('門診負擔', '榮民門診', '榮民', '004', 0, None),
+            ('門診負擔', '職業傷害門診', '職業傷害', '006', 0, None),
+            ('門診負擔', '山地離島門診', '山地離島', '007', 0, None),
+            ('門診負擔', '其他免部份負擔門診', '其他免部份負擔', '009', 0, '針灸療程2-6次, 百歲人瑞, 921震災'),
+            ('門診負擔', '三歲以下兒童門診', '三歲兒童', '902', 0, None),
+            ('門診負擔', '新生兒依附門診', '新生兒', '903', 0, None),
+            ('門診負擔', '愛滋病門診', '愛滋病', '904', 0, None),
+            ('門診負擔', '替代役男門診', '替代役男', '906', 0, None),
         ]
         for rec in data:
             self.database.insert_record('charge_settings', fields, rec)
@@ -96,6 +106,7 @@ class ChargeSettingsShare(QtWidgets.QMainWindow):
             str(rec['ChargeSettingsKey']),
             strings.xstr(rec['ChargeType']),
             strings.xstr(rec['ItemName']),
+            strings.xstr(rec['ShareType']),
             strings.xstr(rec['InsCode']),
             strings.xstr(rec['Amount']),
             strings.xstr(rec['Remark']),
@@ -103,7 +114,7 @@ class ChargeSettingsShare(QtWidgets.QMainWindow):
 
         for column in range(0, self.ui.tableWidget_diag_share.columnCount()):
             self.ui.tableWidget_diag_share.setItem(rec_no, column, QtWidgets.QTableWidgetItem(diag_share_rec[column]))
-            if column in [4]:
+            if column in [5]:
                 self.ui.tableWidget_diag_share.item(rec_no, column).setTextAlignment(
                     QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
 
@@ -113,10 +124,11 @@ class ChargeSettingsShare(QtWidgets.QMainWindow):
         if result != 0:
             current_row = self.ui.tableWidget_diag_share.rowCount()
             self.ui.tableWidget_diag_share.insertRow(current_row)
-            fields = ['ChargeType', 'ItemName', 'InsCode', 'Amount', 'Remark']
+            fields = ['ChargeType', 'ItemName', 'ShareType', 'InsCode', 'Amount', 'Remark']
             data = (
                 '門診負擔',
                 dialog.ui.lineEdit_item_name.text(),
+                dialog.ui.comboBox_share_type.currentText(),
                 dialog.ui.lineEdit_ins_code.text(),
                 dialog.ui.spinBox_amount.value(),
                 dialog.ui.lineEdit_remark.text()
@@ -163,10 +175,29 @@ class ChargeSettingsShare(QtWidgets.QMainWindow):
             self._set_drug_share_basic_data()
 
     def _set_drug_share_basic_data(self):
-        fields = ['ChargeType', 'ItemName', 'InsCode', 'Amount', 'Remark']
+        fields = ['ChargeType', 'ItemName', 'ShareType', 'InsCode', 'Amount', 'Remark']
         data = [
-            ('藥品負擔', '藥費100點以下', 'S10', 0, None),
-            ('藥品負擔', '藥費101點以上, 每增加100點級距', 'S20', 20, None),
+            ('藥品負擔', '藥費100點以下', '基層醫療', 'S10', 0, '<=100'),
+            ('藥品負擔', '藥費101-200', '基層醫療', 'S20', 20, '<=200'),
+            ('藥品負擔', '藥費201-300', '基層醫療', 'S20', 40, '<=300'),
+            ('藥品負擔', '藥費301-400', '基層醫療', 'S20', 60, '<=400'),
+            ('藥品負擔', '藥費401-500', '基層醫療', 'S20', 80, '<=500'),
+            ('藥品負擔', '藥費501-600', '基層醫療', 'S20', 100, '<=600'),
+            ('藥品負擔', '藥費601-700', '基層醫療', 'S20', 120, '<=700'),
+            ('藥品負擔', '藥費701-800', '基層醫療', 'S20', 140, '<=800'),
+            ('藥品負擔', '藥費801-900', '基層醫療', 'S20', 160, '<=900'),
+            ('藥品負擔', '藥費901-1000', '基層醫療', 'S20', 180, '<=1000'),
+            ('藥品負擔', '藥費1000以上', '基層醫療', 'S20', 200, '>1000'),
+            ('藥品負擔', '重大傷病', '重大傷病', '001', 0, None),
+            ('藥品負擔', '低收入戶', '低收入戶', '003', 0, None),
+            ('藥品負擔', '榮民', '榮民', '004', 0, None),
+            ('藥品負擔', '職業傷害', '職業傷害', '006', 0, None),
+            ('藥品負擔', '山地離島', '山地離島', '007', 0, None),
+            ('藥品負擔', '其他免部份負擔', '其他免部份負擔', '009', 0, '針灸療程2-6次, 百歲人瑞, 921震災'),
+            ('藥品負擔', '三歲以下兒童', '三歲兒童', '902', 0, None),
+            ('藥品負擔', '新生兒依附', '新生兒', '903', 0, None),
+            ('藥品負擔', '愛滋病', '愛滋病', '904', 0, None),
+            ('藥品負擔', '替代役男', '替代役男', '906', 0, None),
         ]
         for rec in data:
             self.database.insert_record('charge_settings', fields, rec)
@@ -178,6 +209,7 @@ class ChargeSettingsShare(QtWidgets.QMainWindow):
             str(rec['ChargeSettingsKey']),
             strings.xstr(rec['ChargeType']),
             strings.xstr(rec['ItemName']),
+            strings.xstr(rec['ShareType']),
             strings.xstr(rec['InsCode']),
             strings.xstr(rec['Amount']),
             strings.xstr(rec['Remark']),
@@ -185,7 +217,7 @@ class ChargeSettingsShare(QtWidgets.QMainWindow):
 
         for column in range(0, self.ui.tableWidget_drug_share.columnCount()):
             self.ui.tableWidget_drug_share.setItem(rec_no, column, QtWidgets.QTableWidgetItem(drug_share_rec[column]))
-            if column in [4]:
+            if column in [5]:
                 self.ui.tableWidget_drug_share.item(rec_no, column).setTextAlignment(
                     QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
 
@@ -195,10 +227,11 @@ class ChargeSettingsShare(QtWidgets.QMainWindow):
         if result != 0:
             current_row = self.ui.tableWidget_drug_share.rowCount()
             self.ui.tableWidget_drug_share.insertRow(current_row)
-            fields = ['ChargeType', 'ItemName', 'InsCode', 'Amount', 'Remark']
+            fields = ['ChargeType', 'ItemName', 'ShareType', 'InsCode', 'Amount', 'Remark']
             data = (
                 '藥品負擔',
                 dialog.ui.lineEdit_item_name.text(),
+                dialog.ui.comboBox_share_type.currentText(),
                 dialog.ui.lineEdit_ins_code.text(),
                 dialog.ui.spinBox_amount.value(),
                 dialog.ui.lineEdit_remark.text()

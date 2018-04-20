@@ -7,6 +7,7 @@ from PyQt5 import QtWidgets, QtCore
 from libs import ui_settings
 import charge_settings_regist
 import charge_settings_share
+import charge_settings_nhi
 
 
 # 收費設定 2018.04.14
@@ -38,6 +39,8 @@ class ChargeSettings(QtWidgets.QMainWindow):
             charge_settings_regist.ChargeSettingsRegist(self, *self.args), '掛號費')
         self.ui.tabWidget_charge_settings.addTab(
             charge_settings_share.ChargeSettingsShare(self, *self.args), '部份負擔')
+        self.ui.tabWidget_charge_settings.addTab(
+            charge_settings_nhi.ChargeSettingsNHI(self, *self.args), '健保支付標準')
 
     # 設定信號
     def _set_signal(self):

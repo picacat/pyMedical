@@ -9,10 +9,10 @@ from libs import nhi
 
 
 # 主視窗
-class DialogInputShare(QtWidgets.QDialog):
+class DialogInputNHI(QtWidgets.QDialog):
     # 初始化
     def __init__(self, parent=None, *args):
-        super(DialogInputShare, self).__init__(parent)
+        super(DialogInputNHI, self).__init__(parent)
         self.parent = parent
         self.database = args[0]
         self.system_settings = args[1]
@@ -20,11 +20,6 @@ class DialogInputShare(QtWidgets.QDialog):
             self.charge_settings_key = args[2]
         except IndexError:
             self.charge_settings_key = None
-
-        try:
-            self.charge_type = args[3]
-        except IndexError:
-            self.charge_type = None
 
         self.ui = None
 
@@ -43,19 +38,18 @@ class DialogInputShare(QtWidgets.QDialog):
 
     # 設定GUI
     def _set_ui(self):
-        self.ui = ui_settings.load_ui_file(ui_settings.UI_DIALOG_INPUT_SHARE, self)
+        self.ui = ui_settings.load_ui_file(ui_settings.UI_DIALOG_INPUT_NHI, self)
         self.setFixedSize(self.size())  # non resizable dialog
         system.set_css(self)
         self.setFixedSize(self.size()) # non resizable dialog
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setText('存檔')
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Cancel).setText('取消')
-        self.ui.groupBox.setTitle(self.charge_type)
         self._set_combo_box()
         self.ui.lineEdit_item_name.setFocus()
 
     # 設定comboBox
     def _set_combo_box(self):
-        ui_settings.set_combo_box(self.ui.comboBox_share_type, nhi.SHARE_TYPE)
+        ui_settings.set_combo_box(self.ui.comboBox_charge_type, nhi.CHARGE_TYPE)
 
     # 設定信號
     def _set_signal(self):
@@ -64,8 +58,8 @@ class DialogInputShare(QtWidgets.QDialog):
     def _edit_charge_settings(self):
         sql = 'SELECT * FROM charge_settings where ChargeSettingsKey = {0}'.format(self.charge_settings_key)
         row_data = self.database.select_record(sql)[0]
+        self.ui.comboBox_charge_type.setCurrentText(row_data['ChargeType'])
         self.ui.lineEdit_item_name.setText(row_data['ItemName'])
-        self.ui.comboBox_share_type.setCurrentText(row_data['ShareType'])
         self.ui.lineEdit_ins_code.setText(row_data['InsCode'])
         self.ui.spinBox_amount.setValue(row_data['Amount'])
         self.ui.lineEdit_remark.setText(row_data['Remark'])
@@ -74,10 +68,10 @@ class DialogInputShare(QtWidgets.QDialog):
         if self.charge_settings_key is None:
             return
 
-        fields = ['ItemName', 'ShareType', 'InsCode', 'Amount', 'Remark']
+        fields = ['ChargeType', 'ItemName', 'InsCode', 'Amount', 'Remark']
         data = (
+            self.ui.comboBox_charge_type.currentText(),
             self.ui.lineEdit_item_name.text(),
-            self.ui.comboBox_share_type.currentText(),
             self.ui.lineEdit_ins_code.text(),
             self.ui.spinBox_amount.value(),
             self.ui.lineEdit_remark.text()
