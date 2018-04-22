@@ -4,7 +4,7 @@
 
 # 設定保險類別
 def get_integer(value):
-    if value is None:
+    if value is None or value == '':
         return 0
     else:
         return int(value)

@@ -127,6 +127,11 @@
              </column>
              <column>
               <property name="text">
+               <string>療程</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
                <string>收費金額</string>
               </property>
              </column>

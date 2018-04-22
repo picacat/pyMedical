@@ -13,6 +13,7 @@ from libs import nhi
 from libs import number
 from libs import strings
 from libs import registration_utils
+from libs import charge_utils
 from classes import table_widget
 import print_registration
 
@@ -62,7 +63,10 @@ class Registration(QtWidgets.QMainWindow):
         self.ui.toolButton_print_wait.clicked.connect(self.print_wait_clicked)
         self.ui.lineEdit_query.returnPressed.connect(self.query_clicked)
         self.ui.comboBox_ins_type.currentIndexChanged.connect(self.selection_changed)
+        self.ui.comboBox_share_type.currentIndexChanged.connect(self.selection_changed)
+        self.ui.comboBox_treat_type.currentIndexChanged.connect(self.selection_changed)
         self.ui.comboBox_card.currentIndexChanged.connect(self.selection_changed)
+        self.ui.comboBox_course.currentIndexChanged.connect(self.selection_changed)
         self.ui.comboBox_period.currentIndexChanged.connect(self.selection_changed)
         self.ui.comboBox_room.currentIndexChanged.connect(self.selection_changed)
 
@@ -188,6 +192,16 @@ class Registration(QtWidgets.QMainWindow):
                 self.ui.comboBox_card.setCurrentText('自動取得')
             else:
                 self.ui.comboBox_card.setCurrentText('不需取得')
+
+            self._set_charge()
+        elif sender_name == 'comboBox_share_type':
+            self._set_charge()
+        elif sender_name == 'comboBox_treat_type':
+            self._set_charge()
+        elif sender_name == 'comboBox_card':
+            self._set_charge()
+        elif sender_name == 'comboBox_course':
+            self._set_charge()
         elif sender_name == 'comboBox_period' or sender_name == 'comboBox_room':
             period = self.ui.comboBox_period.currentText()
             room = self.ui.comboBox_room.currentText()
@@ -221,7 +235,7 @@ class Registration(QtWidgets.QMainWindow):
     def _prepare_registration_data(self, row):
         self._set_patient_data(row)
         self._set_registration_data(row)
-        self._set_fee(row)
+        self._set_charge()
 
     # 顯示病患資料
     def _set_patient_data(self, row):
@@ -248,8 +262,14 @@ class Registration(QtWidgets.QMainWindow):
         self.ui.spinBox_reg_no.setValue(int(reg_no))
         self.ui.comboBox_period.setCurrentText(registration_utils.get_period(self.system_settings))
 
-    def _set_fee(self, row):
-        self.ui.lineEdit_regist_fee.setText("100")
+    def _set_charge(self):
+        regist_fee = charge_utils.get_regist_fee(self.database,
+                                                 self.ui.comboBox_ins_type.currentText(),
+                                                 self.ui.comboBox_share_type.currentText(),
+                                                 self.ui.comboBox_treat_type.currentText(),
+                                                 self.ui.comboBox_card.currentText(),
+                                                 self.ui.comboBox_course.currentText())
+        self.ui.lineEdit_regist_fee.setText(str(regist_fee))
 
     def _save_files(self):
         case_key = self._save_medical_record()

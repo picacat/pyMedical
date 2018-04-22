@@ -55,7 +55,8 @@ class DialogInputRegist(QtWidgets.QDialog):
     def _set_combo_box(self):
         ui_settings.set_combo_box(self.ui.comboBox_ins_type, nhi.INS_TYPE, '不分類')
         ui_settings.set_combo_box(self.ui.comboBox_share_type, nhi.SHARE_TYPE, '不分類')
-        ui_settings.set_combo_box(self.ui.comboBox_treat_type, nhi.REGIST_FEE_TREAT_TYPE, '不分類')
+        ui_settings.set_combo_box(self.ui.comboBox_treat_type, nhi.TREAT_TYPE, '不分類')
+        ui_settings.set_combo_box(self.ui.comboBox_course, nhi.COURSE_TYPE)
 
     def _edit_charge_settings(self):
         sql = 'SELECT * FROM charge_settings where ChargeSettingsKey = {0}'.format(self.charge_settings_key)
@@ -64,6 +65,7 @@ class DialogInputRegist(QtWidgets.QDialog):
         self.ui.comboBox_ins_type.setCurrentText(row_data['InsType'])
         self.ui.comboBox_share_type.setCurrentText(row_data['ShareType'])
         self.ui.comboBox_treat_type.setCurrentText(row_data['TreatType'])
+        self.ui.comboBox_course.setCurrentText(row_data['Course'])
         self.ui.spinBox_amount.setValue(row_data['Amount'])
         self.ui.lineEdit_remark.setText(row_data['Remark'])
 
@@ -71,12 +73,13 @@ class DialogInputRegist(QtWidgets.QDialog):
         if self.charge_settings_key is None:
             return
 
-        fields = ['ItemName', 'InsType', 'ShareType', 'TreatType', 'Amount', 'Remark']
+        fields = ['ItemName', 'InsType', 'ShareType', 'TreatType', 'Course', 'Amount', 'Remark']
         data = (
             self.ui.lineEdit_item_name.text(),
             self.ui.comboBox_ins_type.currentText(),
             self.ui.comboBox_share_type.currentText(),
             self.ui.comboBox_treat_type.currentText(),
+            self.ui.comboBox_course.currentText(),
             self.ui.spinBox_amount.value(),
             self.ui.lineEdit_remark.text()
         )

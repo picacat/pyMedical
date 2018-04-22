@@ -55,7 +55,7 @@ class ChargeSettingsRegist(QtWidgets.QMainWindow):
 
     # 設定欄位寬度
     def _set_table_width(self):
-        regist_fee_width = [60, 60, 300, 100, 120, 120, 100, 370]
+        regist_fee_width = [60, 60, 300, 100, 100, 100, 100, 100, 310]
         self.table_widget_regist_fee.set_table_heading_width(regist_fee_width)
         discount_width = [60, 60, 150, 80, 200]
         self.table_widget_discount.set_table_heading_width(discount_width)
@@ -81,7 +81,7 @@ class ChargeSettingsRegist(QtWidgets.QMainWindow):
         if result != 0:
             current_row = self.ui.tableWidget_regist_fee.rowCount()
             self.ui.tableWidget_regist_fee.insertRow(current_row)
-            fields = ['ChargeType', 'ItemName', 'InsType', 'ShareType', 'TreatType',
+            fields = ['ChargeType', 'ItemName', 'InsType', 'ShareType', 'TreatType', 'Course',
                       'Amount', 'Remark']
             data = (
                 '掛號費',
@@ -89,6 +89,7 @@ class ChargeSettingsRegist(QtWidgets.QMainWindow):
                 dialog.ui.comboBox_ins_type.currentText(),
                 dialog.ui.comboBox_share_type.currentText(),
                 dialog.ui.comboBox_treat_type.currentText(),
+                dialog.ui.comboBox_course.currentText(),
                 dialog.ui.spinBox_amount.value(),
                 dialog.ui.lineEdit_remark.text()
             )
@@ -140,38 +141,39 @@ class ChargeSettingsRegist(QtWidgets.QMainWindow):
             strings.xstr(rec['InsType']),
             strings.xstr(rec['ShareType']),
             strings.xstr(rec['TreatType']),
+            strings.xstr(rec['Course']),
             strings.xstr(rec['Amount']),
             strings.xstr(rec['Remark']),
         ]
 
         for column in range(0, self.ui.tableWidget_regist_fee.columnCount()):
             self.ui.tableWidget_regist_fee.setItem(rec_no, column, QtWidgets.QTableWidgetItem(regist_fee_rec[column]))
-            if column in [6]:
+            if column in [7]:
                 self.ui.tableWidget_regist_fee.item(rec_no, column).setTextAlignment(
                     QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
 
     def _set_regist_fee_basic_data(self):
-        fields = ['ChargeType', 'ItemName', 'InsType', 'ShareType', 'TreatType',
+        fields = ['ChargeType', 'ItemName', 'InsType', 'ShareType', 'TreatType', 'Course',
                   'Amount', 'Remark']
         data = [
-            ('掛號費', '健保基本掛號費', '健保', '不分類', '不分類', 0, None),
-            ('掛號費', '自費基本掛號費', '自費', '不分類', '不分類', 0, None),
-            ('掛號費', '欠卡費', '健保', '不分類', '不分類', 0, None),
-            ('掛號費', '健保一般內科一般掛號費', '健保', '基層醫療', '內科', 0, None),
-            ('掛號費', '健保一般傷科首次掛號費', '健保', '基層醫療', '傷科首次', 0, None),
-            ('掛號費', '健保一般傷科療程掛號費', '健保', '基層醫療', '傷科療程', 0, None),
-            ('掛號費', '健保一般針灸首次掛號費', '健保', '基層醫療', '針灸首次', 0, None),
-            ('掛號費', '健保一般針灸療程掛號費', '健保', '基層醫療', '針灸療程', 0, None),
-            ('掛號費', '健保榮民內科一般掛號費', '健保', '榮民', '內科', 0, None),
-            ('掛號費', '健保榮民傷科首次掛號費', '健保', '榮民', '傷科首次', 0, None),
-            ('掛號費', '健保榮民傷科療程掛號費', '健保', '榮民', '傷科療程', 0, None),
-            ('掛號費', '健保榮民針灸首次掛號費', '健保', '榮民', '針灸首次', 0, None),
-            ('掛號費', '健保榮民針灸療程掛號費', '健保', '榮民', '針灸療程', 0, None),
-            ('掛號費', '健保低收入戶內科一般掛號費', '健保', '低收入戶', '內科', 0, None),
-            ('掛號費', '健保低收入戶傷科首次掛號費', '健保', '低收入戶', '傷科首次', 0, None),
-            ('掛號費', '健保低收入戶傷科療程掛號費', '健保', '低收入戶', '傷科療程', 0, None),
-            ('掛號費', '健保低收入戶針灸首次掛號費', '健保', '低收入戶', '針灸首次', 0, None),
-            ('掛號費', '健保低收入戶針灸療程掛號費', '健保', '低收入戶', '針灸療程', 0, None),
+            ('掛號費', '基本掛號費', '健保', '不分類', '不分類', '首次', 100, None),
+            ('掛號費', '基本掛號費', '自費', '不分類', '不分類', '首次', 100, None),
+            ('掛號費', '欠卡費', '健保', '不分類', '不分類', '首次', 500, None),
+            ('掛號費', '內科掛號費', '健保', '基層醫療', '內科', '首次', 100, None),
+            ('掛號費', '傷科首次掛號費', '健保', '基層醫療', '傷科治療', '首次', 100, None),
+            ('掛號費', '傷科療程掛號費', '健保', '基層醫療', '傷科治療', '療程', 100, None),
+            ('掛號費', '針灸首次掛號費', '健保', '基層醫療', '針灸治療', '首次', 100, None),
+            ('掛號費', '針灸療程掛號費', '健保', '基層醫療', '針灸治療', '療程', 150, None),
+            ('掛號費', '榮民內科掛號費', '健保', '榮民', '內科', '首次', 0, None),
+            ('掛號費', '榮民傷科首次掛號費', '健保', '榮民', '傷科治療', '首次', 0, None),
+            ('掛號費', '榮民傷科療程掛號費', '健保', '榮民', '傷科治療', '療程', 0, None),
+            ('掛號費', '榮民針灸首次掛號費', '健保', '榮民', '針灸治療', '首次', 0, None),
+            ('掛號費', '榮民針灸療程掛號費', '健保', '榮民', '針灸治療', '療程', 0, None),
+            ('掛號費', '低收入戶內科掛號費', '健保', '低收入戶', '內科', '首次', 0, None),
+            ('掛號費', '低收入戶傷科首次掛號費', '健保', '低收入戶', '傷科治療', '首次', 0, None),
+            ('掛號費', '低收入戶傷科療程掛號費', '健保', '低收入戶', '傷科治療', '療程', 0, None),
+            ('掛號費', '低收入戶針灸首次掛號費', '健保', '低收入戶', '針灸治療', '首次', 0, None),
+            ('掛號費', '低收入戶針灸療程掛號費', '健保', '低收入戶', '針灸治療', '療程', 0, None),
         ]
         for rec in data:
             self.database.insert_record('charge_settings', fields, rec)
