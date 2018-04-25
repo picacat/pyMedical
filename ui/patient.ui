@@ -29,25 +29,21 @@
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_3">
            <item>
-            <layout class="QGridLayout" name="gridLayout">
-             <item row="3" column="0">
-              <widget class="QLabel" name="label_9">
-               <property name="text">
-                <string>保險類別</string>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="2">
-              <widget class="QLabel" name="label_4">
-               <property name="text">
-                <string>卡片號碼</string>
-               </property>
-              </widget>
-             </item>
+            <layout class="QGridLayout" name="gridLayout_4">
              <item row="2" column="2">
               <widget class="QLabel" name="label_8">
                <property name="text">
-                <string>國籍</string>
+                <string>性別</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="2">
+              <widget class="QLabel" name="label_6">
+               <property name="text">
+                <string>出生日期</string>
                </property>
                <property name="alignment">
                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -59,22 +55,18 @@
                <property name="text">
                 <string>病歷號碼</string>
                </property>
+               <property name="alignment">
+                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+               </property>
               </widget>
-             </item>
-             <item row="3" column="1">
-              <widget class="QComboBox" name="comboBox_ins_type"/>
              </item>
              <item row="2" column="0">
               <widget class="QLabel" name="label_7">
                <property name="text">
                 <string>身份證號</string>
                </property>
-              </widget>
-             </item>
-             <item row="1" column="2">
-              <widget class="QLabel" name="label_6">
-               <property name="text">
-                <string>出生日期</string>
+               <property name="alignment">
+                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                </property>
               </widget>
              </item>
@@ -83,23 +75,13 @@
                <property name="text">
                 <string>病患姓名</string>
                </property>
-              </widget>
-             </item>
-             <item row="1" column="3">
-              <widget class="QLineEdit" name="lineEdit_birthday"/>
-             </item>
-             <item row="2" column="1">
-              <widget class="QLineEdit" name="lineEdit_id"/>
-             </item>
-             <item row="3" column="2">
-              <widget class="QLabel" name="label_10">
-               <property name="text">
-                <string>初診日期</string>
+               <property name="alignment">
+                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                </property>
               </widget>
              </item>
-             <item row="1" column="1">
-              <widget class="QLineEdit" name="lineEdit_name"/>
+             <item row="2" column="1">
+              <widget class="QLineEdit" name="lineEdit_id"/>
              </item>
              <item row="0" column="1">
               <widget class="QLineEdit" name="lineEdit_patient_key">
@@ -108,13 +90,65 @@
                </property>
               </widget>
              </item>
-             <item row="0" column="3" colspan="2">
+             <item row="0" column="2">
+              <widget class="QLabel" name="label_4">
+               <property name="text">
+                <string>卡片號碼</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1">
+              <widget class="QLineEdit" name="lineEdit_name"/>
+             </item>
+             <item row="1" column="3">
+              <widget class="QLineEdit" name="lineEdit_birthday"/>
+             </item>
+             <item row="0" column="3">
               <widget class="QLineEdit" name="lineEdit_card_no"/>
              </item>
-             <item row="2" column="3" colspan="2">
+             <item row="3" column="0">
+              <widget class="QLabel" name="label_20">
+               <property name="text">
+                <string>國籍</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="1">
               <widget class="QComboBox" name="comboBox_nationality"/>
              </item>
-             <item row="3" column="3" colspan="2">
+             <item row="2" column="3">
+              <widget class="QComboBox" name="comboBox_gender"/>
+             </item>
+             <item row="3" column="2">
+              <widget class="QLabel" name="label_9">
+               <property name="text">
+                <string>保險類別</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="3">
+              <widget class="QComboBox" name="comboBox_ins_type"/>
+             </item>
+             <item row="4" column="0">
+              <widget class="QLabel" name="label_10">
+               <property name="text">
+                <string>初診日期</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+               </property>
+              </widget>
+             </item>
+             <item row="4" column="1">
               <widget class="QLineEdit" name="lineEdit_init_date"/>
              </item>
             </layout>
@@ -394,6 +428,7 @@
   <tabstop>lineEdit_name</tabstop>
   <tabstop>lineEdit_birthday</tabstop>
   <tabstop>lineEdit_id</tabstop>
+  <tabstop>comboBox_gender</tabstop>
   <tabstop>comboBox_nationality</tabstop>
   <tabstop>comboBox_ins_type</tabstop>
   <tabstop>lineEdit_init_date</tabstop>

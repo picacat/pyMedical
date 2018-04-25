@@ -32,3 +32,30 @@ def search_patient(ui, database, settings, keyword):
 
     return row
 
+
+# 取得性別
+def get_gender(in_id):
+    gender = None
+    gender_code = in_id[1]
+    if gender_code in ['1', 'A', 'C', 'Y']:
+        gender = '男'
+    elif gender_code in ['2', 'B', 'D', 'X']:
+        gender = '女'
+
+    return gender
+
+
+# 取得國籍
+def get_nationality(in_id):
+    nationality = None
+    gender_code = in_id[1]
+    if gender_code in ['1', '2']:
+        nationality = '本國'
+    elif gender_code in ['C', 'D']:
+        nationality = '外國'
+    elif gender_code in ['A', 'B']:
+        nationality = '居留證'
+    elif gender_code in ['Y', 'X']:
+        nationality = '遊民'
+
+    return nationality

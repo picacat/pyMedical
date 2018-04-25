@@ -3,12 +3,14 @@
 
 import sys
 
-from PyQt5 import QtWidgets, QtGui, QtCore
+from PyQt5 import QtWidgets
+from PyQt5.QtWidgets import QMessageBox, QPushButton
 from libs import ui_settings
 from libs import strings
 from libs import nhi
 from libs import date_utils
 from libs import validator_utils
+from libs import patient_utils
 
 
 # 樣板 2018.01.31
@@ -45,16 +47,18 @@ class Patient(QtWidgets.QMainWindow):
         self._set_combobox()
 
     def _set_validator(self):
-        validator = validator_utils.get_date_validator()
-        self.ui.lineEdit_birthday.setValidator(validator)
+        self.ui.lineEdit_birthday.setValidator(validator_utils.get_date_validator())
+        self.ui.lineEdit_id.setValidator(validator_utils.get_id_validator())
 
     # 設定信號
     def _set_signal(self):
         self.ui.action_save.triggered.connect(self._save_patient)
         self.ui.action_close.triggered.connect(self.close_patient)
         self.ui.lineEdit_birthday.editingFinished.connect(self._validate_birthday)
+        self.ui.lineEdit_id.editingFinished.connect(self._validate_id)
 
     def _set_combobox(self):
+        ui_settings.set_combo_box(self.ui.comboBox_gender, nhi.GENDER)
         ui_settings.set_combo_box(self.ui.comboBox_nationality, nhi.NATIONALITY)
         ui_settings.set_combo_box(self.ui.comboBox_ins_type, nhi.SHARE_TYPE)
         ui_settings.set_combo_box(self.ui.comboBox_marriage, nhi.MARRIAGE)
@@ -65,6 +69,24 @@ class Patient(QtWidgets.QMainWindow):
     def _validate_birthday(self):
         west_date = date_utils.date_to_west_date(self.ui.lineEdit_birthday.text())
         self.ui.lineEdit_birthday.setText(west_date)
+
+    def _validate_id(self):
+        if not validator_utils.verify_id(self.ui.lineEdit_id.text()):
+            msg_box = QMessageBox()
+            msg_box.setIcon(QMessageBox.Warning)
+            msg_box.setWindowTitle('身分證檢查錯誤')
+            msg_box.setText("<font size='4' color='red'><b>身分證可能有誤，請確認身分證號碼是否輸入正確!</b></font>")
+            msg_box.setInformativeText("如果確定輸入正確，可以忽略此項警告.")
+            msg_box.addButton(QPushButton("確定"), QMessageBox.YesRole)
+            msg_box.exec_()
+        self._set_gender()
+        self._set_nationality()
+
+    def _set_gender(self):
+        self.ui.comboBox_gender.setCurrentText(patient_utils.get_gender(self.ui.lineEdit_id.text()))
+
+    def _set_nationality(self):
+        self.ui.comboBox_nationality.setCurrentText(patient_utils.get_nationality(self.ui.lineEdit_id.text()))
 
     def _read_patient(self):
         sql = 'SELECT * FROM patient WHERE PatientKey = {0}'.format(self.patient_key)
@@ -84,6 +106,7 @@ class Patient(QtWidgets.QMainWindow):
         self.ui.lineEdit_address.setText(strings.xstr(self.patient['Address']))
         self.ui.lineEdit_family.setText(strings.xstr(self.patient['FamilyPatientKey']))
         self.ui.lineEdit_family_telephone.setText(strings.xstr(self.patient['Reference']))
+        self.ui.comboBox_gender.setCurrentText(self.patient['Gender'])
         self.ui.comboBox_ins_type.setCurrentText(self.patient['InsType'])
         self.ui.comboBox_nationality.setCurrentText(self.patient['Nationality'])
         self.ui.comboBox_marriage.setCurrentText(self.patient['Marriage'])
@@ -97,7 +120,7 @@ class Patient(QtWidgets.QMainWindow):
 
     def _save_patient(self):
         fields = ['CardNo', 'Name', 'ID', 'Birthday', 'InitDate', 'Telephone', 'Cellphone', 'Email',
-                  'Address', 'FamilyPatientKey', 'Reference', 'InsType', 'Nationality', 'Marriage',
+                  'Address', 'FamilyPatientKey', 'Reference', 'Gender', 'InsType', 'Nationality', 'Marriage',
                   'Education', 'Occupation', 'DiscountType', 'Allergy', 'History', 'Remark', 'Description']
         data = (
             self.ui.lineEdit_card_no.text(),
@@ -111,6 +134,7 @@ class Patient(QtWidgets.QMainWindow):
             self.ui.lineEdit_address.text(),
             self.ui.lineEdit_family.text(),
             self.ui.lineEdit_family_telephone.text(),
+            self.ui.comboBox_gender.currentText(),
             self.ui.comboBox_ins_type.currentText(),
             self.ui.comboBox_nationality.currentText(),
             self.ui.comboBox_marriage.currentText(),
