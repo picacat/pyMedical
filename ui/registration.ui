@@ -76,7 +76,7 @@
             <widget class="QComboBox" name="comboBox_reg_type"/>
            </item>
            <item row="9" column="4" colspan="2">
-            <widget class="QLineEdit" name="lineEdit_massage_fee">
+            <widget class="QLineEdit" name="lineEdit_traditional_health_care_fee">
              <property name="alignment">
               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
              </property>
@@ -120,7 +120,7 @@
             </widget>
            </item>
            <item row="8" column="4" colspan="2">
-            <widget class="QLineEdit" name="lineEdit_reg_share_fee">
+            <widget class="QLineEdit" name="lineEdit_diag_share_fee">
              <property name="alignment">
               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
              </property>
@@ -240,6 +240,12 @@
            </item>
            <item row="10" column="0">
             <widget class="QLabel" name="label_24">
+             <property name="font">
+              <font>
+               <weight>75</weight>
+               <bold>true</bold>
+              </font>
+             </property>
              <property name="text">
               <string>應收金額</string>
              </property>
@@ -288,9 +294,18 @@
             <widget class="QComboBox" name="comboBox_injury_type"/>
            </item>
            <item row="10" column="1" colspan="2">
-            <widget class="QLineEdit" name="lineEdit_total_fee">
+            <widget class="QLineEdit" name="lineEdit_total_amount">
+             <property name="font">
+              <font>
+               <weight>75</weight>
+               <bold>true</bold>
+              </font>
+             </property>
              <property name="alignment">
               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+             </property>
+             <property name="readOnly">
+              <bool>true</bool>
              </property>
             </widget>
            </item>
@@ -359,14 +374,8 @@
         <layout class="QGridLayout" name="gridLayout_3">
          <item row="0" column="0">
           <layout class="QGridLayout" name="gridLayout_2">
-           <item row="2" column="3">
-            <widget class="QLineEdit" name="lineEdit_discount_type"/>
-           </item>
            <item row="3" column="1">
             <widget class="QLineEdit" name="lineEdit_telephone"/>
-           </item>
-           <item row="2" column="1">
-            <widget class="QLineEdit" name="lineEdit_share_type"/>
            </item>
            <item row="1" column="2">
             <widget class="QLabel" name="label_5">
@@ -439,7 +448,14 @@
             <widget class="QLineEdit" name="lineEdit_name"/>
            </item>
            <item row="0" column="1">
-            <widget class="QLineEdit" name="lineEdit_patient_key"/>
+            <widget class="QLineEdit" name="lineEdit_patient_key">
+             <property name="focusPolicy">
+              <enum>Qt::StrongFocus</enum>
+             </property>
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
            </item>
            <item row="0" column="2">
             <widget class="QLabel" name="label_3">
@@ -493,7 +509,11 @@
             </widget>
            </item>
            <item row="1" column="3">
-            <widget class="QLineEdit" name="lineEdit_birthday"/>
+            <widget class="QLineEdit" name="lineEdit_birthday">
+             <property name="inputMask">
+              <string/>
+             </property>
+            </widget>
            </item>
            <item row="4" column="1" colspan="3">
             <widget class="QLineEdit" name="lineEdit_address"/>
@@ -542,6 +562,16 @@
               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
              </property>
             </widget>
+           </item>
+           <item row="2" column="3">
+            <widget class="QComboBox" name="comboBox_patient_discount">
+             <property name="editable">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QComboBox" name="comboBox_patient_share"/>
            </item>
           </layout>
          </item>

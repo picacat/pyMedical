@@ -31,7 +31,11 @@ class DialogInputShare(QtWidgets.QDialog):
         self._set_ui()
         self._set_signal()
         if self.charge_settings_key is not None:
-            self._edit_charge_settings()
+            if self.charge_type == '門診負擔':
+                self._edit_diag_share()
+            else:
+                self._edit_drug_share()
+
 
     # 解構
     def __del__(self):
@@ -57,11 +61,31 @@ class DialogInputShare(QtWidgets.QDialog):
     def _set_combo_box(self):
         ui_settings.set_combo_box(self.ui.comboBox_share_type, nhi.SHARE_TYPE)
 
+        if self.charge_type == '藥品負擔':
+            self.ui.label_treat_type.hide()
+            self.ui.comboBox_treat_type.hide()
+            self.ui.label_course.hide()
+            self.ui.comboBox_course.hide()
+        else:
+            ui_settings.set_combo_box(self.ui.comboBox_treat_type, nhi.TREAT_TYPE)
+            ui_settings.set_combo_box(self.ui.comboBox_course, nhi.COURSE_TYPE)
+
     # 設定信號
     def _set_signal(self):
         self.ui.buttonBox.accepted.connect(self.accepted_button_clicked)
 
-    def _edit_charge_settings(self):
+    def _edit_diag_share(self):
+        sql = 'SELECT * FROM charge_settings where ChargeSettingsKey = {0}'.format(self.charge_settings_key)
+        row_data = self.database.select_record(sql)[0]
+        self.ui.lineEdit_item_name.setText(row_data['ItemName'])
+        self.ui.comboBox_share_type.setCurrentText(row_data['ShareType'])
+        self.ui.comboBox_treat_type.setCurrentText(row_data['TreatType'])
+        self.ui.comboBox_course.setCurrentText(row_data['Course'])
+        self.ui.lineEdit_ins_code.setText(row_data['InsCode'])
+        self.ui.spinBox_amount.setValue(row_data['Amount'])
+        self.ui.lineEdit_remark.setText(row_data['Remark'])
+
+    def _edit_drug_share(self):
         sql = 'SELECT * FROM charge_settings where ChargeSettingsKey = {0}'.format(self.charge_settings_key)
         row_data = self.database.select_record(sql)[0]
         self.ui.lineEdit_item_name.setText(row_data['ItemName'])
@@ -74,6 +98,27 @@ class DialogInputShare(QtWidgets.QDialog):
         if self.charge_settings_key is None:
             return
 
+        if self.charge_type == '門診負擔':
+            self._save_diag_share()
+        else:
+            self._save_drug_share()
+
+    def _save_diag_share(self):
+        fields = ['ItemName', 'ShareType', 'TreatType', 'Course', 'InsCode', 'Amount', 'Remark']
+        data = (
+            self.ui.lineEdit_item_name.text(),
+            self.ui.comboBox_share_type.currentText(),
+            self.ui.comboBox_treat_type.currentText(),
+            self.ui.comboBox_course.currentText(),
+            self.ui.lineEdit_ins_code.text(),
+            self.ui.spinBox_amount.value(),
+            self.ui.lineEdit_remark.text()
+        )
+
+        self.database.update_record('charge_settings', fields, 'ChargeSettingsKey',
+                                    self.charge_settings_key, data)
+
+    def _save_drug_share(self):
         fields = ['ItemName', 'ShareType', 'InsCode', 'Amount', 'Remark']
         data = (
             self.ui.lineEdit_item_name.text(),
@@ -82,6 +127,6 @@ class DialogInputShare(QtWidgets.QDialog):
             self.ui.spinBox_amount.value(),
             self.ui.lineEdit_remark.text()
         )
-        
+
         self.database.update_record('charge_settings', fields, 'ChargeSettingsKey',
                                     self.charge_settings_key, data)

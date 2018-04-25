@@ -117,6 +117,16 @@
              </column>
              <column>
               <property name="text">
+               <string>就醫類別</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
+               <string>療程</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
                <string>負擔代碼</string>
               </property>
              </column>

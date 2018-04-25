@@ -55,6 +55,7 @@ class Registration(QtWidgets.QMainWindow):
 
     # 設定信號
     def _set_signal(self):
+        self.ui.action_new_patient.triggered.connect(self._new_patient)
         self.ui.action_cancel.triggered.connect(self.action_cancel_triggered)
         self.ui.action_save.triggered.connect(self.action_save_triggered)
         self.ui.action_close.triggered.connect(self.close_registration)
@@ -62,13 +63,20 @@ class Registration(QtWidgets.QMainWindow):
         self.ui.toolButton_delete_wait.clicked.connect(self.delete_wait_clicked)
         self.ui.toolButton_print_wait.clicked.connect(self.print_wait_clicked)
         self.ui.lineEdit_query.returnPressed.connect(self.query_clicked)
+        self.ui.comboBox_patient_share.currentIndexChanged.connect(self.selection_changed)
+        self.ui.comboBox_patient_discount.currentIndexChanged.connect(self.selection_changed)
         self.ui.comboBox_ins_type.currentIndexChanged.connect(self.selection_changed)
         self.ui.comboBox_share_type.currentIndexChanged.connect(self.selection_changed)
         self.ui.comboBox_treat_type.currentIndexChanged.connect(self.selection_changed)
         self.ui.comboBox_card.currentIndexChanged.connect(self.selection_changed)
         self.ui.comboBox_course.currentIndexChanged.connect(self.selection_changed)
+        self.ui.comboBox_massager.currentIndexChanged.connect(self.selection_changed)
         self.ui.comboBox_period.currentIndexChanged.connect(self.selection_changed)
         self.ui.comboBox_room.currentIndexChanged.connect(self.selection_changed)
+        self.ui.lineEdit_regist_fee.textChanged.connect(self.selection_changed)
+        self.ui.lineEdit_diag_share_fee.textChanged.connect(self.selection_changed)
+        self.ui.lineEdit_deposit_fee.textChanged.connect(self.selection_changed)
+        self.ui.lineEdit_traditional_health_care_fee.textChanged.connect(self.selection_changed)
 
     def _set_table_width(self):
         width = [70, 70, 60, 80, 40, 50, 80, 80, 80, 60, 80, 40, 30, 50, 80]
@@ -138,27 +146,48 @@ class Registration(QtWidgets.QMainWindow):
         self.ui.groupBox_registration.setEnabled(not enabled)
 
         self._clear_group_box_patient()
+        self._clear_group_box_registration()
 
     # 清除病患資料欄位
     def _clear_group_box_patient(self):
         self.ui.lineEdit_patient_key.clear()
         self.ui.lineEdit_name.clear()
         self.ui.lineEdit_id.clear()
-        self.ui.lineEdit_share_type.clear()
-        self.ui.lineEdit_discount_type.clear()
         self.ui.lineEdit_birthday.clear()
         self.ui.lineEdit_telephone.clear()
         self.ui.lineEdit_cellphone.clear()
         self.ui.lineEdit_address.clear()
         self.ui.lineEdit_patient_remark.clear()
         self.ui.lineEdit_regist_fee.clear()
-        self.ui.lineEdit_reg_share_fee.clear()
+        self.ui.lineEdit_diag_share_fee.clear()
         self.ui.lineEdit_deposit_fee.clear()
-        self.ui.lineEdit_massage_fee.clear()
-        self.ui.lineEdit_total_fee.clear()
+        self.ui.lineEdit_traditional_health_care_fee.clear()
+        self.ui.lineEdit_total_amount.clear()
+        self.ui.comboBox_patient_share.setCurrentIndex(0)
+        self.ui.comboBox_patient_discount.setCurrentIndex(0)
+
+    # 清除掛號資料欄位
+    def _clear_group_box_registration(self):
+        self.ui.comboBox_ins_type.setCurrentIndex(0)
+        self.ui.comboBox_reg_type.setCurrentIndex(0)
+        self.ui.comboBox_share_type.setCurrentIndex(0)
+        self.ui.comboBox_injury_type.setCurrentIndex(0)
+        self.ui.comboBox_treat_type.setCurrentIndex(0)
+        self.ui.comboBox_card.setCurrentIndex(0)
+        self.ui.comboBox_course.setCurrentIndex(0)
+        self.ui.comboBox_massager.setCurrentIndex(0)
+        self.ui.comboBox_room.setCurrentIndex(0)
+        self.ui.lineEdit_regist_fee.clear()
+        self.ui.lineEdit_diag_share_fee.clear()
+        self.ui.lineEdit_deposit_fee.clear()
+        self.ui.lineEdit_traditional_health_care_fee.clear()
+        self.ui.lineEdit_total_amount.clear()
+        self.ui.comboBox_remark.setCurrentIndex(0)
 
     # 設定 comboBox
     def _set_combobox(self):
+        ui_settings.set_combo_box(self.ui.comboBox_patient_share, nhi.SHARE_TYPE)
+        ui_settings.set_combo_box(self.ui.comboBox_patient_discount, '掛號優待', self.database)
         ui_settings.set_combo_box(self.ui.comboBox_ins_type, nhi.INS_TYPE)
         ui_settings.set_combo_box(self.ui.comboBox_visit, nhi.VISIT)
         ui_settings.set_combo_box(self.ui.comboBox_reg_type, nhi.REG_TYPE)
@@ -187,7 +216,12 @@ class Registration(QtWidgets.QMainWindow):
     # comboBox 內容變更
     def selection_changed(self, i):
         sender_name = self.sender().objectName()
-        if sender_name == 'comboBox_ins_type':
+        if sender_name == 'comboBox_patient_share':
+            self.ui.comboBox_share_type.setCurrentText(self.ui.comboBox_patient_share.currentText())
+        elif sender_name == 'comboBox_patient_discount':
+            self._set_charge()
+            self.ui.comboBox_share_type.setCurrentText(self.ui.comboBox_patient_share.currentText())
+        elif sender_name == 'comboBox_ins_type':
             if self.ui.comboBox_ins_type.currentText() == '健保':
                 self.ui.comboBox_card.setCurrentText('自動取得')
             else:
@@ -202,11 +236,21 @@ class Registration(QtWidgets.QMainWindow):
             self._set_charge()
         elif sender_name == 'comboBox_course':
             self._set_charge()
+        elif sender_name == 'comboBox_massager':
+            self._set_charge()
         elif sender_name == 'comboBox_period' or sender_name == 'comboBox_room':
             period = self.ui.comboBox_period.currentText()
             room = self.ui.comboBox_room.currentText()
             reg_no = registration_utils.get_reg_no(self.database, self.system_settings, room, period)  # 取得診號
             self.ui.spinBox_reg_no.setValue(int(reg_no))
+        elif sender_name == 'lineEdit_regist_fee':
+            self._set_total_amount()
+        elif sender_name == 'lineEdit_diag_share_fee':
+            self._set_total_amount()
+        elif sender_name == 'lineEdit_deposit_fee':
+            self._set_total_amount()
+        elif sender_name == 'lineEdit_traditional_health_care_fee':
+            self._set_total_amount()
 
     # 開始查詢病患資料
     def query_clicked(self):
@@ -243,11 +287,12 @@ class Registration(QtWidgets.QMainWindow):
         self.ui.lineEdit_patient_key.setText(str(row[0]['PatientKey']))
         self.ui.lineEdit_name.setText(str(row[0]['Name']))
         self.ui.lineEdit_id.setText(str(row[0]['ID']).strip(None))
-        self.ui.lineEdit_share_type.setText(str(row[0]['InsType']).strip(None))
-        self.ui.lineEdit_discount_type.setText(str(row[0]['DiscountType']).strip(None))
+        share_type = nhi.get_share_type(str(row[0]['InsType']).strip(None))
+        self.ui.comboBox_patient_share.setCurrentText(share_type)
+        self.ui.comboBox_patient_discount.setCurrentText(str(row[0]['DiscountType']).strip(None))
         self.ui.lineEdit_birthday.setText(str(row[0]['Birthday']).strip(None))
-        self.ui.lineEdit_telephone.setText(str(row[0]['Telephone']).strip(None))
-        self.ui.lineEdit_cellphone.setText(str(row[0]['Cellphone']).strip(None))
+        self.ui.lineEdit_telephone.setText(strings.xstr(row[0]['Telephone']))
+        self.ui.lineEdit_cellphone.setText(strings.xstr(row[0]['Cellphone']))
         self.ui.lineEdit_address.setText(str(row[0]['Address']).strip(None))
         self.ui.lineEdit_patient_remark.setText(strings.get_str(row[0]['Remark'], 'utf8'))
         self.ui.comboBox_card.setFocus()
@@ -258,27 +303,103 @@ class Registration(QtWidgets.QMainWindow):
         reg_no = registration_utils.get_reg_no(self.database, self.system_settings, room)  # 取得診號
 
         self.ui.comboBox_ins_type.setCurrentText(ins_type)
+        self.ui.comboBox_share_type.setCurrentText(self.ui.comboBox_patient_share.currentText())
         self.ui.comboBox_room.setCurrentText(room)
         self.ui.spinBox_reg_no.setValue(int(reg_no))
         self.ui.comboBox_period.setCurrentText(registration_utils.get_period(self.system_settings))
 
     def _set_charge(self):
-        regist_fee = charge_utils.get_regist_fee(self.database,
-                                                 self.ui.comboBox_ins_type.currentText(),
-                                                 self.ui.comboBox_share_type.currentText(),
-                                                 self.ui.comboBox_treat_type.currentText(),
-                                                 self.ui.comboBox_card.currentText(),
-                                                 self.ui.comboBox_course.currentText())
+        regist_fee = charge_utils.get_regist_fee(
+            self.database,
+            self.ui.comboBox_patient_discount.currentText(),
+            self.ui.comboBox_ins_type.currentText(),
+            self.ui.comboBox_share_type.currentText(),
+            self.ui.comboBox_treat_type.currentText(),
+            self.ui.comboBox_course.currentText(),
+        )
+        diag_share_fee = charge_utils.get_diag_share_fee(
+            self.database,
+            self.ui.comboBox_share_type.currentText(),
+            self.ui.comboBox_treat_type.currentText(),
+            self.ui.comboBox_course.currentText())
+        deposit_fee = charge_utils.get_deposit_fee(
+            self.database,
+            self.ui.comboBox_card.currentText())
+
+        traditional_health_care_fee = charge_utils.get_deposit_fee(
+            self.database,
+            self.ui.comboBox_ins_type.currentText())
+
         self.ui.lineEdit_regist_fee.setText(str(regist_fee))
+        self.ui.lineEdit_diag_share_fee.setText(str(diag_share_fee))
+        self.ui.lineEdit_deposit_fee.setText(str(deposit_fee))
+        self.ui.lineEdit_traditional_health_care_fee.setText(str(traditional_health_care_fee))
+        self._set_total_amount()
+
+    def _set_total_amount(self):
+        regist_fee = number.get_integer(self.ui.lineEdit_regist_fee.text())
+        diag_share_fee = number.get_integer(self.ui.lineEdit_diag_share_fee.text())
+        deposit_fee = number.get_integer(self.ui.lineEdit_deposit_fee.text())
+        traditional_health_care_fee = number.get_integer(self.ui.lineEdit_traditional_health_care_fee.text())
+        total_amount = regist_fee + diag_share_fee + deposit_fee + traditional_health_care_fee
+
+        self.ui.lineEdit_regist_fee.setText(str(regist_fee))
+        self.ui.lineEdit_diag_share_fee.setText(str(diag_share_fee))
+        self.ui.lineEdit_deposit_fee.setText(str(deposit_fee))
+        self.ui.lineEdit_traditional_health_care_fee.setText(str(traditional_health_care_fee))
+        self.ui.lineEdit_total_amount.setText(str(total_amount))
 
     def _save_files(self):
-        case_key = self._save_medical_record()
-        self._save_wait(case_key)
+        self._save_patient()
+        self._save_medical_record()
+
+    def _save_patient(self):
+        patient_modified = False
+        if self.ui.lineEdit_name.isModified() or \
+                self.ui.lineEdit_id.isModified() or \
+                self.ui.lineEdit_birthday.isModified() or \
+                self.ui.lineEdit_telephone.isModified() or \
+                self.ui.lineEdit_cellphone.isModified() or \
+                self.ui.lineEdit_address.isModified() or \
+                self.ui.lineEdit_patient_remark.isModified():
+                patient_modified = True
+
+        sql = 'SELECT * FROM patient WHERE PatientKey = {0}'.format(self.ui.lineEdit_patient_key.text())
+        try:
+            row = self.database.select_record(sql)[0]
+            share_type = nhi.get_share_type(row['InsType'])
+            discount = strings.xstr(row['DiscountType'])
+            if self.ui.comboBox_patient_share.currentText() != share_type:
+                patient_modified = True
+            if self.ui.comboBox_patient_discount.currentText() != discount:
+                patient_modified = True
+        except IndexError:
+            pass
+
+        if not patient_modified:
+            return
+
+        fields = ['Name', 'ID', 'Birthday', 'Telephone', 'Cellphone', 'Address', 'InsType',
+                  'DiscountType', 'Remark']
+        data = (
+            self.ui.lineEdit_name.text(),
+            self.ui.lineEdit_id.text(),
+            self.ui.lineEdit_birthday.text(),
+            self.ui.lineEdit_telephone.text(),
+            self.ui.lineEdit_cellphone.text(),
+            self.ui.lineEdit_address.text(),
+            self.ui.comboBox_patient_share.currentText(),
+            self.ui.comboBox_patient_discount.currentText(),
+            self.ui.lineEdit_patient_remark.text()
+        )
+        self.database.update_record('patient', fields, 'PatientKey',
+                                    self.ui.lineEdit_patient_key.text(), data)
 
     def _save_medical_record(self):
         fields = ['CaseDate', 'PatientKey', 'Name', 'Visit', 'RegistType', 'Injury',
                   'TreatType', 'Share', 'InsType', 'Card', 'Continuance', 'Period',
-                  'Room', 'RegistNo', 'Massager', 'Remark']
+                  'Room', 'RegistNo', 'Massager',
+                  'RegistFee', 'DiagShareFee', 'DepositFee', 'SMassageFee', 'Remark']
         data = (
                 str(datetime.datetime.now()),
                 self.ui.lineEdit_patient_key.text(),
@@ -296,9 +417,13 @@ class Registration(QtWidgets.QMainWindow):
                 self.ui.spinBox_reg_no.value(),
                 self.ui.comboBox_massager.currentText(),
                 self.ui.comboBox_remark.currentText(),
+                self.ui.lineEdit_regist_fee.text(),
+                self.ui.lineEdit_diag_share_fee.text(),
+                self.ui.lineEdit_deposit_fee.text(),
+                self.ui.lineEdit_traditional_health_care_fee.text(),
                 )
-        last_row_id = self.database.insert_record('cases', fields, data)
-        return last_row_id
+        case_key = self.database.insert_record('cases', fields, data)
+        self._save_wait(case_key)
 
     def _save_wait(self, case_key):
         fields = ['CaseKey', 'CaseDate', 'PatientKey', 'Name', 'Visit', 'RegistType',
@@ -345,6 +470,13 @@ class Registration(QtWidgets.QMainWindow):
         self.ui.tableWidget_wait.removeRow(self.ui.tableWidget_wait.currentRow())
         if self.ui.tableWidget_wait.rowCount() <= 0:
             self._set_tool_button(False)
+
+    # 初診掛號
+    def _new_patient(self):
+        self.parent.open_patient_record(None, '門診掛號')
+
+    def set_name_patient(self):
+        pass
 
     # 補印收據
     def print_wait_clicked(self):

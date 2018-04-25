@@ -157,7 +157,9 @@ class ChargeSettingsRegist(QtWidgets.QMainWindow):
                   'Amount', 'Remark']
         data = [
             ('掛號費', '基本掛號費', '健保', '不分類', '不分類', '首次', 100, None),
-            ('掛號費', '基本掛號費', '自費', '不分類', '不分類', '首次', 100, None),
+            ('掛號費', '基本掛號費', '自費', '不分類', '不分類', '首次', 50, None),
+            ('掛號費', '民俗調理費', '健保', '不分類', '不分類', '首次', 50, None),
+            ('掛號費', '民俗調理費', '自費', '不分類', '不分類', '首次', 100, None),
             ('掛號費', '欠卡費', '健保', '不分類', '不分類', '首次', 500, None),
             ('掛號費', '內科掛號費', '健保', '基層醫療', '內科', '首次', 100, None),
             ('掛號費', '傷科首次掛號費', '健保', '基層醫療', '傷科治療', '首次', 100, None),
@@ -210,6 +212,7 @@ class ChargeSettingsRegist(QtWidgets.QMainWindow):
             ('掛號費優待', '年長病患', None, None, None, 0, None),
             ('掛號費優待', '殘障病患', None, None, None, 0, None),
             ('掛號費優待', '本院員工', None, None, None, 0, None),
+            ('掛號費優待', '其他優待', None, None, None, 0, None),
         ]
 
         for rec in data:

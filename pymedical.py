@@ -115,6 +115,8 @@ class PyMedical(QtWidgets.QMainWindow):
             widget.ui.lineEdit_query.setFocus()
         elif widget_name == "醫師看診作業":
             widget.ui.tableWidget_waiting_list.setFocus()
+        elif widget_name == "新病患資料":
+            widget.ui.lineEdit_name.setFocus()
         elif widget_name == "病歷查詢":
             widget.open_dialog()
         elif widget_name == "病患查詢":
@@ -214,6 +216,11 @@ class PyMedical(QtWidgets.QMainWindow):
         self._add_tab(tab_name, (self.database, self.system_settings, row['CaseKey'], call_from))
 
     def open_patient_record(self, patient_key, call_from=None):
+        if patient_key is None:
+            tab_name = '新病患資料'
+            self._add_tab(tab_name, (self.database, self.system_settings, patient_key, call_from))
+            return
+
         script = 'SELECT PatientKey, Name FROM patient WHERE PatientKey = {0}'.format(patient_key)
         try:
             row = self.database.select_record(script)[0]
@@ -229,6 +236,16 @@ class PyMedical(QtWidgets.QMainWindow):
 
         tab_name = '{0}-{1}-病患資料'.format(str(row['PatientKey']), str(row['Name']))
         self._add_tab(tab_name, (self.database, self.system_settings, row['PatientKey'], call_from))
+
+    def set_new_patient(self, new_patient_key):
+        current_tab = None
+        for i in range(self.ui.tabWidget_window.count()):
+            if self.ui.tabWidget_window.tabText(i) == '門診掛號':
+                current_tab = self.ui.tabWidget_window.widget(i)
+                break
+
+        current_tab.ui.lineEdit_query.setText(str(new_patient_key))
+        current_tab.query_clicked()
 
     # 系統設定
     def open_settings(self):

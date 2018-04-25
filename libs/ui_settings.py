@@ -51,8 +51,22 @@ def load_ui_file(ui_file, self):
         return None
 
 
+def _get_discount_type(database):
+    discount_type = [None]
+    sql = 'SELECT * from charge_settings where ChargeType = "掛號費優待"'
+    rows = database.select_record(sql)
+    for row in rows:
+        discount_type.append(row['ItemName'])
+
+    return discount_type
+
+
 # 設定 comboBox item
 def set_combo_box(combobox, items, *args):
+    if items == '掛號優待':
+        items = _get_discount_type(args[0])
+        args = []
+
     for arg in args:
         combobox.addItem(arg)
 
