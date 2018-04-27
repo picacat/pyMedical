@@ -21,7 +21,6 @@ class PyMedical(QtWidgets.QMainWindow):
         self.database = db.Database()
         if not self.database.connected():
             sys.exit(0)
-            return
 
         self.system_settings = system_settings.SystemSettings(self.database)
         self.ui = None
@@ -195,6 +194,9 @@ class PyMedical(QtWidgets.QMainWindow):
                     current_tab.ui.tableWidget_medical_record_list.setFocus(True)
                 elif tab_name == '病患查詢':
                     current_tab.ui.tableWidget_patient_list.setFocus(True)
+                    current_tab.refresh_patient_record()
+                elif tab_name == '門診掛號':
+                    current_tab.read_wait()
 
                 return
 

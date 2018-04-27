@@ -117,6 +117,13 @@ class PatientList(QtWidgets.QMainWindow):
         patient_key = self.table_widget_patient_list.field_value(0)
         self.parent.open_patient_record(patient_key, '病患查詢')
 
+    def refresh_patient_record(self):
+        patient_key = self.table_widget_patient_list.field_value(0)
+        sql = 'SELECT * FROM patient where PatientKey = {0}'.format(patient_key)
+        row = self.database.select_record(sql)[0]
+        current_row = self.ui.tableWidget_patient_list.currentRow()
+        self._set_table_data(current_row, row)
+
     def close_tab(self):
         current_tab = self.parent.ui.tabWidget_window.currentIndex()
         self.parent.close_tab(current_tab)

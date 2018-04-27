@@ -1,22 +1,21 @@
 from PyQt5 import QtCore, QtGui
 
 
-def _get_validator(in_regexp):
-    regexp = QtCore.QRegExp(in_regexp)
+DATE_REGEXP = '^(0|1|19|20)?[0-9]{2}[-/.](0?[1-9]|1[012])[-/.](0?[1-9]|[12][0-9]|3[01])$'
+ID_REGEXP = '([A-Z])(1|2|A|B|C|D|Y|X)\d{8}'
+
+
+def set_validator(validator_type):
+    regexp_str = None
+    if validator_type == '日期格式':
+        regexp_str = DATE_REGEXP
+    elif validator_type == '身分證格式':
+        regexp_str = ID_REGEXP
+
+    regexp = QtCore.QRegExp(regexp_str)
     validator = QtGui.QRegExpValidator(regexp)
 
     return validator
-
-
-# 取得日期驗證器
-def get_date_validator():
-    regexp = '^(0|1|19|20)?[0-9]{2}[-/.](0?[1-9]|1[012])[-/.](0?[1-9]|[12][0-9]|3[01])$'
-    return _get_validator(regexp)
-
-
-def get_id_validator():
-    regexp = '([A-Z])?(1|2|A|B|C|D|Y|X)\d{8}'
-    return _get_validator(regexp)
 
 
 def verify_id(in_id):

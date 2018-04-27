@@ -1,4 +1,5 @@
 from dialog import dialog_patient
+import datetime
 
 
 # 尋找病患資料
@@ -59,3 +60,17 @@ def get_nationality(in_id):
         nationality = '遊民'
 
     return nationality
+
+
+def get_visit(database, patient_key):
+    visit = '複診'
+    sql = 'SELECT * FROM patient WHERE PatientKey = {0}'.format(patient_key)
+    row = database.select_record(sql)[0]
+    if row['InitDate'] is None:
+        return visit
+
+    current_date=datetime.datetime.now()
+    if row['InitDate'].year == current_date.year and row['InitDate'].month == current_date.month and row['InitDate'].day == current_date.day:
+        visit = '初診'
+
+    return visit

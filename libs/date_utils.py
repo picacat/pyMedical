@@ -2,7 +2,7 @@ import datetime
 
 
 # 取得年齡
-def get_age(birth_date, current_date = datetime.datetime.now()):
+def get_age(birth_date, current_date=datetime.datetime.now()):
     if birth_date is None:
         return None, None
 
@@ -25,10 +25,18 @@ def date_to_west_date(in_date):
         separator = '.'
 
     new_date = in_date.split(separator)
-    year = int(new_date[0])
+
+    try:
+        year = int(new_date[0])
+    except ValueError:
+        return in_date
+
     if year < 1900:  # 非西元曆
         year += 1911
 
-    west_date = '{0}-{1}-{2}'.format(str(year), new_date[1], new_date[2])
+    try:
+        west_date = '{0}-{1}-{2}'.format(str(year), new_date[1], new_date[2])
+    except IndexError:
+        return in_date
 
     return west_date

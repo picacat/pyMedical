@@ -86,4 +86,4 @@ def get_reg_no(database, system_settings, room, period=None):
 
     reg_no = get_reg_no_by_mode(system_settings, last_reg_no)
 
-    return reg_no
+    return int(reg_no)

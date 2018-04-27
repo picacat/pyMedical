@@ -5,6 +5,7 @@ import sys
 
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QMessageBox, QPushButton
+import datetime
 from libs import ui_settings
 from libs import strings
 from libs import nhi
@@ -25,6 +26,7 @@ class Patient(QtWidgets.QMainWindow):
         self.call_from = args[0][3]
         self.patient = None
         self.ui = None
+        self.name_warning = False
 
         self._set_ui()
         self._set_validator()
@@ -45,16 +47,18 @@ class Patient(QtWidgets.QMainWindow):
     def _set_ui(self):
         self.ui = ui_settings.load_ui_file(ui_settings.UI_PATIENT, self)
         self._set_combobox()
+        self.ui.lineEdit_init_date.setText(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
     def _set_validator(self):
-        self.ui.lineEdit_birthday.setValidator(validator_utils.get_date_validator())
-        self.ui.lineEdit_id.setValidator(validator_utils.get_id_validator())
+        self.ui.lineEdit_birthday.setValidator(validator_utils.set_validator('日期格式'))
+        self.ui.lineEdit_id.setValidator(validator_utils.set_validator('身分證格式'))
 
     # 設定信號
     def _set_signal(self):
         self.ui.action_save.triggered.connect(self._save_patient)
         self.ui.action_close.triggered.connect(self.close_patient)
         self.ui.lineEdit_birthday.editingFinished.connect(self._validate_birthday)
+        self.ui.lineEdit_name.editingFinished.connect(self._validate_name)
         self.ui.lineEdit_id.editingFinished.connect(self._validate_id)
 
     def _set_combobox(self):
@@ -64,11 +68,45 @@ class Patient(QtWidgets.QMainWindow):
         ui_settings.set_combo_box(self.ui.comboBox_marriage, nhi.MARRIAGE)
         ui_settings.set_combo_box(self.ui.comboBox_education, nhi.EDUCATION)
         ui_settings.set_combo_box(self.ui.comboBox_occupation, nhi.OCCUPATION)
-        ui_settings.set_combo_box(self.ui.comboBox_discount, nhi.DISCOUNT)
+        ui_settings.set_combo_box(self.ui.comboBox_discount, '掛號優待', self.database)
 
     def _validate_birthday(self):
         west_date = date_utils.date_to_west_date(self.ui.lineEdit_birthday.text())
         self.ui.lineEdit_birthday.setText(west_date)
+
+    def _validate_name(self):
+        name = self.ui.lineEdit_name.text()
+        sql = 'SELECT * FROM patient WHERE Name = "{0}"'.format(name)
+        rows = self.database.select_record(sql)
+        if len(rows) > 0:
+            if self.name_warning:
+                return
+
+            self.name_warning = True
+            msg_box = QMessageBox()
+            msg_box.setIcon(QMessageBox.Warning)
+            msg_box.setWindowTitle('相同姓名病患已存在')
+            msg_box.setText(
+                '''
+                <font size='4' color='red'>
+                <b>相同姓名的病患已存在！以下是相同病患的資料:'<br>
+                </font>
+                <font size='4' color='blue'>
+                   病歷號碼: {0}<br>
+                   病患姓名: {1}<br>
+                   出生日期: {2}<br>
+                   身分證號: {3}
+                </b>
+                </font>
+                ''' .format(rows[0]['PatientKey'], rows[0]['Name'], rows[0]['Birthday'], rows[0]['ID']))
+            msg_box.setInformativeText("如果確定不同人，請繼續編輯病患資料.")
+            msg_box.addButton(QPushButton("不同病患, 繼續編輯"), QMessageBox.NoRole)  # 0
+            msg_box.addButton(QPushButton("此人為相同病患, 確定離開編輯"), QMessageBox.AcceptRole)  # 1
+            quit_patient = msg_box.exec_()
+            if quit_patient:
+                self.close_patient()
+            else:
+                self.ui.lineEdit_birthday.setFocus()
 
     def _validate_id(self):
         if not validator_utils.verify_id(self.ui.lineEdit_id.text()):

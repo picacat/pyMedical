@@ -58,6 +58,9 @@
              <property name="buttonSymbols">
               <enum>QAbstractSpinBox::PlusMinus</enum>
              </property>
+             <property name="suffix">
+              <string/>
+             </property>
              <property name="minimum">
               <number>1</number>
              </property>
@@ -589,6 +592,20 @@
         <layout class="QVBoxLayout" name="verticalLayout_3">
          <item>
           <layout class="QGridLayout" name="gridLayout_6">
+           <item row="0" column="0">
+            <widget class="QLabel" name="label_25">
+             <property name="text">
+              <string>請輸入關鍵字</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QLineEdit" name="lineEdit_query">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;生日格式請輸入&lt;br&gt;民國年 yyy.mm.dd&lt;br&gt;西元年 yyyy.mm.dd&lt;br&gt;用 - 或 / 分隔也可以&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+            </widget>
+           </item>
            <item row="0" column="2">
             <widget class="QToolButton" name="toolButton_query">
              <property name="text">
@@ -600,16 +617,6 @@
              </property>
              <property name="toolButtonStyle">
               <enum>Qt::ToolButtonTextBesideIcon</enum>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="1">
-            <widget class="QLineEdit" name="lineEdit_query"/>
-           </item>
-           <item row="0" column="0">
-            <widget class="QLabel" name="label_25">
-             <property name="text">
-              <string>請輸入任意查詢的關鍵字</string>
              </property>
             </widget>
            </item>
