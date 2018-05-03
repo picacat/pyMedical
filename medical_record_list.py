@@ -151,7 +151,8 @@ class MedicalRecordList(QtWidgets.QMainWindow):
         case_key = self.table_widget_medical_record_list.field_value(0)
         self.database.delete_record('cases', 'CaseKey', case_key)
         self.database.delete_record('wait', 'CaseKey', case_key)
-        self.table_widget_medical_record_list.refresh()
+        current_row = self.ui.tableWidget_medical_record_list.currentRow()
+        self.ui.tableWidget_medical_record_list.removeRow(current_row)
 
     def open_medical_record(self):
         case_key = self.table_widget_medical_record_list.field_value(0)

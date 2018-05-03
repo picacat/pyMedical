@@ -111,7 +111,8 @@ class PatientList(QtWidgets.QMainWindow):
 
         patient_key = self.table_widget_patient_list.field_value(0)
         self.database.delete_record('patient', 'PatientKey', patient_key)
-        self.table_widget_patient_list.refresh()
+        current_row = self.ui.tableWidget_patient_list.currentRow()
+        self.ui.tableWidget_patient_list.removeRow(current_row)
 
     def open_patient_record(self):
         patient_key = self.table_widget_patient_list.field_value(0)

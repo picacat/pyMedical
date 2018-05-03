@@ -10,6 +10,7 @@ from libs import ui_settings
 from libs import modules
 from libs import system
 from dialog import dialog_system_settings
+from dialog import dialog_ic_card
 from classes import system_settings, db
 
 
@@ -67,7 +68,15 @@ class PyMedical(QtWidgets.QMainWindow):
         system.set_css(self)
         system.set_theme(self.ui, self.system_settings)
         self.ui.tabWidget_window.setTabsClosable(True)
+        self._set_button_enabled()
         self.showMaximized()
+
+    # 設定按鈕權限
+    def _set_button_enabled(self):
+        if self.system_settings.field('使用讀卡機') == 'Y':
+            self.ui.pushButton_ic_card.setEnabled(True)
+        else:
+            self.ui.pushButton_ic_card.setEnabled(False)
 
     # 設定信號
     def _set_signal(self):
@@ -80,6 +89,7 @@ class PyMedical(QtWidgets.QMainWindow):
         self.ui.pushButton_patient_list.clicked.connect(self.push_button_clicked)
         self.ui.pushButton_settings.clicked.connect(self.open_settings)
         self.ui.pushButton_charge.clicked.connect(self.push_button_clicked)
+        self.ui.pushButton_ic_card.clicked.connect(self.open_ic_card)
 
         self.ui.tabWidget_window.tabCloseRequested.connect(self.close_tab)
         self.ui.tabWidget_window.currentChanged.connect(self.tab_changed)
@@ -217,10 +227,10 @@ class PyMedical(QtWidgets.QMainWindow):
         tab_name = '{0}-{1}-病歷資料'.format(str(row['PatientKey']), str(row['Name']))
         self._add_tab(tab_name, (self.database, self.system_settings, row['CaseKey'], call_from))
 
-    def open_patient_record(self, patient_key, call_from=None):
+    def open_patient_record(self, patient_key, call_from=None, ic_card=None):
         if patient_key is None:
             tab_name = '新病患資料'
-            self._add_tab(tab_name, (self.database, self.system_settings, patient_key, call_from))
+            self._add_tab(tab_name, (self.database, self.system_settings, patient_key, call_from, ic_card))
             return
 
         script = 'SELECT PatientKey, Name FROM patient WHERE PatientKey = {0}'.format(patient_key)
@@ -237,7 +247,7 @@ class PyMedical(QtWidgets.QMainWindow):
             return
 
         tab_name = '{0}-{1}-病患資料'.format(str(row['PatientKey']), str(row['Name']))
-        self._add_tab(tab_name, (self.database, self.system_settings, row['PatientKey'], call_from))
+        self._add_tab(tab_name, (self.database, self.system_settings, row['PatientKey'], call_from, None))
 
     def set_new_patient(self, new_patient_key):
         current_tab = None
@@ -252,6 +262,13 @@ class PyMedical(QtWidgets.QMainWindow):
     # 系統設定
     def open_settings(self):
         dialog = dialog_system_settings.DialogSettings(self.ui, self.database, self.system_settings)
+        dialog.exec_()
+        del dialog
+        self._set_button_enabled()
+
+    # 系統設定
+    def open_ic_card(self):
+        dialog = dialog_ic_card.DialogICCard(self.ui, self.database, self.system_settings)
         dialog.exec_()
         del dialog
 

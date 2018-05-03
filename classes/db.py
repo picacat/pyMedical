@@ -32,6 +32,13 @@ class Database:
         if self.cnx:
             self.cnx.close()
 
+    # 取得資料庫名稱
+    def _get_database_name(self):
+        config = configparser.ConfigParser()
+        config.read(self.config_file)
+
+        return config['db']['database']
+
     # 連接MySQL
     def _connect_to_db(self):
         config = configparser.ConfigParser()
@@ -165,3 +172,14 @@ class Database:
             return
 
         self.create_table(table_name)
+
+    def get_last_auto_increment_key(self, table_name):
+        database_name = self._get_database_name()
+        sql = '''
+        SELECT AUTO_INCREMENT
+        FROM information_schema.TABLES
+        WHERE TABLE_SCHEMA = "{0}" AND
+        TABLE_NAME = "{1}"'''.format(database_name, table_name)
+        row = self.select_record(sql)
+
+        return row[0]['AUTO_INCREMENT']

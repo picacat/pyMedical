@@ -3,7 +3,7 @@
 from PyQt5.QtWidgets import QMessageBox, QPushButton
 from libs import number
 from libs import strings
-from libs import nhi
+from libs import nhi_utils
 
 
 # 基本掛號費
@@ -82,7 +82,7 @@ def get_regist_fee(database, discount_type, ins_type, share_type, treat_type, co
         return regist_fee
 
     regist_fee = _get_basic_regist_fee(database, ins_type)
-    course_type = nhi.get_course_type(course)
+    course_type = nhi_utils.get_course_type(course)
     sql = '''
             SELECT * FROM charge_settings WHERE ChargeType = "掛號費" AND 
             InsType = "{0}" AND ShareType = "{1}" AND 
@@ -123,7 +123,7 @@ def get_deposit_fee(database, card):
 # 取得門診負擔
 def get_diag_share_fee(database, share_type, treat_type, course):
     diag_share_fee = 0
-    course_type = nhi.get_course_type(course)
+    course_type = nhi_utils.get_course_type(course)
     sql = '''
             SELECT * FROM charge_settings WHERE ChargeType = "門診負擔" AND 
             ShareType = "{0}" AND TreatType = "{1}" AND Course = "{2}"

@@ -9,7 +9,6 @@ class TableWidget:
     def __init__(self, table_widget, database):
         self.table_widget = table_widget
         self.database = database
-        self.sql = None
         self.process_data = None
         self.db_row_count = 0
         self.is_set_heading = False
@@ -31,11 +30,10 @@ class TableWidget:
 
     # 設定資料庫資料
     def set_db_data(self, sql=None, process_data=None, rows=None):
-        self.sql = sql
         self.process_data = process_data
 
         if rows is None:
-            rows = self.database.select_record(self.sql)
+            rows = self.database.select_record(sql)
 
         self.db_row_count = len(list(rows))
 
@@ -58,10 +56,3 @@ class TableWidget:
     def field_value(self, field_index):
         row = self.table_widget.currentRow()
         return self.table_widget.item(row, field_index).text()
-
-    # 重新整理
-    def refresh(self):
-        if self.sql is None:
-            return
-
-        self.set_db_data()

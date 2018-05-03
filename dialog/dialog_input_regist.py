@@ -5,7 +5,7 @@
 from PyQt5 import QtWidgets
 from libs import ui_settings
 from libs import system
-from libs import nhi
+from libs import nhi_utils
 
 
 # 主視窗
@@ -53,10 +53,10 @@ class DialogInputRegist(QtWidgets.QDialog):
 
     # 設定comboBox
     def _set_combo_box(self):
-        ui_settings.set_combo_box(self.ui.comboBox_ins_type, nhi.INS_TYPE, '不分類')
-        ui_settings.set_combo_box(self.ui.comboBox_share_type, nhi.SHARE_TYPE, '不分類')
-        ui_settings.set_combo_box(self.ui.comboBox_treat_type, nhi.TREAT_TYPE, '不分類')
-        ui_settings.set_combo_box(self.ui.comboBox_course, nhi.COURSE_TYPE)
+        ui_settings.set_combo_box(self.ui.comboBox_ins_type, nhi_utils.INS_TYPE, '不分類')
+        ui_settings.set_combo_box(self.ui.comboBox_share_type, nhi_utils.SHARE_TYPE, '不分類')
+        ui_settings.set_combo_box(self.ui.comboBox_treat_type, nhi_utils.TREAT_TYPE, '不分類')
+        ui_settings.set_combo_box(self.ui.comboBox_course, nhi_utils.COURSE_TYPE)
 
     def _edit_charge_settings(self):
         sql = 'SELECT * FROM charge_settings where ChargeSettingsKey = {0}'.format(self.charge_settings_key)

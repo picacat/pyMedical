@@ -6,7 +6,7 @@ from PyQt5 import QtWidgets
 import datetime
 from libs import ui_settings
 from libs import system
-from libs import nhi
+from libs import nhi_utils
 
 
 # 主視窗
@@ -54,13 +54,13 @@ class DialogMedicalRecordList(QtWidgets.QDialog):
         for row in rows:
             doctor_list.append(row['Name'])
 
-        ui_settings.set_combo_box(self.ui.comboBox_period, nhi.PERIOD, '全部')
-        ui_settings.set_combo_box(self.ui.comboBox_ins_type, nhi.INS_TYPE, '全部')
-        ui_settings.set_combo_box(self.ui.comboBox_treat_type, nhi.TREAT_TYPE, '全部')
-        ui_settings.set_combo_box(self.ui.comboBox_share_type, nhi.SHARE_TYPE, '全部')
-        ui_settings.set_combo_box(self.ui.comboBox_apply_type, nhi.APPLY_TYPE, '全部')
+        ui_settings.set_combo_box(self.ui.comboBox_period, nhi_utils.PERIOD, '全部')
+        ui_settings.set_combo_box(self.ui.comboBox_ins_type, nhi_utils.INS_TYPE, '全部')
+        ui_settings.set_combo_box(self.ui.comboBox_treat_type, nhi_utils.TREAT_TYPE, '全部')
+        ui_settings.set_combo_box(self.ui.comboBox_share_type, nhi_utils.SHARE_TYPE, '全部')
+        ui_settings.set_combo_box(self.ui.comboBox_apply_type, nhi_utils.APPLY_TYPE, '全部')
         ui_settings.set_combo_box(self.ui.comboBox_doctor, doctor_list, '全部')
-        ui_settings.set_combo_box(self.ui.comboBox_room, nhi.ROOM, '全部')
+        ui_settings.set_combo_box(self.ui.comboBox_room, nhi_utils.ROOM, '全部')
 
     # 設定 mysql script
     def get_sql(self):

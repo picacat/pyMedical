@@ -8,7 +8,7 @@ import sys
 from libs import ui_settings
 from libs import system
 from libs import number
-from libs import nhi
+from libs import nhi_utils
 from libs import printer_settings
 from classes import system_settings
 
@@ -49,7 +49,7 @@ class DialogSettings(QtWidgets.QDialog):
         else:
             ui_settings.set_combo_box(self.ui.comboBox_theme, ui_settings.THEME)
 
-        ui_settings.set_combo_box(self.ui.comboBox_division, nhi.DIVISION)
+        ui_settings.set_combo_box(self.ui.comboBox_division, nhi_utils.DIVISION)
         ui_settings.set_combo_box(self.ui.comboBox_instruction, ['飯前', '飯後', '飯後睡前'])
         self._set_combo_box_printer()
 

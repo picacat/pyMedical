@@ -365,6 +365,13 @@
               </widget>
              </item>
              <item>
+              <widget class="QPushButton" name="pushButton_ic_card">
+               <property name="text">
+                <string>健保卡讀卡機</string>
+               </property>
+              </widget>
+             </item>
+             <item>
               <widget class="QPushButton" name="pushButton_diagnosis">
                <property name="text">
                 <string>診察資料</string>

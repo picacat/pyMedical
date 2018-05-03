@@ -7,7 +7,7 @@ from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtWidgets import QMessageBox, QPushButton
 from libs import ui_settings
 from libs import strings
-from libs import nhi
+from libs import nhi_utils
 from classes import table_widget
 from dialog import dialog_input_nhi
 
@@ -127,7 +127,7 @@ class ChargeSettingsNHI(QtWidgets.QMainWindow):
 
     def _read_nhi(self):
         sql = 'SELECT * FROM charge_settings WHERE ChargeType in {0} ORDER BY FIELD(ChargeType, {1}), InsCode'.\
-            format(tuple(nhi.CHARGE_TYPE), str(nhi.CHARGE_TYPE)[1:-1])
+            format(tuple(nhi_utils.CHARGE_TYPE), str(nhi_utils.CHARGE_TYPE)[1:-1])
         self.table_widget_nhi.set_db_data(sql, self._set_nhi_data)
         row_count = self.table_widget_nhi.row_count()
         if row_count <= 0:
@@ -221,7 +221,7 @@ class ChargeSettingsNHI(QtWidgets.QMainWindow):
             )
             self.database.insert_record('charge_settings', fields, data)
             sql = 'SELECT * FROM charge_settings WHERE ChargeType in {0} ORDER BY ChargeSettingsKey desc limit 1'.\
-                format(tuple(nhi.CHARGE_TYPE))
+                format(tuple(nhi_utils.CHARGE_TYPE))
             row_data = self.database.select_record(sql)[0]
             self._set_nhi_data(current_row, row_data)
             self.ui.tableWidget_nhi.setCurrentCell(current_row, 3)

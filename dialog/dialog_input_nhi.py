@@ -5,7 +5,7 @@
 from PyQt5 import QtWidgets
 from libs import ui_settings
 from libs import system
-from libs import nhi
+from libs import nhi_utils
 
 
 # 主視窗
@@ -49,7 +49,7 @@ class DialogInputNHI(QtWidgets.QDialog):
 
     # 設定comboBox
     def _set_combo_box(self):
-        ui_settings.set_combo_box(self.ui.comboBox_charge_type, nhi.CHARGE_TYPE)
+        ui_settings.set_combo_box(self.ui.comboBox_charge_type, nhi_utils.CHARGE_TYPE)
 
     # 設定信號
     def _set_signal(self):

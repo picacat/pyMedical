@@ -35,21 +35,21 @@ def search_patient(ui, database, settings, keyword):
 
 
 # 取得性別
-def get_gender(in_id):
+def get_gender(gender_code):
     gender = None
-    gender_code = in_id[1]
-    if gender_code in ['1', 'A', 'C', 'Y']:
+
+    if gender_code in ['1', 'A', 'C', 'Y', 'M']:
         gender = '男'
-    elif gender_code in ['2', 'B', 'D', 'X']:
+    elif gender_code in ['2', 'B', 'D', 'X', 'F']:
         gender = '女'
 
     return gender
 
 
 # 取得國籍
-def get_nationality(in_id):
-    nationality = None
-    gender_code = in_id[1]
+def get_nationality(gender_code):
+    nationality = '本國'
+
     if gender_code in ['1', '2']:
         nationality = '本國'
     elif gender_code in ['C', 'D']:
@@ -62,6 +62,7 @@ def get_nationality(in_id):
     return nationality
 
 
+# 取得初複診
 def get_visit(database, patient_key):
     visit = '複診'
     sql = 'SELECT * FROM patient WHERE PatientKey = {0}'.format(patient_key)

@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import QMessageBox, QPushButton
 import datetime
 from libs import ui_settings
 from libs import strings
-from libs import nhi
+from libs import nhi_utils
 from libs import date_utils
 from libs import validator_utils
 from libs import patient_utils
@@ -24,6 +24,7 @@ class Patient(QtWidgets.QMainWindow):
         self.system_settings = args[0][1]
         self.patient_key = args[0][2]
         self.call_from = args[0][3]
+        self.ic_card = args[0][4]
         self.patient = None
         self.ui = None
         self.name_warning = False
@@ -32,7 +33,9 @@ class Patient(QtWidgets.QMainWindow):
         self._set_validator()
         self._set_signal()
 
-        if self.patient_key is not None:
+        if self.ic_card:
+            self._set_patient_by_ic_card()
+        elif self.patient_key is not None:
             self._read_patient()
 
     # 解構
@@ -47,6 +50,7 @@ class Patient(QtWidgets.QMainWindow):
     def _set_ui(self):
         self.ui = ui_settings.load_ui_file(ui_settings.UI_PATIENT, self)
         self._set_combobox()
+        self.ui.lineEdit_patient_key.setText(strings.xstr(self.database.get_last_auto_increment_key('patient')))
         self.ui.lineEdit_init_date.setText(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
     def _set_validator(self):
@@ -62,19 +66,25 @@ class Patient(QtWidgets.QMainWindow):
         self.ui.lineEdit_id.editingFinished.connect(self._validate_id)
 
     def _set_combobox(self):
-        ui_settings.set_combo_box(self.ui.comboBox_gender, nhi.GENDER)
-        ui_settings.set_combo_box(self.ui.comboBox_nationality, nhi.NATIONALITY)
-        ui_settings.set_combo_box(self.ui.comboBox_ins_type, nhi.SHARE_TYPE)
-        ui_settings.set_combo_box(self.ui.comboBox_marriage, nhi.MARRIAGE)
-        ui_settings.set_combo_box(self.ui.comboBox_education, nhi.EDUCATION)
-        ui_settings.set_combo_box(self.ui.comboBox_occupation, nhi.OCCUPATION)
+        ui_settings.set_combo_box(self.ui.comboBox_gender, nhi_utils.GENDER)
+        ui_settings.set_combo_box(self.ui.comboBox_nationality, nhi_utils.NATIONALITY)
+        ui_settings.set_combo_box(self.ui.comboBox_ins_type, nhi_utils.INSURED_TYPE)
+        ui_settings.set_combo_box(self.ui.comboBox_marriage, nhi_utils.MARRIAGE)
+        ui_settings.set_combo_box(self.ui.comboBox_education, nhi_utils.EDUCATION)
+        ui_settings.set_combo_box(self.ui.comboBox_occupation, nhi_utils.OCCUPATION)
         ui_settings.set_combo_box(self.ui.comboBox_discount, '掛號優待', self.database)
 
     def _validate_birthday(self):
+        if self.ic_card:
+            return
+
         west_date = date_utils.date_to_west_date(self.ui.lineEdit_birthday.text())
         self.ui.lineEdit_birthday.setText(west_date)
 
     def _validate_name(self):
+        if self.ic_card:
+            return
+
         name = self.ui.lineEdit_name.text()
         sql = 'SELECT * FROM patient WHERE Name = "{0}"'.format(name)
         rows = self.database.select_record(sql)
@@ -109,6 +119,9 @@ class Patient(QtWidgets.QMainWindow):
                 self.ui.lineEdit_birthday.setFocus()
 
     def _validate_id(self):
+        if self.ic_card:
+            return
+
         if not validator_utils.verify_id(self.ui.lineEdit_id.text()):
             msg_box = QMessageBox()
             msg_box.setIcon(QMessageBox.Warning)
@@ -121,15 +134,26 @@ class Patient(QtWidgets.QMainWindow):
         self._set_nationality()
 
     def _set_gender(self):
-        self.ui.comboBox_gender.setCurrentText(patient_utils.get_gender(self.ui.lineEdit_id.text()))
+        patient_id = self.ui.lineEdit_id.text()
+        self.ui.comboBox_gender.setCurrentText(patient_utils.get_gender(patient_id[1]))
 
     def _set_nationality(self):
-        self.ui.comboBox_nationality.setCurrentText(patient_utils.get_nationality(self.ui.lineEdit_id.text()))
+        patient_id = self.ui.lineEdit_id.text()
+        self.ui.comboBox_nationality.setCurrentText(patient_utils.get_nationality(patient_id[1]))
 
     def _read_patient(self):
         sql = 'SELECT * FROM patient WHERE PatientKey = {0}'.format(self.patient_key)
         self.patient = self.database.select_record(sql)[0]
         self._set_patient()
+
+    def _set_patient_by_ic_card(self):
+        self.ui.lineEdit_card_no.setText(self.ic_card.basic_data['card_no'])
+        self.ui.lineEdit_name.setText(self.ic_card.basic_data['name'])
+        self.ui.lineEdit_id.setText(self.ic_card.basic_data['patient_id'])
+        self.ui.lineEdit_birthday.setText(self.ic_card.basic_data['birthday'])
+        self.ui.comboBox_ins_type.setCurrentText(self.ic_card.basic_data['insured_mark'])
+        self.ui.comboBox_gender.setCurrentText(self.ic_card.basic_data['gender'])
+        self._set_nationality()
 
     def _set_patient(self):
         self.ui.lineEdit_patient_key.setText(strings.xstr(self.patient['PatientKey']))

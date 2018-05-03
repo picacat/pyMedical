@@ -5,7 +5,7 @@
 from PyQt5 import QtWidgets
 from libs import ui_settings
 from libs import system
-from libs import nhi
+from libs import nhi_utils
 
 
 # 主視窗
@@ -59,7 +59,7 @@ class DialogInputShare(QtWidgets.QDialog):
 
     # 設定comboBox
     def _set_combo_box(self):
-        ui_settings.set_combo_box(self.ui.comboBox_share_type, nhi.SHARE_TYPE)
+        ui_settings.set_combo_box(self.ui.comboBox_share_type, nhi_utils.SHARE_TYPE)
 
         if self.charge_type == '藥品負擔':
             self.ui.label_treat_type.hide()
@@ -67,8 +67,8 @@ class DialogInputShare(QtWidgets.QDialog):
             self.ui.label_course.hide()
             self.ui.comboBox_course.hide()
         else:
-            ui_settings.set_combo_box(self.ui.comboBox_treat_type, nhi.TREAT_TYPE)
-            ui_settings.set_combo_box(self.ui.comboBox_course, nhi.COURSE_TYPE)
+            ui_settings.set_combo_box(self.ui.comboBox_treat_type, nhi_utils.TREAT_TYPE)
+            ui_settings.set_combo_box(self.ui.comboBox_course, nhi_utils.COURSE_TYPE)
 
     # 設定信號
     def _set_signal(self):

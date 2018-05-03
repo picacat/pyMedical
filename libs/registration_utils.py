@@ -5,6 +5,7 @@ import datetime
 from classes import db
 
 
+# 取得班別
 def get_period(system_settings):
     current_time = datetime.datetime.now().strftime('%H:%M')
     try:
@@ -27,6 +28,7 @@ def get_period(system_settings):
     return period
 
 
+# 診號模式
 def get_reg_no_by_mode(system_settings, reg_no):
     if system_settings.field('現場掛號給號模式') == '雙號':
         if reg_no % 2 == 1:

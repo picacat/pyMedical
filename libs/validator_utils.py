@@ -5,6 +5,7 @@ DATE_REGEXP = '^(0|1|19|20)?[0-9]{2}[-/.](0?[1-9]|1[012])[-/.](0?[1-9]|[12][0-9]
 ID_REGEXP = '([A-Z])(1|2|A|B|C|D|Y|X)\d{8}'
 
 
+# 設定資料驗證
 def set_validator(validator_type):
     regexp_str = None
     if validator_type == '日期格式':
@@ -18,6 +19,7 @@ def set_validator(validator_type):
     return validator
 
 
+# 檢查身分證
 def verify_id(in_id):
     area_code = {
         'A': '10', 'B': '11', 'C': '12', 'D': '13', 'E': '14', 'F': '15', 'G': '16', 'H': '17',
