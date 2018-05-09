@@ -4,6 +4,7 @@ from PyQt5 import QtCore
 from PyQt5.QtWidgets import QMessageBox
 
 import ctypes
+from xml.dom.minidom import Document
 from threading import Thread
 from queue import Queue
 
@@ -250,3 +251,44 @@ class CSHIS:
 
         self.treat_data = cshis_utils.decode_treat_data(buffer)
         return True
+
+    def treat_data_to_xml(self):
+        doc = Document()
+        DOCUMENT = doc.createElement('DOCUMENT')
+        DOCUMENT.setAttribute('content', 'cshis')
+
+        doc.appendChild(DOCUMENT)
+        security = doc.createElement('treat_data')
+        DOCUMENT.appendChild(security)
+
+        registered_date = doc.createElement('registered_date')
+        registered_date_value = doc.createTextNode(self.treat_data['registered_date'])
+        registered_date.appendChild(registered_date_value)
+        security.appendChild(registered_date)
+
+        seq_number = doc.createElement('seq_number')
+        seq_number_value = doc.createTextNode(self.treat_data['seq_number'])
+        seq_number.appendChild(seq_number_value)
+        security.appendChild(seq_number)
+
+        clinic_id = doc.createElement('clinic_id')
+        clinic_id_value = doc.createTextNode(self.treat_data['clinic_id'])
+        clinic_id.appendChild(clinic_id_value)
+        security.appendChild(clinic_id)
+
+        security_signature = doc.createElement('security_signature')
+        security_signature_value = doc.createTextNode(self.treat_data['security_signature'])
+        security_signature.appendChild(security_signature_value)
+        security.appendChild(security_signature)
+
+        sam_id = doc.createElement('sam_id')
+        sam_id_value = doc.createTextNode(self.treat_data['sam_id'])
+        sam_id.appendChild(sam_id_value)
+        security.appendChild(sam_id)
+
+        register_duplicated = doc.createElement('register_duplicated')
+        register_duplicated_value = doc.createTextNode(self.treat_data['register_duplicated'])
+        register_duplicated.appendChild(register_duplicated_value)
+        security.appendChild(register_duplicated)
+
+        return doc.toprettyxml(indent='\t')

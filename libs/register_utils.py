@@ -89,3 +89,53 @@ def get_reg_no(database, system_settings, room, period=None):
     reg_no = get_reg_no_by_mode(system_settings, last_reg_no)
 
     return int(reg_no)
+
+
+# 檢查重複就診
+def check_record_duplicated(database, patient_key, case_date):
+    start_date = case_date.strftime('%Y-%m-%d 00:00:00')
+    end_date = case_date.strftime('%Y-%m-%d 23:59:59')
+    sql = '''
+        SELECT * FROM cases WHERE PatientKey = {0} and 
+        CaseDate BETWEEN "{1}" and "{2}" 
+    '''.format(patient_key, start_date, end_date)
+    rows = database.select_record(sql)
+    if len(rows) > 0:
+        return True
+    else:
+        return False
+
+
+# 當月門診次數檢查
+def check_visit_times():
+    pass
+
+
+# 檢查上次給藥是否用完
+def check_finish_prescription():
+    pass
+
+
+# 隔日刷卡
+def check_new_card_on_next_day():
+    pass
+
+
+# 療程未完成
+def check_course_complete():
+    pass
+
+
+# 療程14日未完成
+def check_course_complete_in_two_weeks():
+    pass
+
+
+# 檢查欠卡
+def check_deposit():
+    pass
+
+
+# 檢查欠款
+def check_debt():
+    pass

@@ -372,7 +372,7 @@
               </widget>
              </item>
              <item>
-              <widget class="QPushButton" name="pushButton_diagnosis">
+              <widget class="QPushButton" name="pushButton_diagnostic">
                <property name="text">
                 <string>診察資料</string>
                </property>

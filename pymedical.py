@@ -17,8 +17,8 @@ from classes import system_settings, db
 # 主畫面
 class PyMedical(QtWidgets.QMainWindow):
     # 初始化
-    def __init__(self, *args):
-        super(PyMedical, self).__init__(*args)
+    def __init__(self, parent=None, *args):
+        super(PyMedical, self).__init__(parent)
         self.database = db.Database()
         if not self.database.connected():
             sys.exit(0)
@@ -32,7 +32,7 @@ class PyMedical(QtWidgets.QMainWindow):
 
     # 解構
     def __del__(self):
-        self.close_all()
+        self.database.close_database()
 
     # 關閉主程式
     def closeEvent(self, event: QtGui.QCloseEvent):
@@ -57,10 +57,6 @@ class PyMedical(QtWidgets.QMainWindow):
         for file in mysql_files:
             table_name = file.split('.sql')[0]
             self.database.check_table_exists(table_name)
-
-    # 關閉
-    def close_all(self):
-        self.database.close_database()
 
     # 設定GUI
     def _set_ui(self):
@@ -89,6 +85,8 @@ class PyMedical(QtWidgets.QMainWindow):
         self.ui.pushButton_patient_list.clicked.connect(self.push_button_clicked)
         self.ui.pushButton_settings.clicked.connect(self.open_settings)
         self.ui.pushButton_charge.clicked.connect(self.push_button_clicked)
+        self.ui.pushButton_diagnostic.clicked.connect(self.push_button_clicked)
+        self.ui.pushButton_medicine.clicked.connect(self.push_button_clicked)
         self.ui.pushButton_ic_card.clicked.connect(self.open_ic_card)
 
         self.ui.tabWidget_window.tabCloseRequested.connect(self.close_tab)

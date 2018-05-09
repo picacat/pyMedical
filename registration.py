@@ -9,19 +9,21 @@ import datetime
 import re
 import sys
 
+from classes import table_widget
+from classes import cshis
+
 from libs import ui_settings
 from libs import patient_utils
 from libs import nhi_utils
 from libs import number
 from libs import strings
-from libs import registration_utils
+from libs import register_utils
 from libs import charge_utils
 from libs import date_utils
 from libs import validator_utils
-from classes import table_widget
-import print_registration
 
-from classes import cshis
+import print_registration
+import dialog_past_history
 
 
 # 門診掛號 2018.01.22
@@ -33,6 +35,7 @@ class Registration(QtWidgets.QMainWindow):
         self.database = args[0]
         self.system_settings = args[1]
         self.ui = None
+        self.dialog_history = dialog_past_history.DialogPastHistory(self, self.database, self.system_settings)
 
         self._set_ui()
         self._set_signal()
@@ -59,7 +62,6 @@ class Registration(QtWidgets.QMainWindow):
         self._set_combobox()
         if self.system_settings.field('使用讀卡機') == 'N':
             self.ui.action_ic_card.setEnabled(False)
-
         # self._set_table_width()
 
     # 設定信號
@@ -253,6 +255,8 @@ class Registration(QtWidgets.QMainWindow):
         self.ui.lineEdit_total_amount.clear()
         self.ui.comboBox_patient_share.setCurrentIndex(0)
         self.ui.comboBox_patient_discount.setCurrentIndex(0)
+        self.ui.comboBox_gender.setCurrentIndex(0)
+        self.ui.label_age.setText('年齡')
 
     # 清除掛號資料欄位
     def _clear_group_box_registration(self):
@@ -286,6 +290,7 @@ class Registration(QtWidgets.QMainWindow):
         ui_settings.set_combo_box(self.ui.comboBox_course, nhi_utils.COURSE)
         ui_settings.set_combo_box(self.ui.comboBox_period, nhi_utils.PERIOD)
         ui_settings.set_combo_box(self.ui.comboBox_room, nhi_utils.ROOM)
+        ui_settings.set_combo_box(self.ui.comboBox_gender, nhi_utils.GENDER)
 
     def _reset_action_button_text(self):
         self.ui.action_save.setText('掛號存檔')
@@ -293,6 +298,7 @@ class Registration(QtWidgets.QMainWindow):
 
     # 取消掛號
     def action_cancel_triggered(self):
+        self.dialog_history.close()
         self._reset_action_button_text()
         self._set_reg_mode(True)
         self.ui.groupBox_search_patient.setEnabled(True)
@@ -300,14 +306,14 @@ class Registration(QtWidgets.QMainWindow):
 
     # 存檔
     def action_save_triggered(self):
-        continue_save = True
-        if self.ui.comboBox_card.currentText() == '自動取得':
-            continue_save = self._write_ic_card()
+        ic_card = None
+        if self.system_settings.field('使用讀卡機') == 'Y' and self.ui.comboBox_card.currentText() == '自動取得':
+            ic_card = self._write_ic_card()
+            if not ic_card:
+                return
 
-        if not continue_save:
-            return
-
-        self._save_files()
+        self.dialog_history.close()
+        self._save_files(ic_card)
         self._set_reg_mode(True)
 
         self.ui.groupBox_search_patient.setEnabled(True)
@@ -316,7 +322,25 @@ class Registration(QtWidgets.QMainWindow):
         self.ui.lineEdit_query.setFocus()
 
     def _insert_correct_ic_card(self, ic_card):
-        ic_card.read_basic_data()
+        try:
+            if not ic_card.read_basic_data():
+                return False
+        except AttributeError:
+            msg_box = QMessageBox()
+            msg_box.setIcon(QMessageBox.Critical)
+            msg_box.setWindowTitle('無法使用健保卡')
+            msg_box.setText(
+                '''
+                <font size="4" color="red">
+                  <b>無法使用讀卡機, 請改掛異常卡序或欠卡<br>
+                </font>
+                '''
+            )
+            msg_box.setInformativeText("請確定讀卡機使用正常使用")
+            msg_box.addButton(QPushButton("確定"), QMessageBox.YesRole)
+            msg_box.exec_()
+            return False
+
         if ic_card.basic_data['patient_id'] != self.ui.lineEdit_id.text():
             msg_box = QMessageBox()
             msg_box.setIcon(QMessageBox.Critical)
@@ -353,7 +377,7 @@ class Registration(QtWidgets.QMainWindow):
     def _write_ic_card(self):
         ic_card = cshis.CSHIS(self.system_settings)
         if not self._insert_correct_ic_card(ic_card):
-            return
+            return False
 
         available_date, available_count = ic_card.get_card_status()
         if available_count <= 0:
@@ -363,7 +387,7 @@ class Registration(QtWidgets.QMainWindow):
             return False
 
         self.ui.comboBox_card.setCurrentText(ic_card.treat_data['seq_number'])
-        return True
+        return ic_card
 
     # comboBox 內容變更
     def selection_changed(self, i):
@@ -394,7 +418,7 @@ class Registration(QtWidgets.QMainWindow):
                 self.ui.action_save.text() == '掛號存檔':
             period = self.ui.comboBox_period.currentText()
             room = self.ui.comboBox_room.currentText()
-            reg_no = registration_utils.get_reg_no(self.database, self.system_settings, room, period)  # 取得診號
+            reg_no = register_utils.get_reg_no(self.database, self.system_settings, room, period)  # 取得診號
             self.ui.spinBox_reg_no.setValue(int(reg_no))
         elif sender_name == 'lineEdit_regist_fee':
             self._set_total_amount()
@@ -454,11 +478,41 @@ class Registration(QtWidgets.QMainWindow):
 
     # 準備掛號
     def _prepare_registration_data(self, row, ic_card=None):
+        patient_key = row[0]['PatientKey']
         self._set_reg_mode(False, ic_card)
         self._set_patient_data(row[0])
-        self._set_registration_data(row[0]['PatientKey'])
+        self._set_registration_data(patient_key)
+
+        if not self._register_precheck(patient_key):
+            return
         self._set_charge()
-        self._show_past_history()
+        self._show_past_history(patient_key)
+
+    # 掛號預檢
+    def _register_precheck(self, patient_key):
+        if register_utils.check_record_duplicated(self.database, patient_key, datetime.datetime.now()):
+            msg_box = QMessageBox()
+            msg_box.setIcon(QMessageBox.Critical)
+            msg_box.setWindowTitle('重複就診')
+            msg_box.setText(
+                '''
+                <font size="4" color="red">
+                  <b>此人今日已有門診, 請改掛自費或取消掛號!<br>
+                </font>
+                '''
+            )
+            msg_box.setInformativeText("健保規定不可同日重複就診")
+            msg_box.addButton(QPushButton("改掛自費"), QMessageBox.YesRole)
+            msg_box.addButton(QPushButton("取消掛號"), QMessageBox.NoRole)
+            cancel_register = msg_box.exec_()
+            if cancel_register:
+                self.action_cancel_triggered()
+                return False
+            else:
+                self.ui.comboBox_ins_type.setCurrentText('自費')
+                return True
+
+        return True
 
     # 顯示病患資料
     def _set_patient_data(self, row):
@@ -468,7 +522,14 @@ class Registration(QtWidgets.QMainWindow):
         share_type = nhi_utils.get_share_type(strings.xstr(row['InsType']).strip(None))
         self.ui.comboBox_patient_share.setCurrentText(share_type)
         self.ui.comboBox_patient_discount.setCurrentText(strings.xstr(row['DiscountType']).strip(None))
+        self.ui.comboBox_gender.setCurrentText(strings.xstr(row['Gender']).strip(None))
         self.ui.lineEdit_birthday.setText(strings.xstr(row['Birthday']).strip(None))
+        age_year, age_month = date_utils.get_age(row['Birthday'], datetime.datetime.now())
+        if age_year is None:
+            age = 'N/A'
+        else:
+            age = '{0}歲{1}月'.format(age_year, age_month)
+        self.ui.label_age.setText(age)
         self.ui.lineEdit_telephone.setText(strings.xstr(row['Telephone']))
         self.ui.lineEdit_cellphone.setText(strings.xstr(row['Cellphone']))
         self.ui.lineEdit_address.setText(strings.xstr(row['Address']).strip(None))
@@ -504,8 +565,8 @@ class Registration(QtWidgets.QMainWindow):
             ins_type = self.system_settings.field('預設門診類別')
             share_type = self.ui.comboBox_patient_share.currentText()
             room = self.system_settings.field('診療室')  # 取得預設診療室
-            reg_no = registration_utils.get_reg_no(self.database, self.system_settings, room)  # 取得診號
-            period = registration_utils.get_period(self.system_settings)
+            reg_no = register_utils.get_reg_no(self.database, self.system_settings, room)  # 取得診號
+            period = register_utils.get_period(self.system_settings)
             massager = None
             remark = None
         else:  # 掛號修正
@@ -586,13 +647,13 @@ class Registration(QtWidgets.QMainWindow):
         self.ui.lineEdit_traditional_health_care_fee.setText(str(traditional_health_care_fee))
         self.ui.lineEdit_total_amount.setText(str(total_amount))
 
-    def _show_past_history(self):
-        pass
+    def _show_past_history(self, patient_key):
+        self.dialog_history.show_past_history(patient_key)
 
     # 掛號存檔/修正存檔
-    def _save_files(self):
+    def _save_files(self, ic_card=None):
         self._save_patient()
-        self._save_medical_record()
+        self._save_medical_record(ic_card)
 
     # 病患資料存檔
     def _save_patient(self):
@@ -611,9 +672,12 @@ class Registration(QtWidgets.QMainWindow):
             row = self.database.select_record(sql)[0]
             share_type = nhi_utils.get_share_type(row['InsType'])
             discount = strings.xstr(row['DiscountType'])
+            gender = strings.xstr(row['Gender'])
             if self.ui.comboBox_patient_share.currentText() != share_type:
                 patient_modified = True
             if self.ui.comboBox_patient_discount.currentText() != discount:
+                patient_modified = True
+            if self.ui.comboBox_gender.currentText() != gender:
                 patient_modified = True
         except IndexError:
             pass
@@ -622,7 +686,7 @@ class Registration(QtWidgets.QMainWindow):
             return
 
         fields = ['Name', 'ID', 'Birthday', 'Telephone', 'Cellphone', 'Address', 'InsType',
-                  'DiscountType', 'Remark']
+                  'DiscountType', 'Gender', 'Remark']
         data = (
             self.ui.lineEdit_name.text(),
             self.ui.lineEdit_id.text(),
@@ -632,29 +696,32 @@ class Registration(QtWidgets.QMainWindow):
             self.ui.lineEdit_address.text(),
             self.ui.comboBox_patient_share.currentText(),
             self.ui.comboBox_patient_discount.currentText(),
+            self.ui.comboBox_gender.currentText(),
             self.ui.lineEdit_patient_remark.text()
         )
         self.database.update_record('patient', fields, 'PatientKey',
                                     self.ui.lineEdit_patient_key.text(), data)
 
     # 病歷存檔
-    def _save_medical_record(self):
+    def _save_medical_record(self, ic_card=None):
         if self.ui.action_save.text() == '掛號存檔':
-            self._insert_medical_record()
+            self._insert_medical_record(ic_card)
         else:
             self._update_medical_record()
 
     # 新增病歷
-    def _insert_medical_record(self):
+    def _insert_medical_record(self, ic_card=None):
         fields = ['CaseDate', 'PatientKey', 'Name', 'Visit', 'RegistType', 'Injury',
                   'TreatType', 'Share', 'InsType', 'Card', 'Continuance', 'Period',
                   'Room', 'RegistNo', 'Massager',
-                  'RegistFee', 'DiagShareFee', 'SDiagShareFee', 'DepositFee', 'SMassageFee', 'Remark']
+                  'RegistFee', 'DiagShareFee', 'SDiagShareFee', 'DepositFee', 'SMassageFee', 'Security', 'Remark']
+
         diag_share_fee = charge_utils.get_diag_share_fee(
             self.database,
             self.ui.comboBox_share_type.currentText(),
             self.ui.comboBox_treat_type.currentText(),
             self.ui.comboBox_course.currentText())
+
         data = (
             str(datetime.datetime.now()),
             self.ui.lineEdit_patient_key.text(),
@@ -665,7 +732,7 @@ class Registration(QtWidgets.QMainWindow):
             self.ui.comboBox_treat_type.currentText(),
             self.ui.comboBox_share_type.currentText(),
             self.ui.comboBox_ins_type.currentText(),
-            self.ui.comboBox_card.currentText(),
+            str(self.ui.comboBox_card.currentText()).split(' ')[0],
             number.str_to_int(self.ui.comboBox_course.currentText()),
             self.ui.comboBox_period.currentText(),
             self.ui.comboBox_room.currentText(),
@@ -676,6 +743,7 @@ class Registration(QtWidgets.QMainWindow):
             self.ui.lineEdit_diag_share_fee.text(),
             self.ui.lineEdit_deposit_fee.text(),
             self.ui.lineEdit_traditional_health_care_fee.text(),
+            ic_card.treat_data_to_xml() if ic_card else None,
             self.ui.comboBox_remark.currentText(),
         )
         case_key = self.database.insert_record('cases', fields, data)
@@ -732,7 +800,7 @@ class Registration(QtWidgets.QMainWindow):
                 self.ui.comboBox_treat_type.currentText(),
                 self.ui.comboBox_share_type.currentText(),
                 self.ui.comboBox_ins_type.currentText(),
-                self.ui.comboBox_card.currentText(),
+                str(self.ui.comboBox_card.currentText()).split(' ')[0],
                 number.str_to_int(self.ui.comboBox_course.currentText()),
                 self.ui.comboBox_period.currentText(),
                 self.ui.comboBox_room.currentText(),

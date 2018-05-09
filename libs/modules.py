@@ -9,6 +9,8 @@ from patient_list import *
 from patient import *
 from return_card import *
 from charge_settings import *
+from dict_diagnostic import *
+from dict_medicine import *
 
 module_dict = {
     '門診掛號': Registration,
@@ -22,8 +24,8 @@ module_dict = {
     '病患查詢': PatientList,
     '病患資料': Patient,
     '收費設定': ChargeSettings,
-    '診察資料': Template,
-    '處方資料': Template,
+    '診察資料': DictDiagnostic,
+    '處方資料': DictMedicine,
 }
 
 
