@@ -42,7 +42,6 @@ class DialogInputRegist(QtWidgets.QDialog):
         self.setFixedSize(self.size())  # non resizable dialog
         system.set_css(self)
         self._set_combo_box()
-        self.setFixedSize(self.size()) # non resizable dialog
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setText('存檔')
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Cancel).setText('取消')
         self.ui.lineEdit_item_name.setFocus()

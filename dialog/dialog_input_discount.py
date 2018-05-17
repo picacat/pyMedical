@@ -40,7 +40,6 @@ class DialogInputDiscount(QtWidgets.QDialog):
         self.ui = ui_settings.load_ui_file(ui_settings.UI_DIALOG_INPUT_DISCOUNT, self)
         self.setFixedSize(self.size())  # non resizable dialog
         system.set_css(self)
-        self.setFixedSize(self.size()) # non resizable dialog
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setText('存檔')
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Cancel).setText('取消')
         self.ui.lineEdit_item_name.setFocus()

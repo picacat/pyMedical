@@ -42,7 +42,6 @@ class DialogICCard(QtWidgets.QDialog):
         self.ui = ui_settings.load_ui_file(ui_settings.UI_DIALOG_IC_CARD, self)
         self.setFixedSize(self.size())  # non resizable dialog
         system.set_css(self)
-        self.setFixedSize(self.size()) # non resizable dialog
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setText('關閉')
 
     # 設定信號

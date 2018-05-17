@@ -30,10 +30,14 @@ UI_DIALOG_INPUT_REGIST = "dialog_input_regist.ui"
 UI_DIALOG_INPUT_DISCOUNT = "dialog_input_discount.ui"
 UI_DIALOG_INPUT_SHARE = "dialog_input_share.ui"
 UI_DIALOG_INPUT_NHI = "dialog_input_nhi.ui"
+UI_DIALOG_INPUT_DIAGNOSTIC = "dialog_input_diagnostic.ui"
 UI_DIALOG_IC_CARD = "dialog_ic_card.ui"
 UI_DIALOG_PAST_HISTORY = "dialog_past_history.ui"
 UI_DICT_DIAGNOSTIC = "dict_diagnostic.ui"
+UI_DICT_SYMPTOM = "dict_symptom.ui"
+UI_DICT_TONGUE = "dict_tongue.ui"
 UI_DICT_MEDICINE = "dict_medicine.ui"
+UI_CONVERT = "convert.ui"
 
 THEME = ['Fusion', 'Windows', 'Cleanlooks', 'gtk2', 'motif', 'plastic', 'cde', 'qt5-ct-style']
 WIN32_THEME = ['Fusion', 'Windows', 'WindowsXP', 'WindowsVista']

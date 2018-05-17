@@ -38,7 +38,6 @@ class DialogMedicalRecordList(QtWidgets.QDialog):
         self.ui.dateEdit_start_date.setDate(datetime.datetime.now())
         self.ui.dateEdit_end_date.setDate(datetime.datetime.now())
         self._set_combo_box()
-        self.setFixedSize(self.size()) # non resizable dialog
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setText('確定')
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Cancel).setText('取消')
 

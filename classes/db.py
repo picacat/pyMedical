@@ -15,9 +15,13 @@ DB_PATH = "mysql"
 # 資料庫元件 2018.03.28 重新撰寫 procedure -> class
 class Database:
     # 初始化
-    def __init__(self):
-        self.config_file = ui_settings.CONFIG_FILE
-        self.cnx = self._connect_to_db()
+    def __init__(self, **kwargs):
+        self.cnx = None
+
+        if kwargs == {}:
+            self._connect_to_db()
+        else:
+            self._connect_to_db(**kwargs)
 
     # 結束
     def __del__(self):
@@ -40,33 +44,45 @@ class Database:
         return row['DATABASE()']
 
     # 連接MySQL
-    def _connect_to_db(self):
-        config = configparser.ConfigParser()
-        config.read(self.config_file)
-
+    def _connect_to_db(self, **kwargs):
         try:
-            cnx = mysql.connect(
-                user=config['db']['user'],
-                host=config['db']['host'],
-                password=config['db']['password'],
-                buffered=True)
+            if kwargs == {}:
+                config = configparser.ConfigParser()
+                config.read(ui_settings.CONFIG_FILE)
+                self.cnx = mysql.connect(
+                    user=config['db']['user'],
+                    host=config['db']['host'],
+                    password=config['db']['password'],
+                    buffered=True)
+                cursor = self.cnx.cursor(dictionary=True)
+                cursor.execute('CREATE DATABASE IF NOT EXISTS {0}'.format(config['db']['database']))
+                cursor.execute('USE {0}'.format(config['db']['database']))
+                cursor.execute('set names {encoding}'.format(encoding=config['db']['encoding']))
+                cursor.close()
+            else:
+                self.cnx = mysql.connect(
+                    host=kwargs['host'],
+                    user=kwargs['user'],
+                    password=kwargs['password'],
+                    database=kwargs['database'],
+                    buffered=True)
         except mysql.errors.ProgrammingError:
-            msg_box = QMessageBox()
-            msg_box.setIcon(QMessageBox.Critical)
-            msg_box.setWindowTitle('連線失敗')
-            msg_box.setText("<font size='4' color='red'><b>無法連線至資料庫主機, 請檢查網路設定.</b></font>")
-            msg_box.setInformativeText("請檢查 pymedical.conf 內的設定, 確定資料庫連線設定是否正確.")
-            msg_box.addButton(QPushButton("確定"), QMessageBox.YesRole)
-            msg_box.exec_()
-            return False
-
-        cursor = cnx.cursor(dictionary=True)
-        cursor.execute('CREATE DATABASE IF NOT EXISTS {0}'.format(config['db']['database']))
-        cursor.execute('USE {0}'.format(config['db']['database']))
-        cursor.execute('set names {encoding}'.format(encoding=config['db']['encoding']))
-        cursor.close()
-
-        return cnx
+            if kwargs == {}:
+                msg_box = QMessageBox()
+                msg_box.setIcon(QMessageBox.Critical)
+                msg_box.setWindowTitle('連線失敗')
+                msg_box.setText("<font size='4' color='red'><b>無法連線至資料庫主機, 請檢查網路設定.</b></font>")
+                msg_box.setInformativeText("請檢查 pymedical.conf 內的設定, 確定資料庫連線設定是否正確.")
+                msg_box.addButton(QPushButton("確定"), QMessageBox.YesRole)
+                msg_box.exec_()
+            else:
+                msg_box = QMessageBox()
+                msg_box.setIcon(QMessageBox.Critical)
+                msg_box.setWindowTitle('連線失敗')
+                msg_box.setText("<font size='4' color='red'><b>無法連線至資料庫主機, 請檢查傳遞的參數.</b></font>")
+                msg_box.setInformativeText("請檢查傳遞的參數是否正確.")
+                msg_box.addButton(QPushButton("確定"), QMessageBox.YesRole)
+                msg_box.exec_()
 
     # 取得 mysql insert values
     @staticmethod
@@ -119,6 +135,13 @@ class Database:
         assignment_list = self._get_assignment_list(fields)
         sql = "UPDATE {0} SET {1} WHERE {2} = {3}".format(table_name, assignment_list, primary_key, key_value)
         cursor.execute(sql, data)
+        self.cnx.commit()
+        cursor.close()
+
+    # 執行sql
+    def exec_sql(self, sql):
+        cursor = self.cnx.cursor()
+        cursor.execute(sql)
         self.cnx.commit()
         cursor.close()
 

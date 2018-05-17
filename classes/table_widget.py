@@ -55,4 +55,10 @@ class TableWidget:
     # 取得欄位內容 by index no
     def field_value(self, field_index):
         row = self.table_widget.currentRow()
-        return self.table_widget.item(row, field_index).text()
+
+        try:
+            field_value = self.table_widget.item(row, field_index).text()
+        except AttributeError:
+            field_value = None
+
+        return field_value

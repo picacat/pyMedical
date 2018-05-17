@@ -365,13 +365,6 @@
               </widget>
              </item>
              <item>
-              <widget class="QPushButton" name="pushButton_ic_card">
-               <property name="text">
-                <string>健保卡讀卡機</string>
-               </property>
-              </widget>
-             </item>
-             <item>
               <widget class="QPushButton" name="pushButton_diagnostic">
                <property name="text">
                 <string>診察資料</string>
@@ -382,6 +375,13 @@
               <widget class="QPushButton" name="pushButton_medicine">
                <property name="text">
                 <string>處方資料</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="pushButton_ic_card">
+               <property name="text">
+                <string>健保卡讀卡機</string>
                </property>
               </widget>
              </item>
@@ -451,9 +451,16 @@
      <string>批價作業</string>
     </property>
    </widget>
+   <widget class="QMenu" name="menu_4">
+    <property name="title">
+     <string>系統作業</string>
+    </property>
+    <addaction name="action_convert"/>
+   </widget>
    <addaction name="menu"/>
    <addaction name="menu_2"/>
    <addaction name="menu_3"/>
+   <addaction name="menu_4"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="action">
@@ -469,6 +476,15 @@
   <action name="action_3">
    <property name="text">
     <string>掛號櫃台結帳</string>
+   </property>
+  </action>
+  <action name="action_convert">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/document-import.svg</normaloff>../icons/document-import.svg</iconset>
+   </property>
+   <property name="text">
+    <string>轉檔</string>
    </property>
   </action>
  </widget>

@@ -12,6 +12,7 @@ from libs import system
 from dialog import dialog_system_settings
 from dialog import dialog_ic_card
 from classes import system_settings, db
+from convert import convert
 
 
 # 主畫面
@@ -76,6 +77,7 @@ class PyMedical(QtWidgets.QMainWindow):
 
     # 設定信號
     def _set_signal(self):
+        self.ui.action_convert.triggered.connect(self.convert)
         self.ui.pushButton_registration.clicked.connect(self.push_button_clicked)
         self.ui.pushButton_return_card.clicked.connect(self.push_button_clicked)
         self.ui.pushButton_checkout.clicked.connect(self.push_button_clicked)
@@ -267,6 +269,12 @@ class PyMedical(QtWidgets.QMainWindow):
     # 系統設定
     def open_ic_card(self):
         dialog = dialog_ic_card.DialogICCard(self.ui, self.database, self.system_settings)
+        dialog.exec_()
+        del dialog
+
+    # 轉檔
+    def convert(self):
+        dialog = convert.DialogConvert(self.ui, self.database, self.system_settings)
         dialog.exec_()
         del dialog
 
