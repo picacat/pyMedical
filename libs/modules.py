@@ -19,7 +19,6 @@ module_dict = {
     '醫師看診作業': WaitingList,
     '病歷查詢': MedicalRecordList,
     '病歷資料': MedicalRecord,
-    '健保處方': InsPrescriptRecord,
     '病歷統計': Template,
     '病患查詢': PatientList,
     '病患資料': Patient,

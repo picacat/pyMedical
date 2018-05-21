@@ -5,10 +5,10 @@ import sys
 
 from PyQt5 import QtWidgets
 from libs import ui_settings
-from libs import modules
 from libs import strings
 from libs import number
 from libs import date_utils
+import ins_prescript_record
 
 
 # 病歷資料 2018.01.31
@@ -280,11 +280,9 @@ class MedicalRecord(QtWidgets.QMainWindow):
 
     def _read_prescript(self):
         if self.medical_record['InsType'] == '健保':
-            tab_name = '健保處方'
-            module_name = modules.get_module_name(tab_name)
-            new_tab = module_name(self, self.database, self.system_settings, self.case_key)
-            self.ui.tabWidget_prescript.addTab(new_tab, tab_name)
-            self.ui.tabWidget_prescript.setCurrentWidget(new_tab)
+            self.ui.tabWidget_prescript.addTab(
+                ins_prescript_record.InsPrescriptRecord(
+                    self, self.database, self.system_settings, self.case_key), '健保處方')
 
     def close_medical_record(self):
         self.close_all()

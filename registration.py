@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 #coding: utf-8
 
-import sys
-
 from PyQt5 import QtGui, QtWidgets, QtCore
 from PyQt5.QtWidgets import QMessageBox, QPushButton
 import datetime
@@ -23,7 +21,7 @@ from libs import date_utils
 from libs import validator_utils
 
 import print_registration
-import dialog_past_history
+from dialog import dialog_past_history
 
 
 # 門診掛號 2018.01.22
