@@ -9,6 +9,7 @@ from libs import strings
 from libs import number
 from libs import date_utils
 import ins_prescript_record
+from dialog import dialog_diagnostic
 
 
 # 病歷資料 2018.01.31
@@ -131,10 +132,31 @@ class MedicalRecord(QtWidgets.QMainWindow):
         return modified
 
     def open_dictionary(self):
+        dialog_type = None
         if self.ui.textEdit_symptom.hasFocus():
-            print('symptom')
+            dialog_type = '主訴'
         elif self.ui.textEdit_tongue.hasFocus():
-            print('tongue')
+            dialog_type = '舌診'
+        elif self.ui.textEdit_pulse.hasFocus():
+            dialog_type = '脈象'
+        elif self.ui.textEdit_remark.hasFocus():
+            dialog_type = '備註'
+
+        if dialog_type is None:
+            return
+
+        text_edit = {
+            '主訴': self.ui.textEdit_symptom,
+            '舌診': self.ui.textEdit_tongue,
+            '脈象': self.ui.textEdit_pulse,
+            '備註': self.ui.textEdit_remark,
+        }
+        if dialog_type in ['主訴', '舌診', '脈象', '備註']:
+            dialog = dialog_diagnostic.DialogDiagnostic(
+                self, self.database, self.system_settings, dialog_type, text_edit[dialog_type])
+
+        dialog.exec_()
+        del dialog
 
     # 顯示最近病歷
     def _display_past_record(self):
