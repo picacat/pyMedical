@@ -59,6 +59,8 @@ class PyMedical(QtWidgets.QMainWindow):
             table_name = file.split('.sql')[0]
             self.database.check_table_exists(table_name)
 
+        self.database.check_field_exists('icd10', 'Groups', 'VARCHAR (100) AFTER SpecialCode')
+
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_settings.load_ui_file(ui_settings.UI_PY_MEDICAL, self)
@@ -263,20 +265,20 @@ class PyMedical(QtWidgets.QMainWindow):
     def open_settings(self):
         dialog = dialog_system_settings.DialogSettings(self.ui, self.database, self.system_settings)
         dialog.exec_()
-        del dialog
+        dialog.deleteLater()
         self._set_button_enabled()
 
     # 系統設定
     def open_ic_card(self):
         dialog = dialog_ic_card.DialogICCard(self.ui, self.database, self.system_settings)
         dialog.exec_()
-        del dialog
+        dialog.deleteLater()
 
     # 轉檔
     def convert(self):
         dialog = convert.DialogConvert(self.ui, self.database, self.system_settings)
         dialog.exec_()
-        del dialog
+        dialog.deleteLater()
 
 
 # 主程式

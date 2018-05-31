@@ -40,6 +40,12 @@
            <layout class="QHBoxLayout" name="horizontalLayout_2">
             <item>
              <widget class="QFrame" name="verticalFrame_diagnostic">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
               <layout class="QVBoxLayout" name="verticalLayout_2">
                <property name="spacing">
                 <number>0</number>
@@ -131,6 +137,12 @@
             </item>
             <item>
              <widget class="QFrame" name="verticalFrame_prescript">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
               <layout class="QVBoxLayout" name="verticalLayout_11">
                <property name="spacing">
                 <number>6</number>
@@ -199,6 +211,9 @@
                       <property name="maxLength">
                        <number>10</number>
                       </property>
+                      <property name="clearButtonEnabled">
+                       <bool>true</bool>
+                      </property>
                      </widget>
                     </item>
                     <item row="1" column="0">
@@ -232,6 +247,9 @@
                       <property name="maxLength">
                        <number>10</number>
                       </property>
+                      <property name="clearButtonEnabled">
+                       <bool>true</bool>
+                      </property>
                      </widget>
                     </item>
                     <item row="0" column="1">
@@ -247,6 +265,9 @@
                       </property>
                       <property name="maxLength">
                        <number>10</number>
+                      </property>
+                      <property name="clearButtonEnabled">
+                       <bool>true</bool>
                       </property>
                      </widget>
                     </item>
@@ -271,7 +292,7 @@
                      </widget>
                     </item>
                     <item row="3" column="1" colspan="2">
-                     <widget class="QLineEdit" name="lineEdit_distinct"/>
+                     <widget class="QLineEdit" name="lineEdit_distinguish"/>
                     </item>
                     <item row="2" column="2">
                      <widget class="QLineEdit" name="lineEdit_disease_name3">
@@ -518,229 +539,8 @@
                <item>
                 <widget class="QTabWidget" name="tabWidget_past_record">
                  <property name="currentIndex">
-                  <number>0</number>
+                  <number>-1</number>
                  </property>
-                 <widget class="QWidget" name="tab_past_record">
-                  <attribute name="title">
-                   <string>最近病歷</string>
-                  </attribute>
-                  <layout class="QVBoxLayout" name="verticalLayout_12">
-                   <item>
-                    <layout class="QVBoxLayout" name="verticalLayout_15">
-                     <item>
-                      <layout class="QHBoxLayout" name="horizontalLayout">
-                       <item>
-                        <widget class="QToolButton" name="toolButton_first">
-                         <property name="text">
-                          <string>...</string>
-                         </property>
-                         <property name="icon">
-                          <iconset>
-                           <normaloff>../icons/go-first.svg</normaloff>../icons/go-first.svg</iconset>
-                         </property>
-                        </widget>
-                       </item>
-                       <item>
-                        <widget class="QToolButton" name="toolButton_previous">
-                         <property name="text">
-                          <string>...</string>
-                         </property>
-                         <property name="icon">
-                          <iconset>
-                           <normaloff>../icons/go-previous.svg</normaloff>../icons/go-previous.svg</iconset>
-                         </property>
-                        </widget>
-                       </item>
-                       <item>
-                        <widget class="QToolButton" name="toolButton_next">
-                         <property name="text">
-                          <string>...</string>
-                         </property>
-                         <property name="icon">
-                          <iconset>
-                           <normaloff>../icons/go-next.svg</normaloff>../icons/go-next.svg</iconset>
-                         </property>
-                        </widget>
-                       </item>
-                       <item>
-                        <widget class="QToolButton" name="toolButton_last">
-                         <property name="text">
-                          <string>...</string>
-                         </property>
-                         <property name="icon">
-                          <iconset>
-                           <normaloff>../icons/go-last.svg</normaloff>../icons/go-last.svg</iconset>
-                         </property>
-                        </widget>
-                       </item>
-                       <item>
-                        <spacer name="horizontalSpacer_2">
-                         <property name="orientation">
-                          <enum>Qt::Horizontal</enum>
-                         </property>
-                         <property name="sizeHint" stdset="0">
-                          <size>
-                           <width>40</width>
-                           <height>20</height>
-                          </size>
-                         </property>
-                        </spacer>
-                       </item>
-                       <item>
-                        <widget class="QToolButton" name="toolButton_copy">
-                         <property name="text">
-                          <string>病歷拷貝</string>
-                         </property>
-                         <property name="icon">
-                          <iconset>
-                           <normaloff>../icons/edit-copy.svg</normaloff>../icons/edit-copy.svg</iconset>
-                         </property>
-                         <property name="toolButtonStyle">
-                          <enum>Qt::ToolButtonTextBesideIcon</enum>
-                         </property>
-                        </widget>
-                       </item>
-                      </layout>
-                     </item>
-                     <item>
-                      <widget class="QTextEdit" name="textEdit_past">
-                       <property name="enabled">
-                        <bool>true</bool>
-                       </property>
-                       <property name="readOnly">
-                        <bool>true</bool>
-                       </property>
-                       <property name="case_key" stdset="0">
-                        <string/>
-                       </property>
-                       <property name="patient_key" stdset="0">
-                        <string/>
-                       </property>
-                       <property name="case_date" stdset="0">
-                        <string/>
-                       </property>
-                      </widget>
-                     </item>
-                    </layout>
-                   </item>
-                   <item>
-                    <layout class="QGridLayout" name="gridLayout_6">
-                     <item row="1" column="0">
-                      <widget class="QCheckBox" name="checkBox_disease">
-                       <property name="text">
-                        <string>診斷碼</string>
-                       </property>
-                       <property name="checked">
-                        <bool>true</bool>
-                       </property>
-                      </widget>
-                     </item>
-                     <item row="0" column="0">
-                      <widget class="QCheckBox" name="checkBox_symptom">
-                       <property name="text">
-                        <string>主訴</string>
-                       </property>
-                       <property name="checked">
-                        <bool>true</bool>
-                       </property>
-                      </widget>
-                     </item>
-                     <item row="0" column="2">
-                      <widget class="QCheckBox" name="checkBox_pulse">
-                       <property name="text">
-                        <string>脈象</string>
-                       </property>
-                       <property name="checked">
-                        <bool>true</bool>
-                       </property>
-                      </widget>
-                     </item>
-                     <item row="1" column="2">
-                      <widget class="QCheckBox" name="checkBox_cure">
-                       <property name="text">
-                        <string>治則</string>
-                       </property>
-                       <property name="checked">
-                        <bool>true</bool>
-                       </property>
-                      </widget>
-                     </item>
-                     <item row="0" column="1">
-                      <widget class="QCheckBox" name="checkBox_tongue">
-                       <property name="text">
-                        <string>舌診</string>
-                       </property>
-                       <property name="checked">
-                        <bool>true</bool>
-                       </property>
-                      </widget>
-                     </item>
-                     <item row="1" column="1">
-                      <widget class="QCheckBox" name="checkBox_distinct">
-                       <property name="text">
-                        <string>辨證</string>
-                       </property>
-                       <property name="checked">
-                        <bool>true</bool>
-                       </property>
-                      </widget>
-                     </item>
-                     <item row="1" column="3">
-                      <widget class="QCheckBox" name="checkBox_prescript">
-                       <property name="text">
-                        <string>處方</string>
-                       </property>
-                       <property name="checked">
-                        <bool>true</bool>
-                       </property>
-                      </widget>
-                     </item>
-                     <item row="0" column="3">
-                      <widget class="QCheckBox" name="checkBox_remark">
-                       <property name="text">
-                        <string>備註</string>
-                       </property>
-                       <property name="checked">
-                        <bool>true</bool>
-                       </property>
-                      </widget>
-                     </item>
-                     <item row="0" column="4">
-                      <widget class="QToolButton" name="toolButton_check">
-                       <property name="text">
-                        <string>...</string>
-                       </property>
-                       <property name="icon">
-                        <iconset>
-                         <normaloff>../icons/dialog-apply.svg</normaloff>../icons/dialog-apply.svg</iconset>
-                       </property>
-                      </widget>
-                     </item>
-                    </layout>
-                   </item>
-                  </layout>
-                 </widget>
-                 <widget class="QWidget" name="tabWidget_6Page1">
-                  <attribute name="title">
-                   <string>批價</string>
-                  </attribute>
-                  <layout class="QVBoxLayout" name="verticalLayout_5">
-                   <item>
-                    <widget class="QTableWidget" name="tableWidget">
-                     <column>
-                      <property name="text">
-                       <string>項目名稱</string>
-                      </property>
-                     </column>
-                     <column>
-                      <property name="text">
-                       <string>金額</string>
-                      </property>
-                     </column>
-                    </widget>
-                   </item>
-                  </layout>
-                 </widget>
                 </widget>
                </item>
               </layout>

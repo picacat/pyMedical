@@ -205,3 +205,12 @@ class Database:
         row = self.select_record(sql)
 
         return row[0]['AUTO_INCREMENT']
+
+    def check_field_exists(self, table_name, column, data_type):
+        sql = 'SHOW COLUMNS FROM {0} like "{1}"'.format(table_name, column)
+        rows = self.select_record(sql)
+        if len(rows) > 0:
+            return
+
+        sql = 'ALTER TABLE {0} ADD {1} {2}'.format(table_name, column, data_type)
+        self.exec_sql(sql)

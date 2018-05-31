@@ -13,19 +13,19 @@ from dialog import dialog_input_diagnostic
 
 
 # 收費設定 2018.04.14
-class DictTongue(QtWidgets.QMainWindow):
+class DictRemark(QtWidgets.QMainWindow):
     # 初始化
     def __init__(self, parent=None, *args):
-        super(DictTongue, self).__init__(parent)
+        super(DictRemark, self).__init__(parent)
         self.parent = parent
         self.database = args[0]
         self.system_settings = args[1]
         self.ui = None
-        self.dict_type = '舌診'
+        self.dict_type = '備註'
 
         self._set_ui()
         self._set_signal()
-        self._read_tongue()
+        self._read_remark()
 
     # 解構
     def __del__(self):
@@ -37,13 +37,13 @@ class DictTongue(QtWidgets.QMainWindow):
 
     # 設定GUI
     def _set_ui(self):
-        self.ui = ui_settings.load_ui_file(ui_settings.UI_DICT_TONGUE, self)
+        self.ui = ui_settings.load_ui_file(ui_settings.UI_DICT_REMARK, self)
         self.table_widget_dict_groups = table_widget.TableWidget(self.ui.tableWidget_dict_groups, self.database)
         self.table_widget_dict_groups.set_column_hidden([0])
         self.table_widget_dict_groups_name = table_widget.TableWidget(self.ui.tableWidget_dict_groups_name, self.database)
         self.table_widget_dict_groups_name.set_column_hidden([0])
-        self.table_widget_dict_tongue = table_widget.TableWidget(self.ui.tableWidget_dict_tongue, self.database)
-        self.table_widget_dict_tongue.set_column_hidden([0])
+        self.table_widget_dict_remark = table_widget.TableWidget(self.ui.tableWidget_dict_remark, self.database)
+        self.table_widget_dict_remark.set_column_hidden([0])
         self._set_table_width()
 
     # 設定信號
@@ -58,20 +58,20 @@ class DictTongue(QtWidgets.QMainWindow):
         self.ui.toolButton_remove_groups_name.clicked.connect(self._remove_groups_name)
         self.ui.toolButton_edit_groups_name.clicked.connect(self._edit_groups_name)
         self.ui.tableWidget_dict_groups_name.doubleClicked.connect(self._edit_groups_name)
-        self.ui.toolButton_add_tongue.clicked.connect(self._add_tongue)
-        self.ui.toolButton_remove_tongue.clicked.connect(self._remove_tongue)
-        self.ui.toolButton_edit_tongue.clicked.connect(self._edit_tongue)
-        self.ui.tableWidget_dict_tongue.doubleClicked.connect(self._edit_tongue)
+        self.ui.toolButton_add_remark.clicked.connect(self._add_remark)
+        self.ui.toolButton_remove_remark.clicked.connect(self._remove_remark)
+        self.ui.toolButton_edit_remark.clicked.connect(self._edit_remark)
+        self.ui.tableWidget_dict_remark.doubleClicked.connect(self._edit_remark)
 
     # 設定欄位寬度
     def _set_table_width(self):
         dict_groups_width = [100, 180]
-        dict_tongue_width = [100, 180, 180, 750]
+        dict_remark_width = [100, 180, 180, 750]
         self.table_widget_dict_groups.set_table_heading_width(dict_groups_width)
         self.table_widget_dict_groups_name.set_table_heading_width(dict_groups_width)
-        self.table_widget_dict_tongue.set_table_heading_width(dict_tongue_width)
+        self.table_widget_dict_remark.set_table_heading_width(dict_remark_width)
 
-    def _read_tongue(self):
+    def _read_remark(self):
         self._read_dict_groups()
 
     def _read_dict_groups(self):
@@ -112,30 +112,30 @@ class DictTongue(QtWidgets.QMainWindow):
 
     def dict_groups_name_changed(self):
         dict_groups_name = self.table_widget_dict_groups_name.field_value(1)
-        self.ui.groupBox_dict_tongue.setTitle('{0}資料 - ['.format(self.dict_type) +
-                                              strings.xstr(dict_groups_name) +
-                                              ']')
-        self._read_dict_tongue(dict_groups_name)
+        self.ui.groupBox_dict_remark.setTitle('{0}資料 - ['.format(self.dict_type) +
+                                               strings.xstr(dict_groups_name) +
+                                               ']')
+        self._read_dict_remark(dict_groups_name)
         self.ui.tableWidget_dict_groups_name.setFocus(True)
 
-    def _read_dict_tongue(self, dict_groups_name):
+    def _read_dict_remark(self, dict_groups_name):
         sql = '''
             SELECT * FROM clinic WHERE ClinicType = "{0}" and Groups = "{1}" ORDER BY ClinicCode, ClinicName
         '''.format(self.dict_type, dict_groups_name)
-        self.table_widget_dict_tongue.set_db_data(sql, self._set_dict_tongue_data)
+        self.table_widget_dict_remark.set_db_data(sql, self._set_dict_remark_data)
 
-    def _set_dict_tongue_data(self, rec_no, rec):
-        dict_tongue_rec = [
+    def _set_dict_remark_data(self, rec_no, rec):
+        dict_remark_rec = [
             strings.xstr(rec['ClinicKey']),
             strings.xstr(rec['ClinicCode']),
             strings.xstr(rec['InputCode']),
             strings.xstr(rec['ClinicName']),
         ]
 
-        for column in range(0, self.ui.tableWidget_dict_tongue.columnCount()):
-            self.ui.tableWidget_dict_tongue.setItem(rec_no, column, QtWidgets.QTableWidgetItem(dict_tongue_rec[column]))
+        for column in range(0, self.ui.tableWidget_dict_remark.columnCount()):
+            self.ui.tableWidget_dict_remark.setItem(rec_no, column, QtWidgets.QTableWidgetItem(dict_remark_rec[column]))
 
-    # 新增舌診類別
+    # 新增主訴類別
     def _add_dict_groups(self):
         input_dialog = dialog_utils.get_dialog(
             '{0}類別'.format(self.dict_type), '請輸入{0}類別'.format(self.dict_type),
@@ -150,7 +150,7 @@ class DictTongue(QtWidgets.QMainWindow):
         self.database.insert_record('dict_groups', field, data)
         self._read_dict_groups()
 
-    # 移除舌診類別
+    # 移除主訴類別
     def _remove_dict_groups(self):
         msg_box = dialog_utils.get_message_box(
             '刪除{0}類別資料'.format(self.dict_type), QMessageBox.Warning,
@@ -166,7 +166,7 @@ class DictTongue(QtWidgets.QMainWindow):
         self.database.delete_record('dict_groups', 'DictGroupsKey', key)
         self.ui.tableWidget_dict_groups.removeRow(self.ui.tableWidget_dict_groups.currentRow())
 
-    # 更改舌診類別
+    # 更改主訴類別
     def _edit_dict_groups(self):
         old_groups = self.table_widget_dict_groups.field_value(1)
         input_dialog = dialog_utils.get_dialog(
@@ -191,12 +191,12 @@ class DictTongue(QtWidgets.QMainWindow):
                                     self.table_widget_dict_groups.field_value(0), data)
         self.ui.tableWidget_dict_groups.item(self.ui.tableWidget_dict_groups.currentRow(), 1).setText(dict_groups_name)
 
-    # 新增舌診類別
+    # 新增主訴類別
     def _add_groups_name(self):
         dict_groups = self.table_widget_dict_groups.field_value(1)
         input_dialog = dialog_utils.get_dialog(
-            '{0}分類'.format(self.dict_type), '請輸入{0}分類名稱'.format(self.dict_type), None,
-            QInputDialog.TextInput, 320, 200)
+            '{0}分類'.format(self.dict_type), '請輸入{0}分類名稱'.format(self.dict_type),
+            None, QInputDialog.TextInput, 320, 200)
         ok = input_dialog.exec_()
         if not ok:
             return
@@ -207,7 +207,7 @@ class DictTongue(QtWidgets.QMainWindow):
         self.database.insert_record('dict_groups', field, data)
         self._read_dict_groups_name(dict_groups)
 
-    # 移除舌診類別
+    # 移除主訴類別
     def _remove_groups_name(self):
         msg_box = dialog_utils.get_message_box(
             '刪除{0}分類資料'.format(self.dict_type), QMessageBox.Warning,
@@ -223,7 +223,7 @@ class DictTongue(QtWidgets.QMainWindow):
         self.database.delete_record('dict_groups', 'DictGroupsKey', key)
         self.ui.tableWidget_dict_groups_name.removeRow(self.ui.tableWidget_dict_groups_name.currentRow())
 
-    # 修改舌診類別
+    # 修改主訴類別
     def _edit_groups_name(self):
         old_groups_name = self.table_widget_dict_groups_name.field_value(1)
         input_dialog = dialog_utils.get_dialog(
@@ -249,13 +249,13 @@ class DictTongue(QtWidgets.QMainWindow):
         self.ui.tableWidget_dict_groups_name.item(
             self.ui.tableWidget_dict_groups_name.currentRow(), 1).setText(dict_groups_name)
 
-    # 新增舌診
-    def _add_tongue(self):
+    # 新增主訴
+    def _add_remark(self):
         dialog = dialog_input_diagnostic.DialogInputDiagnostic(self, self.database, self.system_settings)
         result = dialog.exec_()
         if result != 0:
-            current_row = self.ui.tableWidget_dict_tongue.rowCount()
-            self.ui.tableWidget_dict_tongue.insertRow(current_row)
+            current_row = self.ui.tableWidget_dict_remark.rowCount()
+            self.ui.tableWidget_dict_remark.insertRow(current_row)
             dict_groups_name = self.table_widget_dict_groups_name.field_value(1)
             fields = ['ClinicType', 'ClinicCode', 'InputCode', 'ClinicName', 'Groups']
             data = (
@@ -266,35 +266,35 @@ class DictTongue(QtWidgets.QMainWindow):
                 dict_groups_name,
             )
             self.database.insert_record('clinic', fields, data)
-            self._read_dict_tongue(dict_groups_name)
+            self._read_dict_remark(dict_groups_name)
 
         dialog.close_all()
 
-    # 移除舌診
-    def _remove_tongue(self):
+    # 移除主訴
+    def _remove_remark(self):
         msg_box = dialog_utils.get_message_box(
             '刪除{0}資料'.format(self.dict_type), QMessageBox.Warning,
             '<font size="4" color="red"><b>確定刪除{0}: "{1}"?</b></font>'.format(
-                self.dict_type, self.table_widget_dict_tongue.field_value(3)),
+                self.dict_type, self.table_widget_dict_remark.field_value(3)),
             '注意！資料刪除後, 將無法回復!'
         )
         remove_record = msg_box.exec_()
         if not remove_record:
             return
 
-        key = self.table_widget_dict_tongue.field_value(0)
+        key = self.table_widget_dict_remark.field_value(0)
         self.database.delete_record('clinic', 'ClinicKey', key)
-        self.ui.tableWidget_dict_tongue.removeRow(self.ui.tableWidget_dict_tongue.currentRow())
+        self.ui.tableWidget_dict_remark.removeRow(self.ui.tableWidget_dict_remark.currentRow())
 
-    # 更改舌診
-    def _edit_tongue(self):
-        key = self.table_widget_dict_tongue.field_value(0)
+    # 更改主訴
+    def _edit_remark(self):
+        key = self.table_widget_dict_remark.field_value(0)
         dialog = dialog_input_diagnostic.DialogInputDiagnostic(self, self.database, self.system_settings, key)
         dialog.exec_()
         dialog.close_all()
         sql = 'SELECT * FROM clinic WHERE ClinicKey = {0}'.format(key)
         row_data = self.database.select_record(sql)[0]
-        self._set_dict_tongue_data(self.ui.tableWidget_dict_tongue.currentRow(), row_data)
+        self._set_dict_remark_data(self.ui.tableWidget_dict_remark.currentRow(), row_data)
 
     # 主程式控制關閉此分頁
     def close_tab(self):
@@ -310,7 +310,7 @@ class DictTongue(QtWidgets.QMainWindow):
 # 主程式
 def main():
     app = QtWidgets.QApplication(sys.argv)
-    widget = DictTongue()
+    widget = DictRemark()
     widget.show()
     sys.exit(app.exec_())
 

@@ -7,6 +7,11 @@ from PyQt5 import QtWidgets
 from libs import ui_settings
 import dict_symptom
 import dict_tongue
+import dict_pulse
+import dict_remark
+import dict_disease
+import dict_distinguish
+import dict_cure
 
 
 # 樣板 2018.01.31
@@ -38,6 +43,16 @@ class DictDiagnostic(QtWidgets.QMainWindow):
             dict_symptom.DictSymptom(self, *self.args), '主訴資料')
         self.ui.tabWidget_diagnostic.addTab(
             dict_tongue.DictTongue(self, *self.args), '舌診資料')
+        self.ui.tabWidget_diagnostic.addTab(
+            dict_pulse.DictPulse(self, *self.args), '脈象資料')
+        self.ui.tabWidget_diagnostic.addTab(
+            dict_remark.DictRemark(self, *self.args), '備註資料')
+        self.ui.tabWidget_diagnostic.addTab(
+            dict_disease.DictDisease(self, *self.args), '病名資料')
+        self.ui.tabWidget_diagnostic.addTab(
+            dict_distinguish.DictDistinguish(self, *self.args), '辨證資料')
+        self.ui.tabWidget_diagnostic.addTab(
+            dict_cure.DictCure(self, *self.args), '治則資料')
 
     # 設定信號
     def _set_signal(self):

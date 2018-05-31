@@ -9,7 +9,10 @@ from libs import strings
 from libs import number
 from libs import date_utils
 import ins_prescript_record
-from dialog import dialog_diagnostic
+import medical_record_recently_history
+from dialog import dialog_inquiry
+from dialog import dialog_diagnosis
+from dialog import dialog_disease
 
 
 # 病歷資料 2018.01.31
@@ -33,7 +36,8 @@ class MedicalRecord(QtWidgets.QMainWindow):
         self._set_signal()
         self._read_data()
         self._read_prescript()
-        self._display_past_record()
+        self._read_recently_history()
+        self._set_disease_line_edit()
 
     # 解構
     def __del__(self):
@@ -53,12 +57,47 @@ class MedicalRecord(QtWidgets.QMainWindow):
         self.ui.action_save.triggered.connect(self.save_medical_record)
         self.ui.action_dictionary.triggered.connect(self.open_dictionary)
         self.ui.action_close.triggered.connect(self.close_medical_record)
-        self.ui.toolButton_check.clicked.connect(self.set_check_box)
-        self.ui.toolButton_first.clicked.connect(self.first_past_record)
-        self.ui.toolButton_previous.clicked.connect(self.prev_past_record)
-        self.ui.toolButton_next.clicked.connect(self.next_past_record)
-        self.ui.toolButton_last.clicked.connect(self.last_past_record)
-        self.ui.toolButton_copy.clicked.connect(self.on_copy_button_clicked)
+        self.ui.lineEdit_disease_code1.textChanged.connect(self.disease_code_changed)
+        self.ui.lineEdit_disease_code2.textChanged.connect(self.disease_code_changed)
+        self.ui.lineEdit_disease_code3.textChanged.connect(self.disease_code_changed)
+
+    # 設定診斷碼輸入狀態
+    def disease_code_changed(self):
+        disease_list = [
+            [self.ui.lineEdit_disease_code1, self.ui.lineEdit_disease_name1],
+            [self.ui.lineEdit_disease_code2, self.ui.lineEdit_disease_name2],
+            [self.ui.lineEdit_disease_code3, self.ui.lineEdit_disease_name3],
+        ]
+
+        for row_no in reversed(range(len(disease_list))):
+            icd_code = str(disease_list[row_no][0].text()).strip()
+            if icd_code == '':
+                disease_list[row_no][1].setText(None)
+                if row_no > 0:
+                    if disease_list[row_no-1][0].text() == '':
+                        disease_list[row_no][0].setEnabled(False)
+                    else:
+                        disease_list[row_no][0].setEnabled(True)
+
+            for i in range(len(disease_list)):
+                if i == len(disease_list) - 1:
+                    break
+
+                if disease_list[i][0].text() == '' and disease_list[i+1][0].text() != '':
+                    disease_list[i][0].setText(disease_list[i+1][0].text())
+                    disease_list[i][1].setText(disease_list[i+1][1].text())
+                    disease_list[i+1][0].setText(None)
+
+    def _set_disease_line_edit(self):
+        if str(self.ui.lineEdit_disease_code2.text()).strip() == '':
+            self.ui.lineEdit_disease_code3.setEnabled(False)
+        else:
+            self.ui.lineEdit_disease_code3.setEnabled(True)
+
+        if str(self.ui.lineEdit_disease_code1.text()).strip() == '':
+            self.ui.lineEdit_disease_code2.setEnabled(False)
+        else:
+            self.ui.lineEdit_disease_code2.setEnabled(True)
 
     def _read_data(self):
         sql = 'SELECT * FROM cases WHERE CaseKey = {0}'.format(self.case_key)
@@ -103,22 +142,8 @@ class MedicalRecord(QtWidgets.QMainWindow):
         self.ui.lineEdit_disease_name2.setText(strings.get_str(self.medical_record['DiseaseName2'], 'utf8'))
         self.ui.lineEdit_disease_code3.setText(strings.get_str(self.medical_record['DiseaseCode3'], 'utf8'))
         self.ui.lineEdit_disease_name3.setText(strings.get_str(self.medical_record['DiseaseName3'], 'utf8'))
-        self.ui.lineEdit_distinct.setText(strings.get_str(self.medical_record['Distincts'], 'utf8'))
+        self.ui.lineEdit_distinguish.setText(strings.get_str(self.medical_record['Distincts'], 'utf8'))
         self.ui.lineEdit_cure.setText(strings.get_str(self.medical_record['Cure'], 'utf8'))
-
-    # 病歷存檔
-    def save_medical_record(self):
-        self.record_saved = True
-        fields = ['Symptom', 'Tongue', 'Pulse', 'Remark']
-        data = (
-            self.ui.textEdit_symptom.toPlainText(),
-            self.ui.textEdit_tongue.toPlainText(),
-            self.ui.textEdit_pulse.toPlainText(),
-            self.ui.textEdit_remark.toPlainText(),
-        )
-        self.database.update_record('cases', fields, 'CaseKey', self.case_key, data)
-        self.close_all()
-        self.close_tab()
 
     def close_tab(self):
         current_tab = self.parent.ui.tabWidget_window.currentIndex()
@@ -126,7 +151,12 @@ class MedicalRecord(QtWidgets.QMainWindow):
 
     def record_modified(self):
         modified = False
-        if self.ui.textEdit_symptom.document().isModified():
+        if self.ui.textEdit_symptom.document().isModified() or \
+           self.ui.textEdit_tongue.document().isModified() or \
+           self.ui.textEdit_pulse.document().isModified() or \
+           self.ui.textEdit_remark.document().isModified() or \
+           self.ui.lineEdit_distinguish.isModified() or \
+           self.ui.lineEdit_cure.isModified():
             modified = True
 
         return modified
@@ -141,6 +171,16 @@ class MedicalRecord(QtWidgets.QMainWindow):
             dialog_type = '脈象'
         elif self.ui.textEdit_remark.hasFocus():
             dialog_type = '備註'
+        elif self.ui.lineEdit_distinguish.hasFocus():
+            dialog_type = '辨證'
+        elif self.ui.lineEdit_cure.hasFocus():
+            dialog_type = '治則'
+        elif self.ui.lineEdit_disease_code1.hasFocus():
+            dialog_type = '病名1'
+        elif self.ui.lineEdit_disease_code2.hasFocus():
+            dialog_type = '病名2'
+        elif self.ui.lineEdit_disease_code3.hasFocus():
+            dialog_type = '病名3'
 
         if dialog_type is None:
             return
@@ -150,155 +190,37 @@ class MedicalRecord(QtWidgets.QMainWindow):
             '舌診': self.ui.textEdit_tongue,
             '脈象': self.ui.textEdit_pulse,
             '備註': self.ui.textEdit_remark,
+            '辨證': self.ui.lineEdit_distinguish,
+            '治則': self.ui.lineEdit_cure,
+            '病名1': self.ui.lineEdit_disease_code1,
+            '病名2': self.ui.lineEdit_disease_code2,
+            '病名3': self.ui.lineEdit_disease_code3,
         }
+        dialog = None
         if dialog_type in ['主訴', '舌診', '脈象', '備註']:
-            dialog = dialog_diagnostic.DialogDiagnostic(
+            dialog = dialog_inquiry.DialogInquiry(
                 self, self.database, self.system_settings, dialog_type, text_edit[dialog_type])
+        elif dialog_type in ['辨證', '治則']:
+            dialog = dialog_diagnosis.DialogDiagnosis(
+                self, self.database, self.system_settings, dialog_type, text_edit[dialog_type])
+        elif dialog_type in ['病名1', '病名2', '病名3']:
+            line_edit = self.ui.lineEdit_disease_name1
+
+            if dialog_type == '病名1':
+                line_edit = self.ui.lineEdit_disease_name1
+            elif dialog_type == '病名2':
+                line_edit = self.ui.lineEdit_disease_name2
+            elif dialog_type == '病名3':
+                line_edit = self.ui.lineEdit_disease_name3
+
+            dialog = dialog_disease.DialogDisease(
+                self, self.database, self.system_settings, text_edit[dialog_type], line_edit)
+
+        if dialog is None:
+            return
 
         dialog.exec_()
-        del dialog
-
-    # 顯示最近病歷
-    def _display_past_record(self):
-        self.first_past_record()
-
-    # 設定最近病歷參數
-    def _set_past_values(self, rec):
-        self.ui.textEdit_past.setProperty('case_key', rec['CaseKey'])
-        self.ui.textEdit_past.setProperty('patient_key', rec['PatientKey'])
-        self.ui.textEdit_past.setProperty('case_date', rec['CaseDate'])
-
-    # 讀取最近病歷
-    def _set_past_record(self, sql, direction):
-        past_record = self.database.select_record(sql)
-
-        if len(past_record) <= 0:
-            self.ui.toolButton_copy.setEnabled(False)
-            self.ui.toolButton_first.setEnabled(False)
-            self.ui.toolButton_previous.setEnabled(False)
-            self.ui.toolButton_next.setEnabled(False)
-            self.ui.toolButton_last.setEnabled(False)
-            if direction in ['prev']:
-                self.ui.toolButton_next.setEnabled(True)
-                self.ui.toolButton_last.setEnabled(True)
-                self.ui.toolButton_copy.setEnabled(True)
-            elif direction in ['next']:
-                self.ui.toolButton_first.setEnabled(True)
-                self.ui.toolButton_previous.setEnabled(True)
-                self.ui.toolButton_copy.setEnabled(True)
-
-            return
-
-        rec = past_record[0]
-        self.ui.toolButton_first.setEnabled(True)
-        self.ui.toolButton_previous.setEnabled(True)
-        self.ui.toolButton_next.setEnabled(True)
-        self.ui.toolButton_last.setEnabled(True)
-        self._set_past_values(rec)
-        self._set_record_summary(rec)
-
-    # 最近一筆
-    def first_past_record(self):
-        sql = \
-            'SELECT * FROM cases WHERE ' \
-            'PatientKey = {0} AND CaseKey != {1} ORDER BY CaseDate DESC LIMIT 1'\
-            .format(self.medical_record['PatientKey'],
-                    self.case_key,
-                    str(self.medical_record['CaseDate'])
-                    )
-        self._set_past_record(sql, 'first')
-        self.ui.toolButton_first.setEnabled(False)
-        self.ui.toolButton_previous.setEnabled(False)
-
-    # 上一筆
-    def prev_past_record(self):
-        sql = \
-            'SELECT * FROM cases WHERE ' \
-            'PatientKey = {0} AND CaseKey != {1} AND CaseDate > "{2}" ORDER BY CaseDate LIMIT 1'\
-            .format(self.ui.textEdit_past.property('patient_key'),
-                    self.case_key,
-                    self.ui.textEdit_past.property('case_date')
-                    )
-        self._set_past_record(sql, 'prev')
-
-    # 下一筆
-    def next_past_record(self):
-        sql = \
-            'SELECT * FROM cases WHERE ' \
-            'PatientKey = {0} AND CaseKey != {1} AND CaseDate < "{2}" ORDER BY CaseDate DESC LIMIT 1' \
-            .format(self.ui.textEdit_past.property('patient_key'),
-                    self.case_key,
-                    self.ui.textEdit_past.property('case_date')
-                    )
-        self._set_past_record(sql, 'next')
-
-    # 最後一筆
-    def last_past_record(self):
-        sql = \
-            'SELECT * FROM cases WHERE ' \
-            'PatientKey = {0} AND CaseKey != {1} AND CaseDate < "{2}" ORDER BY CaseDate LIMIT 1' \
-            .format(self.medical_record['PatientKey'],
-                    self.case_key,
-                    str(self.medical_record['CaseDate'])
-                    )
-        self._set_past_record(sql, 'next')
-        self.ui.toolButton_next.setEnabled(False)
-        self.ui.toolButton_last.setEnabled(False)
-
-    # 顯示最近病歷內容
-    def _set_record_summary(self, rec):
-        if rec['InsType'] == '健保':
-            card = str(rec['Card'])
-            if number.get_integer(rec['Continuance']) >= 1:
-                card += '-' + str(rec['Continuance'])
-        else:
-            card = ''
-
-        summary = '<b>日期</b>: {0} <b>卡序</b>: {1}<br>'.format(str(rec['CaseDate']), card)
-        if rec['Symptom'] is not None:
-            summary += '<b>主訴</b>: {0}<br>'.format(strings.get_str(rec['Symptom'], 'utf8'))
-        if rec['Tongue'] is not None:
-            summary += '<b>舌診</b>: {0}<br>'.format(strings.get_str(rec['Tongue'], 'utf8'))
-        if rec['Pulse'] is not None:
-            summary += '<b>脈象</b>: {0}<br>'.format(strings.get_str(rec['Pulse'], 'utf8'))
-        if rec['Remark'] is not None:
-            summary += '<b>備註</b>: {0}<br>'.format(strings.get_str(rec['Remark'], 'utf8'))
-        if rec['DiseaseCode1'] is not None and len(str(rec['DiseaseCode1']).strip()) > 0:
-            summary += '<b>主診斷</b>: {0} {1}<br>'.format(str(rec['DiseaseCode1']), str(rec['DiseaseName1']))
-        if rec['DiseaseCode2'] is not None and len(str(rec['DiseaseCode2']).strip()) > 0:
-            summary += '<b>次診斷1</b>: {0} {1}<br>'.format(str(rec['DiseaseCode2']), str(rec['DiseaseName2']))
-        if rec['DiseaseCode3'] is not None and len(str(rec['DiseaseCode3']).strip()) > 0:
-            summary += '<b>次診斷2</b>: {0} {1}<br>'.format(str(rec['DiseaseCode3']), str(rec['DiseaseName3']))
-
-        self.ui.textEdit_past.setHtml(summary)
-
-    # 拷貝病歷
-    def on_copy_button_clicked(self):
-        case_key = self.ui.textEdit_past.property('case_key')
-        if case_key == '':
-            return
-
-        sql = 'SELECT * FROM cases WHERE CaseKey = {0}'.format(case_key)
-        row = self.database.select_record(sql)[0]
-        if self.ui.checkBox_symptom.isChecked():
-            self.ui.textEdit_symptom.setText(strings.get_str(row['Symptom'], 'utf8'))
-        if self.ui.checkBox_tongue.isChecked():
-            self.ui.textEdit_tongue.setText(strings.get_str(row['Tongue'], 'utf8'))
-        if self.ui.checkBox_pulse.isChecked():
-            self.ui.textEdit_pulse.setText(strings.get_str(row['Pulse'], 'utf8'))
-        if self.ui.checkBox_remark.isChecked():
-            self.ui.textEdit_remark.setText(strings.get_str(row['Remark'], 'utf8'))
-
-    # 設定核取方塊
-    def set_check_box(self):
-        self.ui.checkBox_symptom.setChecked(not self.ui.checkBox_symptom.isChecked())
-        self.ui.checkBox_tongue.setChecked(not self.ui.checkBox_tongue.isChecked())
-        self.ui.checkBox_pulse.setChecked(not self.ui.checkBox_pulse.isChecked())
-        self.ui.checkBox_remark.setChecked(not self.ui.checkBox_remark.isChecked())
-        self.ui.checkBox_disease.setChecked(not self.ui.checkBox_disease.isChecked())
-        self.ui.checkBox_distinct.setChecked(not self.ui.checkBox_distinct.isChecked())
-        self.ui.checkBox_cure.setChecked(not self.ui.checkBox_cure.isChecked())
-        self.ui.checkBox_prescript.setChecked(not self.ui.checkBox_prescript.isChecked())
+        dialog.deleteLater()
 
     def _read_prescript(self):
         if self.medical_record['InsType'] == '健保':
@@ -306,19 +228,30 @@ class MedicalRecord(QtWidgets.QMainWindow):
                 ins_prescript_record.InsPrescriptRecord(
                     self, self.database, self.system_settings, self.case_key), '健保處方')
 
-    def close_medical_record(self):
+    def _read_recently_history(self):
+        self.ui.tabWidget_past_record.addTab(
+            medical_record_recently_history.MedicalRecordRecentlyHistory(
+                self, self.database, self.system_settings, self.case_key, self.call_from), '最近病歷')
+
+    def save_medical_record(self):
+        self.update_medical_record()
         self.close_all()
         self.close_tab()
 
+    # 病歷存檔
+    def update_medical_record(self):
+        self.record_saved = True
+        fields = ['Symptom', 'Tongue', 'Pulse', 'Remark', 'Distincts', 'Cure']
+        data = (
+            self.ui.textEdit_symptom.toPlainText(),
+            self.ui.textEdit_tongue.toPlainText(),
+            self.ui.textEdit_pulse.toPlainText(),
+            self.ui.textEdit_remark.toPlainText(),
+            self.ui.lineEdit_distinguish.text(),
+            self.ui.lineEdit_cure.text(),
+        )
+        self.database.update_record('cases', fields, 'CaseKey', self.case_key, data)
 
-# 主程式
-def main():
-    app = QtWidgets.QApplication(sys.argv)
-    widget = MedicalRecord()
-    widget.show()
-    sys.exit(app.exec_())
-
-
-# 程式開始
-if __name__ == '__main__':
-    main()
+    def close_medical_record(self):
+        self.close_all()
+        self.close_tab()

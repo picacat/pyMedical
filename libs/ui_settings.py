@@ -1,7 +1,7 @@
 import os
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtWidgets import QMessageBox, QPushButton
-from PyQt5.uic import loadUi
+from PyQt5 import uic
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname("__file__")))
 
@@ -12,6 +12,7 @@ UI_PY_MEDICAL = "pymedical.ui"
 
 UI_INS_PRESCRIPT_RECORD = "ins_prescript_record.ui"
 UI_MEDICAL_RECORD = "medical_record.ui"
+UI_MEDICAL_RECORD_RECENTLY_HISTORY = "medical_record_recently_history.ui"
 UI_MEDICAL_RECORD_LIST = "medical_record_list.ui"
 UI_PATIENT_LIST = "patient_list.ui"
 UI_PATIENT = "patient.ui"
@@ -25,23 +26,37 @@ UI_CHARGE_SETTINGS_NHI = "charge_settings_nhi.ui"
 UI_CHARGE_SETTINGS_REGIST = "charge_settings_regist.ui"
 UI_CHARGE_SETTINGS_SHARE = "charge_settings_share.ui"
 
-UI_DIALOG_DIAGNOSTIC = "dialog_diagnostic.ui"
+UI_DIALOG_DIAGNOSIS = "dialog_diagnosis.ui"
+UI_DIALOG_DISEASE = "dialog_disease.ui"
+UI_DIALOG_INQUIRY = "dialog_inquiry.ui"
 UI_DIALOG_IC_CARD = "dialog_ic_card.ui"
 UI_DIALOG_INPUT_REGIST = "dialog_input_regist.ui"
 UI_DIALOG_INPUT_DISCOUNT = "dialog_input_discount.ui"
 UI_DIALOG_INPUT_SHARE = "dialog_input_share.ui"
 UI_DIALOG_INPUT_NHI = "dialog_input_nhi.ui"
 UI_DIALOG_INPUT_DIAGNOSTIC = "dialog_input_diagnostic.ui"
+UI_DIALOG_INPUT_DISEASE = "dialog_input_disease.ui"
+UI_DIALOG_EDIT_DISEASE = "dialog_edit_disease.ui"
 UI_DIALOG_MEDICAL_RECORD_LIST = "dialog_medical_record_list.ui"
 UI_DIALOG_PAST_HISTORY = "dialog_past_history.ui"
 UI_DIALOG_PATIENT = "dialog_patient.ui"
 UI_DIALOG_PATIENT_LIST = "dialog_patient_list.ui"
 UI_DIALOG_SETTINGS = "dialog_settings.ui"
 UI_DIALOG_SYMPTOM = "dialog_symptom.ui"
+UI_DIALOG_TONGUE = "dialog_tongue.ui"
+UI_DIALOG_PULSE = "dialog_pulse.ui"
+UI_DIALOG_REMARK = "dialog_remark.ui"
+UI_DIALOG_DISTINGUISH = "dialog_distinguish.ui"
+UI_DIALOG_CURE = "dialog_cure.ui"
 
 UI_DICT_DIAGNOSTIC = "dict_diagnostic.ui"
 UI_DICT_SYMPTOM = "dict_symptom.ui"
 UI_DICT_TONGUE = "dict_tongue.ui"
+UI_DICT_PULSE = "dict_pulse.ui"
+UI_DICT_REMARK = "dict_remark.ui"
+UI_DICT_DISEASE = "dict_disease.ui"
+UI_DICT_DISTINGUISH = "dict_distinguish.ui"
+UI_DICT_CURE = "dict_cure.ui"
 UI_DICT_MEDICINE = "dict_medicine.ui"
 
 UI_CONVERT = "convert.ui"
@@ -53,7 +68,7 @@ WIN32_THEME = ['Fusion', 'Windows', 'WindowsXP', 'WindowsVista']
 # 載入 ui 檔
 def load_ui_file(ui_file, self):
     try:
-        return loadUi(os.path.join(BASE_DIR, UI_PATH, ui_file), self)
+        return uic.loadUi(os.path.join(BASE_DIR, UI_PATH, ui_file), self)
     except:
         msg_box = QMessageBox()
         msg_box.setIcon(QMessageBox.Warning)

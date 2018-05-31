@@ -28,6 +28,12 @@
       </property>
       <item row="2" column="0">
        <widget class="QGroupBox" name="groupBox_registration">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <property name="title">
          <string>掛號資料</string>
         </property>
@@ -48,7 +54,14 @@
             </widget>
            </item>
            <item row="0" column="1">
-            <widget class="QComboBox" name="comboBox_ins_type"/>
+            <widget class="QComboBox" name="comboBox_ins_type">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+            </widget>
            </item>
            <item row="12" column="0">
             <widget class="QLabel" name="label_28">
@@ -84,10 +97,24 @@
             </widget>
            </item>
            <item row="1" column="1">
-            <widget class="QComboBox" name="comboBox_share_type"/>
+            <widget class="QComboBox" name="comboBox_share_type">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+            </widget>
            </item>
            <item row="0" column="3">
-            <widget class="QComboBox" name="comboBox_reg_type"/>
+            <widget class="QComboBox" name="comboBox_reg_type">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+            </widget>
            </item>
            <item row="10" column="0">
             <widget class="QLabel" name="label_24">
@@ -106,7 +133,14 @@
             </widget>
            </item>
            <item row="1" column="3">
-            <widget class="QComboBox" name="comboBox_injury_type"/>
+            <widget class="QComboBox" name="comboBox_injury_type">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+            </widget>
            </item>
            <item row="12" column="1" colspan="3">
             <widget class="QComboBox" name="comboBox_remark">
@@ -178,10 +212,23 @@
            <item row="4" column="3">
             <layout class="QHBoxLayout" name="horizontalLayout_3">
              <item>
-              <widget class="QComboBox" name="comboBox_room"/>
+              <widget class="QComboBox" name="comboBox_room">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+              </widget>
              </item>
              <item>
               <widget class="QSpinBox" name="spinBox_reg_no">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
                <property name="minimumSize">
                 <size>
                  <width>0</width>
@@ -224,6 +271,12 @@
             <layout class="QHBoxLayout" name="horizontalLayout_2">
              <item>
               <widget class="QComboBox" name="comboBox_card">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
                <property name="editable">
                 <bool>true</bool>
                </property>
@@ -234,6 +287,12 @@
              </item>
              <item>
               <widget class="QComboBox" name="comboBox_course">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
                <property name="minimumSize">
                 <size>
                  <width>0</width>
@@ -269,7 +328,14 @@
             </widget>
            </item>
            <item row="5" column="1">
-            <widget class="QComboBox" name="comboBox_massager"/>
+            <widget class="QComboBox" name="comboBox_massager">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+            </widget>
            </item>
            <item row="2" column="0">
             <widget class="QLabel" name="label_12">
@@ -282,7 +348,14 @@
             </widget>
            </item>
            <item row="2" column="1">
-            <widget class="QComboBox" name="comboBox_treat_type"/>
+            <widget class="QComboBox" name="comboBox_treat_type">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+            </widget>
            </item>
            <item row="5" column="0">
             <widget class="QLabel" name="label_15">
@@ -361,7 +434,14 @@
             </widget>
            </item>
            <item row="5" column="3">
-            <widget class="QComboBox" name="comboBox_visit"/>
+            <widget class="QComboBox" name="comboBox_visit">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+            </widget>
            </item>
            <item row="2" column="2">
             <widget class="QLabel" name="label_20">
@@ -374,7 +454,14 @@
             </widget>
            </item>
            <item row="2" column="3">
-            <widget class="QComboBox" name="comboBox_period"/>
+            <widget class="QComboBox" name="comboBox_period">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+            </widget>
            </item>
           </layout>
          </item>
@@ -388,6 +475,12 @@
        <widget class="QGroupBox" name="groupBox_patient">
         <property name="enabled">
          <bool>true</bool>
+        </property>
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
         </property>
         <property name="font">
          <font>
@@ -575,7 +668,14 @@
             </widget>
            </item>
            <item row="3" column="1">
-            <widget class="QComboBox" name="comboBox_patient_share"/>
+            <widget class="QComboBox" name="comboBox_patient_share">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+            </widget>
            </item>
            <item row="5" column="1" colspan="3">
             <widget class="QLineEdit" name="lineEdit_address"/>
@@ -588,6 +688,12 @@
            </item>
            <item row="3" column="3">
             <widget class="QComboBox" name="comboBox_patient_discount">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
              <property name="editable">
               <bool>true</bool>
              </property>
@@ -610,10 +716,23 @@
               </widget>
              </item>
              <item>
-              <widget class="QComboBox" name="comboBox_gender"/>
+              <widget class="QComboBox" name="comboBox_gender">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+              </widget>
              </item>
              <item>
               <widget class="QLabel" name="label_age">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
                <property name="text">
                 <string>年齡</string>
                </property>
@@ -628,6 +747,12 @@
       </item>
       <item row="0" column="0">
        <widget class="QGroupBox" name="groupBox_search_patient">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <property name="title">
          <string>人工手動掛號</string>
         </property>

@@ -861,7 +861,7 @@ class Registration(QtWidgets.QMainWindow):
 
     # 補印收據
     def print_wait_clicked(self):
-        case_key = self._get_tabWidget_wait_row_data(1)
+        case_key = self.table_widget_wait.field_value(1)
         print_regist = print_registration.PrintRegistration(case_key, self.database, self.system_settings)
         print_regist.printing()
         del print_regist

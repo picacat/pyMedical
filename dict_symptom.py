@@ -21,6 +21,7 @@ class DictSymptom(QtWidgets.QMainWindow):
         self.database = args[0]
         self.system_settings = args[1]
         self.ui = None
+        self.dict_type = '主訴'
 
         self._set_ui()
         self._set_signal()
@@ -74,7 +75,7 @@ class DictSymptom(QtWidgets.QMainWindow):
         self._read_dict_groups()
 
     def _read_dict_groups(self):
-        sql = 'SELECT * FROM dict_groups WHERE DictGroupsType = "主訴類別" ORDER BY DictGroupsKey'
+        sql = 'SELECT * FROM dict_groups WHERE DictGroupsType = "{0}類別" ORDER BY DictGroupsKey'.format(self.dict_type)
         self.table_widget_dict_groups.set_db_data(sql, self._set_dict_groups_data)
 
     def _set_dict_groups_data(self, rec_no, rec):
@@ -90,12 +91,13 @@ class DictSymptom(QtWidgets.QMainWindow):
         dict_groups_type = self.table_widget_dict_groups.field_value(1)
         self.ui.groupBox_dict_groups_name.setTitle(strings.xstr(dict_groups_type) + '類別')
         self._read_dict_groups_name(dict_groups_type)
+        self.ui.tableWidget_dict_groups.setFocus(True)
 
     def _read_dict_groups_name(self, dict_groups_type):
         sql = '''
-            SELECT * FROM dict_groups WHERE DictGroupsType = "主訴" and DictGroupsTopLevel = "{0}" 
+            SELECT * FROM dict_groups WHERE DictGroupsType = "{0}" and DictGroupsTopLevel = "{1}" 
             ORDER BY DictGroupsName
-        '''.format(dict_groups_type)
+        '''.format(self.dict_type, dict_groups_type)
         self.table_widget_dict_groups_name.set_db_data(sql, self._set_dict_groups_name_data)
         self.dict_groups_name_changed()
 
@@ -110,13 +112,16 @@ class DictSymptom(QtWidgets.QMainWindow):
 
     def dict_groups_name_changed(self):
         dict_groups_name = self.table_widget_dict_groups_name.field_value(1)
-        self.ui.groupBox_dict_symptom.setTitle('主訴資料 - [' + strings.xstr(dict_groups_name) + ']')
+        self.ui.groupBox_dict_symptom.setTitle('{0}資料 - ['.format(self.dict_type) +
+                                               strings.xstr(dict_groups_name) +
+                                               ']')
         self._read_dict_symptom(dict_groups_name)
+        self.ui.tableWidget_dict_groups_name.setFocus(True)
 
     def _read_dict_symptom(self, dict_groups_name):
         sql = '''
-            SELECT * FROM clinic WHERE ClinicType = "主訴" and Groups = "{0}" ORDER BY ClinicCode, ClinicName
-        '''.format(dict_groups_name)
+            SELECT * FROM clinic WHERE ClinicType = "{0}" and Groups = "{1}" ORDER BY ClinicCode, ClinicName
+        '''.format(self.dict_type, dict_groups_name)
         self.table_widget_dict_symptom.set_db_data(sql, self._set_dict_symptom_data)
 
     def _set_dict_symptom_data(self, rec_no, rec):
@@ -133,22 +138,24 @@ class DictSymptom(QtWidgets.QMainWindow):
     # 新增主訴類別
     def _add_dict_groups(self):
         input_dialog = dialog_utils.get_dialog(
-            '主訴類別', '請輸入主訴類別', None, QInputDialog.TextInput, 320, 200)
+            '{0}類別'.format(self.dict_type), '請輸入{0}類別'.format(self.dict_type),
+            None, QInputDialog.TextInput, 320, 200)
         ok = input_dialog.exec_()
         if not ok:
             return
 
         dict_groups = input_dialog.textValue()
         field = ['DictGroupsType', 'DictGroupsName']
-        data = ('主訴類別', dict_groups, )
+        data = ('{0}類別'.format(self.dict_type), dict_groups, )
         self.database.insert_record('dict_groups', field, data)
         self._read_dict_groups()
 
     # 移除主訴類別
     def _remove_dict_groups(self):
         msg_box = dialog_utils.get_message_box(
-            '刪除主訴類別資料', QMessageBox.Warning,
-            '<font size="4" color="red"><b>確定刪除 [{0}] 主訴類別?</b></font>'.format(self.table_widget_dict_groups.field_value(1)),
+            '刪除{0}類別資料'.format(self.dict_type), QMessageBox.Warning,
+            '<font size="4" color="red"><b>確定刪除 [{0}] {1}類別?</b></font>'.format(
+                self.table_widget_dict_groups.field_value(1), self.dict_type),
             '注意！資料刪除後, 將無法回復!'
         )
         remove_record = msg_box.exec_()
@@ -163,7 +170,7 @@ class DictSymptom(QtWidgets.QMainWindow):
     def _edit_dict_groups(self):
         old_groups = self.table_widget_dict_groups.field_value(1)
         input_dialog = dialog_utils.get_dialog(
-            '主訴類別', '請輸入主訴類別',
+            '{0}類別'.format(self.dict_type), '請輸入{0}類別'.format(self.dict_type),
             old_groups,
             QInputDialog.TextInput, 320, 200)
         ok = input_dialog.exec_()
@@ -175,8 +182,8 @@ class DictSymptom(QtWidgets.QMainWindow):
 
         sql = '''
             UPDATE dict_groups set DictGroupsTopLevel = "{0}" WHERE 
-            DictGroupsType = "主訴" and DictGroupsTopLevel = "{1}"
-        '''.format(dict_groups_name, old_groups)
+            DictGroupsType = "{1}" and DictGroupsTopLevel = "{2}"
+        '''.format(dict_groups_name, self.dict_type, old_groups)
         self.database.exec_sql(sql)
 
         fields = ['DictGroupsName']
@@ -188,22 +195,24 @@ class DictSymptom(QtWidgets.QMainWindow):
     def _add_groups_name(self):
         dict_groups = self.table_widget_dict_groups.field_value(1)
         input_dialog = dialog_utils.get_dialog(
-            '主訴分類', '請輸入主訴分類名稱', None, QInputDialog.TextInput, 320, 200)
+            '{0}分類'.format(self.dict_type), '請輸入{0}分類名稱'.format(self.dict_type),
+            None, QInputDialog.TextInput, 320, 200)
         ok = input_dialog.exec_()
         if not ok:
             return
 
         groups_name = input_dialog.textValue()
         field = ['DictGroupsType', 'DictGroupsTopLevel', 'DictGroupsName']
-        data = ('主訴', dict_groups, groups_name)
+        data = ('{0}'.format(self.dict_type), dict_groups, groups_name)
         self.database.insert_record('dict_groups', field, data)
         self._read_dict_groups_name(dict_groups)
 
     # 移除主訴類別
     def _remove_groups_name(self):
         msg_box = dialog_utils.get_message_box(
-            '刪除主訴分類資料', QMessageBox.Warning,
-            '<font size="4" color="red"><b>確定刪除 [{0}] 主訴分類?</b></font>'.format(self.table_widget_dict_groups_name.field_value(1)),
+            '刪除{0}分類資料'.format(self.dict_type), QMessageBox.Warning,
+            '<font size="4" color="red"><b>確定刪除 [{0}] {1}分類?</b></font>'.format(
+                self.table_widget_dict_groups_name.field_value(1), self.dict_type),
             '注意！資料刪除後, 將無法回復!'
         )
         remove_record = msg_box.exec_()
@@ -218,7 +227,7 @@ class DictSymptom(QtWidgets.QMainWindow):
     def _edit_groups_name(self):
         old_groups_name = self.table_widget_dict_groups_name.field_value(1)
         input_dialog = dialog_utils.get_dialog(
-            '主訴分類', '請輸入主訴分類',
+            '{0}分類'.format(self.dict_type), '請輸入{0}分類'.format(self.dict_type),
             old_groups_name,
             QInputDialog.TextInput, 320, 200)
         ok = input_dialog.exec_()
@@ -230,8 +239,8 @@ class DictSymptom(QtWidgets.QMainWindow):
 
         sql = '''
             UPDATE clinic set Groups = "{0}" WHERE 
-            ClinicType = "主訴" and Groups = "{1}"
-        '''.format(dict_groups_name, old_groups_name)
+            ClinicType = "{1}" and Groups = "{2}"
+        '''.format(dict_groups_name, self.dict_type, old_groups_name)
         self.database.exec_sql(sql)
 
         fields = ['DictGroupsName']
@@ -250,7 +259,7 @@ class DictSymptom(QtWidgets.QMainWindow):
             dict_groups_name = self.table_widget_dict_groups_name.field_value(1)
             fields = ['ClinicType', 'ClinicCode', 'InputCode', 'ClinicName', 'Groups']
             data = (
-                '主訴',
+                '{0}'.format(self.dict_type),
                 dialog.ui.lineEdit_diagnostic_code.text(),
                 dialog.ui.lineEdit_input_code.text(),
                 dialog.ui.lineEdit_diagnostic_name.text(),
@@ -264,8 +273,9 @@ class DictSymptom(QtWidgets.QMainWindow):
     # 移除主訴
     def _remove_symptom(self):
         msg_box = dialog_utils.get_message_box(
-            '刪除主訴資料', QMessageBox.Warning,
-            '<font size="4" color="red"><b>確定刪除主訴: "{0}"?</b></font>'.format(self.table_widget_dict_symptom.field_value(3)),
+            '刪除{0}資料'.format(self.dict_type), QMessageBox.Warning,
+            '<font size="4" color="red"><b>確定刪除{0}: "{1}"?</b></font>'.format(
+                self.dict_type, self.table_widget_dict_symptom.field_value(3)),
             '注意！資料刪除後, 將無法回復!'
         )
         remove_record = msg_box.exec_()

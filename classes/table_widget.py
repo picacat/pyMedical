@@ -1,6 +1,5 @@
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import Qt
-from libs import number
 
 
 # tableWidget 設定 2018.03.29
@@ -21,6 +20,7 @@ class TableWidget:
     def set_table_heading_width(self, width):
         for i in range(0, self.table_widget.columnCount()):
             self.table_widget.setColumnWidth(i, width[i])
+            self.table_widget.horizontalHeaderItem(i).setTextAlignment(Qt.AlignLeft)
 
         self.is_set_heading = True
 
