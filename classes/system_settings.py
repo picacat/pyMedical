@@ -57,7 +57,9 @@ class SystemSettings:
             self.database.update_record('system_settings', ['Value'], 'SystemSettingsKey', setting_rec['SystemSettingsKey'], [value])
         except IndexError:
             fields = ['StationNo', 'Field', 'Value']
-            data = (station_no, field_name, value)
+            data = [
+                station_no, field_name, value
+            ]
             self.database.insert_record('system_settings', fields, data)
 
     # 取得工作站編號

@@ -104,7 +104,7 @@ class DialogInputShare(QtWidgets.QDialog):
 
     def _save_diag_share(self):
         fields = ['ItemName', 'ShareType', 'TreatType', 'Course', 'InsCode', 'Amount', 'Remark']
-        data = (
+        data = [
             self.ui.lineEdit_item_name.text(),
             self.ui.comboBox_share_type.currentText(),
             self.ui.comboBox_treat_type.currentText(),
@@ -112,20 +112,20 @@ class DialogInputShare(QtWidgets.QDialog):
             self.ui.lineEdit_ins_code.text(),
             self.ui.spinBox_amount.value(),
             self.ui.lineEdit_remark.text()
-        )
+        ]
 
         self.database.update_record('charge_settings', fields, 'ChargeSettingsKey',
                                     self.charge_settings_key, data)
 
     def _save_drug_share(self):
         fields = ['ItemName', 'ShareType', 'InsCode', 'Amount', 'Remark']
-        data = (
+        data = [
             self.ui.lineEdit_item_name.text(),
             self.ui.comboBox_share_type.currentText(),
             self.ui.lineEdit_ins_code.text(),
             self.ui.spinBox_amount.value(),
             self.ui.lineEdit_remark.text()
-        )
+        ]
 
         self.database.update_record('charge_settings', fields, 'ChargeSettingsKey',
                                     self.charge_settings_key, data)

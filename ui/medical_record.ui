@@ -67,6 +67,12 @@
                  <property name="title">
                   <string>主訴</string>
                  </property>
+                 <property name="checkable">
+                  <bool>false</bool>
+                 </property>
+                 <property name="checked">
+                  <bool>false</bool>
+                 </property>
                  <layout class="QVBoxLayout" name="verticalLayout_6">
                   <item>
                    <widget class="QTextEdit" name="textEdit_symptom">
@@ -292,7 +298,11 @@
                      </widget>
                     </item>
                     <item row="3" column="1" colspan="2">
-                     <widget class="QLineEdit" name="lineEdit_distinguish"/>
+                     <widget class="QLineEdit" name="lineEdit_distinguish">
+                      <property name="clearButtonEnabled">
+                       <bool>true</bool>
+                      </property>
+                     </widget>
                     </item>
                     <item row="2" column="2">
                      <widget class="QLineEdit" name="lineEdit_disease_name3">
@@ -305,7 +315,11 @@
                      </widget>
                     </item>
                     <item row="4" column="1" colspan="2">
-                     <widget class="QLineEdit" name="lineEdit_cure"/>
+                     <widget class="QLineEdit" name="lineEdit_cure">
+                      <property name="clearButtonEnabled">
+                       <bool>true</bool>
+                      </property>
+                     </widget>
                     </item>
                    </layout>
                   </item>
@@ -316,6 +330,12 @@
                 <widget class="QTabWidget" name="tabWidget_prescript">
                  <property name="currentIndex">
                   <number>-1</number>
+                 </property>
+                 <property name="documentMode">
+                  <bool>false</bool>
+                 </property>
+                 <property name="tabsClosable">
+                  <bool>true</bool>
                  </property>
                 </widget>
                </item>
@@ -432,7 +452,7 @@
                        </font>
                       </property>
                       <property name="text">
-                       <string>年齡:</string>
+                       <string>診號:</string>
                       </property>
                       <property name="alignment">
                        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -440,7 +460,7 @@
                      </widget>
                     </item>
                     <item row="1" column="3">
-                     <widget class="QLabel" name="label_age">
+                     <widget class="QLabel" name="label_regist_no">
                       <property name="text">
                        <string>TextLabel</string>
                       </property>
@@ -552,7 +572,7 @@
         </widget>
         <widget class="QWidget" name="tab_registration_data">
          <attribute name="title">
-          <string>掛號資料</string>
+          <string>門診資料</string>
          </attribute>
         </widget>
        </widget>
@@ -576,6 +596,7 @@
     <bool>false</bool>
    </attribute>
    <addaction name="action_dictionary"/>
+   <addaction name="action_patient"/>
    <addaction name="action_save"/>
    <addaction name="separator"/>
    <addaction name="action_close"/>
@@ -607,6 +628,9 @@
    <property name="toolTip">
     <string>功能按鈕</string>
    </property>
+   <property name="shortcut">
+    <string>F10</string>
+   </property>
   </action>
   <action name="action_dictionary">
    <property name="icon">
@@ -627,6 +651,18 @@
    </property>
    <property name="text">
     <string>關閉病歷</string>
+   </property>
+  </action>
+  <action name="action_patient">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/document-open.svg</normaloff>../icons/document-open.svg</iconset>
+   </property>
+   <property name="text">
+    <string>病患資料</string>
+   </property>
+   <property name="shortcut">
+    <string>F2</string>
    </property>
   </action>
  </widget>

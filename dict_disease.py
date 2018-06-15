@@ -3,7 +3,7 @@
 
 import sys
 
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtGui
 from PyQt5.QtWidgets import QInputDialog, QMessageBox, QPushButton
 from libs import ui_settings
 from libs import strings
@@ -67,7 +67,7 @@ class DictDisease(QtWidgets.QMainWindow):
     # 設定欄位寬度
     def _set_table_width(self):
         dict_groups_width = [100, 400]
-        dict_disease_width = [100, 120, 120, 600]
+        dict_disease_width = [100, 120, 80, 70, 570]
         self.table_widget_dict_groups.set_table_heading_width(dict_groups_width)
         self.table_widget_dict_groups_name.set_table_heading_width(dict_groups_width)
         self.table_widget_dict_disease.set_table_heading_width(dict_disease_width)
@@ -132,11 +132,21 @@ class DictDisease(QtWidgets.QMainWindow):
             strings.xstr(rec['ICD10Key']),
             strings.xstr(rec['ICDCode']),
             strings.xstr(rec['InputCode']),
+            strings.xstr(rec['SpecialCode']),
             strings.xstr(rec['ChineseName']),
         ]
 
         for column in range(0, self.ui.tableWidget_dict_disease.columnCount()):
-            self.ui.tableWidget_dict_disease.setItem(rec_no, column, QtWidgets.QTableWidgetItem(dict_disease_rec[column]))
+            self.ui.tableWidget_dict_disease.setItem(
+                rec_no, column, QtWidgets.QTableWidgetItem(
+                    dict_disease_rec[column]
+                )
+            )
+
+            if strings.xstr(rec['SpecialCode']) != '':
+                self.ui.tableWidget_dict_disease.item(
+                    rec_no, column
+                ).setForeground(QtGui.QColor('red'))
 
     # 新增舌診類別
     def _add_dict_groups(self):
@@ -149,7 +159,9 @@ class DictDisease(QtWidgets.QMainWindow):
 
         dict_groups = input_dialog.textValue()
         field = ['DictGroupsType', 'DictGroupsName']
-        data = ('{0}類別'.format(self.dict_type), dict_groups, )
+        data = [
+            '{0}類別'.format(self.dict_type), dict_groups,
+        ]
         self.database.insert_record('dict_groups', field, data)
         self._read_dict_groups()
 
@@ -181,7 +193,9 @@ class DictDisease(QtWidgets.QMainWindow):
             return
 
         dict_groups_name = input_dialog.textValue()
-        data = (dict_groups_name,)
+        data = [
+            dict_groups_name,
+        ]
 
         sql = '''
             UPDATE dict_groups set DictGroupsTopLevel = "{0}" WHERE 
@@ -206,7 +220,9 @@ class DictDisease(QtWidgets.QMainWindow):
 
         groups_name = input_dialog.textValue()
         field = ['DictGroupsType', 'DictGroupsTopLevel', 'DictGroupsName']
-        data = ('{0}'.format(self.dict_type), dict_groups, groups_name)
+        data = [
+            '{0}'.format(self.dict_type), dict_groups, groups_name
+        ]
         self.database.insert_record('dict_groups', field, data)
         self._read_dict_groups_name(dict_groups)
 
@@ -238,7 +254,9 @@ class DictDisease(QtWidgets.QMainWindow):
             return
 
         dict_groups_name = input_dialog.textValue()
-        data = (dict_groups_name,)
+        data = [
+            dict_groups_name,
+        ]
 
         sql = '''
             UPDATE clinic set Groups = "{0}" WHERE 

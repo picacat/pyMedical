@@ -68,13 +68,13 @@ class DialogInputNHI(QtWidgets.QDialog):
             return
 
         fields = ['ChargeType', 'ItemName', 'InsCode', 'Amount', 'Remark']
-        data = (
+        data = [
             self.ui.comboBox_charge_type.currentText(),
             self.ui.lineEdit_item_name.text(),
             self.ui.lineEdit_ins_code.text(),
             self.ui.spinBox_amount.value(),
             self.ui.lineEdit_remark.text()
-        )
+        ]
         
         self.database.update_record('charge_settings', fields, 'ChargeSettingsKey',
                                     self.charge_settings_key, data)

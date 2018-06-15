@@ -40,3 +40,9 @@ def remove_bom(string):
         string = string[1:]
 
     return string
+
+
+def str_to_none(in_list):
+    for i in range(len(in_list)):
+        if str(in_list[i]) == '':
+            in_list[i] = None

@@ -148,7 +148,9 @@ class DictDistinguish(QtWidgets.QMainWindow):
 
         dict_groups = input_dialog.textValue()
         field = ['DictGroupsType', 'DictGroupsName']
-        data = ('{0}類別'.format(self.dict_type), dict_groups, )
+        data = [
+            '{0}類別'.format(self.dict_type), dict_groups,
+        ]
         self.database.insert_record('dict_groups', field, data)
         self._read_dict_groups()
 
@@ -180,7 +182,9 @@ class DictDistinguish(QtWidgets.QMainWindow):
             return
 
         dict_groups_name = input_dialog.textValue()
-        data = (dict_groups_name,)
+        data = [
+            dict_groups_name,
+        ]
 
         sql = '''
             UPDATE dict_groups set DictGroupsTopLevel = "{0}" WHERE 
@@ -205,7 +209,9 @@ class DictDistinguish(QtWidgets.QMainWindow):
 
         groups_name = input_dialog.textValue()
         field = ['DictGroupsType', 'DictGroupsTopLevel', 'DictGroupsName']
-        data = ('{0}'.format(self.dict_type), dict_groups, groups_name)
+        data = [
+            '{0}'.format(self.dict_type), dict_groups, groups_name
+        ]
         self.database.insert_record('dict_groups', field, data)
         self._read_dict_groups_name(dict_groups)
 
@@ -237,7 +243,9 @@ class DictDistinguish(QtWidgets.QMainWindow):
             return
 
         dict_groups_name = input_dialog.textValue()
-        data = (dict_groups_name,)
+        data = [
+            dict_groups_name,
+        ]
 
         sql = '''
             UPDATE clinic set Groups = "{0}" WHERE 
@@ -260,13 +268,13 @@ class DictDistinguish(QtWidgets.QMainWindow):
             self.ui.tableWidget_dict_distinguish.insertRow(current_row)
             dict_groups_name = self.table_widget_dict_groups_name.field_value(1)
             fields = ['ClinicType', 'ClinicCode', 'InputCode', 'ClinicName', 'Groups']
-            data = (
+            data = [
                 '{0}'.format(self.dict_type),
                 dialog.ui.lineEdit_diagnostic_code.text(),
                 dialog.ui.lineEdit_input_code.text(),
                 dialog.ui.lineEdit_diagnostic_name.text(),
                 dict_groups_name,
-            )
+            ]
             self.database.insert_record('clinic', fields, data)
             self._read_dict_distinguish(dict_groups_name)
 

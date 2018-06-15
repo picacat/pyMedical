@@ -212,13 +212,13 @@ class ChargeSettingsNHI(QtWidgets.QMainWindow):
             current_row = self.ui.tableWidget_nhi.rowCount()
             self.ui.tableWidget_nhi.insertRow(current_row)
             fields = ['ChargeType', 'ItemName', 'InsCode', 'Amount', 'Remark']
-            data = (
+            data = [
                 dialog.ui.comboBox_charge_type.currentText(),
                 dialog.ui.lineEdit_item_name.text(),
                 dialog.ui.lineEdit_ins_code.text(),
                 dialog.ui.spinBox_amount.value(),
                 dialog.ui.lineEdit_remark.text()
-            )
+            ]
             self.database.insert_record('charge_settings', fields, data)
             sql = 'SELECT * FROM charge_settings WHERE ChargeType in {0} ORDER BY ChargeSettingsKey desc limit 1'.\
                 format(tuple(nhi_utils.CHARGE_TYPE))

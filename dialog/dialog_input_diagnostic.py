@@ -60,11 +60,11 @@ class DialogInputDiagnostic(QtWidgets.QDialog):
             return
 
         fields = ['ClinicCode', 'InputCode', 'ClinicName']
-        data = (
+        data = [
             self.ui.lineEdit_diagnostic_code.text(),
             self.ui.lineEdit_input_code.text(),
             self.ui.lineEdit_diagnostic_name.text(),
-        )
+        ]
         
         self.database.update_record('clinic', fields, 'ClinicKey',
                                     self.diagnostic_key, data)

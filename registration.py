@@ -685,7 +685,7 @@ class Registration(QtWidgets.QMainWindow):
 
         fields = ['Name', 'ID', 'Birthday', 'Telephone', 'Cellphone', 'Address', 'InsType',
                   'DiscountType', 'Gender', 'Remark']
-        data = (
+        data = [
             self.ui.lineEdit_name.text(),
             self.ui.lineEdit_id.text(),
             self.ui.lineEdit_birthday.text(),
@@ -696,7 +696,7 @@ class Registration(QtWidgets.QMainWindow):
             self.ui.comboBox_patient_discount.currentText(),
             self.ui.comboBox_gender.currentText(),
             self.ui.lineEdit_patient_remark.text()
-        )
+        ]
         self.database.update_record('patient', fields, 'PatientKey',
                                     self.ui.lineEdit_patient_key.text(), data)
 
@@ -720,7 +720,7 @@ class Registration(QtWidgets.QMainWindow):
             self.ui.comboBox_treat_type.currentText(),
             self.ui.comboBox_course.currentText())
 
-        data = (
+        data = [
             str(datetime.datetime.now()),
             self.ui.lineEdit_patient_key.text(),
             self.ui.lineEdit_name.text(),
@@ -743,7 +743,7 @@ class Registration(QtWidgets.QMainWindow):
             self.ui.lineEdit_traditional_health_care_fee.text(),
             ic_card.treat_data_to_xml() if ic_card else None,
             self.ui.comboBox_remark.currentText(),
-        )
+        ]
         case_key = self.database.insert_record('cases', fields, data)
         self.insert_wait(case_key)
 
@@ -758,7 +758,7 @@ class Registration(QtWidgets.QMainWindow):
             self.ui.comboBox_share_type.currentText(),
             self.ui.comboBox_treat_type.currentText(),
             self.ui.comboBox_course.currentText())
-        data = (
+        data = [
             self.ui.lineEdit_name.text(),
             self.ui.comboBox_visit.currentText(),
             self.ui.comboBox_reg_type.currentText(),
@@ -778,7 +778,7 @@ class Registration(QtWidgets.QMainWindow):
             self.ui.lineEdit_deposit_fee.text(),
             self.ui.lineEdit_traditional_health_care_fee.text(),
             self.ui.comboBox_remark.currentText(),
-        )
+        ]
         case_key = self.table_widget_wait.field_value(1)
         wait_key = self.table_widget_wait.field_value(0)
         self.database.update_record('cases', fields, 'CaseKey', case_key, data)
@@ -789,23 +789,24 @@ class Registration(QtWidgets.QMainWindow):
         fields = ['CaseKey', 'CaseDate', 'PatientKey', 'Name', 'Visit', 'RegistType',
                   'TreatType', 'Share', 'InsType', 'Card', 'Continuance', 'Period',
                   'Room', 'RegistNo', 'Massager', 'Remark']
-        data = (case_key,
-                str(datetime.datetime.now()),
-                self.ui.lineEdit_patient_key.text(),
-                self.ui.lineEdit_name.text(),
-                self.ui.comboBox_visit.currentText(),
-                self.ui.comboBox_reg_type.currentText(),
-                self.ui.comboBox_treat_type.currentText(),
-                self.ui.comboBox_share_type.currentText(),
-                self.ui.comboBox_ins_type.currentText(),
-                str(self.ui.comboBox_card.currentText()).split(' ')[0],
-                number.str_to_int(self.ui.comboBox_course.currentText()),
-                self.ui.comboBox_period.currentText(),
-                self.ui.comboBox_room.currentText(),
-                self.ui.spinBox_reg_no.value(),
-                self.ui.comboBox_massager.currentText(),
-                self.ui.comboBox_remark.currentText(),
-                )
+        data = [
+            case_key,
+            str(datetime.datetime.now()),
+            self.ui.lineEdit_patient_key.text(),
+            self.ui.lineEdit_name.text(),
+            self.ui.comboBox_visit.currentText(),
+            self.ui.comboBox_reg_type.currentText(),
+            self.ui.comboBox_treat_type.currentText(),
+            self.ui.comboBox_share_type.currentText(),
+            self.ui.comboBox_ins_type.currentText(),
+            str(self.ui.comboBox_card.currentText()).split(' ')[0],
+            number.str_to_int(self.ui.comboBox_course.currentText()),
+            self.ui.comboBox_period.currentText(),
+            self.ui.comboBox_room.currentText(),
+            self.ui.spinBox_reg_no.value(),
+            self.ui.comboBox_massager.currentText(),
+            self.ui.comboBox_remark.currentText(),
+        ]
 
         self.database.insert_record('wait', fields, data)
 
@@ -814,7 +815,7 @@ class Registration(QtWidgets.QMainWindow):
         fields = ['Name', 'Visit', 'RegistType',
                   'TreatType', 'Share', 'InsType', 'Card', 'Continuance', 'Period',
                   'Room', 'RegistNo', 'Massager', 'Remark']
-        data = (
+        data = [
             self.ui.lineEdit_name.text(),
             self.ui.comboBox_visit.currentText(),
             self.ui.comboBox_reg_type.currentText(),
@@ -827,8 +828,8 @@ class Registration(QtWidgets.QMainWindow):
             self.ui.comboBox_room.currentText(),
             self.ui.spinBox_reg_no.value(),
             self.ui.comboBox_massager.currentText(),
-            self.ui.comboBox_remark.currentText(),
-        )
+            self.ui.comboBox_remark.currentText()[:100],
+        ]
         self.database.update_record('wait', fields, 'WaitKey', wait_key, data)
 
     # 刪除候診名單

@@ -122,6 +122,7 @@ class Database:
         cursor = self.cnx.cursor()
         value_list = self._get_value_list(fields)
         sql = "INSERT INTO {0} ({1}) VALUES ({2})".format(table_name, ", ".join(fields), value_list)
+        strings.str_to_none(data)
         cursor.execute(sql, data)
         self.cnx.commit()
         last_row_id = cursor.lastrowid
@@ -134,6 +135,7 @@ class Database:
         cursor = self.cnx.cursor()
         assignment_list = self._get_assignment_list(fields)
         sql = "UPDATE {0} SET {1} WHERE {2} = {3}".format(table_name, assignment_list, primary_key, key_value)
+        strings.str_to_none(data)
         cursor.execute(sql, data)
         self.cnx.commit()
         cursor.close()

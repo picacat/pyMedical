@@ -184,7 +184,7 @@ class Patient(QtWidgets.QMainWindow):
         fields = ['CardNo', 'Name', 'ID', 'Birthday', 'InitDate', 'Telephone', 'Cellphone', 'Email',
                   'Address', 'FamilyPatientKey', 'Reference', 'Gender', 'InsType', 'Nationality', 'Marriage',
                   'Education', 'Occupation', 'DiscountType', 'Allergy', 'History', 'Remark', 'Description']
-        data = (
+        data = [
             self.ui.lineEdit_card_no.text(),
             self.ui.lineEdit_name.text(),
             self.ui.lineEdit_id.text(),
@@ -207,7 +207,7 @@ class Patient(QtWidgets.QMainWindow):
             self.ui.textEdit_history.toPlainText(),
             self.ui.textEdit_remark.toPlainText(),
             self.ui.textEdit_description.toPlainText(),
-        )
+        ]
         if self.patient is None:
             last_row_id = self.database.insert_record('patient', fields, data)
             self.parent.set_new_patient(last_row_id)

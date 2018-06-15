@@ -83,7 +83,7 @@ class ChargeSettingsRegist(QtWidgets.QMainWindow):
             self.ui.tableWidget_regist_fee.insertRow(current_row)
             fields = ['ChargeType', 'ItemName', 'InsType', 'ShareType', 'TreatType', 'Course',
                       'Amount', 'Remark']
-            data = (
+            data = [
                 '掛號費',
                 dialog.ui.lineEdit_item_name.text(),
                 dialog.ui.comboBox_ins_type.currentText(),
@@ -92,7 +92,7 @@ class ChargeSettingsRegist(QtWidgets.QMainWindow):
                 dialog.ui.comboBox_course.currentText(),
                 dialog.ui.spinBox_amount.value(),
                 dialog.ui.lineEdit_remark.text()
-            )
+            ]
             self.database.insert_record('charge_settings', fields, data)
             sql = 'SELECT * FROM charge_settings WHERE ChargeType = "掛號費" ORDER BY ChargeSettingsKey desc limit 1'
             row_data = self.database.select_record(sql)[0]
@@ -227,12 +227,12 @@ class ChargeSettingsRegist(QtWidgets.QMainWindow):
             current_row = self.ui.tableWidget_discount.rowCount()
             self.ui.tableWidget_discount.insertRow(current_row)
             fields = ['ChargeType', 'ItemName', 'Amount', 'Remark']
-            data = (
+            data = [
                 '掛號費優待',
                 dialog.ui.lineEdit_item_name.text(),
                 dialog.ui.spinBox_amount.value(),
                 dialog.ui.lineEdit_remark.text()
-            )
+            ]
             self.database.insert_record('charge_settings', fields, data)
             sql = 'SELECT * FROM charge_settings WHERE ChargeType = "掛號費優待" ORDER BY ChargeSettingsKey desc limit 1'
             row_data = self.database.select_record(sql)[0]

@@ -60,11 +60,11 @@ class DialogInputDiscount(QtWidgets.QDialog):
             return
 
         fields = ['ItemName', 'Amount', 'Remark']
-        data = (
+        data = [
             self.ui.lineEdit_item_name.text(),
             self.ui.spinBox_amount.value(),
             self.ui.lineEdit_remark.text()
-        )
+        ]
         
         self.database.update_record('charge_settings', fields, 'ChargeSettingsKey',
                                     self.charge_settings_key, data)

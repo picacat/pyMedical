@@ -88,8 +88,26 @@
          </item>
          <item>
           <widget class="QTableWidget" name="tableWidget_prescript">
+           <property name="frameShadow">
+            <enum>QFrame::Sunken</enum>
+           </property>
+           <property name="dragEnabled">
+            <bool>false</bool>
+           </property>
+           <property name="dragDropOverwriteMode">
+            <bool>false</bool>
+           </property>
+           <property name="dragDropMode">
+            <enum>QAbstractItemView::NoDragDrop</enum>
+           </property>
+           <property name="defaultDropAction">
+            <enum>Qt::MoveAction</enum>
+           </property>
            <property name="selectionMode">
             <enum>QAbstractItemView::SingleSelection</enum>
+           </property>
+           <property name="rowCount">
+            <number>0</number>
            </property>
            <column>
             <property name="text">
@@ -116,6 +134,46 @@
              <string>服法</string>
             </property>
            </column>
+           <column>
+            <property name="text">
+             <string>prescript_no</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>case_key</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>case_date</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>medicine_set</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>medicine_type</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>medicine_key</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>ins_code</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>dosage_mode</string>
+            </property>
+           </column>
           </widget>
          </item>
          <item>
@@ -128,7 +186,11 @@
             </widget>
            </item>
            <item>
-            <widget class="QComboBox" name="comboBox"/>
+            <widget class="QComboBox" name="comboBox_package">
+             <property name="editable">
+              <bool>true</bool>
+             </property>
+            </widget>
            </item>
            <item>
             <widget class="QLabel" name="label_2">
@@ -138,7 +200,11 @@
             </widget>
            </item>
            <item>
-            <widget class="QComboBox" name="comboBox_2"/>
+            <widget class="QComboBox" name="comboBox_pres_days">
+             <property name="editable">
+              <bool>true</bool>
+             </property>
+            </widget>
            </item>
            <item>
             <widget class="QLabel" name="label_3">
@@ -148,7 +214,11 @@
             </widget>
            </item>
            <item>
-            <widget class="QComboBox" name="comboBox_3"/>
+            <widget class="QComboBox" name="comboBox_instruction">
+             <property name="editable">
+              <bool>true</bool>
+             </property>
+            </widget>
            </item>
            <item>
             <spacer name="horizontalSpacer">

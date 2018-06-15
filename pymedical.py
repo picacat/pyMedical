@@ -69,6 +69,7 @@ class PyMedical(QtWidgets.QMainWindow):
         self.ui.tabWidget_window.setTabsClosable(True)
         self._set_button_enabled()
         self.showMaximized()
+        self.ui.setWindowTitle('{0} 醫療資訊管理系統'.format(self.system_settings.field('院所名稱')))
 
     # 設定按鈕權限
     def _set_button_enabled(self):
@@ -155,6 +156,13 @@ class PyMedical(QtWidgets.QMainWindow):
         closable = True
 
         if tab_name.find('病歷資料') == -1:
+            return closable
+
+        if current_tab.call_from == '醫師看診作業':
+            current_tab.update_medical_record()
+            if current_tab.medical_record['InsType'] == '健保':
+                current_tab.tab_ins_prescript.save_prescript()
+
             return closable
 
         record_modified = current_tab.record_modified()

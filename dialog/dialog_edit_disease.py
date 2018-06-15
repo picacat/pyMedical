@@ -53,17 +53,19 @@ class DialogEditDisease(QtWidgets.QDialog):
         row_data = self.database.select_record(sql)[0]
         self.ui.lineEdit_icd10_code.setText(row_data['ICDCode'])
         self.ui.lineEdit_input_code.setText(row_data['InputCode'])
+        self.ui.lineEdit_special_code.setText(row_data['SpecialCode'])
         self.ui.lineEdit_disease_name.setText(row_data['ChineseName'])
 
     def accepted_button_clicked(self):
         if self.icd10_key is None:
             return
 
-        fields = ['InputCode', 'ChineseName']
-        data = (
+        fields = ['InputCode', 'SpecialCode', 'ChineseName']
+        data = [
             self.ui.lineEdit_input_code.text(),
+            self.ui.lineEdit_special_code.text(),
             self.ui.lineEdit_disease_name.text(),
-        )
+        ]
         
         self.database.update_record('icd10', fields, 'ICD10Key',
                                     self.icd10_key, data)

@@ -73,7 +73,7 @@ class DialogInputRegist(QtWidgets.QDialog):
             return
 
         fields = ['ItemName', 'InsType', 'ShareType', 'TreatType', 'Course', 'Amount', 'Remark']
-        data = (
+        data = [
             self.ui.lineEdit_item_name.text(),
             self.ui.comboBox_ins_type.currentText(),
             self.ui.comboBox_share_type.currentText(),
@@ -81,7 +81,7 @@ class DialogInputRegist(QtWidgets.QDialog):
             self.ui.comboBox_course.currentText(),
             self.ui.spinBox_amount.value(),
             self.ui.lineEdit_remark.text()
-        )
+        ]
         
         self.database.update_record('charge_settings', fields, 'ChargeSettingsKey',
                                     self.charge_settings_key, data)

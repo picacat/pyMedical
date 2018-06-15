@@ -14,14 +14,17 @@
  主畫面 樣式表
 **************************************************************************************/
 #frameSidebar {
-    background: #8af;
+    /*background: #8af; */
+    /* background: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #4d7fff, stop: 1 #b3c8ff); */
+    background: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #8af, stop: 1 #b3c8ff);
     border: none;
-    border-right: 1px solid black;
+    /* border-right: 1px solid black; */
+    border-right: 1px;
 }
 
 #label_title {
     color: white;
-    font: 16px;
+    font: 18px;
 }
 
 #label_eng_title {
@@ -61,6 +64,8 @@ QFrame.SidebarFrame QLabel {
 #textEdit_symptom, #textEdit_tongue, #textEdit_pulse {
     background: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #eef, stop: 1 #ccf);
 }
+*/
+
 /*
 #textEdit_remark {
 	background: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #eef, stop: 1 #ccf);

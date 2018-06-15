@@ -2,7 +2,7 @@
 # 病歷查詢 2014.09.22
 #coding: utf-8
 
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtGui
 from classes import table_widget
 from libs import ui_settings
 from libs import system
@@ -58,7 +58,8 @@ class DialogDisease(QtWidgets.QDialog):
     # 存檔
     def accepted_button_clicked(self):
         self.line_edit_icd_code.setText(self.table_widget_disease.field_value(1))
-        self.line_edit_disease_name.setText(self.table_widget_disease.field_value(2))
+        self.line_edit_disease_name.setText(self.table_widget_disease.field_value(3))
+        self.line_edit_icd_code.setModified(True)
         self.close()
 
     # 關閉
@@ -68,7 +69,7 @@ class DialogDisease(QtWidgets.QDialog):
     # 設定欄位寬度
     def _set_table_width(self):
         groups_name_width = [100, 450]
-        disease_width = [100, 120, 640]
+        disease_width = [100, 100, 70, 590]
         self.table_widget_disease.set_table_heading_width(disease_width)
         self.table_widget_groups_name.set_table_heading_width(groups_name_width)
 
@@ -125,8 +126,15 @@ class DialogDisease(QtWidgets.QDialog):
         disease_rec = [
             strings.xstr(rec['ICD10Key']),
             strings.xstr(rec['ICDCode']),
+            strings.xstr(rec['SpecialCode']),
             strings.xstr(rec['ChineseName']),
         ]
 
         for column in range(0, self.ui.tableWidget_disease.columnCount()):
-            self.ui.tableWidget_disease.setItem(rec_no, column, QtWidgets.QTableWidgetItem(disease_rec[column]))
+            self.ui.tableWidget_disease.setItem(
+                rec_no, column, QtWidgets.QTableWidgetItem(disease_rec[column])
+            )
+            if strings.xstr(rec['SpecialCode']) != '':
+                self.ui.tableWidget_disease.item(
+                    rec_no, column
+                ).setForeground(QtGui.QColor('red'))

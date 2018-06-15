@@ -94,6 +94,9 @@
              <property name="alignment">
               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
              </property>
+             <property name="clearButtonEnabled">
+              <bool>true</bool>
+             </property>
             </widget>
            </item>
            <item row="1" column="1">
@@ -167,12 +170,18 @@
              <property name="alignment">
               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
              </property>
+             <property name="clearButtonEnabled">
+              <bool>true</bool>
+             </property>
             </widget>
            </item>
            <item row="8" column="3">
             <widget class="QLineEdit" name="lineEdit_diag_share_fee">
              <property name="alignment">
               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+             </property>
+             <property name="clearButtonEnabled">
+              <bool>true</bool>
              </property>
             </widget>
            </item>
@@ -307,6 +316,9 @@
             <widget class="QLineEdit" name="lineEdit_deposit_fee">
              <property name="alignment">
               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+             </property>
+             <property name="clearButtonEnabled">
+              <bool>true</bool>
              </property>
             </widget>
            </item>
@@ -498,7 +510,11 @@
          <item row="0" column="0">
           <layout class="QGridLayout" name="gridLayout_2">
            <item row="4" column="1">
-            <widget class="QLineEdit" name="lineEdit_telephone"/>
+            <widget class="QLineEdit" name="lineEdit_telephone">
+             <property name="clearButtonEnabled">
+              <bool>true</bool>
+             </property>
+            </widget>
            </item>
            <item row="2" column="2">
             <widget class="QLabel" name="label_5">
@@ -565,7 +581,11 @@
             </widget>
            </item>
            <item row="2" column="1">
-            <widget class="QLineEdit" name="lineEdit_id"/>
+            <widget class="QLineEdit" name="lineEdit_id">
+             <property name="clearButtonEnabled">
+              <bool>false</bool>
+             </property>
+            </widget>
            </item>
            <item row="1" column="1">
             <widget class="QLineEdit" name="lineEdit_patient_key">
@@ -678,13 +698,25 @@
             </widget>
            </item>
            <item row="5" column="1" colspan="3">
-            <widget class="QLineEdit" name="lineEdit_address"/>
+            <widget class="QLineEdit" name="lineEdit_address">
+             <property name="clearButtonEnabled">
+              <bool>true</bool>
+             </property>
+            </widget>
            </item>
            <item row="6" column="1" colspan="3">
-            <widget class="QLineEdit" name="lineEdit_patient_remark"/>
+            <widget class="QLineEdit" name="lineEdit_patient_remark">
+             <property name="clearButtonEnabled">
+              <bool>true</bool>
+             </property>
+            </widget>
            </item>
            <item row="4" column="3">
-            <widget class="QLineEdit" name="lineEdit_cellphone"/>
+            <widget class="QLineEdit" name="lineEdit_cellphone">
+             <property name="clearButtonEnabled">
+              <bool>true</bool>
+             </property>
+            </widget>
            </item>
            <item row="3" column="3">
             <widget class="QComboBox" name="comboBox_patient_discount">
@@ -699,19 +731,15 @@
              </property>
             </widget>
            </item>
-           <item row="1" column="3">
-            <layout class="QHBoxLayout" name="horizontalLayout_4">
-             <item>
-              <widget class="QLineEdit" name="lineEdit_name"/>
-             </item>
-            </layout>
-           </item>
            <item row="2" column="3">
             <layout class="QHBoxLayout" name="horizontalLayout_5">
              <item>
               <widget class="QLineEdit" name="lineEdit_birthday">
                <property name="inputMask">
                 <string/>
+               </property>
+               <property name="clearButtonEnabled">
+                <bool>false</bool>
                </property>
               </widget>
              </item>
@@ -739,6 +767,13 @@
               </widget>
              </item>
             </layout>
+           </item>
+           <item row="1" column="3">
+            <widget class="QLineEdit" name="lineEdit_name">
+             <property name="clearButtonEnabled">
+              <bool>false</bool>
+             </property>
+            </widget>
            </item>
           </layout>
          </item>
@@ -773,6 +808,9 @@
             <widget class="QLineEdit" name="lineEdit_query">
              <property name="toolTip">
               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;生日格式請輸入&lt;br&gt;民國年 yyy.mm.dd&lt;br&gt;西元年 yyyy.mm.dd&lt;br&gt;用 - 或 / 分隔也可以&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+             <property name="clearButtonEnabled">
+              <bool>true</bool>
              </property>
             </widget>
            </item>
@@ -817,7 +855,7 @@
               </property>
               <property name="icon">
                <iconset>
-                <normaloff>../icons/folder-move.svg</normaloff>../icons/folder-move.svg</iconset>
+                <normaloff>../icons/document-open.svg</normaloff>../icons/document-open.svg</iconset>
               </property>
               <property name="toolButtonStyle">
                <enum>Qt::ToolButtonTextBesideIcon</enum>

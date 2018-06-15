@@ -176,14 +176,14 @@ class ChargeSettingsShare(QtWidgets.QMainWindow):
             current_row = self.ui.tableWidget_diag_share.rowCount()
             self.ui.tableWidget_diag_share.insertRow(current_row)
             fields = ['ChargeType', 'ItemName', 'ShareType', 'InsCode', 'Amount', 'Remark']
-            data = (
+            data = [
                 '門診負擔',
                 dialog.ui.lineEdit_item_name.text(),
                 dialog.ui.comboBox_share_type.currentText(),
                 dialog.ui.lineEdit_ins_code.text(),
                 dialog.ui.spinBox_amount.value(),
                 dialog.ui.lineEdit_remark.text()
-            )
+            ]
             self.database.insert_record('charge_settings', fields, data)
             sql = 'SELECT * FROM charge_settings WHERE ChargeType = "門診負擔" ORDER BY ChargeSettingsKey desc limit 1'
             row_data = self.database.select_record(sql)[0]
@@ -279,14 +279,14 @@ class ChargeSettingsShare(QtWidgets.QMainWindow):
             current_row = self.ui.tableWidget_drug_share.rowCount()
             self.ui.tableWidget_drug_share.insertRow(current_row)
             fields = ['ChargeType', 'ItemName', 'ShareType', 'InsCode', 'Amount', 'Remark']
-            data = (
+            data = [
                 '藥品負擔',
                 dialog.ui.lineEdit_item_name.text(),
                 dialog.ui.comboBox_share_type.currentText(),
                 dialog.ui.lineEdit_ins_code.text(),
                 dialog.ui.spinBox_amount.value(),
                 dialog.ui.lineEdit_remark.text()
-            )
+            ]
             self.database.insert_record('charge_settings', fields, data)
             sql = 'SELECT * FROM charge_settings WHERE ChargeType = "藥品負擔" ORDER BY ChargeSettingsKey desc limit 1'
             row_data = self.database.select_record(sql)[0]
