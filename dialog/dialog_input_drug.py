@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# 病歷查詢 2014.09.22
+# 輸入處方 2018.06.15
 #coding: utf-8
 
 from PyQt5 import QtWidgets
