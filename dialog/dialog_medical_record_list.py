@@ -66,16 +66,18 @@ class DialogMedicalRecordList(QtWidgets.QDialog):
         start_date = self.ui.dateEdit_start_date.date().toString('yyyy-MM-dd 00:00:00')
         end_date = self.ui.dateEdit_end_date.date().toString('yyyy-MM-dd 23:59:59')
 
-        script = ("SELECT CaseKey, DATE_FORMAT(CaseDate, '%Y-%m-%d %H:%i') AS CaseDate, "
-                  "cases.PatientKey, cases.Name, Period, cases.InsType, "
-                  "Share, RegistNo, Card, Continuance, TreatType, "
-                  "PresDays1, PresDays2, DiseaseCode1, DiseaseName1, "
-                  "Doctor, Massager, Room, RegistFee, SDiagShareFee, SDrugShareFee, "
-                  "TotalFee, patient.Gender, patient.Birthday "
-                  "FROM cases "
-                  "LEFT JOIN patient ON patient.PatientKey = cases.PatientKey "
-                  "WHERE "
-                  "CaseDate BETWEEN '{0}' AND '{1}'").format(start_date, end_date)
+        script = '''
+            SELECT CaseKey, DATE_FORMAT(CaseDate, '%Y-%m-%d %H:%i') AS CaseDate, 
+            cases.PatientKey, cases.Name, Period, cases.InsType, 
+            Share, RegistNo, Card, Continuance, TreatType, 
+            PresDays1, PresDays2, DiseaseCode1, DiseaseName1,
+            Doctor, Massager, Room, RegistFee, SDiagShareFee, SDrugShareFee,
+            TotalFee, patient.Gender, patient.Birthday
+            FROM cases
+            LEFT JOIN patient ON patient.PatientKey = cases.PatientKey
+            WHERE
+            (CaseDate BETWEEN "{0}" AND "{1}")
+            '''.format(start_date, end_date)
 
         ins_type = self.ui.comboBox_ins_type.currentText()
         if ins_type != '全部':
@@ -84,6 +86,10 @@ class DialogMedicalRecordList(QtWidgets.QDialog):
         apply_type = self.ui.comboBox_apply_type.currentText()
         if apply_type != '全部':
             script = script + " and ApplyType = '{0}'".format(apply_type)
+
+        treat_type = self.ui.comboBox_treat_type.currentText()
+        if treat_type != '全部':
+            script = script + " and TreatType = '{0}'".format(treat_type)
 
         share_type = self.ui.comboBox_share_type.currentText()
         if share_type != '全部':

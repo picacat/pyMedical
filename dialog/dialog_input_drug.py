@@ -54,7 +54,7 @@ class DialogInputDrug(QtWidgets.QDialog):
     def _set_combo_box(self):
         sql = 'SELECT Unit FROM medicine GROUP BY Unit ORDER BY Unit'
         rows = self.database.select_record(sql)
-        unit_list = []
+        unit_list = [None, ]
         for row in rows:
             if row['Unit'] is None or str(row['Unit']).strip() == '':
                 continue
@@ -62,9 +62,13 @@ class DialogInputDrug(QtWidgets.QDialog):
 
         ui_settings.set_combo_box(self.ui.comboBox_unit, unit_list)
 
-        sql = 'SELECT MedicineMode FROM medicine GROUP BY MedicineMode ORDER BY MedicineMode'
+        sql = '''
+            SELECT MedicineMode FROM medicine WHERE
+            (MedicineType != "穴道" AND MedicineType != "處置")
+            GROUP BY MedicineMode ORDER BY MedicineMode
+        '''
         rows = self.database.select_record(sql)
-        medicine_mode_list = []
+        medicine_mode_list = [None, ]
         for row in rows:
             if row['MedicineMode'] is None or str(row['MedicineMode']).strip() == '':
                 continue
@@ -88,7 +92,7 @@ class DialogInputDrug(QtWidgets.QDialog):
         self.ui.lineEdit_sale_price.setText(strings.xstr(row['SalePrice']))
         self.ui.lineEdit_quantity.setText(strings.xstr(row['Quantity']))
         self.ui.lineEdit_safe_quantity.setText(strings.xstr(row['SafeQuantity']))
-        self.ui.textEdit_description.setText(strings.get_str(row['Description'], 'utf8'))
+        self.ui.textEdit_description.setPlainText(strings.get_str(row['Description'], 'utf8'))
 
     def accepted_button_clicked(self):
         if self.medicine_key is None:

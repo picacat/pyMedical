@@ -3,7 +3,7 @@
 
 import sys
 
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtCore, QtGui
 from libs import ui_settings
 from libs import strings
 from libs import number
@@ -13,6 +13,7 @@ import medical_record_recently_history
 from dialog import dialog_inquiry
 from dialog import dialog_diagnosis
 from dialog import dialog_disease
+from dialog import dialog_medicine
 
 
 # 病歷資料 2018.01.31
@@ -53,6 +54,11 @@ class MedicalRecord(QtWidgets.QMainWindow):
         self.ui = ui_settings.load_ui_file(ui_settings.UI_MEDICAL_RECORD, self)
         self.ui.groupBox_symptom.setContentsMargins(0, 0, 0, 0)
 
+        self.add_tab_button = QtWidgets.QToolButton()
+        self.add_tab_button.setIcon(QtGui.QIcon('./icons/document-new.svg'))
+        self.ui.tabWidget_prescript.setCornerWidget(self.add_tab_button, QtCore.Qt.TopLeftCorner)
+        self.ui.tabWidget_prescript.tabCloseRequested.connect(self.close_prescript_tab)
+
     # 設定信號
     def _set_signal(self):
         self.ui.action_save.triggered.connect(self.save_medical_record)
@@ -71,7 +77,7 @@ class MedicalRecord(QtWidgets.QMainWindow):
         self.ui.lineEdit_disease_code3.textChanged.connect(self.disease_code_changed)
         self.ui.lineEdit_disease_code3.returnPressed.connect(self.disease_code_return_pressed)
         self.ui.lineEdit_disease_code3.editingFinished.connect(self.disease_code_editing_finished)
-        self.disease_code_changed()
+        self.add_tab_button.clicked.connect(self.add_self_tab)
 
     def modify_patient(self):
         patient_key = self.patient_data['PatientKey']
@@ -210,6 +216,8 @@ class MedicalRecord(QtWidgets.QMainWindow):
             dialog_type = '病名2'
         elif self.ui.lineEdit_disease_code3.hasFocus():
             dialog_type = '病名3'
+        elif self.tab_ins_prescript.ui.tableWidget_prescript.hasFocus():
+            dialog_type = '健保處方'
 
         if dialog_type is None:
             return
@@ -244,6 +252,11 @@ class MedicalRecord(QtWidgets.QMainWindow):
 
             dialog = dialog_disease.DialogDisease(
                 self, self.database, self.system_settings, text_edit[dialog_type], line_edit)
+        elif dialog_type in ['健保處方']:
+            medicine_set = '1'
+            dialog = dialog_medicine.DialogMedicine(
+                self, self.database, self.system_settings,
+                self.tab_ins_prescript.tableWidget_prescript, medicine_set)
 
         if dialog is None:
             return
@@ -255,7 +268,13 @@ class MedicalRecord(QtWidgets.QMainWindow):
         if self.medical_record['InsType'] == '健保':
             self.tab_ins_prescript = ins_prescript_record.InsPrescriptRecord(
                 self, self.database, self.system_settings, self.case_key)
-            self.ui.tabWidget_prescript.addTab(self.tab_ins_prescript, '健保處方')
+            self.ui.tabWidget_prescript.addTab(self.tab_ins_prescript, '健保')
+
+    # 新增自費處方
+    def add_self_tab(self):
+        self.tab_ins_prescript = ins_prescript_record.InsPrescriptRecord(
+            self, self.database, self.system_settings, self.case_key)
+        self.ui.tabWidget_prescript.addTab(self.tab_ins_prescript, '自費')
 
     def _read_recently_history(self):
         self.ui.tabWidget_past_record.addTab(
@@ -309,6 +328,15 @@ class MedicalRecord(QtWidgets.QMainWindow):
         ]
 
         self.database.update_record('cases', fields, 'CaseKey', self.case_key, data)
+
+    def close_prescript_tab(self, current_index):
+        current_tab = self.ui.tabWidget_prescript.widget(current_index)
+        tab_name = self.ui.tabWidget_prescript.tabText(current_index)
+        if tab_name == '健保':
+            return
+
+        current_tab.close_all()
+        current_tab.deleteLater()
 
     def close_medical_record(self):
         self.close_all()

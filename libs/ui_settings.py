@@ -62,6 +62,8 @@ UI_DICT_DISTINGUISH = "dict_distinguish.ui"
 UI_DICT_CURE = "dict_cure.ui"
 UI_DICT_MEDICINE = "dict_medicine.ui"
 UI_DICT_DRUG = "dict_drug.ui"
+UI_DICT_TREAT = "dict_treat.ui"
+UI_DICT_COMPOUND = "dict_compound.ui"
 
 UI_CONVERT = "convert.ui"
 

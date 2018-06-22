@@ -11,6 +11,7 @@ INSURED_TYPE = ['基層醫療', '榮民', '低收入戶']
 SHARE_TYPE = ['基層醫療', '榮民', '低收入戶', '重大傷病', '職業傷害', '三歲兒童',
               '山地離島', '其他免部份負擔', '新生兒', '愛滋病', '替代役男']
 TREAT_TYPE = ['內科', '針灸治療', '傷科治療', '脫臼整復', '複雜性針灸', '複雜性傷科', '加強照護']
+INS_TREAT = [None, '針灸治療', '傷科治療', '脫臼整復', '複雜性針灸', '複雜性傷科']
 CHARGE_TYPE = ['診察費', '藥費', '調劑費', '處置費', '檢驗費', '照護費']
 COURSE_TYPE = ['首次', '療程']
 CARD = [
@@ -77,3 +78,13 @@ def get_course_type(course):
 
     return course_type
 
+
+# 取得藥品類別
+def get_medicine_type(database, medicine_type):
+    sql = 'select * from dict_groups where DictGroupsType = "{0}"'.format(medicine_type)
+    rows = database.select_record(sql)
+    medicine_groups = []
+    for row in rows:
+        medicine_groups.append(row['DictGroupsName'])
+
+    return medicine_groups

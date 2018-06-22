@@ -37,7 +37,7 @@
         <number>9</number>
        </property>
        <property name="rightMargin">
-        <number>3</number>
+        <number>0</number>
        </property>
        <property name="bottomMargin">
         <number>9</number>
@@ -45,12 +45,9 @@
        <item>
         <layout class="QVBoxLayout" name="verticalLayout">
          <item>
-          <layout class="QHBoxLayout" name="horizontalLayout_3"/>
-         </item>
-         <item>
           <layout class="QHBoxLayout" name="horizontalLayout_2">
            <item>
-            <widget class="QToolButton" name="toolButton_add">
+            <widget class="QToolButton" name="toolButton_add_medicine">
              <property name="text">
               <string>...</string>
              </property>
@@ -61,7 +58,7 @@
             </widget>
            </item>
            <item>
-            <widget class="QToolButton" name="toolButton_delete">
+            <widget class="QToolButton" name="toolButton_remove_medicine">
              <property name="text">
               <string>...</string>
              </property>
@@ -262,7 +259,7 @@
         <number>6</number>
        </property>
        <property name="leftMargin">
-        <number>3</number>
+        <number>0</number>
        </property>
        <property name="topMargin">
         <number>9</number>
@@ -276,17 +273,96 @@
        <item>
         <layout class="QVBoxLayout" name="verticalLayout_2">
          <item>
-          <widget class="QToolButton" name="toolButton_2">
-           <property name="text">
-            <string>...</string>
+          <layout class="QHBoxLayout" name="horizontalLayout_7">
+           <item>
+            <widget class="QToolButton" name="toolButton_add_treat">
+             <property name="text">
+              <string>...</string>
+             </property>
+             <property name="icon">
+              <iconset>
+               <normaloff>../icons/add.svg</normaloff>../icons/add.svg</iconset>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QToolButton" name="toolButton_remove_treat">
+             <property name="text">
+              <string>...</string>
+             </property>
+             <property name="icon">
+              <iconset>
+               <normaloff>../icons/gtk-remove.svg</normaloff>../icons/gtk-remove.svg</iconset>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer name="horizontalSpacer_4">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <widget class="QTableWidget" name="tableWidget_treat">
+           <property name="dragDropOverwriteMode">
+            <bool>false</bool>
            </property>
+           <property name="defaultDropAction">
+            <enum>Qt::MoveAction</enum>
+           </property>
+           <property name="selectionMode">
+            <enum>QAbstractItemView::SingleSelection</enum>
+           </property>
+           <column>
+            <property name="text">
+             <string>prescript_key</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>處置名稱</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>case_key</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>case_date</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>medicine_set</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>medicine_type</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>medicine_key</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>ins_code</string>
+            </property>
+           </column>
           </widget>
-         </item>
-         <item>
-          <layout class="QHBoxLayout" name="horizontalLayout_5"/>
-         </item>
-         <item>
-          <widget class="QTableWidget" name="tableWidget_2"/>
          </item>
          <item>
           <layout class="QHBoxLayout" name="horizontalLayout_6">

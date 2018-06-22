@@ -6,6 +6,8 @@ import sys
 from PyQt5 import QtWidgets
 from libs import ui_settings
 import dict_drug
+import dict_treat
+import dict_compound
 
 
 # 樣板 2018.01.31
@@ -35,6 +37,10 @@ class DictMedicine(QtWidgets.QMainWindow):
         self.ui = ui_settings.load_ui_file(ui_settings.UI_DICT_MEDICINE, self)
         self.ui.tabWidget_medicine.addTab(
             dict_drug.DictDrug(self, *self.args), '藥品資料')
+        self.ui.tabWidget_medicine.addTab(
+            dict_treat.DictTreat(self, *self.args), '處置資料')
+        self.ui.tabWidget_medicine.addTab(
+            dict_compound.DictCompound(self, *self.args), '成方資料')
 
     # 設定信號
     def _set_signal(self):

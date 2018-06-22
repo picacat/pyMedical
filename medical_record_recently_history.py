@@ -78,7 +78,7 @@ class MedicalRecordRecentlyHistory(QtWidgets.QMainWindow):
         past_record = self.database.select_record(sql)
 
         if len(past_record) <= 0:
-            self.ui.textEdit_past.setHtml('<br><br><br><br><br><center>無過去病歷</center>')
+            self.ui.textEdit_past.setHtml('<br><br><br><br><br><br><br><center>無過去病歷</center>')
             self.ui.toolButton_copy.setEnabled(False)
             self.ui.toolButton_first.setEnabled(False)
             self.ui.toolButton_previous.setEnabled(False)

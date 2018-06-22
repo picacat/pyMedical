@@ -29,16 +29,15 @@ class TableWidget:
             self.table_widget.setColumnHidden(i, True)
 
     # 設定資料庫資料
-    def set_db_data(self, sql=None, process_data=None, rows=None):
+    def set_db_data(self, sql=None, process_data=None, rows=None, start_index=0):
         self.process_data = process_data
 
         if rows is None:
             rows = self.database.select_record(sql)
 
-        self.db_row_count = len(list(rows))
-
+        self.db_row_count = len(list(rows)) + start_index
         self.table_widget.setRowCount(self.db_row_count)
-        for i, rec in zip(range(0, self.db_row_count), rows):
+        for i, rec in zip(range(start_index, self.db_row_count), rows):
             self.process_data(i, rec)
 
         if not self.is_set_heading:

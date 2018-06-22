@@ -1,6 +1,20 @@
 # 字串 2018.01.29
 #coding: utf-8
 
+phonetic_table = {
+    'ㄅ': '1', 'ㄆ': 'q', 'ㄇ': 'a', 'ㄈ': 'z',
+    'ㄉ': '2', 'ㄊ': 'w', 'ㄋ': 's', 'ㄌ': 'x',
+    'ㄍ': 'e', 'ㄎ': 'd', 'ㄏ': 'c',
+    'ㄐ': 'r', 'ㄑ': 'f', 'ㄒ': 'v',
+    'ㄓ': '5', 'ㄔ': 't', 'ㄕ': 'g', 'ㄖ': 'b',
+    'ㄗ': 'y', 'ㄘ': 'h', 'ㄙ': 'n',
+    'ㄧ': 'u', 'ㄨ': 'j', 'ㄩ': 'm',
+    'ㄚ': '8', 'ㄛ': 'i', 'ㄜ': 'k', 'ㄝ': ',',
+    'ㄞ': '9', 'ㄟ': 'o', 'ㄠ': 'l', 'ㄡ': '.',
+    'ㄢ': '0', 'ㄣ': 'p', 'ㄤ': ';', 'ㄥ': '/',
+    'ㄦ': '-',
+}
+
 
 # 整數轉字串(零不顯示)
 def int_to_str(number):
@@ -46,3 +60,17 @@ def str_to_none(in_list):
     for i in range(len(in_list)):
         if str(in_list[i]) == '':
             in_list[i] = None
+
+
+# 轉換注音字母為英數字母
+def phonetic_to_str(in_str):
+    ansi_str = ''
+    for char in in_str:
+        try:
+            phn_str = phonetic_table[char]
+        except KeyError:
+            phn_str = char
+
+        ansi_str += phn_str
+
+    return ansi_str

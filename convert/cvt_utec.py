@@ -43,7 +43,7 @@ class CvtUtec():
         ]
 
         sql = 'TRUNCATE dict_groups'
-        self.source_db.exec_sql(sql)
+        self.database.exec_sql(sql)
 
         data = ['主訴類別', None, '內科']
         self.database.insert_record('dict_groups', fields, data)
@@ -89,6 +89,8 @@ class CvtUtec():
         data = ['處置類別', None, '穴道']
         self.database.insert_record('dict_groups', fields, data)
         data = ['處置類別', None, '處置']
+        self.database.insert_record('dict_groups', fields, data)
+        data = ['處置類別', None, '照護']
         self.database.insert_record('dict_groups', fields, data)
         data = ['處置類別', None, '檢驗']
         self.database.insert_record('dict_groups', fields, data)

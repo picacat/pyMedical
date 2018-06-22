@@ -46,7 +46,7 @@ class DialogInputMedicine(QtWidgets.QDialog):
             self.table_widget_prescript.currentItem().setText(self.input_code)
         else:
             self.add_medicine()
-            self.parent.add_medicine()
+            self.parent.append_null_medicine()
 
     def add_medicine(self):
         prescript_rec = [
@@ -65,6 +65,7 @@ class DialogInputMedicine(QtWidgets.QDialog):
         ]
 
         self.parent.set_prescript(prescript_rec)
+        self.parent.set_default_pres_days()
 
     # 設定GUI
     def _set_ui(self):
@@ -115,7 +116,8 @@ class DialogInputMedicine(QtWidgets.QDialog):
             SELECT * FROM medicine WHERE 
             (MedicineName LIKE "{0}%" OR InputCode LIKE "{0}%" OR MedicineCode = "{0}" OR InsCode = "{0}")
             {1}
-            ORDER BY FIELD(MedicineType, "單方", "複方", "成方"), LENGTH(MedicineName), MedicineName
+            ORDER BY FIELD(MedicineType, "單方", "複方", "成方"), LENGTH(MedicineName), 
+            CAST(CONVERT(`MedicineName` using big5) AS BINARY)
         '''.format(self.input_code, medicine_type)
         self.table_widget_medicine.set_db_data(sql, self._set_medicine_data)
 
