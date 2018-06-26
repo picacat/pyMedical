@@ -45,8 +45,10 @@ class DialogInputMedicine(QtWidgets.QDialog):
         if self.medicine_key is None:
             self.table_widget_prescript.currentItem().setText(self.input_code)
         else:
-            self.add_medicine()
-            self.parent.append_null_medicine()
+            if self.medicine_type == '健保藥品':
+                self.add_medicine()
+            elif self.medicine_type == '健保處置':
+                self.add_treat()
 
     def add_medicine(self):
         prescript_rec = [
@@ -66,6 +68,22 @@ class DialogInputMedicine(QtWidgets.QDialog):
 
         self.parent.set_prescript(prescript_rec)
         self.parent.set_default_pres_days()
+        self.parent.append_null_medicine()
+
+    def add_treat(self):
+        treat_rec = [
+            [0, '-1'],
+            [1, self.table_widget_medicine.field_value(2)],
+            [2, str(self.parent.case_key)],
+            [3, str(self.parent.case_date)],
+            [4, '1'],
+            [5, self.table_widget_medicine.field_value(1)],
+            [6, self.table_widget_medicine.field_value(0)],
+            [7, self.table_widget_medicine.field_value(5)],
+        ]
+
+        self.parent.set_treat(treat_rec)
+        self.parent.append_null_treat()
 
     # 設定GUI
     def _set_ui(self):
@@ -109,6 +127,8 @@ class DialogInputMedicine(QtWidgets.QDialog):
     def read_dictionary(self):
         if self.medicine_type == '健保藥品':
             medicine_type = 'AND (MedicineType = "單方" OR MedicineType = "複方" OR MedicineType = "成方")'
+        elif self.medicine_type == '健保處置':
+            medicine_type = 'AND (MedicineType = "穴道" OR MedicineType = "處置" OR MedicineType = "成方")'
         else:
             medicine_type = ''
 

@@ -10,6 +10,7 @@ from libs import number
 from libs import date_utils
 import ins_prescript_record
 import medical_record_recently_history
+import medical_record_fees
 from dialog import dialog_inquiry
 from dialog import dialog_diagnosis
 from dialog import dialog_disease
@@ -39,7 +40,12 @@ class MedicalRecord(QtWidgets.QMainWindow):
         self._set_signal()
         self._set_data()
         self._read_prescript()
-        self._read_recently_history()
+        if self.call_from == '醫師看診作業':
+            self._read_recently_history()
+            self._read_fees()
+        else:
+            self._read_fees()
+            self._read_recently_history()
 
     # 解構
     def __del__(self):
@@ -277,9 +283,15 @@ class MedicalRecord(QtWidgets.QMainWindow):
         self.ui.tabWidget_prescript.addTab(self.tab_ins_prescript, '自費')
 
     def _read_recently_history(self):
-        self.ui.tabWidget_past_record.addTab(
+        self.tab_medical_record_recently_history = \
             medical_record_recently_history.MedicalRecordRecentlyHistory(
-                self, self.database, self.system_settings, self.case_key, self.call_from), '最近病歷')
+                self, self.database, self.system_settings, self.case_key, self.call_from)
+        self.ui.tabWidget_past_record.addTab(self.tab_medical_record_recently_history, '最近病歷')
+
+    def _read_fees(self):
+        self.tab_medical_record_fees = medical_record_fees.MedicalRecordFees(
+            self, self.database, self.system_settings, self.case_key, self.call_from)
+        self.ui.tabWidget_past_record.addTab(self.tab_medical_record_fees, '批價明細')
 
     def save_medical_record(self):
         self.update_medical_record()
@@ -289,25 +301,29 @@ class MedicalRecord(QtWidgets.QMainWindow):
 
     # 病歷存檔
     def update_medical_record(self):
+        self.update_diagnosis_data()
+        self.update_treat_data()
+        self.update_ins_fees_data()
+        self.update_cash_fees_data()
+
+    # 診斷資料存檔
+    def update_diagnosis_data(self):
         self.record_saved = True
         fields = [
             'Symptom', 'Tongue', 'Pulse', 'Remark',
             'DiseaseCode1', 'DiseaseCode2', 'DiseaseCode3',
             'DiseaseName1', 'DiseaseName2', 'DiseaseName3',
             'Distincts', 'Cure', 'Package1', 'PresDays1', 'Instruction1',
+            'Treatment',
         ]
 
         package1, pres_days1, instruction1 = None, None, None
+        treatment = None
         if self.medical_record['InsType'] == '健保':
             package1 = strings.xstr(self.tab_ins_prescript.ui.comboBox_package.currentText())
             pres_days1 = strings.xstr(self.tab_ins_prescript.ui.comboBox_pres_days.currentText())
             instruction1 = strings.xstr(self.tab_ins_prescript.ui.comboBox_instruction.currentText())
-            if package1 == '':
-                package1 = None
-            if pres_days1 == '':
-                pres_days1 = None
-            if instruction1 == '':
-                instruction1 = None
+            treatment = strings.xstr(self.tab_ins_prescript.combo_box_treatment.currentText())
 
         data = [
             self.ui.textEdit_symptom.toPlainText(),
@@ -322,9 +338,64 @@ class MedicalRecord(QtWidgets.QMainWindow):
             self.ui.lineEdit_disease_name3.text(),
             self.ui.lineEdit_distinguish.text(),
             self.ui.lineEdit_cure.text(),
-            package1,
-            pres_days1,
-            instruction1,
+            package1, pres_days1, instruction1,
+            treatment,
+        ]
+
+        self.database.update_record('cases', fields, 'CaseKey', self.case_key, data)
+
+    # 處置資料存檔
+    def update_treat_data(self):
+        self.record_saved = True
+        fields = [
+            'Package1', 'PresDays1', 'Instruction1',
+            'Treatment',
+        ]
+
+        package1, pres_days1, instruction1 = None, None, None
+        treatment = None
+        if self.medical_record['InsType'] == '健保':
+            package1 = strings.xstr(self.tab_ins_prescript.ui.comboBox_package.currentText())
+            pres_days1 = strings.xstr(self.tab_ins_prescript.ui.comboBox_pres_days.currentText())
+            instruction1 = strings.xstr(self.tab_ins_prescript.ui.comboBox_instruction.currentText())
+            treatment = strings.xstr(self.tab_ins_prescript.combo_box_treatment.currentText())
+
+        data = [
+            package1, pres_days1, instruction1,
+            treatment,
+        ]
+
+        self.database.update_record('cases', fields, 'CaseKey', self.case_key, data)
+
+    # 健保批價資料存檔
+    def update_ins_fees_data(self):
+        self.record_saved = True
+        fields = [
+            'DiagFee', 'InterDrugFee', 'PharmacyFee',
+            'AcupunctureFee', 'MassageFee', 'DislocateFee', 'ExamFee',
+            'InsTotalFee', 'DiagShareFee', 'DrugShareFee', 'AgentFee', 'InsApplyFee',
+        ]
+
+        data = [
+            self.tab_medical_record_fees.ui.tableWidget_ins_fees.item(i, 0).text()
+            for i in range(len(fields))
+        ]
+
+        self.database.update_record('cases', fields, 'CaseKey', self.case_key, data)
+
+    # 自費批價資料存檔
+    def update_cash_fees_data(self):
+        self.record_saved = True
+        fields = [
+            'RegistFee', 'SDiagShareFee', 'SDrugShareFee', 'DepositFee', 'RefundFee',
+            'SDiagFee', 'SDrugFee', 'SHerbFee', 'SExpensiveFee',
+            'SAcupunctureFee', 'SMassageFee', 'SMaterialFee',
+            'SelfTotalFee', 'DiscountFee', 'TotalFee', 'ReceiptFee',
+        ]
+
+        data = [
+            self.tab_medical_record_fees.ui.tableWidget_cash_fees.item(i, 0).text()
+            for i in range(len(fields))
         ]
 
         self.database.update_record('cases', fields, 'CaseKey', self.case_key, data)
