@@ -132,17 +132,3 @@ class PatientList(QtWidgets.QMainWindow):
     def close_patient_list(self):
         self.close_all()
         self.close_tab()
-
-
-# 主程式
-def main():
-    app = QtWidgets.QApplication(sys.argv)
-    widget = PatientList()
-    widget.show()
-
-    sys.exit(app.exec_())
-
-
-# 程式進入點
-if __name__ == '__main__':
-    main()

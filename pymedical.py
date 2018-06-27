@@ -13,6 +13,7 @@ from dialog import dialog_system_settings
 from dialog import dialog_ic_card
 from classes import system_settings, db
 from convert import convert
+import login
 
 
 # 主畫面
@@ -68,7 +69,6 @@ class PyMedical(QtWidgets.QMainWindow):
         system.set_theme(self.ui, self.system_settings)
         self.ui.tabWidget_window.setTabsClosable(True)
         self._set_button_enabled()
-        self.showMaximized()
         self.ui.setWindowTitle('{0} 醫療資訊管理系統'.format(self.system_settings.field('院所名稱')))
 
     # 設定按鈕權限
@@ -90,6 +90,7 @@ class PyMedical(QtWidgets.QMainWindow):
         self.ui.pushButton_patient_list.clicked.connect(self.push_button_clicked)
         self.ui.pushButton_settings.clicked.connect(self.open_settings)
         self.ui.pushButton_charge.clicked.connect(self.push_button_clicked)
+        self.ui.pushButton_users.clicked.connect(self.push_button_clicked)
         self.ui.pushButton_diagnostic.clicked.connect(self.push_button_clicked)
         self.ui.pushButton_medicine.clicked.connect(self.push_button_clicked)
         self.ui.pushButton_ic_card.clicked.connect(self.open_ic_card)
@@ -288,12 +289,33 @@ class PyMedical(QtWidgets.QMainWindow):
         dialog.exec_()
         dialog.deleteLater()
 
+    def set_status_bar(self):
+        label_station_no = QtWidgets.QLabel()
+        label_station_no.setText('工作站編號: {0}'.format(self.system_settings.field('工作站編號')))
+        label_station_no.setFixedWidth(200)
+        self.ui.statusbar.addPermanentWidget(label_station_no)
+
+        label_user_name = QtWidgets.QLabel()
+        label_user_name.setText('使用者: {0}'.format(self.system_settings.field('使用者')))
+        label_user_name.setFixedWidth(200)
+        self.ui.statusbar.addPermanentWidget(label_user_name)
+
 
 # 主程式
 def main():
     app = QtWidgets.QApplication(sys.argv)
-    widget = PyMedical()
-    widget.show()
+    py_medical = PyMedical()
+    py_medical.system_settings.post('使用者', None)
+    login_dialog = login.Login(py_medical, py_medical.database, py_medical.system_settings)
+    login_dialog.exec_()
+    if not login_dialog.login_ok:
+        return
+
+    login_dialog.deleteLater()
+    user_name = login_dialog.user_name
+    py_medical.system_settings.post('使用者', user_name)
+    py_medical.set_status_bar()
+    py_medical.showMaximized()
     sys.exit(app.exec_())
 
 

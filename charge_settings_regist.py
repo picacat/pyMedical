@@ -265,16 +265,3 @@ class ChargeSettingsRegist(QtWidgets.QMainWindow):
         sql = 'SELECT * FROM charge_settings WHERE ChargeSettingsKey = {0}'.format(key)
         row_data = self.database.select_record(sql)[0]
         self._set_discount_data(self.ui.tableWidget_discount.currentRow(), row_data)
-
-
-# 主程式
-def main():
-    app = QtWidgets.QApplication(sys.argv)
-    widget = ChargeSettingsRegist()
-    widget.show()
-    sys.exit(app.exec_())
-
-
-# 程式開始
-if __name__ == '__main__':
-    main()

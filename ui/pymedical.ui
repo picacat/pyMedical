@@ -365,6 +365,13 @@
               </widget>
              </item>
              <item>
+              <widget class="QPushButton" name="pushButton_users">
+               <property name="text">
+                <string>使用者管理</string>
+               </property>
+              </widget>
+             </item>
+             <item>
               <widget class="QPushButton" name="pushButton_diagnostic">
                <property name="text">
                 <string>診察資料</string>

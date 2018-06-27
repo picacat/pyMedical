@@ -159,3 +159,10 @@ def get_traditional_health_care_fee(database, ins_type, massager):
         traditional_health_care_fee = number.get_integer(row['Amount'])
 
     return traditional_health_care_fee
+
+
+# 取得健保門診診察費
+def get_ins_diag_fee(database, system_settings):
+    ins_diag_fee = 0
+
+    return ins_diag_fee

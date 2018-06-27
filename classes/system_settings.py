@@ -54,7 +54,10 @@ class SystemSettings:
             if value == setting_rec['Value']:
                 return
 
-            self.database.update_record('system_settings', ['Value'], 'SystemSettingsKey', setting_rec['SystemSettingsKey'], [value])
+            self.database.update_record(
+                'system_settings', ['Value'], 'SystemSettingsKey',
+                setting_rec['SystemSettingsKey'], [value]
+            )
         except IndexError:
             fields = ['StationNo', 'Field', 'Value']
             data = [

@@ -65,16 +65,3 @@ class DictDiagnostic(QtWidgets.QMainWindow):
     def close_template(self):
         self.close_all()
         self.close_tab()
-
-
-# 主程式
-def main():
-    app = QtWidgets.QApplication(sys.argv)
-    widget = DictDiagnostic()
-    widget.show()
-    sys.exit(app.exec_())
-
-
-# 程式開始
-if __name__ == '__main__':
-    main()
