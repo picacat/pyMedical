@@ -305,6 +305,7 @@ class PyMedical(QtWidgets.QMainWindow):
 def main():
     app = QtWidgets.QApplication(sys.argv)
     py_medical = PyMedical()
+
     py_medical.system_settings.post('使用者', None)
     login_dialog = login.Login(py_medical, py_medical.database, py_medical.system_settings)
     login_dialog.exec_()

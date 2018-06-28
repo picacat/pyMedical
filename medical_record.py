@@ -40,6 +40,7 @@ class MedicalRecord(QtWidgets.QMainWindow):
         self._set_signal()
         self._set_data()
         self._read_prescript()
+
         if self.call_from == '醫師看診作業':
             self._read_recently_history()
             self._read_fees()
@@ -84,6 +85,19 @@ class MedicalRecord(QtWidgets.QMainWindow):
         self.ui.lineEdit_disease_code3.returnPressed.connect(self.disease_code_return_pressed)
         self.ui.lineEdit_disease_code3.editingFinished.connect(self.disease_code_editing_finished)
         self.add_tab_button.clicked.connect(self.add_self_tab)
+
+    def close_prescript_tab(self, current_index):
+        current_tab = self.ui.tabWidget_prescript.widget(current_index)
+        tab_name = self.ui.tabWidget_prescript.tabText(current_index)
+        if tab_name == '健保':
+            return
+
+        current_tab.close_all()
+        current_tab.deleteLater()
+
+    def close_medical_record(self):
+        self.close_all()
+        self.close_tab()
 
     def modify_patient(self):
         patient_key = self.patient_data['PatientKey']
@@ -373,7 +387,7 @@ class MedicalRecord(QtWidgets.QMainWindow):
         fields = [
             'DiagFee', 'InterDrugFee', 'PharmacyFee',
             'AcupunctureFee', 'MassageFee', 'DislocateFee', 'ExamFee',
-            'InsTotalFee', 'DiagShareFee', 'DrugShareFee', 'AgentFee', 'InsApplyFee',
+            'InsTotalFee', 'DiagShareFee', 'DrugShareFee', 'InsApplyFee', 'AgentFee',
         ]
 
         data = [
@@ -400,15 +414,9 @@ class MedicalRecord(QtWidgets.QMainWindow):
 
         self.database.update_record('cases', fields, 'CaseKey', self.case_key, data)
 
-    def close_prescript_tab(self, current_index):
-        current_tab = self.ui.tabWidget_prescript.widget(current_index)
-        tab_name = self.ui.tabWidget_prescript.tabText(current_index)
-        if tab_name == '健保':
-            return
-
-        current_tab.close_all()
-        current_tab.deleteLater()
-
-    def close_medical_record(self):
-        self.close_all()
-        self.close_tab()
+    # 健保重新批價
+    def calculate_ins_fees(self):
+        try:
+            self.tab_medical_record_fees.calculate_ins_fees()
+        except AttributeError:
+            pass

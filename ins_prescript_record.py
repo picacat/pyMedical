@@ -54,13 +54,6 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
         self.ui.tableWidget_treat.setCellWidget(0, 1, self.combo_box_treatment)
         self.combo_box_treatment.currentTextChanged.connect(self._combo_box_treat_changed)
 
-    def _combo_box_treat_changed(self):
-        if self.combo_box_treatment.currentText() == '':
-            self.ui.tableWidget_treat.setRowCount(0)
-            self._set_treat_ui()
-        else:
-            self.append_null_treat()
-
     def _set_combo_box(self):
         ui_settings.set_combo_box(
             self.ui.comboBox_package,
@@ -83,6 +76,7 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
         self.ui.toolButton_remove_treat.clicked.connect(self.remove_treat)
         self.ui.tableWidget_prescript.keyPressEvent = self._table_widget_prescript_key_press
         self.ui.tableWidget_treat.keyPressEvent = self._table_widget_treat_key_press
+        self.ui.comboBox_pres_days.currentTextChanged.connect(self.pres_days_changed)
 
     def _table_widget_prescript_key_press(self, event):
         key = event.key()
@@ -583,4 +577,17 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
             self.append_null_medicine()
             self.append_prescript(row)
 
+    # 處置內容變更
+    def _combo_box_treat_changed(self):
+        if self.combo_box_treatment.currentText() == '':
+            self.ui.tableWidget_treat.setRowCount(0)
+            self._set_treat_ui()
+        else:
+            self.append_null_treat()
+
+        self.parent.calculate_ins_fees()
+
+    # 藥日變更重新批價
+    def pres_days_changed(self):
+        self.parent.calculate_ins_fees()
 
