@@ -113,7 +113,7 @@ class PyMedical(QtWidgets.QMainWindow):
 
     # 新增tab
     def _add_tab(self, tab_name, *args):
-        if self._is_tab_exists(tab_name):
+        if self._tab_exists(tab_name):
             return
 
         module_name = modules.get_module_name(tab_name)
@@ -159,10 +159,9 @@ class PyMedical(QtWidgets.QMainWindow):
         if tab_name.find('病歷資料') == -1:
             return closable
 
-        if current_tab.call_from == '醫師看診作業':
+        if current_tab.call_from == '醫師看診作業' and not current_tab.record_saved:
             current_tab.update_medical_record()
-            if current_tab.medical_record['InsType'] == '健保':
-                current_tab.tab_ins_prescript.save_prescript()
+            current_tab.save_prescript()
 
             return closable
 
@@ -191,7 +190,7 @@ class PyMedical(QtWidgets.QMainWindow):
         return closable
 
     # 檢查是否開啟tab
-    def _is_tab_exists(self, tab_text):
+    def _tab_exists(self, tab_text):
         if self.ui.tabWidget_window.count() <= 0:
             return False
 

@@ -163,11 +163,13 @@ class Registration(QtWidgets.QMainWindow):
         self.table_widget_wait.set_table_heading_width(width)
 
     def read_wait(self):
-        sql = ('SELECT wait.*, patient.Gender FROM wait '
-               'LEFT JOIN patient ON wait.PatientKey = patient.PatientKey '
-               ' WHERE '
-               'DoctorDone = "False" '
-               'ORDER BY CaseDate, RegistNo')
+        sql = '''
+            SELECT wait.*, patient.Gender FROM wait
+            LEFT JOIN patient ON wait.PatientKey = patient.PatientKey
+            WHERE 
+            DoctorDone = "False"
+            ORDER BY CaseDate, RegistNo
+        '''
         self.table_widget_wait.set_db_data(sql, self._set_table_data)
         row_count = self.table_widget_wait.row_count()
 
@@ -178,21 +180,21 @@ class Registration(QtWidgets.QMainWindow):
 
     def _set_table_data(self, rec_no, rec):
         wait_rec = [
-            str(rec['WaitKey']),
-            str(rec['CaseKey']),
-            str(rec['PatientKey']),
-            str(rec['Name']),
-            str(rec['Gender']),
-            str(rec['InsType']),
-            str(rec['RegistType']),
-            str(rec['Share']),
-            str(rec['TreatType']),
-            str(rec['Visit']),
-            str(rec['Card']),
+            strings.xstr(rec['WaitKey']),
+            strings.xstr(rec['CaseKey']),
+            strings.xstr(rec['PatientKey']),
+            strings.xstr(rec['Name']),
+            strings.xstr(rec['Gender']),
+            strings.xstr(rec['InsType']),
+            strings.xstr(rec['RegistType']),
+            strings.xstr(rec['Share']),
+            strings.xstr(rec['TreatType']),
+            strings.xstr(rec['Visit']),
+            strings.xstr(rec['Card']),
             strings.int_to_str(rec['Continuance']).strip('0'),
-            str(rec['Room']),
-            str(rec['RegistNo']),
-            str(rec['Massager']),
+            strings.xstr(rec['Room']),
+            strings.xstr(rec['RegistNo']),
+            strings.xstr(rec['Massager']),
         ]
 
         for column in range(0, self.ui.tableWidget_wait.columnCount()):

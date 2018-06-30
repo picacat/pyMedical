@@ -2,7 +2,6 @@
 #coding: utf-8
 
 
-# 設定保險類別
 def get_integer(value):
     if value is None or value == '':
         return 0

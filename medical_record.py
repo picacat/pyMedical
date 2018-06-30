@@ -9,6 +9,7 @@ from libs import strings
 from libs import number
 from libs import date_utils
 import ins_prescript_record
+import self_prescript_record
 import medical_record_recently_history
 import medical_record_fees
 from dialog import dialog_inquiry
@@ -34,6 +35,12 @@ class MedicalRecord(QtWidgets.QMainWindow):
         self.last_record = None
         self.ui = None
         self.tab_ins_prescript = None
+        self.tab_self_prescript1 = None
+        self.tab_self_prescript2 = None
+        self.tab_self_prescript3 = None
+        self.tab_self_prescript4 = None
+        self.tab_self_prescript5 = None
+        self.tab_self_prescript6 = None
 
         self._read_data()
         self._set_ui()
@@ -84,7 +91,7 @@ class MedicalRecord(QtWidgets.QMainWindow):
         self.ui.lineEdit_disease_code3.textChanged.connect(self.disease_code_changed)
         self.ui.lineEdit_disease_code3.returnPressed.connect(self.disease_code_return_pressed)
         self.ui.lineEdit_disease_code3.editingFinished.connect(self.disease_code_editing_finished)
-        self.add_tab_button.clicked.connect(self.add_self_tab)
+        self.add_tab_button.clicked.connect(self.add_prescript_tab)
 
     def close_prescript_tab(self, current_index):
         current_tab = self.ui.tabWidget_prescript.widget(current_index)
@@ -285,16 +292,88 @@ class MedicalRecord(QtWidgets.QMainWindow):
         dialog.deleteLater()
 
     def _read_prescript(self):
-        if self.medical_record['InsType'] == '健保':
-            self.tab_ins_prescript = ins_prescript_record.InsPrescriptRecord(
-                self, self.database, self.system_settings, self.case_key)
-            self.ui.tabWidget_prescript.addTab(self.tab_ins_prescript, '健保')
+        sql = '''
+            SELECT MedicineSet FROM prescript WHERE
+            CaseKey = {0}
+            GROUP BY MedicineSet ORDER BY MedicineSet
+        '''.format(self.case_key)
+        rows = self.database.select_record(sql)
+        if len(rows) <= 0:
+            if self.medical_record['InsType'] == '健保':
+                self.add_prescript_tab(1)
+            else:
+                self.add_prescript_tab(2)
+
+            return
+
+        for row in rows:
+                self.add_prescript_tab(row['MedicineSet'])
 
     # 新增自費處方
-    def add_self_tab(self):
-        self.tab_ins_prescript = ins_prescript_record.InsPrescriptRecord(
-            self, self.database, self.system_settings, self.case_key)
-        self.ui.tabWidget_prescript.addTab(self.tab_ins_prescript, '自費')
+    def add_prescript_tab(self, medicine_set=None):
+        max_medicine_set = 7  # 自費最多6帖 (1 + 6)
+        set_current_tab = False
+        if medicine_set == 1:
+            self.tab_ins_prescript = ins_prescript_record.InsPrescriptRecord(
+                self, self.database, self.system_settings, self.case_key, 1)
+            self.ui.tabWidget_prescript.addTab(self.tab_ins_prescript, '健保')
+            return
+
+        if not medicine_set:  # 新增自費處方按鈕
+            medicine_set = 2
+            set_current_tab = True
+
+        tab_name = '自費{0}'.format(medicine_set-1)
+        if self._tab_exists(tab_name):
+            for i in range(2, max_medicine_set + 1):  # MedicineSet2 ~ MedicineSet7  最多六帖藥
+                tab_name = '自費{0}'.format(medicine_set-1)
+                if self._tab_exists(tab_name):
+                    medicine_set += 1
+                    if medicine_set > max_medicine_set:
+                        return
+                else:
+                    break
+
+        current_tab = None
+        new_tab = self_prescript_record.SelfPrescriptRecord(
+            self, self.database, self.system_settings, self.case_key, medicine_set)
+
+        if tab_name == '自費1':
+            self.tab_self_prescript1 = new_tab
+            current_tab = self.tab_self_prescript1
+        elif tab_name == '自費2':
+            self.tab_self_prescript2 = new_tab
+            current_tab = self.tab_self_prescript2
+        elif tab_name == '自費3':
+            self.tab_self_prescript3 = new_tab
+            current_tab = self.tab_self_prescript3
+        elif tab_name == '自費4':
+            self.tab_self_prescript4 = new_tab
+            current_tab = self.tab_self_prescript4
+        elif tab_name == '自費5':
+            self.tab_self_prescript5 = new_tab
+            current_tab = self.tab_self_prescript5
+        elif tab_name == '自費6':
+            self.tab_self_prescript6 = new_tab
+            current_tab = self.tab_self_prescript6
+
+        if current_tab is None:
+            return
+
+        self.ui.tabWidget_prescript.addTab(current_tab, tab_name)
+        if set_current_tab:
+            self.ui.tabWidget_prescript.setCurrentWidget(current_tab)
+
+    # 檢查是否開啟tab
+    def _tab_exists(self, tab_text):
+        if self.ui.tabWidget_prescript.count() <= 0:
+            return False
+
+        for i in range(self.ui.tabWidget_prescript.count()):
+            if self.ui.tabWidget_prescript.tabText(i) == tab_text:
+                return True
+
+        return False
 
     def _read_recently_history(self):
         self.tab_medical_record_recently_history = \
@@ -308,8 +387,9 @@ class MedicalRecord(QtWidgets.QMainWindow):
         self.ui.tabWidget_past_record.addTab(self.tab_medical_record_fees, '批價明細')
 
     def save_medical_record(self):
+        self.record_saved = True
         self.update_medical_record()
-        self.tab_ins_prescript.save_prescript()
+        self.save_prescript()
         self.close_all()
         self.close_tab()
 
@@ -322,7 +402,6 @@ class MedicalRecord(QtWidgets.QMainWindow):
 
     # 診斷資料存檔
     def update_diagnosis_data(self):
-        self.record_saved = True
         fields = [
             'Symptom', 'Tongue', 'Pulse', 'Remark',
             'DiseaseCode1', 'DiseaseCode2', 'DiseaseCode3',
@@ -360,7 +439,6 @@ class MedicalRecord(QtWidgets.QMainWindow):
 
     # 處置資料存檔
     def update_treat_data(self):
-        self.record_saved = True
         fields = [
             'Package1', 'PresDays1', 'Instruction1',
             'Treatment',
@@ -383,7 +461,6 @@ class MedicalRecord(QtWidgets.QMainWindow):
 
     # 健保批價資料存檔
     def update_ins_fees_data(self):
-        self.record_saved = True
         fields = [
             'DiagFee', 'InterDrugFee', 'PharmacyFee',
             'AcupunctureFee', 'MassageFee', 'DislocateFee', 'ExamFee',
@@ -399,7 +476,6 @@ class MedicalRecord(QtWidgets.QMainWindow):
 
     # 自費批價資料存檔
     def update_cash_fees_data(self):
-        self.record_saved = True
         fields = [
             'RegistFee', 'SDiagShareFee', 'SDrugShareFee', 'DepositFee', 'RefundFee',
             'SDiagFee', 'SDrugFee', 'SHerbFee', 'SExpensiveFee',
@@ -413,6 +489,38 @@ class MedicalRecord(QtWidgets.QMainWindow):
         ]
 
         self.database.update_record('cases', fields, 'CaseKey', self.case_key, data)
+
+    def save_prescript(self):
+        tab_prescript_list = [
+            self.tab_ins_prescript,
+            self.tab_self_prescript1,
+            self.tab_self_prescript2,
+            self.tab_self_prescript3,
+            self.tab_self_prescript4,
+            self.tab_self_prescript5,
+            self.tab_self_prescript6,
+        ]
+
+        for medicine_set, tab_prescript in zip(range(1, len(tab_prescript_list)+1), tab_prescript_list):
+            if tab_prescript is not None:
+                try:
+                    tab_prescript.save_prescript()
+                except RuntimeError:  # 關閉處方頁, 刪除整個處方
+                    self.remove_prescript(medicine_set)
+            else:
+                self.remove_prescript(medicine_set)
+
+    def remove_prescript(self, medicine_set):
+        sql = '''
+            DELETE FROM prescript WHERE 
+            (CaseKey = {0}) AND (MedicineSet = {1})
+        '''.format(self.case_key, medicine_set)
+        self.database.exec_sql(sql)
+        sql = '''
+            DELETE FROM dosage WHERE 
+            (CaseKey = {0}) AND (MedicineSet = {1})
+        '''.format(self.case_key, medicine_set)
+        self.database.exec_sql(sql)
 
     # 健保重新批價
     def calculate_ins_fees(self):

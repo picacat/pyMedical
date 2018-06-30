@@ -8,6 +8,7 @@ from classes import table_widget
 from libs import ui_settings
 from libs import system
 from libs import strings
+from libs import nhi_utils
 
 
 # 主視窗
@@ -19,7 +20,8 @@ class DialogInputMedicine(QtWidgets.QDialog):
         self.database = args[0]
         self.system_settings = args[1]
         self.medicine_type = args[2]
-        self.table_widget_prescript = args[3]
+        self.medicine_set = args[3]
+        self.table_widget_prescript = args[4]
         self.input_code = self.table_widget_prescript.currentItem().text()
 
         self.settings = QSettings('__settings.ini', QSettings.IniFormat)
@@ -45,7 +47,7 @@ class DialogInputMedicine(QtWidgets.QDialog):
         if self.medicine_key is None:
             self.table_widget_prescript.currentItem().setText(self.input_code)
         else:
-            if self.medicine_type == '健保藥品':
+            if self.medicine_type in ['健保藥品', '所有藥品']:
                 self.add_medicine()
             elif self.medicine_type == '健保處置':
                 self.add_treat()
@@ -59,7 +61,7 @@ class DialogInputMedicine(QtWidgets.QDialog):
             [5, str(self.table_widget_prescript.currentRow()+1)],
             [6, str(self.parent.case_key)],
             [7, str(self.parent.case_date)],
-            [8, '1'],
+            [8, str(self.medicine_set)],
             [9, self.table_widget_medicine.field_value(1)],
             [10, self.table_widget_medicine.field_value(0)],
             [11, self.table_widget_medicine.field_value(5)],
@@ -67,7 +69,9 @@ class DialogInputMedicine(QtWidgets.QDialog):
         ]
 
         self.parent.set_prescript(prescript_rec)
-        self.parent.set_default_pres_days()
+        if self.medicine_set == 1:
+            self.parent.set_default_pres_days()
+
         self.parent.append_null_medicine()
 
     def add_treat(self):
@@ -76,7 +80,7 @@ class DialogInputMedicine(QtWidgets.QDialog):
             [1, self.table_widget_medicine.field_value(2)],
             [2, str(self.parent.case_key)],
             [3, str(self.parent.case_date)],
-            [4, '1'],
+            [4, str(self.medicine_set)],
             [5, self.table_widget_medicine.field_value(1)],
             [6, self.table_widget_medicine.field_value(0)],
             [7, self.table_widget_medicine.field_value(5)],
@@ -126,9 +130,16 @@ class DialogInputMedicine(QtWidgets.QDialog):
 
     def read_dictionary(self):
         if self.medicine_type == '健保藥品':
-            medicine_type = 'AND (MedicineType = "單方" OR MedicineType = "複方" OR MedicineType = "成方")'
+            medicine_type = 'AND (MedicineType in ("單方", "複方", "成方"))'
+        elif self.medicine_type == '所有藥品':
+            medicine_type = 'AND (MedicineType in ("單方", "複方", "水藥", "外用", "高貴", "成方"))'
         elif self.medicine_type == '健保處置':
-            medicine_type = 'AND (MedicineType = "穴道" OR MedicineType = "處置" OR MedicineType = "成方")'
+            if self.parent.combo_box_treatment.currentText() in nhi_utils.ACUPUNCTURE_TREAT:
+                medicine_type = 'AND (MedicineType in ("穴道", "成方"))'
+            elif self.parent.combo_box_treatment.currentText() in nhi_utils.MASSAGE_TREAT:
+                medicine_type = 'AND (MedicineType in ("處置", "成方"))'
+            else:
+                medicine_type = 'AND (MedicineType in ("穴道", "處置", "成方"))'
         else:
             medicine_type = ''
 
@@ -136,7 +147,8 @@ class DialogInputMedicine(QtWidgets.QDialog):
             SELECT * FROM medicine WHERE 
             (MedicineName LIKE "{0}%" OR InputCode LIKE "{0}%" OR MedicineCode = "{0}" OR InsCode = "{0}")
             {1}
-            ORDER BY FIELD(MedicineType, "單方", "複方", "成方"), LENGTH(MedicineName), 
+            ORDER BY FIELD(MedicineType, "單方", "複方", "水藥", "外用", "高貴", "穴道", "處置", "成方"), 
+                     LENGTH(MedicineName), 
             CAST(CONVERT(`MedicineName` using big5) AS BINARY)
         '''.format(self.input_code, medicine_type)
         self.table_widget_medicine.set_db_data(sql, self._set_medicine_data)

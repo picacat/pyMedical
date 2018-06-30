@@ -9,15 +9,18 @@ UI_PATH = "ui"
 CONFIG_FILE = "pymedical.conf"
 
 UI_PY_MEDICAL = "pymedical.ui"
-
-UI_INS_PRESCRIPT_RECORD = "ins_prescript_record.ui"
 UI_LOGIN = "login.ui"
+
 UI_MEDICAL_RECORD = "medical_record.ui"
+UI_INS_PRESCRIPT_RECORD = "ins_prescript_record.ui"
+UI_SELF_PRESCRIPT_RECORD = "self_prescript_record.ui"
 UI_MEDICAL_RECORD_RECENTLY_HISTORY = "medical_record_recently_history.ui"
 UI_MEDICAL_RECORD_FEES = "medical_record_fees.ui"
 UI_MEDICAL_RECORD_LIST = "medical_record_list.ui"
+
 UI_PATIENT_LIST = "patient_list.ui"
 UI_PATIENT = "patient.ui"
+
 UI_RETURN_CARD = "return_card.ui"
 UI_REGISTRATION = "registration.ui"
 UI_TEMPLATE = "template.ui"

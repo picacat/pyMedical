@@ -25,6 +25,8 @@ class CvtUtec():
 
         if self.parent.ui.checkBox_groups.isChecked():
             self.cvt_groups()
+        if self.parent.ui.checkBox_dosage.isChecked():
+            self.cvt_dosage()
 
     # 類別詞庫轉檔
     def cvt_groups(self):
@@ -36,6 +38,14 @@ class CvtUtec():
             self.cvt_med2000_remark_groups()
             self.cvt_med2000_disease_groups()
             self.cvt_med2000_other_groups()
+        else:
+            pass
+
+    def cvt_dosage(self):
+        if self.product_type == 'Med2000':
+            self.cvt_med2000_dosage()
+        else:
+            pass
 
     def cvt_med2000_groups(self):
         fields = [
@@ -1613,3 +1623,31 @@ class CvtUtec():
         self.source_db.exec_sql(sql)
         sql = 'UPDATE clinic SET ClinicType = "治則" WHERE ClinicType = "傷治"'
         self.source_db.exec_sql(sql)
+
+    def cvt_med2000_dosage(self):
+        sql = 'TRUNCATE dosage'
+        self.database.exec_sql(sql)
+
+        sql = '''
+            SELECT CaseKey,
+                Package1, Package2, Package3, Package4, Package5, Package6,
+                PresDays1, PresDays2, PresDays3, PresDays4, PresDays5, PresDays6,
+                Instruction1, Instruction2, Instruction3, Instruction4, Instruction5, Instruction6
+             FROM cases ORDER BY CaseKey
+        '''
+        rows = self.source_db.select_record(sql)
+        self.progress_bar.setMaximum(len(rows))
+        self.progress_bar.setValue(0)
+        fields = ['CaseKey', 'MedicineSet', 'Packages', 'Days', 'Instruction']
+        for row in rows:
+            self.progress_bar.setValue(self.progress_bar.value() + 1)
+            for i in range(1, 7):
+                if row['Package{0}'.format(i)] is not None or row['PresDays{0}'.format(i)] is not None:
+                    data = [
+                        row['CaseKey'],
+                        i,
+                        row['Package{0}'.format(i)],
+                        row['PresDays{0}'.format(i)],
+                        row['Instruction{0}'.format(i)]
+                    ]
+                    self.database.insert_record('dosage', fields, data)

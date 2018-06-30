@@ -95,29 +95,38 @@ class MedicalRecordList(QtWidgets.QMainWindow):
 
     def _set_table_data(self, rec_no, rec):
         if rec['InsType'] == '健保':
-            pres_days = rec['PresDays1']
+            medicine_set = 1
         else:
-            pres_days = rec['PresDays2']
+            medicine_set = 2
+        sql = '''
+            SELECT * FROM dosage WHERE
+            CaseKey = {0} AND MedicineSet = {1}
+        '''.format(rec['CaseKey'], medicine_set)
+        rows = self.database.select_record(sql)
+        if len(rows) > 0:
+            pres_days = rows[0]['Days']
+        else:
+            pres_days = None
 
         medical_record = [
-            str(rec['CaseKey']),
-            str(rec['CaseDate']),
-            str(rec['Period']),
-            str(rec['Room']),
-            str(rec['RegistNo']),
-            str(rec['PatientKey']),
-            str(rec['Name']),
-            str(rec['Gender']),
-            str(rec['Birthday']),
-            str(rec['InsType']),
-            str(rec['Share']),
-            str(rec['TreatType']),
-            str(rec['Card']),
+            strings.xstr(rec['CaseKey']),
+            strings.xstr(rec['CaseDate']),
+            strings.xstr(rec['Period']),
+            strings.xstr(rec['Room']),
+            strings.xstr(rec['RegistNo']),
+            strings.xstr(rec['PatientKey']),
+            strings.xstr(rec['Name']),
+            strings.xstr(rec['Gender']),
+            strings.xstr(rec['Birthday']),
+            strings.xstr(rec['InsType']),
+            strings.xstr(rec['Share']),
+            strings.xstr(rec['TreatType']),
+            strings.xstr(rec['Card']),
             strings.int_to_str(rec['Continuance']).strip('0'),
             strings.int_to_str(pres_days),
-            str(rec['Doctor']),
-            str(rec['DiseaseName1']),
-            str(rec['Massager']),
+            strings.xstr(rec['Doctor']),
+            strings.xstr(rec['DiseaseName1']),
+            strings.xstr(rec['Massager']),
             strings.int_to_str(rec['RegistFee']),
             strings.int_to_str(rec['SDiagShareFee']),
             strings.int_to_str(rec['SDrugShareFee']),
@@ -168,17 +177,3 @@ class MedicalRecordList(QtWidgets.QMainWindow):
     def close_medical_record_list(self):
         self.close_all()
         self.close_tab()
-
-
-# 主程式
-def main():
-    app = QtWidgets.QApplication(sys.argv)
-    widget = MedicalRecordList()
-    widget.show()
-
-    sys.exit(app.exec_())
-
-
-# 程式進入點
-if __name__ == '__main__':
-    main()

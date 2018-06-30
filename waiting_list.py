@@ -51,11 +51,13 @@ class WaitingList(QtWidgets.QMainWindow):
         self.table_widget_waiting_list.set_table_heading_width(width)
 
     def read_wait(self):
-        sql = ('SELECT wait.*, patient.Gender, patient.Birthday FROM wait '
-               'LEFT JOIN patient ON wait.PatientKey = patient.PatientKey '
-               'WHERE '
-               'DoctorDone = "False" '
-               'ORDER BY CaseDate, RegistNo')
+        sql = '''
+            SELECT wait.*, patient.Gender, patient.Birthday FROM wait 
+            LEFT JOIN patient ON wait.PatientKey = patient.PatientKey 
+            WHERE 
+            DoctorDone = "False"
+            ORDER BY CaseDate, RegistNo
+        '''
         self.table_widget_waiting_list.set_db_data(sql, self._set_table_data)
         row_count = self.table_widget_waiting_list.row_count()
         if row_count > 0:
@@ -80,24 +82,24 @@ class WaitingList(QtWidgets.QMainWindow):
             age = '{0}歲{1}月'.format(age_year, age_month)
 
         wait_rec = [
-                    str(rec['WaitKey']),
-                    str(rec['CaseKey']),
-                    str(rec['PatientKey']),
-                    str(rec['Name']),
-                    str(rec['Gender']),
+                    strings.xstr(rec['WaitKey']),
+                    strings.xstr(rec['CaseKey']),
+                    strings.xstr(rec['PatientKey']),
+                    strings.xstr(rec['Name']),
+                    strings.xstr(rec['Gender']),
                     age,
-                    str(rec['RegistNo']),
+                    strings.xstr(rec['RegistNo']),
                     registration_time,
                     wait_time,
-                    str(rec['InsType']),
-                    str(rec['RegistType']),
-                    str(rec['Share']),
-                    str(rec['TreatType']),
-                    str(rec['Visit']),
-                    str(rec['Card']),
+                    strings.xstr(rec['InsType']),
+                    strings.xstr(rec['RegistType']),
+                    strings.xstr(rec['Share']),
+                    strings.xstr(rec['TreatType']),
+                    strings.xstr(rec['Visit']),
+                    strings.xstr(rec['Card']),
                     strings.int_to_str(rec['Continuance']).strip('0'),
-                    str(rec['Massager']),
-                    str(rec['Remark']),
+                    strings.xstr(rec['Massager']),
+                    strings.xstr(rec['Remark']),
         ]
 
         for column in range(0, self.ui.tableWidget_waiting_list.columnCount()):
