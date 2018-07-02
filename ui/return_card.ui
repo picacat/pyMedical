@@ -28,6 +28,9 @@
       </property>
       <item>
        <widget class="QTableWidget" name="tableWidget_return_card">
+        <property name="editTriggers">
+         <set>QAbstractItemView::NoEditTriggers</set>
+        </property>
         <property name="selectionMode">
          <enum>QAbstractItemView::SingleSelection</enum>
         </property>
@@ -86,7 +89,7 @@
         </column>
         <column>
          <property name="text">
-          <string>還卡卡序</string>
+          <string>卡序</string>
          </property>
         </column>
         <column>
@@ -129,7 +132,7 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
-   <addaction name="action_something"/>
+   <addaction name="action_return_card"/>
    <addaction name="separator"/>
    <addaction name="action_close"/>
   </widget>
@@ -149,7 +152,7 @@
    </widget>
    <addaction name="menu"/>
   </widget>
-  <action name="action_something">
+  <action name="action_return_card">
    <property name="icon">
     <iconset>
      <normaloff>../icons/document-new.svg</normaloff>../icons/document-new.svg</iconset>

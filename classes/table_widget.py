@@ -1,4 +1,4 @@
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtCore import Qt
 
 
@@ -61,3 +61,25 @@ class TableWidget:
             field_value = None
 
         return field_value
+
+    def set_cell_text_format(self, row_index, column_index, text_format, variable_type=None):
+        item = self.table_widget.item(row_index, column_index)
+        if item is None:
+            return
+
+        self.table_widget.setCurrentCell(row_index, column_index + 1)
+        self.table_widget.setCurrentCell(row_index, column_index)
+
+        try:
+            if variable_type == 'float':
+                field_text = format(float(item.text()), text_format)
+            else:
+                field_text = format(int(item.text()), text_format)
+        except ValueError:
+            field_text = item.text()
+
+        self.table_widget.setItem(
+            row_index, column_index, QtWidgets.QTableWidgetItem(field_text)
+        )
+        self.table_widget.item(row_index, column_index).setTextAlignment(
+            QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)

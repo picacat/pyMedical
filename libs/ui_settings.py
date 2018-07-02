@@ -57,6 +57,7 @@ UI_DIALOG_PULSE = "dialog_pulse.ui"
 UI_DIALOG_REMARK = "dialog_remark.ui"
 UI_DIALOG_DISTINGUISH = "dialog_distinguish.ui"
 UI_DIALOG_CURE = "dialog_cure.ui"
+UI_DIALOG_RETURN_CARD = "dialog_return_card.ui"
 
 UI_DICT_DIAGNOSTIC = "dict_diagnostic.ui"
 UI_DICT_SYMPTOM = "dict_symptom.ui"

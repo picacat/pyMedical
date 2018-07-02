@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+
 #coding: utf-8
 
 from PyQt5 import QtWidgets, QtCore, QtGui
@@ -96,6 +96,8 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
             if self.ui.tableWidget_prescript.currentColumn() == 1:
                 self.open_medicine_dialog()
             elif self.ui.tableWidget_prescript.currentColumn() == 2:
+                self.table_widget_prescript.set_cell_text_format(
+                    current_row, self.ui.tableWidget_prescript.currentColumn(), '.2f', 'float')
                 self.ui.tableWidget_prescript.setCurrentCell(self.ui.tableWidget_prescript.currentRow()+1, 2)
 
         return QtWidgets.QTableWidget.keyPressEvent(self.ui.tableWidget_prescript, event)
@@ -196,21 +198,16 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
             dialog.deleteLater()
 
     def append_prescript(self, row):
-        if row['Dosage'] is None:
-            dosage = ''
-        else:
-            dosage = str(row['Dosage'])
-
         prescript_rec = [
             [0, '-1'],
             [1, row['MedicineName']],
-            [2, dosage],
+            # [2, strings.xstr(row['Dosage'])],
             [3, row['Unit']],
             [4, None],
-            [5, str(self.ui.tableWidget_prescript.currentRow()+1)],
-            [6, str(self.case_key)],
-            [7, str(self.case_date)],
-            [8, str(self.medicine_set)],
+            [5, strings.xstr(self.ui.tableWidget_prescript.currentRow()+1)],
+            [6, strings.xstr(self.case_key)],
+            [7, strings.xstr(self.case_date)],
+            [8, strings.xstr(self.medicine_set)],
             [9, row['MedicineType']],
             [10, row['MedicineKey']],
             [11, row['InsCode']],
@@ -224,9 +221,9 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
         treat_rec = [
             [0, '-1'],
             [1, row['MedicineName']],
-            [2, str(self.case_key)],
-            [3, str(self.case_date)],
-            [4, str(self.medicine_set)],
+            [2, strings.xstr(self.case_key)],
+            [3, strings.xstr(self.case_date)],
+            [4, strings.xstr(self.medicine_set)],
             [5, row['MedicineType']],
             [6, row['MedicineKey']],
             [7, row['InsCode']],
@@ -234,12 +231,16 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
 
         self.set_treat(treat_rec)
 
-    def set_prescript(self, prescript_rec):
-        for item in prescript_rec:
+    def set_prescript(self, row_data):
+        row_no = self.ui.tableWidget_prescript.currentRow()
+        for item in row_data:
             self.ui.tableWidget_prescript.setItem(
-                self.ui.tableWidget_prescript.currentRow(), item[0],
-                QtWidgets.QTableWidgetItem(item[1])
+                row_no, item[0], QtWidgets.QTableWidgetItem(item[1])
             )
+
+            if item[0] in [3]:
+                self.ui.tableWidget_prescript.item(row_no, item[0]).setTextAlignment(
+                    QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter)
 
     def set_treat(self, treat_rec):
         for item in treat_rec:
@@ -399,6 +400,10 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
         self.ui.tableWidget_prescript.setFocus(True)
         self.ui.tableWidget_prescript.insertRow(index)
         self.ui.tableWidget_prescript.setCurrentCell(index, 1)
+
+        self.ui.tableWidget_prescript.setItem(index, 2, QtWidgets.QTableWidgetItem(None))
+        self.ui.tableWidget_prescript.item(index, 2).setTextAlignment(
+            QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
 
     def _insert_treat_row(self, index):
         self.ui.tableWidget_treat.setFocus(True)

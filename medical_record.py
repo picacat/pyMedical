@@ -292,32 +292,48 @@ class MedicalRecord(QtWidgets.QMainWindow):
         dialog.deleteLater()
 
     def _read_prescript(self):
+        if self.medical_record['InsType'] == '健保':  # 健保無論如何一定要開啟
+            self.add_prescript_tab(1)
+
+        # 讀取自費資料
         sql = '''
             SELECT MedicineSet FROM prescript WHERE
-            CaseKey = {0}
+            CaseKey = {0} AND MedicineSet >= 2
             GROUP BY MedicineSet ORDER BY MedicineSet
         '''.format(self.case_key)
         rows = self.database.select_record(sql)
         if len(rows) <= 0:
-            if self.medical_record['InsType'] == '健保':
-                self.add_prescript_tab(1)
-            else:
-                self.add_prescript_tab(2)
-
             return
 
         for row in rows:
                 self.add_prescript_tab(row['MedicineSet'])
 
+    def _get_new_tab(self, max_medicine_set):
+        tab_name = None
+        medicine_set = 2
+        for i in range(2, max_medicine_set + 1):  # MedicineSet2 ~ MedicineSet7  最多六帖藥
+            tab_name = '自費{0}'.format(medicine_set-1)
+            if self._tab_exists(tab_name):
+                medicine_set += 1
+                if medicine_set > max_medicine_set:
+                    return False, None
+                else:
+                    continue
+            else:
+                break
+
+        return tab_name, medicine_set
+
     # 新增自費處方
     def add_prescript_tab(self, medicine_set=None):
-        max_medicine_set = 7  # 自費最多6帖 (1 + 6)
-        set_current_tab = False
-        if medicine_set == 1:
+        if medicine_set == 1:  # 健保處方頁
             self.tab_ins_prescript = ins_prescript_record.InsPrescriptRecord(
                 self, self.database, self.system_settings, self.case_key, 1)
             self.ui.tabWidget_prescript.addTab(self.tab_ins_prescript, '健保')
             return
+
+        max_medicine_set = 7  # 自費最多6帖 (1 + 6)
+        set_current_tab = False
 
         if not medicine_set:  # 新增自費處方按鈕
             medicine_set = 2
@@ -325,14 +341,10 @@ class MedicalRecord(QtWidgets.QMainWindow):
 
         tab_name = '自費{0}'.format(medicine_set-1)
         if self._tab_exists(tab_name):
-            for i in range(2, max_medicine_set + 1):  # MedicineSet2 ~ MedicineSet7  最多六帖藥
-                tab_name = '自費{0}'.format(medicine_set-1)
-                if self._tab_exists(tab_name):
-                    medicine_set += 1
-                    if medicine_set > max_medicine_set:
-                        return
-                else:
-                    break
+            tab_name, medicine_set = self._get_new_tab(max_medicine_set)
+
+        if not tab_name:
+            return
 
         current_tab = None
         new_tab = self_prescript_record.SelfPrescriptRecord(
@@ -406,16 +418,12 @@ class MedicalRecord(QtWidgets.QMainWindow):
             'Symptom', 'Tongue', 'Pulse', 'Remark',
             'DiseaseCode1', 'DiseaseCode2', 'DiseaseCode3',
             'DiseaseName1', 'DiseaseName2', 'DiseaseName3',
-            'Distincts', 'Cure', 'Package1', 'PresDays1', 'Instruction1',
+            'Distincts', 'Cure',
             'Treatment',
         ]
 
-        package1, pres_days1, instruction1 = None, None, None
         treatment = None
         if self.medical_record['InsType'] == '健保':
-            package1 = strings.xstr(self.tab_ins_prescript.ui.comboBox_package.currentText())
-            pres_days1 = strings.xstr(self.tab_ins_prescript.ui.comboBox_pres_days.currentText())
-            instruction1 = strings.xstr(self.tab_ins_prescript.ui.comboBox_instruction.currentText())
             treatment = strings.xstr(self.tab_ins_prescript.combo_box_treatment.currentText())
 
         data = [
@@ -431,7 +439,6 @@ class MedicalRecord(QtWidgets.QMainWindow):
             self.ui.lineEdit_disease_name3.text(),
             self.ui.lineEdit_distinguish.text(),
             self.ui.lineEdit_cure.text(),
-            package1, pres_days1, instruction1,
             treatment,
         ]
 

@@ -196,8 +196,13 @@ class DictTreat(QtWidgets.QMainWindow):
                 dialog.ui.comboBox_unit.currentText(),
                 dialog.ui.comboBox_medicine_mode.currentText(),
                 dialog.ui.lineEdit_ins_code.text(),
+                dialog.ui.lineEdit_dosage.text(),
                 dialog.ui.lineEdit_medicine_alias.text(),
+                dialog.ui.lineEdit_location.text(),
+                dialog.ui.lineEdit_in_price.text(),
                 dialog.ui.lineEdit_sale_price.text(),
+                dialog.ui.lineEdit_quantity.text(),
+                dialog.ui.lineEdit_safe_quantity.text(),
                 dialog.ui.textEdit_description.toPlainText(),
             ]
             strings.str_to_none(data)

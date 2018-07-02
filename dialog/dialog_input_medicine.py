@@ -47,47 +47,10 @@ class DialogInputMedicine(QtWidgets.QDialog):
         if self.medicine_key is None:
             self.table_widget_prescript.currentItem().setText(self.input_code)
         else:
-            if self.medicine_type in ['健保藥品', '所有藥品']:
-                self.add_medicine()
-            elif self.medicine_type == '健保處置':
+            if self.medicine_type == '健保處置':
                 self.add_treat()
-
-    def add_medicine(self):
-        prescript_rec = [
-            [0, '-1'],
-            [1, self.table_widget_medicine.field_value(2)],
-            [3, self.table_widget_medicine.field_value(3)],
-            [4, None],
-            [5, str(self.table_widget_prescript.currentRow()+1)],
-            [6, str(self.parent.case_key)],
-            [7, str(self.parent.case_date)],
-            [8, str(self.medicine_set)],
-            [9, self.table_widget_medicine.field_value(1)],
-            [10, self.table_widget_medicine.field_value(0)],
-            [11, self.table_widget_medicine.field_value(5)],
-            [12, self.system_settings.field('劑量模式')],
-        ]
-
-        self.parent.set_prescript(prescript_rec)
-        if self.medicine_set == 1:
-            self.parent.set_default_pres_days()
-
-        self.parent.append_null_medicine()
-
-    def add_treat(self):
-        treat_rec = [
-            [0, '-1'],
-            [1, self.table_widget_medicine.field_value(2)],
-            [2, str(self.parent.case_key)],
-            [3, str(self.parent.case_date)],
-            [4, str(self.medicine_set)],
-            [5, self.table_widget_medicine.field_value(1)],
-            [6, self.table_widget_medicine.field_value(0)],
-            [7, self.table_widget_medicine.field_value(5)],
-        ]
-
-        self.parent.set_treat(treat_rec)
-        self.parent.append_null_treat()
+            else:
+                self.add_medicine()
 
     # 設定GUI
     def _set_ui(self):
@@ -109,7 +72,7 @@ class DialogInputMedicine(QtWidgets.QDialog):
     def _set_signal(self):
         self.ui.buttonBox.accepted.connect(self.accepted_button_clicked)
         self.ui.buttonBox.rejected.connect(self.rejected_button_clicked)
-        self.ui.tableWidget_medicine.doubleClicked.connect(self.accepted_button_clicked)
+        self.ui.tableWidget_medicine.clicked.connect(self.accepted_button_clicked)
 
     # 設定欄位寬度
     def _set_table_width(self):
@@ -172,3 +135,41 @@ class DialogInputMedicine(QtWidgets.QDialog):
             if column in [3]:
                 self.ui.tableWidget_medicine.item(rec_no, column).setTextAlignment(
                     QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter)
+
+    def add_medicine(self):
+        prescript_rec = [
+            [0, '-1'],
+            [1, self.table_widget_medicine.field_value(2)],
+            [3, self.table_widget_medicine.field_value(3)],
+            [4, None],
+            [5, str(self.table_widget_prescript.currentRow()+1)],
+            [6, str(self.parent.case_key)],
+            [7, str(self.parent.case_date)],
+            [8, str(self.medicine_set)],
+            [9, self.table_widget_medicine.field_value(1)],
+            [10, self.table_widget_medicine.field_value(0)],
+            [11, self.table_widget_medicine.field_value(5)],
+            [12, self.system_settings.field('劑量模式')],
+        ]
+
+        self.parent.set_prescript(prescript_rec)
+        if self.medicine_set == 1:
+            self.parent.set_default_pres_days()
+
+        self.parent.append_null_medicine()
+
+    def add_treat(self):
+        treat_rec = [
+            [0, '-1'],
+            [1, self.table_widget_medicine.field_value(2)],
+            [2, str(self.parent.case_key)],
+            [3, str(self.parent.case_date)],
+            [4, str(self.medicine_set)],
+            [5, self.table_widget_medicine.field_value(1)],
+            [6, self.table_widget_medicine.field_value(0)],
+            [7, self.table_widget_medicine.field_value(5)],
+        ]
+
+        self.parent.set_treat(treat_rec)
+        self.parent.append_null_treat()
+

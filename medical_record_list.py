@@ -21,7 +21,7 @@ class MedicalRecordList(QtWidgets.QMainWindow):
         self.database = args[0]
         self.system_settings = args[1]
         self.dialog_setting = {
-            "dialog_executed": None,
+            "dialog_executed": False,
             "start_date": None,
             "end_date": None,
             "period": None,
@@ -63,7 +63,7 @@ class MedicalRecordList(QtWidgets.QMainWindow):
         self.table_widget_medical_record_list.set_table_heading_width(width)
 
     # 讀取病歷
-    def _get_sql(self):
+    def open_dialog(self):
         dialog = dialog_medical_record_list.DialogMedicalRecordList(self, self.database, self.system_settings)
         if self.dialog_setting['dialog_executed']:
             dialog.ui.dateEdit_start_date.setDate(self.dialog_setting['start_date'])
@@ -80,15 +80,9 @@ class MedicalRecordList(QtWidgets.QMainWindow):
 
         sql = dialog.get_sql()
         dialog.close_all()
+        dialog.deleteLater()
 
         if result == 0:
-            return None
-        else:
-            return sql
-
-    def open_dialog(self):
-        sql = self._get_sql()
-        if sql is None:
             return
 
         self.table_widget_medical_record_list.set_db_data(sql, self._set_table_data)

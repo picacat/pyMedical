@@ -105,6 +105,8 @@ class PyMedical(QtWidgets.QMainWindow):
             tab.read_wait()
         elif tab_name == '醫師看診作業':
             tab.read_wait()
+        elif tab_name == '健保卡欠還卡':
+            tab.read_return_card()
 
     # 按鍵驅動
     def push_button_clicked(self):
@@ -299,6 +301,12 @@ class PyMedical(QtWidgets.QMainWindow):
         label_user_name.setFixedWidth(200)
         self.ui.statusbar.addPermanentWidget(label_user_name)
 
+    def set_root_permission(self):
+        if self.system_settings.field('使用者') != '超級使用者':
+            self.action_convert.setEnabled(False)
+        else:
+            self.action_convert.setEnabled(True)
+
 
 # 主程式
 def main():
@@ -315,6 +323,7 @@ def main():
     user_name = login_dialog.user_name
     py_medical.system_settings.post('使用者', user_name)
     py_medical.set_status_bar()
+    py_medical.set_root_permission()
     py_medical.showMaximized()
     sys.exit(app.exec_())
 

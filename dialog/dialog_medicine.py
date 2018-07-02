@@ -61,7 +61,7 @@ class DialogMedicine(QtWidgets.QDialog):
     # 設定信號
     def _set_signal(self):
         self.ui.tableWidget_dict_groups.itemSelectionChanged.connect(self.dict_groups_changed)
-        self.ui.tableWidget_medicine.doubleClicked.connect(self.medicine_double_clicked)
+        self.ui.tableWidget_medicine.clicked.connect(self.medicine_double_clicked)
         self.ui.lineEdit_input_code.textChanged.connect(self.input_code_changed)
         self.ui.buttonBox.accepted.connect(self.accepted_button_clicked)
         self.ui.buttonBox.rejected.connect(self.rejected_button_clicked)
@@ -182,7 +182,6 @@ class DialogMedicine(QtWidgets.QDialog):
         dict_groups_type = self.table_widget_dict_groups.field_value(1)
         input_code = str(self.ui.lineEdit_input_code.text()).strip()
         if input_code == '':
-            self._read_medicine(dict_groups_type)
             return
 
         input_code = strings.phonetic_to_str(input_code)

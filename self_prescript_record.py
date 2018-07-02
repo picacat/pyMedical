@@ -82,6 +82,8 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
             if self.ui.tableWidget_prescript.currentColumn() == 1:
                 self.open_medicine_dialog()
             elif self.ui.tableWidget_prescript.currentColumn() == 2:
+                self.table_widget_prescript.set_cell_text_format(
+                    current_row, self.ui.tableWidget_prescript.currentColumn(), '.2f', 'float')
                 self.ui.tableWidget_prescript.setCurrentCell(self.ui.tableWidget_prescript.currentRow()+1, 2)
 
         return QtWidgets.QTableWidget.keyPressEvent(self.ui.tableWidget_prescript, event)
@@ -93,12 +95,10 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
         if item is None or item.text() == '':
             return
 
-        medicine_type = 'AND (MedicineType = "單方" OR MedicineType = "複方" OR MedicineType = "成方")'
         sql = '''
             SELECT * FROM medicine WHERE 
             (MedicineName like "{0}%" OR InputCode LIKE "{0}%" OR MedicineCode = "{0}" OR InsCode = "{0}") 
-            {1}
-        '''.format(item.text(), medicine_type)
+        '''.format(item.text())
         rows = self.database.select_record(sql)
         if len(rows) <= 0:
             if self.table_widget_prescript.field_value(0) is None:
@@ -112,7 +112,7 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
             dialog = dialog_input_medicine.DialogInputMedicine(
                 self, self.database,
                 self.system_settings,
-                '所有藥品',
+                None,
                 self.medicine_set,
                 self.ui.tableWidget_prescript,
             )
@@ -179,13 +179,11 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
         self.ui.comboBox_instruction.setCurrentText(strings.xstr(row[0]['Instruction']))
 
     def _read_medicine(self):
-        medicine_groups = nhi_utils.get_medicine_type(self.database, '藥品類別')
         sql = """ 
             SELECT * FROM prescript WHERE 
-            (CaseKey = {0}) AND (MedicineSet = {1}) AND
-            (MedicineType in {2})
+            (CaseKey = {0}) AND (MedicineSet = {1})
             ORDER BY PrescriptNo, PrescriptKey
-        """.format(self.case_key, self.medicine_set, tuple(medicine_groups))
+        """.format(self.case_key, self.medicine_set)
         self.table_widget_prescript.set_db_data(sql, self._set_medicine_data)
 
     def _set_medicine_data(self, rec_no, rec):
@@ -236,6 +234,10 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
         self.ui.tableWidget_prescript.setFocus(True)
         self.ui.tableWidget_prescript.insertRow(index)
         self.ui.tableWidget_prescript.setCurrentCell(index, 1)
+
+        self.ui.tableWidget_prescript.setItem(index, 2, QtWidgets.QTableWidgetItem(None))
+        self.ui.tableWidget_prescript.item(index, 2).setTextAlignment(
+            QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
 
     # 刪除處方
     def remove_medicine(self):
@@ -307,13 +309,11 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
         for items in prescript_data_set:
             prescript_key_list.append(items[0])
 
-        medicine_type_list = nhi_utils.get_medicine_type(self.database, medicine_type)
         sql = '''
             SELECT * FROM prescript WHERE 
             CaseKey = {0} AND 
-            MedicineSet = {1} AND
-            MedicineType in {2}
-        '''.format(self.case_key, self.medicine_set, tuple(medicine_type_list))
+            MedicineSet = {1}
+        '''.format(self.case_key, self.medicine_set)
 
         rows = self.database.select_record(sql)
         for row in rows:

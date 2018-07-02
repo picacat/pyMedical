@@ -23,6 +23,7 @@ class WaitingList(QtWidgets.QMainWindow):
 
         self._set_ui()
         self._set_signal()
+        # self.read_wait()   # activate by pymedical.py->tab_changed
 
     # 解構
     def __del__(self):
