@@ -5,8 +5,8 @@ import sys
 
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtWidgets import QInputDialog, QMessageBox, QPushButton
-from libs import ui_settings
-from libs import strings
+from libs import ui_utils
+from libs import string_utils
 from libs import dialog_utils
 from classes import table_widget
 from dialog import dialog_input_drug
@@ -37,7 +37,7 @@ class DictDrug(QtWidgets.QMainWindow):
 
     # 設定GUI
     def _set_ui(self):
-        self.ui = ui_settings.load_ui_file(ui_settings.UI_DICT_DRUG, self)
+        self.ui = ui_utils.load_ui_file(ui_utils.UI_DICT_DRUG, self)
         self.table_widget_dict_groups = table_widget.TableWidget(self.ui.tableWidget_dict_groups, self.database)
         self.table_widget_dict_groups.set_column_hidden([0])
         self.table_widget_dict_drug = table_widget.TableWidget(self.ui.tableWidget_dict_drug, self.database)
@@ -73,8 +73,8 @@ class DictDrug(QtWidgets.QMainWindow):
 
     def _set_dict_groups_data(self, rec_no, rec):
         dict_groups_rec = [
-            strings.xstr(rec['DictGroupsKey']),
-            strings.xstr(rec['DictGroupsName']),
+            string_utils.xstr(rec['DictGroupsKey']),
+            string_utils.xstr(rec['DictGroupsName']),
         ]
 
         for column in range(0, self.ui.tableWidget_dict_groups.columnCount()):
@@ -95,20 +95,20 @@ class DictDrug(QtWidgets.QMainWindow):
 
     def _set_dict_drug_data(self, rec_no, rec):
         dict_drug_rec = [
-            strings.xstr(rec['MedicineKey']),
-            strings.xstr(rec['MedicineCode']),
-            strings.xstr(rec['InputCode']),
-            strings.xstr(rec['MedicineName']),
-            strings.xstr(rec['InsCode']),
-            strings.xstr(rec['Unit']),
-            strings.xstr(rec['Dosage']),
-            strings.xstr(rec['MedicineMode']),
-            strings.xstr(rec['MedicineAlias']),
-            strings.xstr(rec['Location']),
-            strings.xstr(rec['InPrice']),
-            strings.xstr(rec['SalePrice']),
-            strings.xstr(rec['Quantity']),
-            strings.xstr(rec['SafeQuantity']),
+            string_utils.xstr(rec['MedicineKey']),
+            string_utils.xstr(rec['MedicineCode']),
+            string_utils.xstr(rec['InputCode']),
+            string_utils.xstr(rec['MedicineName']),
+            string_utils.xstr(rec['InsCode']),
+            string_utils.xstr(rec['Unit']),
+            string_utils.xstr(rec['Dosage']),
+            string_utils.xstr(rec['MedicineMode']),
+            string_utils.xstr(rec['MedicineAlias']),
+            string_utils.xstr(rec['Location']),
+            string_utils.xstr(rec['InPrice']),
+            string_utils.xstr(rec['SalePrice']),
+            string_utils.xstr(rec['Quantity']),
+            string_utils.xstr(rec['SafeQuantity']),
         ]
 
         for column in range(0, self.ui.tableWidget_dict_drug.columnCount()):
@@ -210,7 +210,7 @@ class DictDrug(QtWidgets.QMainWindow):
                 dialog.ui.lineEdit_safe_quantity.text(),
                 dialog.ui.textEdit_description.toPlainText(),
             ]
-            strings.str_to_none(data)
+            string_utils.str_to_none(data)
             self.database.insert_record('medicine', fields, data)
             self._read_dict_drug(dict_groups_type)
 
@@ -258,7 +258,7 @@ class DictDrug(QtWidgets.QMainWindow):
             return
 
         try:
-            self.ui.textEdit_description.setText(strings.get_str(rows[0]['Description'], 'utf8'))
+            self.ui.textEdit_description.setText(string_utils.get_str(rows[0]['Description'], 'utf8'))
         except TypeError:
             pass
 

@@ -4,8 +4,8 @@
 
 from PyQt5 import QtWidgets, QtGui
 
-from libs import ui_settings
-from libs import system
+from libs import ui_utils
+from libs import system_utils
 
 
 # 系統設定 2018.03.19
@@ -27,9 +27,9 @@ class Login(QtWidgets.QDialog):
 
     # 設定GUI
     def _set_ui(self):
-        self.ui = ui_settings.load_ui_file(ui_settings.UI_LOGIN, self)
+        self.ui = ui_utils.load_ui_file(ui_utils.UI_LOGIN, self)
         self.setFixedSize(self.size())  # non resizable dialog
-        system.set_css(self)
+        system_utils.set_css(self)
         self._set_combo_box()
         self.center()
         self.ui.label_login_error.setVisible(False)
@@ -62,7 +62,7 @@ class Login(QtWidgets.QDialog):
         for row in rows:
             user_list.append(row['Name'])
 
-        ui_settings.set_combo_box(self.ui.comboBox_user_name, user_list)
+        ui_utils.set_combo_box(self.ui.comboBox_user_name, user_list)
 
     # 登入系統
     def login_button_clicked(self):

@@ -3,8 +3,8 @@
 #coding: utf-8
 
 from PyQt5 import QtWidgets
-from libs import ui_settings
-from libs import system
+from libs import ui_utils
+from libs import system_utils
 from libs import nhi_utils
 
 
@@ -38,9 +38,9 @@ class DialogInputRegist(QtWidgets.QDialog):
 
     # 設定GUI
     def _set_ui(self):
-        self.ui = ui_settings.load_ui_file(ui_settings.UI_DIALOG_INPUT_REGIST, self)
+        self.ui = ui_utils.load_ui_file(ui_utils.UI_DIALOG_INPUT_REGIST, self)
         self.setFixedSize(self.size())  # non resizable dialog
-        system.set_css(self)
+        system_utils.set_css(self)
         self._set_combo_box()
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setText('存檔')
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Cancel).setText('取消')
@@ -52,10 +52,10 @@ class DialogInputRegist(QtWidgets.QDialog):
 
     # 設定comboBox
     def _set_combo_box(self):
-        ui_settings.set_combo_box(self.ui.comboBox_ins_type, nhi_utils.INS_TYPE, '不分類')
-        ui_settings.set_combo_box(self.ui.comboBox_share_type, nhi_utils.SHARE_TYPE, '不分類')
-        ui_settings.set_combo_box(self.ui.comboBox_treat_type, nhi_utils.TREAT_TYPE, '不分類')
-        ui_settings.set_combo_box(self.ui.comboBox_course, nhi_utils.COURSE_TYPE)
+        ui_utils.set_combo_box(self.ui.comboBox_ins_type, nhi_utils.INS_TYPE, '不分類')
+        ui_utils.set_combo_box(self.ui.comboBox_share_type, nhi_utils.SHARE_TYPE, '不分類')
+        ui_utils.set_combo_box(self.ui.comboBox_treat_type, nhi_utils.TREAT_TYPE, '不分類')
+        ui_utils.set_combo_box(self.ui.comboBox_course, nhi_utils.COURSE_TYPE)
 
     def _edit_charge_settings(self):
         sql = 'SELECT * FROM charge_settings where ChargeSettingsKey = {0}'.format(self.charge_settings_key)

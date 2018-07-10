@@ -8,7 +8,7 @@ from xml.dom.minidom import Document
 from threading import Thread
 from queue import Queue
 
-from libs import number
+from libs import number_utils
 from libs import date_utils
 from libs import cshis_utils
 
@@ -16,13 +16,14 @@ from libs import cshis_utils
 # 健保ICD卡 2018.03.31
 class CSHIS:
     def __init__(self, system_settings):
-        self.com_port = number.get_integer(system_settings.field('讀卡機連接埠')) - 1  # com1=0, com2=1, com3=2,...
+        self.com_port = number_utils.get_integer(system_settings.field('讀卡機連接埠')) - 1  # com1=0, com2=1, com3=2,...
         self.cshis = cshis_utils.get_cshis()
         self.basic_data = cshis_utils.BASIC_DATA
         self.treat_data = cshis_utils.TREAT_DATA
 
     def __del__(self):
-        self._close_com()
+        if self.cshis is not None:
+            self._close_com()
 
     def _open_com(self):
         self.cshis.csOpenCom(self.com_port)
@@ -172,7 +173,7 @@ class CSHIS:
             return available_date, available_count
 
         available_date = date_utils.nhi_date_to_west_date(buffer[:7].decode('ascii').strip())
-        available_count = number.get_integer(buffer[7:9].decode('ascii').strip())
+        available_count = number_utils.get_integer(buffer[7:9].decode('ascii').strip())
 
         return available_date, available_count
 
@@ -252,14 +253,150 @@ class CSHIS:
         self.treat_data = cshis_utils.decode_treat_data(buffer)
         return True
 
+    '''
+    hisWriteMultiPrescriptSign(
+        char * pDateTime            [in] 傳入之「就診日期時間」(HC健8-3)，長度14 bytes(含null char)
+        char * pPatientID           [in] 傳入之民眾「身分證號」(HC基3)，長度11 bytes(含null char)
+        char * pPatientBirthDate    [in] pPatientBirthDate: 傳入之民眾「出生日期」(HC基4)，長度8 bytes(含null char)
+        char * pDataWrite           [in] pDataWrite: 傳入欲寫入之門診處方箋之資料（多組或一組），
+        順序內容如下:
+        門診處方箋第1組
+        就診日期時間(1-13)
+        醫令類別(14)
+        診療項目代號(15-26)
+        診療部位(27-32)
+        用法(33-50)
+        天數(51-52)
+        總量(53-59)
+        交付處方註記(60-61)
+        char * pBuffer              [out] pBuffer: 為HIS準備之buffer，需可存入「pBuffer回傳內容」所稱之欄位值。
+        欄位存入的順序，如「pBuffer回傳內容」所述
+        int * iBufferLen)           [in/out] iBufferLen: HIS所準備buffer之長度，HIS呼叫此API時，傳入準備的buffer長度；
+    '''
+    def write_prescript_sign_thread(
+            self, out_queue, registration_datetime, patient_id, patient_birthday, data_write):
+        p_registration_datetime = ctypes.c_char_p(registration_datetime.encode('ascii'))
+        p_patient_id = ctypes.c_char_p(patient_id.encode('ascii'))
+        p_patient_birthday = ctypes.c_char_p(patient_birthday.encode('ascii'))
+        p_data_write = ctypes.c_char_p(data_write.encode('ascii'))
+
+        buffer = ctypes.create_string_buffer(40)  # c: char *
+        buffer_len = ctypes.c_int()  # c: int *
+        buffer_len.value = len(buffer)
+        self._open_com()
+        error_code = self.cshis.hisWritePrescriptionSign(
+            p_registration_datetime,
+            p_patient_id,
+            p_patient_birthday,
+            p_data_write,
+            buffer,
+            ctypes.byref(buffer_len)
+        )
+        self._close_com()
+
+        out_queue.put((error_code, buffer))
+
+    def write_prescript_sign(self, registration_datetime, patient_id, patient_birthday, data_write):
+        title = '取得處置簽章'
+        message = '<font size="4" color="red"><b>健保讀卡機取得處置簽章中, 請稍後...</b></font>'
+        hint = '正在與與健保IDC資訊中心連線, 會花費一些時間.'
+        msg_box = self._message_box(title, message, hint)
+        msg_box.show()
+        msg_queue = Queue()
+        QtCore.QCoreApplication.processEvents()
+        t = Thread(target=self.write_prescript_sign_thread,
+                   args=(msg_queue, registration_datetime, patient_id, patient_birthday, data_write, ))
+        t.start()
+        (error_code, buffer) = msg_queue.get()
+        msg_box.close()
+
+        if error_code != 0:
+            cshis_utils.show_ic_card_message(error_code, '健保卡取得處置簽章')
+            return None
+
+        prescript_sign = buffer[:40].decode('ascii')
+
+        return prescript_sign
+
+    '''
+    hisWriteMultiPrescriptSign(
+        char * pDateTime            [in] 傳入之「就診日期時間」(HC健8-3)，長度14 bytes(含null char)
+        char * pPatientID           [in] 傳入之民眾「身分證號」(HC基3)，長度11 bytes(含null char)
+        char * pPatientBirthDate    [in] pPatientBirthDate: 傳入之民眾「出生日期」(HC基4)，長度8 bytes(含null char)
+        char * pDataWrite           [in] pDataWrite: 傳入欲寫入之門診處方箋之資料（多組或一組），
+        順序內容如下:
+        門診處方箋第1組
+        就診日期時間(1-13)
+        醫令類別(14)
+        診療項目代號(15-26)
+        診療部位(27-32)
+        用法(33-50)
+        天數(51-52)
+        總量(53-59)
+        交付處方註記(60-61)
+        int * iWriteCount           [in] 寫入處方資料組數
+        char * pBuffer              [out] pBuffer: 為HIS準備之buffer，需可存入「pBuffer回傳內容」所稱之欄位值。
+        欄位存入的順序，如「pBuffer回傳內容」所述
+        int * iBufferLen)           [in/out] iBufferLen: HIS所準備buffer之長度，HIS呼叫此API時，傳入準備的buffer長度；
+    '''
+    def write_multi_prescript_sign_thread(
+            self, out_queue, registration_datetime, patient_id, patient_birthday, data_write, write_count):
+        p_registration_datetime = ctypes.c_char_p(registration_datetime.encode('ascii'))
+        p_patient_id = ctypes.c_char_p(patient_id.encode('ascii'))
+        p_patient_birthday = ctypes.c_char_p(patient_birthday.encode('ascii'))
+        p_data_write = ctypes.c_char_p(data_write.encode('ascii'))
+        p_write_count =  ctypes.c_int()
+        p_write_count.value = write_count
+
+        buffer = ctypes.create_string_buffer(write_count * 40)  # c: char *
+        buffer_len = ctypes.c_int()  # c: int *
+        buffer_len.value = len(buffer)
+        self._open_com()
+        error_code = self.cshis.hisWriteMultiPrescriptSign(
+            p_registration_datetime,
+            p_patient_id,
+            p_patient_birthday,
+            p_data_write,
+            ctypes.byref(p_write_count),
+            buffer,
+            ctypes.byref(buffer_len)
+        )
+        self._close_com()
+
+        out_queue.put((error_code, buffer))
+
+    def write_multi_prescript_sign(self, registration_datetime, patient_id, patient_birthday,
+                                   data_write, write_count):
+        title = '取得處方簽章'
+        message = '<font size="4" color="red"><b>健保讀卡機取得處方簽章中, 請稍後...</b></font>'
+        hint = '正在與與健保IDC資訊中心連線, 會花費一些時間.'
+        msg_box = self._message_box(title, message, hint)
+        msg_box.show()
+        msg_queue = Queue()
+        QtCore.QCoreApplication.processEvents()
+        t = Thread(target=self.write_multi_prescript_sign_thread,
+                   args=(msg_queue, registration_datetime, patient_id, patient_birthday, data_write, write_count, ))
+        t.start()
+        (error_code, buffer) = msg_queue.get()
+        msg_box.close()
+
+        if error_code != 0:
+            cshis_utils.show_ic_card_message(error_code, '健保卡取得處方簽章')
+            return None
+
+        chunks, chunk_size = len(buffer), 40
+        prescript_sign_list = [buffer[i:i+chunk_size].decode('ascii') for i in range(0, chunks, chunk_size)]
+
+        return prescript_sign_list
+
     def treat_data_to_xml(self):
         doc = Document()
-        DOCUMENT = doc.createElement('DOCUMENT')
-        DOCUMENT.setAttribute('content', 'cshis')
+        document = doc.createElement('DOCUMENT')
+        document.setAttribute('content', 'cshis')
 
-        doc.appendChild(DOCUMENT)
+        doc.appendChild(document)
         security = doc.createElement('treat_data')
-        DOCUMENT.appendChild(security)
+        document.appendChild(security)
 
         registered_date = doc.createElement('registered_date')
         registered_date_value = doc.createTextNode(self.treat_data['registered_date'])
@@ -292,3 +429,32 @@ class CSHIS:
         security.appendChild(register_duplicated)
 
         return doc.toprettyxml(indent='\t')
+
+    def return_seq_number_thread(self, out_queue, treat_date):
+        p_treat_date = ctypes.c_char_p(treat_date.encode('ascii'))
+        self._open_com()
+        error_code = self.cshis.csUnGetSeqNumber(p_treat_date)
+        self._close_com()
+
+        out_queue.put(error_code)
+
+    # IC退掛
+    def return_seq_number(self, treat_date):
+        title = '健保IC卡退掛'
+        message = '<font size="4" color="red"><b>健保IC卡退掛中, 請稍後...</b></font>'
+        hint = '正在與與健保IDC資訊中心連線, 會花費一些時間.'
+        msg_box = self._message_box(title, message, hint)
+        msg_box.show()
+        msg_queue = Queue()
+        QtCore.QCoreApplication.processEvents()
+        t = Thread(target=self.return_seq_number_thread, args=(msg_queue, treat_date))
+        t.start()
+        error_code = msg_queue.get()
+        msg_box.close()
+
+        if error_code != 0:
+            cshis_utils.show_ic_card_message(error_code, '健保卡退掛')
+            return False
+        else:
+            return True
+

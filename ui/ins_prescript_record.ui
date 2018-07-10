@@ -367,16 +367,6 @@
          <item>
           <layout class="QHBoxLayout" name="horizontalLayout_6">
            <item>
-            <widget class="QLabel" name="label_4">
-             <property name="text">
-              <string>診療部位:</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QComboBox" name="comboBox_4"/>
-           </item>
-           <item>
             <spacer name="horizontalSpacer_2">
              <property name="orientation">
               <enum>Qt::Horizontal</enum>
@@ -388,6 +378,13 @@
               </size>
              </property>
             </spacer>
+           </item>
+           <item>
+            <widget class="QPushButton" name="pushButton_clear_prescript">
+             <property name="text">
+              <string>清除處方</string>
+             </property>
+            </widget>
            </item>
           </layout>
          </item>

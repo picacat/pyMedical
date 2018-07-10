@@ -4,7 +4,7 @@
 import sys
 
 from PyQt5 import QtWidgets
-from libs import ui_settings
+from libs import ui_utils
 import dict_drug
 import dict_treat
 import dict_compound
@@ -34,7 +34,7 @@ class DictMedicine(QtWidgets.QMainWindow):
 
     # 設定GUI
     def _set_ui(self):
-        self.ui = ui_settings.load_ui_file(ui_settings.UI_DICT_MEDICINE, self)
+        self.ui = ui_utils.load_ui_file(ui_utils.UI_DICT_MEDICINE, self)
         self.ui.tabWidget_medicine.addTab(
             dict_drug.DictDrug(self, *self.args), '藥品資料')
         self.ui.tabWidget_medicine.addTab(

@@ -5,9 +5,9 @@ import sys
 
 from PyQt5 import QtWidgets, QtGui, QtCore
 import datetime
-from libs import ui_settings
+from libs import ui_utils
 from libs import date_utils
-from libs import strings
+from libs import string_utils
 from classes import table_widget
 
 
@@ -35,7 +35,7 @@ class WaitingList(QtWidgets.QMainWindow):
 
     # 設定GUI
     def _set_ui(self):
-        self.ui = ui_settings.load_ui_file(ui_settings.UI_WAITING_LIST, self)
+        self.ui = ui_utils.load_ui_file(ui_utils.UI_WAITING_LIST, self)
         self.table_widget_waiting_list = table_widget.TableWidget(self.ui.tableWidget_waiting_list, self.database)
         self.table_widget_waiting_list.set_column_hidden([0, 1])
         # self._set_table_width()
@@ -83,24 +83,24 @@ class WaitingList(QtWidgets.QMainWindow):
             age = '{0}歲{1}月'.format(age_year, age_month)
 
         wait_rec = [
-                    strings.xstr(rec['WaitKey']),
-                    strings.xstr(rec['CaseKey']),
-                    strings.xstr(rec['PatientKey']),
-                    strings.xstr(rec['Name']),
-                    strings.xstr(rec['Gender']),
+                    string_utils.xstr(rec['WaitKey']),
+                    string_utils.xstr(rec['CaseKey']),
+                    string_utils.xstr(rec['PatientKey']),
+                    string_utils.xstr(rec['Name']),
+                    string_utils.xstr(rec['Gender']),
                     age,
-                    strings.xstr(rec['RegistNo']),
+                    string_utils.xstr(rec['RegistNo']),
                     registration_time,
                     wait_time,
-                    strings.xstr(rec['InsType']),
-                    strings.xstr(rec['RegistType']),
-                    strings.xstr(rec['Share']),
-                    strings.xstr(rec['TreatType']),
-                    strings.xstr(rec['Visit']),
-                    strings.xstr(rec['Card']),
-                    strings.int_to_str(rec['Continuance']).strip('0'),
-                    strings.xstr(rec['Massager']),
-                    strings.xstr(rec['Remark']),
+                    string_utils.xstr(rec['InsType']),
+                    string_utils.xstr(rec['RegistType']),
+                    string_utils.xstr(rec['Share']),
+                    string_utils.xstr(rec['TreatType']),
+                    string_utils.xstr(rec['Visit']),
+                    string_utils.xstr(rec['Card']),
+                    string_utils.int_to_str(rec['Continuance']).strip('0'),
+                    string_utils.xstr(rec['Massager']),
+                    string_utils.xstr(rec['Remark']),
         ]
 
         for column in range(0, self.ui.tableWidget_waiting_list.columnCount()):

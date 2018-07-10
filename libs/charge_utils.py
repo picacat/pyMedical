@@ -1,8 +1,8 @@
 # 取得各項費用金額
 
 from PyQt5.QtWidgets import QMessageBox, QPushButton
-from libs import number
-from libs import strings
+from libs import number_utils
+from libs import string_utils
 from libs import nhi_utils
 
 
@@ -26,7 +26,7 @@ def _get_basic_regist_fee(database, ins_type):
         return regist_fee
 
     if len(row) > 0:
-        regist_fee = number.get_integer(row['Amount'])
+        regist_fee = number_utils.get_integer(row['Amount'])
 
     return regist_fee
 
@@ -51,7 +51,7 @@ def _get_basic_discount_fee(database):
         return discount_fee
 
     if len(row) > 0:
-        discount_fee = number.get_integer(row['Amount'])
+        discount_fee = number_utils.get_integer(row['Amount'])
 
     return discount_fee
 
@@ -70,14 +70,14 @@ def _get_regist_discount_fee(database, discount_type):
         return discount_fee
 
     if len(row) > 0:
-        discount_fee = number.get_integer(row['Amount'])
+        discount_fee = number_utils.get_integer(row['Amount'])
 
     return discount_fee
 
 
 # 取得掛號費
 def get_regist_fee(database, discount_type, ins_type, share_type, treat_type, course=None):
-    if strings.xstr(discount_type) != '':  # 掛號費優待優先取得
+    if string_utils.xstr(discount_type) != '':  # 掛號費優待優先取得
         regist_fee = _get_regist_discount_fee(database, discount_type)
         return regist_fee
 
@@ -94,7 +94,7 @@ def get_regist_fee(database, discount_type, ins_type, share_type, treat_type, co
         return regist_fee
 
     if len(row) > 0:
-        regist_fee = number.get_integer(row['Amount'])
+        regist_fee = number_utils.get_integer(row['Amount'])
 
     return regist_fee
 
@@ -115,7 +115,7 @@ def get_deposit_fee(database, card):
         return deposit_fee
 
     if len(row) > 0:
-        deposit_fee = number.get_integer(row['Amount'])
+        deposit_fee = number_utils.get_integer(row['Amount'])
 
     return deposit_fee
 
@@ -134,7 +134,7 @@ def get_diag_share_fee(database, share_type, treat_type, course):
         return diag_share_fee
 
     if len(row) > 0:
-        diag_share_fee = number.get_integer(row['Amount'])
+        diag_share_fee = number_utils.get_integer(row['Amount'])
 
     return diag_share_fee
 
@@ -179,7 +179,7 @@ def get_drug_share_fee(database, share_type, ins_drug_fee):
         return drug_share_fee
 
     if len(row) > 0:
-        drug_share_fee = number.get_integer(row['Amount'])
+        drug_share_fee = number_utils.get_integer(row['Amount'])
 
     return drug_share_fee
 
@@ -201,7 +201,7 @@ def get_traditional_health_care_fee(database, ins_type, massager):
         return traditional_health_care_fee
 
     if len(row) > 0:
-        traditional_health_care_fee = number.get_integer(row['Amount'])
+        traditional_health_care_fee = number_utils.get_integer(row['Amount'])
 
     return traditional_health_care_fee
 

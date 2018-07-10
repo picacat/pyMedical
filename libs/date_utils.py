@@ -81,3 +81,33 @@ def nhi_datetime_to_west_datetime(nhi_datetime):
         return nhi_datetime
 
     return west_datetime
+
+
+# 西元日期時間轉健保日期時間
+def west_datetime_to_nhi_datetime(in_datetime):
+    if type(in_datetime) is str:
+        in_datetime = datetime.datetime.strptime(in_datetime, '%Y-%m-%d %H:%M:%S')
+
+    year = in_datetime.year - 1911
+    nhi_datetime = '{0:0>3}{1:0>2}{2:0>2}{3:0>2}{4:0>2}{5:0>2}'.format(
+        str(year), str(in_datetime.month), str(in_datetime.day),
+        str(in_datetime.hour), str(in_datetime.minute), str(in_datetime.second))
+
+    return nhi_datetime
+
+
+# 西元日期轉健保日期
+def west_date_to_nhi_date(in_date):
+    if type(in_date) is str:
+        in_date = datetime.datetime.strptime(in_date, '%Y-%m-%d')
+
+    year = in_date.year - 1911
+    nhi_date = '{0:0>3}{1:0>2}{2:0>2}'.format(
+        str(year), str(in_date.month), str(in_date.day))
+
+    return nhi_date
+
+
+# 取得現在時間
+def now_to_str():
+    return datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")

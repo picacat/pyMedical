@@ -15,6 +15,7 @@ UI_MEDICAL_RECORD = "medical_record.ui"
 UI_INS_PRESCRIPT_RECORD = "ins_prescript_record.ui"
 UI_SELF_PRESCRIPT_RECORD = "self_prescript_record.ui"
 UI_MEDICAL_RECORD_RECENTLY_HISTORY = "medical_record_recently_history.ui"
+UI_MEDICAL_RECORD_REGISTRATION = "medical_record_registration.ui"
 UI_MEDICAL_RECORD_FEES = "medical_record_fees.ui"
 UI_MEDICAL_RECORD_LIST = "medical_record_list.ui"
 

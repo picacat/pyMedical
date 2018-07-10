@@ -3,8 +3,8 @@
 #coding: utf-8
 
 from PyQt5 import QtWidgets
-from libs import system
-from libs import ui_settings
+from libs import system_utils
+from libs import ui_utils
 
 
 # 主視窗
@@ -30,8 +30,8 @@ class DialogPatientList(QtWidgets.QDialog):
 
     # 設定GUI
     def _set_ui(self):
-        self.ui = ui_settings.load_ui_file(ui_settings.UI_DIALOG_PATIENT_LIST, self)
-        system.set_css(self)
+        self.ui = ui_utils.load_ui_file(ui_utils.UI_DIALOG_PATIENT_LIST, self)
+        system_utils.set_css(self)
         self.setFixedSize(self.size())  # non resizable dialog
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setText('確定')
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Cancel).setText('取消')

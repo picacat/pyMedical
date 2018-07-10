@@ -4,8 +4,8 @@
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtWidgets import QMessageBox, QPushButton
 from classes import table_widget
-from libs import ui_settings
-from libs import strings
+from libs import ui_utils
+from libs import string_utils
 from dialog import dialog_input_user
 
 
@@ -34,7 +34,7 @@ class Users(QtWidgets.QMainWindow):
 
     # 設定GUI
     def _set_ui(self):
-        self.ui = ui_settings.load_ui_file(ui_settings.UI_USERS, self)
+        self.ui = ui_utils.load_ui_file(ui_utils.UI_USERS, self)
         self.table_widget_users = table_widget.TableWidget(self.ui.tableWidget_users, self.database)
         self._set_table_width()
 
@@ -75,25 +75,25 @@ class Users(QtWidgets.QMainWindow):
 
     def _set_user_data(self, rec_no, rec):
         users_rec = [
-            strings.xstr(rec['PersonKey']),
-            strings.xstr(rec['Code']),
-            strings.xstr(rec['Name']),
-            strings.xstr(rec['Gender']),
-            strings.xstr(rec['Birthday']),
-            strings.xstr(rec['ID']),
-            strings.xstr(rec['Position']),
-            strings.xstr(rec['FullTime']),
-            strings.xstr(rec['Certificate']),
+            string_utils.xstr(rec['PersonKey']),
+            string_utils.xstr(rec['Code']),
+            string_utils.xstr(rec['Name']),
+            string_utils.xstr(rec['Gender']),
+            string_utils.xstr(rec['Birthday']),
+            string_utils.xstr(rec['ID']),
+            string_utils.xstr(rec['Position']),
+            string_utils.xstr(rec['FullTime']),
+            string_utils.xstr(rec['Certificate']),
             '******',  # password
-            strings.xstr(rec['Telephone']),
-            strings.xstr(rec['Cellphone']),
-            strings.xstr(rec['Address']),
-            strings.xstr(rec['EMail']),
-            strings.xstr(rec['Department']),
-            strings.xstr(rec['InitDate']),
-            strings.xstr(rec['QuitDate']),
-            strings.xstr(rec['InputDate']),
-            strings.xstr(rec['Remark']),
+            string_utils.xstr(rec['Telephone']),
+            string_utils.xstr(rec['Cellphone']),
+            string_utils.xstr(rec['Address']),
+            string_utils.xstr(rec['EMail']),
+            string_utils.xstr(rec['Department']),
+            string_utils.xstr(rec['InitDate']),
+            string_utils.xstr(rec['QuitDate']),
+            string_utils.xstr(rec['InputDate']),
+            string_utils.xstr(rec['Remark']),
         ]
 
         for column in range(0, self.ui.tableWidget_users.columnCount()):

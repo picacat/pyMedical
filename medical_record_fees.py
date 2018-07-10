@@ -3,9 +3,9 @@
 
 from PyQt5 import QtWidgets, QtCore
 from classes import table_widget
-from libs import ui_settings
-from libs import strings
-from libs import number
+from libs import ui_utils
+from libs import string_utils
+from libs import number_utils
 from libs import charge_utils
 
 
@@ -35,7 +35,7 @@ class MedicalRecordFees(QtWidgets.QMainWindow):
 
     # 設定GUI
     def _set_ui(self):
-        self.ui = ui_settings.load_ui_file(ui_settings.UI_MEDICAL_RECORD_FEES, self)
+        self.ui = ui_utils.load_ui_file(ui_utils.UI_MEDICAL_RECORD_FEES, self)
         self.table_widget_ins_fees = table_widget.TableWidget(self.ui.tableWidget_ins_fees, self.database)
         self.table_widget_cash_fees = table_widget.TableWidget(self.ui.tableWidget_cash_fees, self.database)
         self._set_table_width()
@@ -91,12 +91,12 @@ class MedicalRecordFees(QtWidgets.QMainWindow):
         for fees in ins_fees:
             self.ui.tableWidget_ins_fees.setItem(
                 fees[0], 1,
-                QtWidgets.QTableWidgetItem(strings.xstr(fees[1])))
+                QtWidgets.QTableWidgetItem(string_utils.xstr(fees[1])))
 
         for fees in cash_fees:
             self.ui.tableWidget_cash_fees.setItem(
                 fees[0], 1,
-                QtWidgets.QTableWidgetItem(strings.xstr(fees[1])))
+                QtWidgets.QTableWidgetItem(string_utils.xstr(fees[1])))
 
         self.ui.tableWidget_ins_fees.setAlternatingRowColors(True)
         self.ui.tableWidget_cash_fees.setAlternatingRowColors(True)
@@ -112,7 +112,7 @@ class MedicalRecordFees(QtWidgets.QMainWindow):
         treatment = self.parent.tab_ins_prescript.combo_box_treatment.currentText()
 
         ins_diag_fee = charge_utils.get_ins_diag_fee(self.database, self.system_settings)
-        pres_days = number.get_integer(self.parent.tab_ins_prescript.ui.comboBox_pres_days.currentText())
+        pres_days = number_utils.get_integer(self.parent.tab_ins_prescript.ui.comboBox_pres_days.currentText())
         ins_drug_fee = charge_utils.get_ins_drug_fee(self.database, pres_days)
         ins_pharmacy_fee = charge_utils.get_ins_pharmacy_fee(self.database, self.system_settings, ins_drug_fee)
         ins_acupuncture_fee = charge_utils.get_ins_acupuncture_fee(self.database, treatment, ins_drug_fee)
@@ -163,4 +163,4 @@ class MedicalRecordFees(QtWidgets.QMainWindow):
         for fee in ins_fees:
             self.ui.tableWidget_ins_fees.setItem(
                 fee[0], 0,
-                QtWidgets.QTableWidgetItem(strings.xstr(fee[1])))
+                QtWidgets.QTableWidgetItem(string_utils.xstr(fee[1])))

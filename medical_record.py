@@ -4,14 +4,16 @@
 import sys
 
 from PyQt5 import QtWidgets, QtCore, QtGui
-from libs import ui_settings
-from libs import strings
-from libs import number
+from libs import ui_utils
+from libs import string_utils
+from libs import number_utils
 from libs import date_utils
+from libs import cshis_utils
 import ins_prescript_record
 import self_prescript_record
 import medical_record_recently_history
 import medical_record_fees
+import medical_record_registration
 from dialog import dialog_inquiry
 from dialog import dialog_diagnosis
 from dialog import dialog_disease
@@ -34,13 +36,7 @@ class MedicalRecord(QtWidgets.QMainWindow):
         self.first_record = None
         self.last_record = None
         self.ui = None
-        self.tab_ins_prescript = None
-        self.tab_self_prescript1 = None
-        self.tab_self_prescript2 = None
-        self.tab_self_prescript3 = None
-        self.tab_self_prescript4 = None
-        self.tab_self_prescript5 = None
-        self.tab_self_prescript6 = None
+        self._init_tab()
 
         self._read_data()
         self._set_ui()
@@ -55,6 +51,33 @@ class MedicalRecord(QtWidgets.QMainWindow):
             self._read_fees()
             self._read_recently_history()
 
+    def _init_tab(self):
+        self.tab_ins_prescript = None
+        self.tab_self_prescript1 = None
+        self.tab_self_prescript2 = None
+        self.tab_self_prescript3 = None
+        self.tab_self_prescript4 = None
+        self.tab_self_prescript5 = None
+        self.tab_self_prescript6 = None
+        self.tab_self_prescript7 = None
+        self.tab_self_prescript8 = None
+        self.tab_self_prescript9 = None
+        self.tab_self_prescript10 = None
+        self.tab_list = [
+            self.tab_ins_prescript,
+            self.tab_self_prescript1,
+            self.tab_self_prescript2,
+            self.tab_self_prescript3,
+            self.tab_self_prescript4,
+            self.tab_self_prescript5,
+            self.tab_self_prescript6,
+            self.tab_self_prescript7,
+            self.tab_self_prescript8,
+            self.tab_self_prescript9,
+            self.tab_self_prescript10,
+        ]
+        self.max_tab = len(self.tab_list)
+
     # 解構
     def __del__(self):
         self.close_all()
@@ -65,13 +88,15 @@ class MedicalRecord(QtWidgets.QMainWindow):
 
     # 設定GUI
     def _set_ui(self):
-        self.ui = ui_settings.load_ui_file(ui_settings.UI_MEDICAL_RECORD, self)
-        self.ui.groupBox_symptom.setContentsMargins(0, 0, 0, 0)
+        self.ui = ui_utils.load_ui_file(ui_utils.UI_MEDICAL_RECORD, self)
 
         self.add_tab_button = QtWidgets.QToolButton()
         self.add_tab_button.setIcon(QtGui.QIcon('./icons/document-new.svg'))
         self.ui.tabWidget_prescript.setCornerWidget(self.add_tab_button, QtCore.Qt.TopLeftCorner)
         self.ui.tabWidget_prescript.tabCloseRequested.connect(self.close_prescript_tab)
+        self.tab_registration = medical_record_registration.MedicalRecordRegistration(
+            self, self.database, self.system_settings, self.case_key, self.call_from)
+        self.ui.tabWidget_medical.addTab(self.tab_registration, '門診資料')
 
     # 設定信號
     def _set_signal(self):
@@ -177,32 +202,31 @@ class MedicalRecord(QtWidgets.QMainWindow):
 
         name += ' {0} {1}'.format(gender, age)
 
-        card = self.medical_record['Card']
-        if number.get_integer(self.medical_record['Continuance']) >= 1:
-            card += '-' + str(self.medical_record['Continuance'])
+        card = string_utils.xstr(self.medical_record['Card'])
+        if number_utils.get_integer(self.medical_record['Continuance']) >= 1:
+            card += '-' + string_utils.xstr(self.medical_record['Continuance'])
 
-        self.ui.label_case_date.setText(str(self.medical_record['CaseDate']))
-        self.ui.label_ins_type.setText(self.medical_record['InsType'])
-        self.ui.label_patient_name.setText(name)
-        self.ui.label_regist_no.setText(str(self.medical_record['RegistNo']))
-        self.ui.label_share_type.setText(self.medical_record['Share'])
-        if card is not None:
-            self.ui.label_card.setText(card)
+        self.ui.label_case_date.setText(string_utils.xstr(self.medical_record['CaseDate']))
+        self.ui.label_ins_type.setText(string_utils.xstr(self.medical_record['InsType']))
+        self.ui.label_patient_name.setText(string_utils.xstr(name))
+        self.ui.label_regist_no.setText(string_utils.xstr(self.medical_record['RegistNo']))
+        self.ui.label_share_type.setText(string_utils.xstr(self.medical_record['Share']))
+        self.ui.label_card.setText(string_utils.xstr(card))
 
     # 顯示病歷
     def _set_medical_record(self):
-        self.ui.textEdit_symptom.setText(strings.get_str(self.medical_record['Symptom'], 'utf8'))
-        self.ui.textEdit_tongue.setText(strings.get_str(self.medical_record['Tongue'], 'utf8'))
-        self.ui.textEdit_pulse.setText(strings.get_str(self.medical_record['Pulse'], 'utf8'))
-        self.ui.textEdit_remark.setText(strings.get_str(self.medical_record['Remark'], 'utf8'))
-        self.ui.lineEdit_disease_code1.setText(strings.get_str(self.medical_record['DiseaseCode1'], 'utf8'))
-        self.ui.lineEdit_disease_name1.setText(strings.get_str(self.medical_record['DiseaseName1'], 'utf8'))
-        self.ui.lineEdit_disease_code2.setText(strings.get_str(self.medical_record['DiseaseCode2'], 'utf8'))
-        self.ui.lineEdit_disease_name2.setText(strings.get_str(self.medical_record['DiseaseName2'], 'utf8'))
-        self.ui.lineEdit_disease_code3.setText(strings.get_str(self.medical_record['DiseaseCode3'], 'utf8'))
-        self.ui.lineEdit_disease_name3.setText(strings.get_str(self.medical_record['DiseaseName3'], 'utf8'))
-        self.ui.lineEdit_distinguish.setText(strings.get_str(self.medical_record['Distincts'], 'utf8'))
-        self.ui.lineEdit_cure.setText(strings.get_str(self.medical_record['Cure'], 'utf8'))
+        self.ui.textEdit_symptom.setText(string_utils.get_str(self.medical_record['Symptom'], 'utf8'))
+        self.ui.textEdit_tongue.setText(string_utils.get_str(self.medical_record['Tongue'], 'utf8'))
+        self.ui.textEdit_pulse.setText(string_utils.get_str(self.medical_record['Pulse'], 'utf8'))
+        self.ui.textEdit_remark.setText(string_utils.get_str(self.medical_record['Remark'], 'utf8'))
+        self.ui.lineEdit_disease_code1.setText(string_utils.get_str(self.medical_record['DiseaseCode1'], 'utf8'))
+        self.ui.lineEdit_disease_name1.setText(string_utils.get_str(self.medical_record['DiseaseName1'], 'utf8'))
+        self.ui.lineEdit_disease_code2.setText(string_utils.get_str(self.medical_record['DiseaseCode2'], 'utf8'))
+        self.ui.lineEdit_disease_name2.setText(string_utils.get_str(self.medical_record['DiseaseName2'], 'utf8'))
+        self.ui.lineEdit_disease_code3.setText(string_utils.get_str(self.medical_record['DiseaseCode3'], 'utf8'))
+        self.ui.lineEdit_disease_name3.setText(string_utils.get_str(self.medical_record['DiseaseName3'], 'utf8'))
+        self.ui.lineEdit_distinguish.setText(string_utils.get_str(self.medical_record['Distincts'], 'utf8'))
+        self.ui.lineEdit_cure.setText(string_utils.get_str(self.medical_record['Cure'], 'utf8'))
 
     def close_tab(self):
         current_tab = self.parent.ui.tabWidget_window.currentIndex()
@@ -243,7 +267,7 @@ class MedicalRecord(QtWidgets.QMainWindow):
             dialog_type = '病名2'
         elif self.ui.lineEdit_disease_code3.hasFocus():
             dialog_type = '病名3'
-        elif self.tab_ins_prescript.ui.tableWidget_prescript.hasFocus():
+        elif self.tab_list[0].ui.tableWidget_prescript.hasFocus():
             dialog_type = '健保處方'
 
         if dialog_type is None:
@@ -283,7 +307,7 @@ class MedicalRecord(QtWidgets.QMainWindow):
             medicine_set = '1'
             dialog = dialog_medicine.DialogMedicine(
                 self, self.database, self.system_settings,
-                self.tab_ins_prescript.tableWidget_prescript, medicine_set)
+                self.tab_list[0].tableWidget_prescript, medicine_set)
 
         if dialog is None:
             return
@@ -327,12 +351,11 @@ class MedicalRecord(QtWidgets.QMainWindow):
     # 新增自費處方
     def add_prescript_tab(self, medicine_set=None):
         if medicine_set == 1:  # 健保處方頁
-            self.tab_ins_prescript = ins_prescript_record.InsPrescriptRecord(
+            self.tab_list[0] = ins_prescript_record.InsPrescriptRecord(
                 self, self.database, self.system_settings, self.case_key, 1)
-            self.ui.tabWidget_prescript.addTab(self.tab_ins_prescript, '健保')
+            self.ui.tabWidget_prescript.addTab(self.tab_list[medicine_set-1], '健保')
             return
 
-        max_medicine_set = 7  # 自費最多6帖 (1 + 6)
         set_current_tab = False
 
         if not medicine_set:  # 新增自費處方按鈕
@@ -341,7 +364,7 @@ class MedicalRecord(QtWidgets.QMainWindow):
 
         tab_name = '自費{0}'.format(medicine_set-1)
         if self._tab_exists(tab_name):
-            tab_name, medicine_set = self._get_new_tab(max_medicine_set)
+            tab_name, medicine_set = self._get_new_tab(self.max_tab)
 
         if not tab_name:
             return
@@ -350,24 +373,10 @@ class MedicalRecord(QtWidgets.QMainWindow):
         new_tab = self_prescript_record.SelfPrescriptRecord(
             self, self.database, self.system_settings, self.case_key, medicine_set)
 
-        if tab_name == '自費1':
-            self.tab_self_prescript1 = new_tab
-            current_tab = self.tab_self_prescript1
-        elif tab_name == '自費2':
-            self.tab_self_prescript2 = new_tab
-            current_tab = self.tab_self_prescript2
-        elif tab_name == '自費3':
-            self.tab_self_prescript3 = new_tab
-            current_tab = self.tab_self_prescript3
-        elif tab_name == '自費4':
-            self.tab_self_prescript4 = new_tab
-            current_tab = self.tab_self_prescript4
-        elif tab_name == '自費5':
-            self.tab_self_prescript5 = new_tab
-            current_tab = self.tab_self_prescript5
-        elif tab_name == '自費6':
-            self.tab_self_prescript6 = new_tab
-            current_tab = self.tab_self_prescript6
+        for i in range(1, self.max_tab):
+            if tab_name == '自費{0}'.format(i):
+                self.tab_list[i] = new_tab
+                current_tab = self.tab_list[i]
 
         if current_tab is None:
             return
@@ -402,8 +411,16 @@ class MedicalRecord(QtWidgets.QMainWindow):
         self.record_saved = True
         self.update_medical_record()
         self.save_prescript()
+        if self.medical_record['InsType'] == '健保' and self.system_settings.field('產生醫令簽章位置') == '診療' and \
+           self.system_settings.field('使用讀卡機') == 'Y':
+            self._write_prescript_signature()
+
         self.close_all()
         self.close_tab()
+
+    def _write_prescript_signature(self):
+        cshis_utils.write_prescript_signature(
+            self.database, self.system_settings, self.case_key)
 
     # 病歷存檔
     def update_medical_record(self):
@@ -411,6 +428,7 @@ class MedicalRecord(QtWidgets.QMainWindow):
         self.update_treat_data()
         self.update_ins_fees_data()
         self.update_cash_fees_data()
+        self.tab_registration.save_record()
 
     # 診斷資料存檔
     def update_diagnosis_data(self):
@@ -424,7 +442,7 @@ class MedicalRecord(QtWidgets.QMainWindow):
 
         treatment = None
         if self.medical_record['InsType'] == '健保':
-            treatment = strings.xstr(self.tab_ins_prescript.combo_box_treatment.currentText())
+            treatment = string_utils.xstr(self.tab_list[0].combo_box_treatment.currentText())
 
         data = [
             self.ui.textEdit_symptom.toPlainText(),
@@ -454,10 +472,10 @@ class MedicalRecord(QtWidgets.QMainWindow):
         package1, pres_days1, instruction1 = None, None, None
         treatment = None
         if self.medical_record['InsType'] == '健保':
-            package1 = strings.xstr(self.tab_ins_prescript.ui.comboBox_package.currentText())
-            pres_days1 = strings.xstr(self.tab_ins_prescript.ui.comboBox_pres_days.currentText())
-            instruction1 = strings.xstr(self.tab_ins_prescript.ui.comboBox_instruction.currentText())
-            treatment = strings.xstr(self.tab_ins_prescript.combo_box_treatment.currentText())
+            package1 = string_utils.xstr(self.tab_list[0].ui.comboBox_package.currentText())
+            pres_days1 = string_utils.xstr(self.tab_list[0].ui.comboBox_pres_days.currentText())
+            instruction1 = string_utils.xstr(self.tab_list[0].ui.comboBox_instruction.currentText())
+            treatment = string_utils.xstr(self.tab_list[0].combo_box_treatment.currentText())
 
         data = [
             package1, pres_days1, instruction1,
@@ -498,17 +516,7 @@ class MedicalRecord(QtWidgets.QMainWindow):
         self.database.update_record('cases', fields, 'CaseKey', self.case_key, data)
 
     def save_prescript(self):
-        tab_prescript_list = [
-            self.tab_ins_prescript,
-            self.tab_self_prescript1,
-            self.tab_self_prescript2,
-            self.tab_self_prescript3,
-            self.tab_self_prescript4,
-            self.tab_self_prescript5,
-            self.tab_self_prescript6,
-        ]
-
-        for medicine_set, tab_prescript in zip(range(1, len(tab_prescript_list)+1), tab_prescript_list):
+        for medicine_set, tab_prescript in zip(range(1, self.max_tab+1), self.tab_list):
             if tab_prescript is not None:
                 try:
                     tab_prescript.save_prescript()

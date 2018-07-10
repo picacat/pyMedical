@@ -5,8 +5,8 @@ import sys
 
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtWidgets import QMessageBox, QPushButton
-from libs import ui_settings
-from libs import strings
+from libs import ui_utils
+from libs import string_utils
 from classes import table_widget
 from dialog import dialog_input_share
 
@@ -35,7 +35,7 @@ class ChargeSettingsShare(QtWidgets.QMainWindow):
 
     # 設定GUI
     def _set_ui(self):
-        self.ui = ui_settings.load_ui_file(ui_settings.UI_CHARGE_SETTINGS_SHARE, self)
+        self.ui = ui_utils.load_ui_file(ui_utils.UI_CHARGE_SETTINGS_SHARE, self)
         self.table_widget_diag_share = table_widget.TableWidget(self.ui.tableWidget_diag_share, self.database)
         self.table_widget_diag_share.set_column_hidden([0, 1])
         self.table_widget_drug_share = table_widget.TableWidget(self.ui.tableWidget_drug_share, self.database)
@@ -153,14 +153,14 @@ class ChargeSettingsShare(QtWidgets.QMainWindow):
     def _set_diag_share_data(self, rec_no, rec):
         diag_share_rec = [
             str(rec['ChargeSettingsKey']),
-            strings.xstr(rec['ChargeType']),
-            strings.xstr(rec['ItemName']),
-            strings.xstr(rec['ShareType']),
-            strings.xstr(rec['TreatType']),
-            strings.xstr(rec['Course']),
-            strings.xstr(rec['InsCode']),
-            strings.xstr(rec['Amount']),
-            strings.xstr(rec['Remark']),
+            string_utils.xstr(rec['ChargeType']),
+            string_utils.xstr(rec['ItemName']),
+            string_utils.xstr(rec['ShareType']),
+            string_utils.xstr(rec['TreatType']),
+            string_utils.xstr(rec['Course']),
+            string_utils.xstr(rec['InsCode']),
+            string_utils.xstr(rec['Amount']),
+            string_utils.xstr(rec['Remark']),
         ]
 
         for column in range(0, self.ui.tableWidget_diag_share.columnCount()):
@@ -258,12 +258,12 @@ class ChargeSettingsShare(QtWidgets.QMainWindow):
     def _set_drug_share_data(self, rec_no, rec):
         drug_share_rec = [
             str(rec['ChargeSettingsKey']),
-            strings.xstr(rec['ChargeType']),
-            strings.xstr(rec['ItemName']),
-            strings.xstr(rec['ShareType']),
-            strings.xstr(rec['InsCode']),
-            strings.xstr(rec['Amount']),
-            strings.xstr(rec['Remark']),
+            string_utils.xstr(rec['ChargeType']),
+            string_utils.xstr(rec['ItemName']),
+            string_utils.xstr(rec['ShareType']),
+            string_utils.xstr(rec['InsCode']),
+            string_utils.xstr(rec['Amount']),
+            string_utils.xstr(rec['Remark']),
         ]
 
         for column in range(0, self.ui.tableWidget_drug_share.columnCount()):

@@ -5,8 +5,8 @@ import sys
 
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtWidgets import QMessageBox, QPushButton
-from libs import ui_settings
-from libs import strings
+from libs import ui_utils
+from libs import string_utils
 from libs import nhi_utils
 from classes import table_widget
 from dialog import dialog_input_nhi
@@ -37,7 +37,7 @@ class ChargeSettingsNHI(QtWidgets.QMainWindow):
 
     # 設定GUI
     def _set_ui(self):
-        self.ui = ui_settings.load_ui_file(ui_settings.UI_CHARGE_SETTINGS_NHI, self)
+        self.ui = ui_utils.load_ui_file(ui_utils.UI_CHARGE_SETTINGS_NHI, self)
         self.table_widget_nhi = table_widget.TableWidget(self.ui.tableWidget_nhi, self.database)
         self.table_widget_nhi.set_column_hidden([0])
         self._set_table_width()
@@ -192,11 +192,11 @@ class ChargeSettingsNHI(QtWidgets.QMainWindow):
     def _set_nhi_data(self, rec_no, rec):
         nhi_rec = [
             str(rec['ChargeSettingsKey']),
-            strings.xstr(rec['ChargeType']),
-            strings.xstr(rec['ItemName']),
-            strings.xstr(rec['InsCode']),
-            strings.xstr(rec['Amount']),
-            strings.xstr(rec['Remark']),
+            string_utils.xstr(rec['ChargeType']),
+            string_utils.xstr(rec['ItemName']),
+            string_utils.xstr(rec['InsCode']),
+            string_utils.xstr(rec['Amount']),
+            string_utils.xstr(rec['Remark']),
         ]
 
         for column in range(0, self.ui.tableWidget_nhi.columnCount()):

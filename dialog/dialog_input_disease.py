@@ -4,9 +4,9 @@
 
 from PyQt5 import QtWidgets
 from classes import table_widget
-from libs import ui_settings
-from libs import system
-from libs import strings
+from libs import ui_utils
+from libs import system_utils
+from libs import string_utils
 
 
 # 主視窗
@@ -34,9 +34,9 @@ class DialogInputDisease(QtWidgets.QDialog):
 
     # 設定GUI
     def _set_ui(self):
-        self.ui = ui_settings.load_ui_file(ui_settings.UI_DIALOG_INPUT_DISEASE, self)
+        self.ui = ui_utils.load_ui_file(ui_utils.UI_DIALOG_INPUT_DISEASE, self)
         self.setFixedSize(self.size())  # non resizable dialog
-        system.set_css(self)
+        system_utils.set_css(self)
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setText('存檔')
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Cancel).setText('取消')
         self.table_widget_disease = table_widget.TableWidget(self.ui.tableWidget_disease, self.database)
@@ -85,9 +85,9 @@ class DialogInputDisease(QtWidgets.QDialog):
 
     def _set_disease(self, rec_no, rec):
         disease_rec = [
-            strings.xstr(rec['ICD10Key']),
-            strings.xstr(rec['ICDCode']),
-            strings.xstr(rec['ChineseName']),
+            string_utils.xstr(rec['ICD10Key']),
+            string_utils.xstr(rec['ICDCode']),
+            string_utils.xstr(rec['ChineseName']),
         ]
 
         for column in range(0, self.ui.tableWidget_disease.columnCount()):

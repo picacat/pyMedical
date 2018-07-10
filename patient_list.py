@@ -6,8 +6,8 @@ from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtWidgets import QMessageBox, QPushButton
 import sys
 
-from libs import ui_settings
-from libs import strings
+from libs import ui_utils
+from libs import string_utils
 from dialog import dialog_patient_list
 from classes import table_widget
 
@@ -35,7 +35,7 @@ class PatientList(QtWidgets.QMainWindow):
 
     # 設定GUI
     def _set_ui(self):
-        self.ui = ui_settings.load_ui_file(ui_settings.UI_PATIENT_LIST, self)
+        self.ui = ui_utils.load_ui_file(ui_utils.UI_PATIENT_LIST, self)
         self.table_widget_patient_list = table_widget.TableWidget(self.ui.tableWidget_patient_list, self.database)
         # self._set_table_width()
 
@@ -75,17 +75,17 @@ class PatientList(QtWidgets.QMainWindow):
         patient_record = [
             str(rec['PatientKey']),
             str(rec['Name']),
-            strings.xstr(rec['Gender']),
-            strings.xstr(rec['Birthday']),
-            strings.xstr(rec['ID']),
-            strings.xstr(rec['Nationality']),
-            strings.xstr(rec['InsType']),
-            strings.xstr(rec['DiscountType']),
-            strings.xstr(rec['InitDate']),
-            strings.xstr(rec['Telephone']),
-            strings.xstr(rec['Cellphone']),
-            strings.xstr(rec['Email']),
-            strings.xstr(rec['Address']),
+            string_utils.xstr(rec['Gender']),
+            string_utils.xstr(rec['Birthday']),
+            string_utils.xstr(rec['ID']),
+            string_utils.xstr(rec['Nationality']),
+            string_utils.xstr(rec['InsType']),
+            string_utils.xstr(rec['DiscountType']),
+            string_utils.xstr(rec['InitDate']),
+            string_utils.xstr(rec['Telephone']),
+            string_utils.xstr(rec['Cellphone']),
+            string_utils.xstr(rec['Email']),
+            string_utils.xstr(rec['Address']),
         ]
 
         for column in range(0, self.ui.tableWidget_patient_list.columnCount()):

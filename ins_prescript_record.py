@@ -3,8 +3,8 @@
 
 from PyQt5 import QtWidgets, QtCore, QtGui
 
-from libs import ui_settings
-from libs import strings
+from libs import ui_utils
+from libs import string_utils
 from libs import nhi_utils
 from classes import table_widget
 from dialog import dialog_input_medicine
@@ -38,7 +38,7 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
 
     # 設定GUI
     def _set_ui(self):
-        self.ui = ui_settings.load_ui_file(ui_settings.UI_INS_PRESCRIPT_RECORD, self)
+        self.ui = ui_utils.load_ui_file(ui_utils.UI_INS_PRESCRIPT_RECORD, self)
         self.table_widget_prescript = table_widget.TableWidget(self.ui.tableWidget_prescript, self.database)
         self.table_widget_prescript.set_column_hidden([0, 5, 6, 7, 8, 9, 10, 11, 12])
         self.table_widget_treat = table_widget.TableWidget(self.ui.tableWidget_treat, self.database)
@@ -49,21 +49,21 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
 
     def _set_treat_ui(self):
         self.combo_box_treatment = QtWidgets.QComboBox()
-        ui_settings.set_combo_box(self.combo_box_treatment, nhi_utils.INS_TREAT, None)
+        ui_utils.set_combo_box(self.combo_box_treatment, nhi_utils.INS_TREAT, None)
         self.ui.tableWidget_treat.setRowCount(1)
         self.ui.tableWidget_treat.setCellWidget(0, 1, self.combo_box_treatment)
         self.combo_box_treatment.currentTextChanged.connect(self._combo_box_treat_changed)
 
     def _set_combo_box(self):
-        ui_settings.set_combo_box(
+        ui_utils.set_combo_box(
             self.ui.comboBox_package,
             nhi_utils.PACKAGE
         )
-        ui_settings.set_combo_box(
+        ui_utils.set_combo_box(
             self.ui.comboBox_pres_days,
             nhi_utils.PRESDAYS
         )
-        ui_settings.set_combo_box(
+        ui_utils.set_combo_box(
             self.ui.comboBox_instruction,
             nhi_utils.INSTRUCTION
         )
@@ -204,10 +204,10 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
             # [2, strings.xstr(row['Dosage'])],
             [3, row['Unit']],
             [4, None],
-            [5, strings.xstr(self.ui.tableWidget_prescript.currentRow()+1)],
-            [6, strings.xstr(self.case_key)],
-            [7, strings.xstr(self.case_date)],
-            [8, strings.xstr(self.medicine_set)],
+            [5, string_utils.xstr(self.ui.tableWidget_prescript.currentRow() + 1)],
+            [6, string_utils.xstr(self.case_key)],
+            [7, string_utils.xstr(self.case_date)],
+            [8, string_utils.xstr(self.medicine_set)],
             [9, row['MedicineType']],
             [10, row['MedicineKey']],
             [11, row['InsCode']],
@@ -221,9 +221,9 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
         treat_rec = [
             [0, '-1'],
             [1, row['MedicineName']],
-            [2, strings.xstr(self.case_key)],
-            [3, strings.xstr(self.case_date)],
-            [4, strings.xstr(self.medicine_set)],
+            [2, string_utils.xstr(self.case_key)],
+            [3, string_utils.xstr(self.case_date)],
+            [4, string_utils.xstr(self.medicine_set)],
             [5, row['MedicineType']],
             [6, row['MedicineKey']],
             [7, row['InsCode']],
@@ -291,9 +291,9 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
         if len(row) <= 0:
             return
 
-        self.ui.comboBox_package.setCurrentText(strings.xstr(row[0]['Packages']))
-        self.ui.comboBox_pres_days.setCurrentText(strings.xstr(row[0]['Days']))
-        self.ui.comboBox_instruction.setCurrentText(strings.xstr(row[0]['Instruction']))
+        self.ui.comboBox_package.setCurrentText(string_utils.xstr(row[0]['Packages']))
+        self.ui.comboBox_pres_days.setCurrentText(string_utils.xstr(row[0]['Days']))
+        self.ui.comboBox_instruction.setCurrentText(string_utils.xstr(row[0]['Instruction']))
 
     def _read_medicine(self):
         medicine_groups = nhi_utils.get_medicine_type(self.database, '藥品類別')
@@ -307,19 +307,19 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
 
     def _set_medicine_data(self, rec_no, rec):
         prescript_rec = [
-            strings.xstr(rec['PrescriptKey']),
-            strings.xstr(rec['MedicineName']),
-            strings.xstr(rec['Dosage']),
-            strings.xstr(rec['Unit']),
-            strings.xstr(rec['Instruction']),
-            strings.xstr(rec['PrescriptNo']),
-            strings.xstr(rec['CaseKey']),
-            strings.xstr(rec['CaseDate']),
-            strings.xstr(rec['MedicineSet']),
-            strings.xstr(rec['MedicineType']),
-            strings.xstr(rec['MedicineKey']),
-            strings.xstr(rec['InsCode']),
-            strings.xstr(rec['DosageMode']),
+            string_utils.xstr(rec['PrescriptKey']),
+            string_utils.xstr(rec['MedicineName']),
+            string_utils.xstr(rec['Dosage']),
+            string_utils.xstr(rec['Unit']),
+            string_utils.xstr(rec['Instruction']),
+            string_utils.xstr(rec['PrescriptNo']),
+            string_utils.xstr(rec['CaseKey']),
+            string_utils.xstr(rec['CaseDate']),
+            string_utils.xstr(rec['MedicineSet']),
+            string_utils.xstr(rec['MedicineType']),
+            string_utils.xstr(rec['MedicineKey']),
+            string_utils.xstr(rec['InsCode']),
+            string_utils.xstr(rec['DosageMode']),
         ]
 
         for column in range(0, self.ui.tableWidget_prescript.columnCount()):
@@ -353,14 +353,14 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
 
     def _set_treat_data(self, rec_no, rec):
         treat_rec = [
-            strings.xstr(rec['PrescriptKey']),
-            strings.xstr(rec['MedicineName']),
-            strings.xstr(rec['CaseKey']),
-            strings.xstr(rec['CaseDate']),
-            strings.xstr(rec['MedicineSet']),
-            strings.xstr(rec['MedicineType']),
-            strings.xstr(rec['MedicineKey']),
-            strings.xstr(rec['InsCode']),
+            string_utils.xstr(rec['PrescriptKey']),
+            string_utils.xstr(rec['MedicineName']),
+            string_utils.xstr(rec['CaseKey']),
+            string_utils.xstr(rec['CaseDate']),
+            string_utils.xstr(rec['MedicineSet']),
+            string_utils.xstr(rec['MedicineType']),
+            string_utils.xstr(rec['MedicineKey']),
+            string_utils.xstr(rec['InsCode']),
         ]
 
         for column in range(0, self.ui.tableWidget_treat.columnCount()):
@@ -541,6 +541,7 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
         for row in rows:
             if str(row['PrescriptKey']) not in prescript_key_list:
                 self.database.exec_sql('DELETE FROM prescript where PrescriptKey = {0}'.format(row['PrescriptKey']))
+                self.database.exec_sql('DELETE FROM presextend where PrescriptKey = {0}'.format(row['PrescriptKey']))
 
     # 插入處方資料至資料庫內
     def insert_prescript(self, items):

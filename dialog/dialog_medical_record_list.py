@@ -4,8 +4,8 @@
 
 from PyQt5 import QtWidgets
 import datetime
-from libs import ui_settings
-from libs import system
+from libs import ui_utils
+from libs import system_utils
 from libs import nhi_utils
 
 
@@ -32,9 +32,9 @@ class DialogMedicalRecordList(QtWidgets.QDialog):
 
     # 設定GUI
     def _set_ui(self):
-        self.ui = ui_settings.load_ui_file(ui_settings.UI_DIALOG_MEDICAL_RECORD_LIST, self)
+        self.ui = ui_utils.load_ui_file(ui_utils.UI_DIALOG_MEDICAL_RECORD_LIST, self)
         self.setFixedSize(self.size())  # non resizable dialog
-        system.set_css(self)
+        system_utils.set_css(self)
         self.ui.dateEdit_start_date.setDate(datetime.datetime.now())
         self.ui.dateEdit_end_date.setDate(datetime.datetime.now())
         self._set_combo_box()
@@ -53,13 +53,13 @@ class DialogMedicalRecordList(QtWidgets.QDialog):
         for row in rows:
             doctor_list.append(row['Name'])
 
-        ui_settings.set_combo_box(self.ui.comboBox_period, nhi_utils.PERIOD, '全部')
-        ui_settings.set_combo_box(self.ui.comboBox_ins_type, nhi_utils.INS_TYPE, '全部')
-        ui_settings.set_combo_box(self.ui.comboBox_treat_type, nhi_utils.TREAT_TYPE, '全部')
-        ui_settings.set_combo_box(self.ui.comboBox_share_type, nhi_utils.SHARE_TYPE, '全部')
-        ui_settings.set_combo_box(self.ui.comboBox_apply_type, nhi_utils.APPLY_TYPE, '全部')
-        ui_settings.set_combo_box(self.ui.comboBox_doctor, doctor_list, '全部')
-        ui_settings.set_combo_box(self.ui.comboBox_room, nhi_utils.ROOM, '全部')
+        ui_utils.set_combo_box(self.ui.comboBox_period, nhi_utils.PERIOD, '全部')
+        ui_utils.set_combo_box(self.ui.comboBox_ins_type, nhi_utils.INS_TYPE, '全部')
+        ui_utils.set_combo_box(self.ui.comboBox_treat_type, nhi_utils.TREAT_TYPE, '全部')
+        ui_utils.set_combo_box(self.ui.comboBox_share_type, nhi_utils.SHARE_TYPE, '全部')
+        ui_utils.set_combo_box(self.ui.comboBox_apply_type, nhi_utils.APPLY_TYPE, '全部')
+        ui_utils.set_combo_box(self.ui.comboBox_doctor, doctor_list, '全部')
+        ui_utils.set_combo_box(self.ui.comboBox_room, nhi_utils.ROOM, '全部')
 
     # 設定 mysql script
     def get_sql(self):

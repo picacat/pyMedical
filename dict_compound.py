@@ -5,8 +5,8 @@ import sys
 
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtWidgets import QInputDialog, QMessageBox, QPushButton
-from libs import ui_settings
-from libs import strings
+from libs import ui_utils
+from libs import string_utils
 from libs import dialog_utils
 from classes import table_widget
 from dialog import dialog_input_drug
@@ -37,7 +37,7 @@ class DictCompound(QtWidgets.QMainWindow):
 
     # 設定GUI
     def _set_ui(self):
-        self.ui = ui_settings.load_ui_file(ui_settings.UI_DICT_COMPOUND, self)
+        self.ui = ui_utils.load_ui_file(ui_utils.UI_DICT_COMPOUND, self)
         self.table_widget_dict_compound = table_widget.TableWidget(self.ui.tableWidget_dict_compound, self.database)
         self.table_widget_dict_compound.set_column_hidden([0])
         self.table_widget_dict_medicine = table_widget.TableWidget(self.ui.tableWidget_dict_medicine, self.database)
@@ -73,12 +73,12 @@ class DictCompound(QtWidgets.QMainWindow):
 
     def _set_dict_compound_data(self, rec_no, rec):
         dict_compound_rec = [
-            strings.xstr(rec['MedicineKey']),
-            strings.xstr(rec['MedicineCode']),
-            strings.xstr(rec['InputCode']),
-            strings.xstr(rec['MedicineName']),
-            strings.xstr(rec['Unit']),
-            strings.xstr(rec['SalePrice']),
+            string_utils.xstr(rec['MedicineKey']),
+            string_utils.xstr(rec['MedicineCode']),
+            string_utils.xstr(rec['InputCode']),
+            string_utils.xstr(rec['MedicineName']),
+            string_utils.xstr(rec['Unit']),
+            string_utils.xstr(rec['SalePrice']),
         ]
 
         for column in range(0, self.ui.tableWidget_dict_compound.columnCount()):
@@ -105,13 +105,13 @@ class DictCompound(QtWidgets.QMainWindow):
             return
 
         dict_medicine_rec = [
-            strings.xstr(rec['MedicineKey']),
-            strings.xstr(row['MedicineCode']),
-            strings.xstr(row['MedicineName']),
-            strings.xstr(row['InsCode']),
-            strings.xstr(row['Unit']),
-            strings.xstr(rec['Quantity']),
-            strings.xstr(row['SalePrice']),
+            string_utils.xstr(rec['MedicineKey']),
+            string_utils.xstr(row['MedicineCode']),
+            string_utils.xstr(row['MedicineName']),
+            string_utils.xstr(row['InsCode']),
+            string_utils.xstr(row['Unit']),
+            string_utils.xstr(rec['Quantity']),
+            string_utils.xstr(row['SalePrice']),
         ]
 
         for column in range(0, self.ui.tableWidget_dict_medicine.columnCount()):

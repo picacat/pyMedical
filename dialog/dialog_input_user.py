@@ -4,10 +4,10 @@
 
 import datetime
 from PyQt5 import QtWidgets
-from libs import ui_settings
+from libs import ui_utils
 from libs import nhi_utils
-from libs import system
-from libs import strings
+from libs import system_utils
+from libs import string_utils
 
 
 # 主視窗
@@ -42,9 +42,9 @@ class DialogInputUser(QtWidgets.QDialog):
 
     # 設定GUI
     def _set_ui(self):
-        self.ui = ui_settings.load_ui_file(ui_settings.UI_DIALOG_INPUT_USER, self)
+        self.ui = ui_utils.load_ui_file(ui_utils.UI_DIALOG_INPUT_USER, self)
         self.setFixedSize(self.size())  # non resizable dialog
-        system.set_css(self)
+        system_utils.set_css(self)
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setText('存檔')
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Cancel).setText('取消')
         self._set_combo_box()
@@ -56,30 +56,30 @@ class DialogInputUser(QtWidgets.QDialog):
 
     # 設定 comboBox
     def _set_combo_box(self):
-        ui_settings.set_combo_box(self.ui.comboBox_gender, nhi_utils.GENDER)
-        ui_settings.set_combo_box(self.ui.comboBox_position, nhi_utils.POSITION)
-        ui_settings.set_combo_box(self.ui.comboBox_fulltime, nhi_utils.FULLTIME)
+        ui_utils.set_combo_box(self.ui.comboBox_gender, nhi_utils.GENDER)
+        ui_utils.set_combo_box(self.ui.comboBox_position, nhi_utils.POSITION)
+        ui_utils.set_combo_box(self.ui.comboBox_fulltime, nhi_utils.FULLTIME)
 
     def _read_person(self):
         sql = 'SELECT * FROM person WHERE PersonKey = {0}'.format(self.person_key)
         row = self.database.select_record(sql)[0]
-        self.ui.lineEdit_code.setText(row['Code'])
-        self.ui.lineEdit_name.setText(row['Name'])
-        self.ui.comboBox_gender.setCurrentText(row['Gender'])
-        self.ui.lineEdit_birthday.setText(strings.xstr(row['Birthday']))
-        self.ui.lineEdit_id.setText(row['ID'])
-        self.ui.comboBox_position.setCurrentText(row['Position'])
-        self.ui.comboBox_fulltime.setCurrentText(row['FullTime'])
-        self.ui.lineEdit_certificate.setText(row['Certificate'])
-        self.ui.lineEdit_password.setText(row['Password'])
-        self.ui.lineEdit_telephone.setText(row['Telephone'])
-        self.ui.lineEdit_cellphone.setText(row['Cellphone'])
-        self.ui.lineEdit_address.setText(row['Address'])
-        self.ui.lineEdit_email.setText(row['EMail'])
-        self.ui.lineEdit_department.setText(row['Department'])
-        self.ui.lineEdit_input_date.setText(row['InputDate'])
-        self.ui.lineEdit_init_date.setText(row['InitDate'])
-        self.ui.lineEdit_quit_date.setText(row['QuitDate'])
+        self.ui.lineEdit_code.setText(string_utils.xstr(row['Code']))
+        self.ui.lineEdit_name.setText(string_utils.xstr(row['Name']))
+        self.ui.comboBox_gender.setCurrentText(string_utils.xstr(row['Gender']))
+        self.ui.lineEdit_birthday.setText(string_utils.xstr(row['Birthday']))
+        self.ui.lineEdit_id.setText(string_utils.xstr(row['ID']))
+        self.ui.comboBox_position.setCurrentText(string_utils.xstr(row['Position']))
+        self.ui.comboBox_fulltime.setCurrentText(string_utils.xstr(row['FullTime']))
+        self.ui.lineEdit_certificate.setText(string_utils.xstr(row['Certificate']))
+        self.ui.lineEdit_password.setText(string_utils.xstr(row['Password']))
+        self.ui.lineEdit_telephone.setText(string_utils.xstr(row['Telephone']))
+        self.ui.lineEdit_cellphone.setText(string_utils.xstr(row['Cellphone']))
+        self.ui.lineEdit_address.setText(string_utils.xstr(row['Address']))
+        self.ui.lineEdit_email.setText(string_utils.xstr(row['EMail']))
+        self.ui.lineEdit_department.setText(string_utils.xstr(row['Department']))
+        self.ui.lineEdit_input_date.setText(string_utils.xstr(row['InputDate']))
+        self.ui.lineEdit_init_date.setText(string_utils.xstr(row['InitDate']))
+        self.ui.lineEdit_quit_date.setText(string_utils.xstr(row['QuitDate']))
         self.ui.lineEdit_remark.setText(row['Remark'])
 
     def _add_person(self):

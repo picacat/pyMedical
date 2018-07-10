@@ -3,7 +3,7 @@
 
 import configparser
 
-from libs import ui_settings
+from libs import ui_utils
 
 
 # 系統設定
@@ -11,7 +11,7 @@ class SystemSettings:
     # 初始化
     def __init__(self, database, station_no=None):
         self.database = database
-        self.config_file = ui_settings.CONFIG_FILE
+        self.config_file = ui_utils.CONFIG_FILE
         self.config = configparser.ConfigParser()
         self.config.read(self.config_file)
 

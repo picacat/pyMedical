@@ -5,9 +5,9 @@
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtCore import QSettings, QSize, QPoint
 from classes import table_widget
-from libs import ui_settings
-from libs import system
-from libs import strings
+from libs import ui_utils
+from libs import system_utils
+from libs import string_utils
 
 
 # 主視窗
@@ -45,10 +45,10 @@ class DialogMedicine(QtWidgets.QDialog):
 
     # 設定GUI
     def _set_ui(self):
-        self.ui = ui_settings.load_ui_file(ui_settings.UI_DIALOG_MEDICINE, self)
+        self.ui = ui_utils.load_ui_file(ui_utils.UI_DIALOG_MEDICINE, self)
         # self.setFixedSize(self.size())  # non resizable dialog
-        system.set_css(self)
-        system.set_theme(self.ui, self.system_settings)
+        system_utils.set_css(self)
+        system_utils.set_theme(self.ui, self.system_settings)
 
         self.ui.resize(self.settings.value("dialog_medicine_size", QSize(635, 802)))
         self.ui.move(self.settings.value("dialog_medicine_pos", QPoint(226, 147)))
@@ -130,8 +130,8 @@ class DialogMedicine(QtWidgets.QDialog):
 
     def _set_dict_groups_data(self, rec_no, rec):
         dict_groups_rec = [
-            strings.xstr(rec['DictGroupsKey']),
-            strings.xstr(rec['DictGroupsName']),
+            string_utils.xstr(rec['DictGroupsKey']),
+            string_utils.xstr(rec['DictGroupsName']),
         ]
 
         for column in range(0, self.ui.tableWidget_dict_groups.columnCount()):
@@ -156,12 +156,12 @@ class DialogMedicine(QtWidgets.QDialog):
 
     def _set_medicine_data(self, rec_no, rec):
         medicine_rec = [
-            strings.xstr(rec['MedicineKey']),
-            strings.xstr(rec['MedicineName']),
-            strings.xstr(rec['InsCode']),
-            strings.xstr(rec['Unit']),
-            strings.xstr(rec['SalePrice']),
-            strings.xstr(rec['MedicineType']),
+            string_utils.xstr(rec['MedicineKey']),
+            string_utils.xstr(rec['MedicineName']),
+            string_utils.xstr(rec['InsCode']),
+            string_utils.xstr(rec['Unit']),
+            string_utils.xstr(rec['SalePrice']),
+            string_utils.xstr(rec['MedicineType']),
         ]
 
         for column in range(0, self.ui.tableWidget_medicine.columnCount()):
@@ -184,13 +184,13 @@ class DialogMedicine(QtWidgets.QDialog):
         if input_code == '':
             return
 
-        input_code = strings.phonetic_to_str(input_code)
+        input_code = string_utils.phonetic_to_str(input_code)
         self._read_medicine(dict_groups_type, input_code)
         self.ui.lineEdit_input_code.setFocus(True)
         self.ui.lineEdit_input_code.setCursorPosition(len(input_code))
 
     def medicine_double_clicked(self):
-        self.parent.tab_ins_prescript.append_null_medicine()
+        self.parent.tab_list[0].append_null_medicine()
         self.add_medicine()
         self.ui.lineEdit_input_code.setText(None)
         self.ui.lineEdit_input_code.setFocus(True)
@@ -202,8 +202,8 @@ class DialogMedicine(QtWidgets.QDialog):
             [3, self.table_widget_medicine.field_value(3)],
             [4, None],
             [5, str(self.table_widget_prescript.currentRow()+1)],
-            [6, str(self.parent.tab_ins_prescript.case_key)],
-            [7, str(self.parent.tab_ins_prescript.case_date)],
+            [6, str(self.parent.tab_list[0].case_key)],
+            [7, str(self.parent.tab_list[0].case_date)],
             [8, self.medicine_set],
             [9, self.table_widget_medicine.field_value(5)],
             [10, self.table_widget_medicine.field_value(0)],
@@ -211,5 +211,5 @@ class DialogMedicine(QtWidgets.QDialog):
             [12, self.system_settings.field('劑量模式')],
         ]
 
-        self.parent.tab_ins_prescript.set_prescript(prescript_rec)
-        self.parent.tab_ins_prescript.set_default_pres_days()
+        self.parent.tab_list[0].set_prescript(prescript_rec)
+        self.parent.tab_list[0].set_default_pres_days()

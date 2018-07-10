@@ -5,8 +5,8 @@ import sys
 
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QInputDialog, QMessageBox, QPushButton
-from libs import ui_settings
-from libs import strings
+from libs import ui_utils
+from libs import string_utils
 from libs import dialog_utils
 from classes import table_widget
 from dialog import dialog_input_diagnostic
@@ -37,7 +37,7 @@ class DictDistinguish(QtWidgets.QMainWindow):
 
     # 設定GUI
     def _set_ui(self):
-        self.ui = ui_settings.load_ui_file(ui_settings.UI_DICT_DISTINGUISH, self)
+        self.ui = ui_utils.load_ui_file(ui_utils.UI_DICT_DISTINGUISH, self)
         self.table_widget_dict_groups = table_widget.TableWidget(self.ui.tableWidget_dict_groups, self.database)
         self.table_widget_dict_groups.set_column_hidden([0])
         self.table_widget_dict_groups_name = table_widget.TableWidget(self.ui.tableWidget_dict_groups_name, self.database)
@@ -80,8 +80,8 @@ class DictDistinguish(QtWidgets.QMainWindow):
 
     def _set_dict_groups_data(self, rec_no, rec):
         dict_groups_rec = [
-            strings.xstr(rec['DictGroupsKey']),
-            strings.xstr(rec['DictGroupsName']),
+            string_utils.xstr(rec['DictGroupsKey']),
+            string_utils.xstr(rec['DictGroupsName']),
         ]
 
         for column in range(0, self.ui.tableWidget_dict_groups.columnCount()):
@@ -89,7 +89,7 @@ class DictDistinguish(QtWidgets.QMainWindow):
 
     def dict_groups_changed(self):
         dict_groups_type = self.table_widget_dict_groups.field_value(1)
-        self.ui.groupBox_dict_groups_name.setTitle(strings.xstr(dict_groups_type) + '類別')
+        self.ui.groupBox_dict_groups_name.setTitle(string_utils.xstr(dict_groups_type) + '類別')
         self._read_dict_groups_name(dict_groups_type)
         self.ui.tableWidget_dict_groups.setFocus(True)
 
@@ -103,8 +103,8 @@ class DictDistinguish(QtWidgets.QMainWindow):
 
     def _set_dict_groups_name_data(self, rec_no, rec):
         dict_groups_name_rec = [
-            strings.xstr(rec['DictGroupsKey']),
-            strings.xstr(rec['DictGroupsName']),
+            string_utils.xstr(rec['DictGroupsKey']),
+            string_utils.xstr(rec['DictGroupsName']),
         ]
 
         for column in range(0, self.ui.tableWidget_dict_groups_name.columnCount()):
@@ -114,7 +114,7 @@ class DictDistinguish(QtWidgets.QMainWindow):
         dict_groups_name = self.table_widget_dict_groups_name.field_value(1)
         self.ui.groupBox_dict_distinguish.setTitle(
             '{0}資料 - ['.format(self.dict_type) +
-            strings.xstr(dict_groups_name) +
+            string_utils.xstr(dict_groups_name) +
             ']'
         )
         self._read_dict_distinguish(dict_groups_name)
@@ -128,10 +128,10 @@ class DictDistinguish(QtWidgets.QMainWindow):
 
     def _set_dict_distinguish_data(self, rec_no, rec):
         dict_distinguish_rec = [
-            strings.xstr(rec['ClinicKey']),
-            strings.xstr(rec['ClinicCode']),
-            strings.xstr(rec['InputCode']),
-            strings.xstr(rec['ClinicName']),
+            string_utils.xstr(rec['ClinicKey']),
+            string_utils.xstr(rec['ClinicCode']),
+            string_utils.xstr(rec['InputCode']),
+            string_utils.xstr(rec['ClinicName']),
         ]
 
         for column in range(0, self.ui.tableWidget_dict_distinguish.columnCount()):

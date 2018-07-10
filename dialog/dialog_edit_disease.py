@@ -3,8 +3,8 @@
 #coding: utf-8
 
 from PyQt5 import QtWidgets
-from libs import ui_settings
-from libs import system
+from libs import ui_utils
+from libs import system_utils
 
 
 # 主視窗
@@ -37,9 +37,9 @@ class DialogEditDisease(QtWidgets.QDialog):
 
     # 設定GUI
     def _set_ui(self):
-        self.ui = ui_settings.load_ui_file(ui_settings.UI_DIALOG_EDIT_DISEASE, self)
+        self.ui = ui_utils.load_ui_file(ui_utils.UI_DIALOG_EDIT_DISEASE, self)
         self.setFixedSize(self.size())  # non resizable dialog
-        system.set_css(self)
+        system_utils.set_css(self)
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setText('存檔')
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Cancel).setText('取消')
         self.ui.lineEdit_input_code.setFocus()

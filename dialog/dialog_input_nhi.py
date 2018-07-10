@@ -3,8 +3,8 @@
 #coding: utf-8
 
 from PyQt5 import QtWidgets
-from libs import ui_settings
-from libs import system
+from libs import ui_utils
+from libs import system_utils
 from libs import nhi_utils
 
 
@@ -38,9 +38,9 @@ class DialogInputNHI(QtWidgets.QDialog):
 
     # 設定GUI
     def _set_ui(self):
-        self.ui = ui_settings.load_ui_file(ui_settings.UI_DIALOG_INPUT_NHI, self)
+        self.ui = ui_utils.load_ui_file(ui_utils.UI_DIALOG_INPUT_NHI, self)
         self.setFixedSize(self.size())  # non resizable dialog
-        system.set_css(self)
+        system_utils.set_css(self)
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setText('存檔')
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Cancel).setText('取消')
         self._set_combo_box()
@@ -48,7 +48,7 @@ class DialogInputNHI(QtWidgets.QDialog):
 
     # 設定comboBox
     def _set_combo_box(self):
-        ui_settings.set_combo_box(self.ui.comboBox_charge_type, nhi_utils.CHARGE_TYPE)
+        ui_utils.set_combo_box(self.ui.comboBox_charge_type, nhi_utils.CHARGE_TYPE)
 
     # 設定信號
     def _set_signal(self):

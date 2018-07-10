@@ -4,7 +4,7 @@
 import sys
 
 from PyQt5 import QtWidgets
-from libs import ui_settings
+from libs import ui_utils
 import dict_symptom
 import dict_tongue
 import dict_pulse
@@ -38,7 +38,7 @@ class DictDiagnostic(QtWidgets.QMainWindow):
 
     # 設定GUI
     def _set_ui(self):
-        self.ui = ui_settings.load_ui_file(ui_settings.UI_DICT_DIAGNOSTIC, self)
+        self.ui = ui_utils.load_ui_file(ui_utils.UI_DICT_DIAGNOSTIC, self)
         self.ui.tabWidget_diagnostic.addTab(
             dict_symptom.DictSymptom(self, *self.args), '主訴資料')
         self.ui.tabWidget_diagnostic.addTab(

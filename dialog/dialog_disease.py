@@ -4,9 +4,9 @@
 
 from PyQt5 import QtWidgets, QtGui
 from classes import table_widget
-from libs import ui_settings
-from libs import system
-from libs import strings
+from libs import ui_utils
+from libs import system_utils
+from libs import string_utils
 
 
 # 主視窗
@@ -35,9 +35,9 @@ class DialogDisease(QtWidgets.QDialog):
 
     # 設定GUI
     def _set_ui(self):
-        self.ui = ui_settings.load_ui_file(ui_settings.UI_DIALOG_DISEASE, self)
+        self.ui = ui_utils.load_ui_file(ui_utils.UI_DIALOG_DISEASE, self)
         self.setFixedSize(self.size())  # non resizable dialog
-        system.set_css(self)
+        system_utils.set_css(self)
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Save).setText('選取')
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Close).setText('關閉')
         self.ui.tableWidget_disease.doubleClicked.connect(self.accepted_button_clicked)
@@ -103,8 +103,8 @@ class DialogDisease(QtWidgets.QDialog):
 
     def _set_groups_name_data(self, rec_no, rec):
         groups_name_rec = [
-            strings.xstr(rec['DictGroupsKey']),
-            strings.xstr(rec['DictGroupsName']),
+            string_utils.xstr(rec['DictGroupsKey']),
+            string_utils.xstr(rec['DictGroupsName']),
         ]
 
         for column in range(0, self.ui.tableWidget_groups_name.columnCount()):
@@ -124,17 +124,17 @@ class DialogDisease(QtWidgets.QDialog):
 
     def _set_disease_data(self, rec_no, rec):
         disease_rec = [
-            strings.xstr(rec['ICD10Key']),
-            strings.xstr(rec['ICDCode']),
-            strings.xstr(rec['SpecialCode']),
-            strings.xstr(rec['ChineseName']),
+            string_utils.xstr(rec['ICD10Key']),
+            string_utils.xstr(rec['ICDCode']),
+            string_utils.xstr(rec['SpecialCode']),
+            string_utils.xstr(rec['ChineseName']),
         ]
 
         for column in range(0, self.ui.tableWidget_disease.columnCount()):
             self.ui.tableWidget_disease.setItem(
                 rec_no, column, QtWidgets.QTableWidgetItem(disease_rec[column])
             )
-            if strings.xstr(rec['SpecialCode']) != '':
+            if string_utils.xstr(rec['SpecialCode']) != '':
                 self.ui.tableWidget_disease.item(
                     rec_no, column
                 ).setForeground(QtGui.QColor('red'))

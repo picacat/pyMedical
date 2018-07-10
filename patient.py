@@ -6,8 +6,8 @@ import sys
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QMessageBox, QPushButton
 import datetime
-from libs import ui_settings
-from libs import strings
+from libs import ui_utils
+from libs import string_utils
 from libs import nhi_utils
 from libs import date_utils
 from libs import validator_utils
@@ -48,10 +48,10 @@ class Patient(QtWidgets.QMainWindow):
 
     # 設定GUI
     def _set_ui(self):
-        self.ui = ui_settings.load_ui_file(ui_settings.UI_PATIENT, self)
+        self.ui = ui_utils.load_ui_file(ui_utils.UI_PATIENT, self)
         self._set_combobox()
-        self.ui.lineEdit_patient_key.setText(strings.xstr(self.database.get_last_auto_increment_key('patient')))
-        self.ui.lineEdit_init_date.setText(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        self.ui.lineEdit_patient_key.setText(string_utils.xstr(self.database.get_last_auto_increment_key('patient')))
+        self.ui.lineEdit_init_date.setText(date_utils.now_to_str())
 
     def _set_validator(self):
         self.ui.lineEdit_birthday.setValidator(validator_utils.set_validator('日期格式'))
@@ -66,13 +66,13 @@ class Patient(QtWidgets.QMainWindow):
         self.ui.lineEdit_id.editingFinished.connect(self._validate_id)
 
     def _set_combobox(self):
-        ui_settings.set_combo_box(self.ui.comboBox_gender, nhi_utils.GENDER)
-        ui_settings.set_combo_box(self.ui.comboBox_nationality, nhi_utils.NATIONALITY)
-        ui_settings.set_combo_box(self.ui.comboBox_ins_type, nhi_utils.INSURED_TYPE)
-        ui_settings.set_combo_box(self.ui.comboBox_marriage, nhi_utils.MARRIAGE)
-        ui_settings.set_combo_box(self.ui.comboBox_education, nhi_utils.EDUCATION)
-        ui_settings.set_combo_box(self.ui.comboBox_occupation, nhi_utils.OCCUPATION)
-        ui_settings.set_combo_box(self.ui.comboBox_discount, '掛號優待', self.database)
+        ui_utils.set_combo_box(self.ui.comboBox_gender, nhi_utils.GENDER)
+        ui_utils.set_combo_box(self.ui.comboBox_nationality, nhi_utils.NATIONALITY)
+        ui_utils.set_combo_box(self.ui.comboBox_ins_type, nhi_utils.INSURED_TYPE)
+        ui_utils.set_combo_box(self.ui.comboBox_marriage, nhi_utils.MARRIAGE)
+        ui_utils.set_combo_box(self.ui.comboBox_education, nhi_utils.EDUCATION)
+        ui_utils.set_combo_box(self.ui.comboBox_occupation, nhi_utils.OCCUPATION)
+        ui_utils.set_combo_box(self.ui.comboBox_discount, '掛號優待', self.database)
 
     def _validate_birthday(self):
         if self.ic_card:
@@ -156,18 +156,18 @@ class Patient(QtWidgets.QMainWindow):
         self._set_nationality()
 
     def _set_patient(self):
-        self.ui.lineEdit_patient_key.setText(strings.xstr(self.patient['PatientKey']))
-        self.ui.lineEdit_card_no.setText(strings.xstr(self.patient['CardNo']))
-        self.ui.lineEdit_name.setText(strings.xstr(self.patient['Name']))
-        self.ui.lineEdit_id.setText(strings.xstr(self.patient['ID']))
-        self.ui.lineEdit_birthday.setText(strings.xstr(self.patient['Birthday']))
-        self.ui.lineEdit_init_date.setText(strings.xstr(self.patient['InitDate']))
-        self.ui.lineEdit_telephone.setText(strings.xstr(self.patient['Telephone']))
-        self.ui.lineEdit_cellphone.setText(strings.xstr(self.patient['Cellphone']))
-        self.ui.lineEdit_email.setText(strings.xstr(self.patient['Email']))
-        self.ui.lineEdit_address.setText(strings.xstr(self.patient['Address']))
-        self.ui.lineEdit_family.setText(strings.xstr(self.patient['FamilyPatientKey']))
-        self.ui.lineEdit_family_telephone.setText(strings.xstr(self.patient['Reference']))
+        self.ui.lineEdit_patient_key.setText(string_utils.xstr(self.patient['PatientKey']))
+        self.ui.lineEdit_card_no.setText(string_utils.xstr(self.patient['CardNo']))
+        self.ui.lineEdit_name.setText(string_utils.xstr(self.patient['Name']))
+        self.ui.lineEdit_id.setText(string_utils.xstr(self.patient['ID']))
+        self.ui.lineEdit_birthday.setText(string_utils.xstr(self.patient['Birthday']))
+        self.ui.lineEdit_init_date.setText(string_utils.xstr(self.patient['InitDate']))
+        self.ui.lineEdit_telephone.setText(string_utils.xstr(self.patient['Telephone']))
+        self.ui.lineEdit_cellphone.setText(string_utils.xstr(self.patient['Cellphone']))
+        self.ui.lineEdit_email.setText(string_utils.xstr(self.patient['Email']))
+        self.ui.lineEdit_address.setText(string_utils.xstr(self.patient['Address']))
+        self.ui.lineEdit_family.setText(string_utils.xstr(self.patient['FamilyPatientKey']))
+        self.ui.lineEdit_family_telephone.setText(string_utils.xstr(self.patient['Reference']))
         self.ui.comboBox_gender.setCurrentText(self.patient['Gender'])
         self.ui.comboBox_ins_type.setCurrentText(self.patient['InsType'])
         self.ui.comboBox_nationality.setCurrentText(self.patient['Nationality'])
@@ -175,10 +175,10 @@ class Patient(QtWidgets.QMainWindow):
         self.ui.comboBox_education.setCurrentText(self.patient['Education'])
         self.ui.comboBox_occupation.setCurrentText(self.patient['Occupation'])
         self.ui.comboBox_discount.setCurrentText(self.patient['DiscountType'])
-        self.ui.textEdit_allergy.setText(strings.get_str(self.patient['Allergy'], 'utf8'))
-        self.ui.textEdit_history.setText(strings.get_str(self.patient['History'], 'utf8'))
-        self.ui.textEdit_remark.setText(strings.get_str(self.patient['Remark'], 'utf8'))
-        self.ui.textEdit_description.setText(strings.get_str(self.patient['Description'], 'utf8'))
+        self.ui.textEdit_allergy.setText(string_utils.get_str(self.patient['Allergy'], 'utf8'))
+        self.ui.textEdit_history.setText(string_utils.get_str(self.patient['History'], 'utf8'))
+        self.ui.textEdit_remark.setText(string_utils.get_str(self.patient['Remark'], 'utf8'))
+        self.ui.textEdit_description.setText(string_utils.get_str(self.patient['Description'], 'utf8'))
 
     def _save_patient(self):
         fields = ['CardNo', 'Name', 'ID', 'Birthday', 'InitDate', 'Telephone', 'Cellphone', 'Email',

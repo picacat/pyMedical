@@ -5,9 +5,9 @@
 import sys
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtWidgets import QMessageBox, QPushButton
-from libs import ui_settings
-from libs import strings
-from libs import number
+from libs import ui_utils
+from libs import string_utils
+from libs import number_utils
 from dialog import dialog_medical_record_list
 from classes import table_widget
 
@@ -42,7 +42,7 @@ class MedicalRecordList(QtWidgets.QMainWindow):
 
     # 設定GUI
     def _set_ui(self):
-        self.ui = ui_settings.load_ui_file(ui_settings.UI_MEDICAL_RECORD_LIST, self)
+        self.ui = ui_utils.load_ui_file(ui_utils.UI_MEDICAL_RECORD_LIST, self)
         self.table_widget_medical_record_list = table_widget.TableWidget(
             self.ui.tableWidget_medical_record_list, self.database)
         self.table_widget_medical_record_list.set_column_hidden([0])
@@ -103,28 +103,28 @@ class MedicalRecordList(QtWidgets.QMainWindow):
             pres_days = None
 
         medical_record = [
-            strings.xstr(rec['CaseKey']),
-            strings.xstr(rec['CaseDate']),
-            strings.xstr(rec['Period']),
-            strings.xstr(rec['Room']),
-            strings.xstr(rec['RegistNo']),
-            strings.xstr(rec['PatientKey']),
-            strings.xstr(rec['Name']),
-            strings.xstr(rec['Gender']),
-            strings.xstr(rec['Birthday']),
-            strings.xstr(rec['InsType']),
-            strings.xstr(rec['Share']),
-            strings.xstr(rec['TreatType']),
-            strings.xstr(rec['Card']),
-            strings.int_to_str(rec['Continuance']).strip('0'),
-            strings.int_to_str(pres_days),
-            strings.xstr(rec['Doctor']),
-            strings.xstr(rec['DiseaseName1']),
-            strings.xstr(rec['Massager']),
-            strings.int_to_str(rec['RegistFee']),
-            strings.int_to_str(rec['SDiagShareFee']),
-            strings.int_to_str(rec['SDrugShareFee']),
-            strings.int_to_str(rec['TotalFee']),
+            string_utils.xstr(rec['CaseKey']),
+            string_utils.xstr(rec['CaseDate']),
+            string_utils.xstr(rec['Period']),
+            string_utils.xstr(rec['Room']),
+            string_utils.xstr(rec['RegistNo']),
+            string_utils.xstr(rec['PatientKey']),
+            string_utils.xstr(rec['Name']),
+            string_utils.xstr(rec['Gender']),
+            string_utils.xstr(rec['Birthday']),
+            string_utils.xstr(rec['InsType']),
+            string_utils.xstr(rec['Share']),
+            string_utils.xstr(rec['TreatType']),
+            string_utils.xstr(rec['Card']),
+            string_utils.int_to_str(rec['Continuance']).strip('0'),
+            string_utils.int_to_str(pres_days),
+            string_utils.xstr(rec['Doctor']),
+            string_utils.xstr(rec['DiseaseName1']),
+            string_utils.xstr(rec['Massager']),
+            string_utils.int_to_str(rec['RegistFee']),
+            string_utils.int_to_str(rec['SDiagShareFee']),
+            string_utils.int_to_str(rec['SDrugShareFee']),
+            string_utils.int_to_str(rec['TotalFee']),
         ]
 
         for column in range(0, self.ui.tableWidget_medical_record_list.columnCount()):
@@ -134,7 +134,7 @@ class MedicalRecordList(QtWidgets.QMainWindow):
             elif column in [7]:
                 self.ui.tableWidget_medical_record_list.item(rec_no, column).setTextAlignment(QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter)
 
-            if number.get_integer(rec['TotalFee']) > 0 or rec['InsType'] == '自費':
+            if number_utils.get_integer(rec['TotalFee']) > 0 or rec['InsType'] == '自費':
                 self.ui.tableWidget_medical_record_list.item(rec_no, column).setForeground(QtGui.QColor('blue'))
 
     def delete_medical_record(self):

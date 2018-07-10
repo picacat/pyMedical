@@ -4,8 +4,8 @@ from PyQt5.QtWidgets import QMessageBox, QPushButton
 import configparser
 import mysql.connector as mysql
 import os
-from libs import ui_settings
-from libs import strings
+from libs import ui_utils
+from libs import string_utils
 
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname("__file__")))
@@ -48,7 +48,7 @@ class Database:
         try:
             if kwargs == {}:
                 config = configparser.ConfigParser()
-                config.read(ui_settings.CONFIG_FILE)
+                config.read(ui_utils.CONFIG_FILE)
                 self.cnx = mysql.connect(
                     user=config['db']['user'],
                     host=config['db']['host'],
@@ -122,7 +122,7 @@ class Database:
         cursor = self.cnx.cursor()
         value_list = self._get_value_list(fields)
         sql = "INSERT INTO {0} ({1}) VALUES ({2})".format(table_name, ", ".join(fields), value_list)
-        strings.str_to_none(data)
+        string_utils.str_to_none(data)
         cursor.execute(sql, data)
         self.cnx.commit()
         last_row_id = cursor.lastrowid
@@ -135,7 +135,7 @@ class Database:
         cursor = self.cnx.cursor()
         assignment_list = self._get_assignment_list(fields)
         sql = "UPDATE {0} SET {1} WHERE {2} = {3}".format(table_name, assignment_list, primary_key, key_value)
-        strings.str_to_none(data)
+        string_utils.str_to_none(data)
         cursor.execute(sql, data)
         self.cnx.commit()
         cursor.close()
@@ -176,7 +176,7 @@ class Database:
             print('file encoding error')
             return
 
-        sql = strings.remove_bom(sql)
+        sql = string_utils.remove_bom(sql)
         cursor = self.cnx.cursor(sql)
         try:
             cursor.execute(sql)

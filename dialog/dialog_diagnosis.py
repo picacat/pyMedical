@@ -3,8 +3,8 @@
 #coding: utf-8
 
 from PyQt5 import QtWidgets, QtGui
-from libs import ui_settings
-from libs import system
+from libs import ui_utils
+from libs import system_utils
 from PyQt5.QtCore import QSettings, QSize, QPoint
 from dialog import dialog_symptom
 from dialog import dialog_tongue
@@ -46,10 +46,10 @@ class DialogDiagnosis(QtWidgets.QDialog):
 
     # 設定GUI
     def _set_ui(self):
-        self.ui = ui_settings.load_ui_file(ui_settings.UI_DIALOG_DIAGNOSIS, self)
+        self.ui = ui_utils.load_ui_file(ui_utils.UI_DIALOG_DIAGNOSIS, self)
         # self.setFixedSize(self.size())  # non resizable dialog
-        system.set_css(self)
-        system.set_theme(self.ui, self.system_settings)
+        system_utils.set_css(self)
+        system_utils.set_theme(self.ui, self.system_settings)
 
         self.ui.resize(self.settings.value("dialog_diagnosis_size", QSize(635, 769)))
         self.ui.move(self.settings.value("dialog_diagnosis_pos", QPoint(205, 220)))

@@ -3,8 +3,8 @@
 
 from PyQt5 import QtWidgets, QtCore, QtGui
 
-from libs import ui_settings
-from libs import strings
+from libs import ui_utils
+from libs import string_utils
 from libs import nhi_utils
 from classes import table_widget
 from dialog import dialog_input_medicine
@@ -37,7 +37,7 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
 
     # 設定GUI
     def _set_ui(self):
-        self.ui = ui_settings.load_ui_file(ui_settings.UI_SELF_PRESCRIPT_RECORD, self)
+        self.ui = ui_utils.load_ui_file(ui_utils.UI_SELF_PRESCRIPT_RECORD, self)
         self.table_widget_prescript = table_widget.TableWidget(self.ui.tableWidget_prescript, self.database)
         self.table_widget_prescript.set_column_hidden([0, 5, 6, 7, 8, 9, 10, 11, 12])
         self._set_table_width()
@@ -51,15 +51,15 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
         self.ui.comboBox_pres_days.currentTextChanged.connect(self.pres_days_changed)
 
     def _set_combo_box(self):
-        ui_settings.set_combo_box(
+        ui_utils.set_combo_box(
             self.ui.comboBox_package,
             nhi_utils.PACKAGE
         )
-        ui_settings.set_combo_box(
+        ui_utils.set_combo_box(
             self.ui.comboBox_pres_days,
             nhi_utils.PRESDAYS
         )
-        ui_settings.set_combo_box(
+        ui_utils.set_combo_box(
             self.ui.comboBox_instruction,
             nhi_utils.INSTRUCTION
         )
@@ -174,9 +174,9 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
         if len(row) <= 0:
             return
 
-        self.ui.comboBox_package.setCurrentText(strings.xstr(row[0]['Packages']))
-        self.ui.comboBox_pres_days.setCurrentText(strings.xstr(row[0]['Days']))
-        self.ui.comboBox_instruction.setCurrentText(strings.xstr(row[0]['Instruction']))
+        self.ui.comboBox_package.setCurrentText(string_utils.xstr(row[0]['Packages']))
+        self.ui.comboBox_pres_days.setCurrentText(string_utils.xstr(row[0]['Days']))
+        self.ui.comboBox_instruction.setCurrentText(string_utils.xstr(row[0]['Instruction']))
 
     def _read_medicine(self):
         sql = """ 
@@ -188,19 +188,19 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
 
     def _set_medicine_data(self, rec_no, rec):
         prescript_rec = [
-            strings.xstr(rec['PrescriptKey']),
-            strings.xstr(rec['MedicineName']),
-            strings.xstr(rec['Dosage']),
-            strings.xstr(rec['Unit']),
-            strings.xstr(rec['Instruction']),
-            strings.xstr(rec['PrescriptNo']),
-            strings.xstr(rec['CaseKey']),
-            strings.xstr(rec['CaseDate']),
-            strings.xstr(rec['MedicineSet']),
-            strings.xstr(rec['MedicineType']),
-            strings.xstr(rec['MedicineKey']),
-            strings.xstr(rec['InsCode']),
-            strings.xstr(rec['DosageMode']),
+            string_utils.xstr(rec['PrescriptKey']),
+            string_utils.xstr(rec['MedicineName']),
+            string_utils.xstr(rec['Dosage']),
+            string_utils.xstr(rec['Unit']),
+            string_utils.xstr(rec['Instruction']),
+            string_utils.xstr(rec['PrescriptNo']),
+            string_utils.xstr(rec['CaseKey']),
+            string_utils.xstr(rec['CaseDate']),
+            string_utils.xstr(rec['MedicineSet']),
+            string_utils.xstr(rec['MedicineType']),
+            string_utils.xstr(rec['MedicineKey']),
+            string_utils.xstr(rec['InsCode']),
+            string_utils.xstr(rec['DosageMode']),
         ]
 
         for column in range(0, self.ui.tableWidget_prescript.columnCount()):

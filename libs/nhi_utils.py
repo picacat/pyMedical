@@ -1,6 +1,7 @@
 # 2018.01.23
 
-from libs import number
+from collections import Counter
+from libs import number_utils
 
 INS_TYPE = ['健保', '自費']
 APPLY_TYPE = ['申報', '不申報']
@@ -8,8 +9,8 @@ VISIT = ['複診', '初診']
 REG_TYPE = ['一般門診', '預約門診', '夜間急診']
 INJURY_TYPE = ['普通疾病', '職業傷害', '職業病']
 INSURED_TYPE = ['基層醫療', '榮民', '低收入戶']
-SHARE_TYPE = [
-    '基層醫療', '榮民', '低收入戶', '重大傷病', '職業傷害', '三歲兒童',
+SHARE_TYPE = INSURED_TYPE + [
+    '重大傷病', '職業傷害', '三歲兒童',
     '山地離島', '其他免部份負擔', '新生兒', '愛滋病', '替代役男', '天然災害',
 ]
 AGENT_SHARE = [
@@ -17,24 +18,19 @@ AGENT_SHARE = [
     '新生兒', '愛滋病', '替代役男', '天然災害',
 ]
 
-TREAT_TYPE = [
-    '內科', '針灸治療', '電針治療', '複雜性針灸', '傷科治療', '複雜性傷科',
-    '脫臼復位', '脫臼整復首次', '脫臼整復',
-    '小兒氣喘', '小兒腦性麻痺', '腦血管疾病', '癌症照護', '助孕照護', '保胎照護', '兒童鼻炎',
-]
-INS_TREAT = [
-    '針灸治療', '電針治療', '複雜性針灸', '傷科治療', '複雜性傷科',
-    '脫臼復位', '脫臼整復首次', '脫臼整復',
-]
 ACUPUNCTURE_TREAT = ['針灸治療', '電針治療', '複雜性針灸',]
 MASSAGE_TREAT = ['傷科治療', '複雜性傷科',]
 DISLOCATE_TREAT = ['脫臼復位', '脫臼整復首次', '脫臼整復',]
+INS_TREAT = ACUPUNCTURE_TREAT + MASSAGE_TREAT + DISLOCATE_TREAT
 CARE_TREAT = [
     '小兒氣喘(氣霧處置)', '小兒氣喘',
     '小兒腦性麻痺(藥浴處置)', '小兒腦性麻痺',
     '腦血管疾病', '癌症照護',
     '助孕照護', '保胎照護', '兒童鼻炎',
 ]
+INS_TREAT_WITH_CARE = INS_TREAT + CARE_TREAT
+TREAT_TYPE = ['內科'] + INS_TREAT_WITH_CARE
+
 ACUPUNCTURE_DRUG_DICT = {
     '針灸治療': 'B41',
     '電針治療': 'B43',
@@ -71,6 +67,15 @@ CARE_DICT = {
     '腦血管疾病': 'C05',
 }
 
+TREAT_DICT = {
+    **ACUPUNCTURE_DRUG_DICT,
+    **ACUPUNCTURE_DICT,
+    **MASSAGE_DRUG_DICT,
+    **MASSAGE_DICT,
+    **DISLOCATE_DRUG_DICT,
+    **DISLOCATE_DICT,
+    **CARE_DICT,
+}
 
 CHARGE_TYPE = ['診察費', '藥費', '調劑費', '處置費', '檢驗費', '照護費']
 COURSE_TYPE = ['首次', '療程']
@@ -127,7 +132,7 @@ ABNORMAL_CARD = [
 COURSE = [None, '1', '2', '3', '4', '5', '6']
 ROOM = ['1', '2', '3', '5', '6', '7', '8', '9', '10', '11', '12', '13', '15', '16', '17', '18', '19', '20']
 PERIOD = ['早班', '午班', '晚班']
-POSITION = [None, '院長', '主任', '醫師', '支援醫師', '藥師', '護士', '職員', '理療師']
+POSITION = [None, '院長', '主任', '醫師', '支援醫師', '藥師', '護士', '職員', '推拿師父']
 FULLTIME = [None, '全職', '兼職']
 GENDER = [None, '男', '女']
 NATIONALITY = [None, '本國', '外國', '居留證', '遊民']
@@ -162,7 +167,7 @@ def get_treat_type(treatment):
 
 # 取得療程類別
 def get_course_type(course):
-    if 2 <= number.get_integer(course) <= 6:
+    if 2 <= number_utils.get_integer(course) <= 6:
         course_type = '療程'
     else:
         course_type = '首次'
@@ -179,3 +184,31 @@ def get_medicine_type(database, medicine_type):
         medicine_groups.append(row['DictGroupsName'])
 
     return medicine_groups
+
+
+def get_treat_code(treatment, dosage_row):
+    treat_code = None
+    if dosage_row is not None:
+        pres_days = dosage_row['Days']
+    else:
+        pres_days = 0
+
+    if treatment in ACUPUNCTURE_TREAT:
+        if pres_days > 0:
+            treat_code = ACUPUNCTURE_DRUG_DICT[treatment]
+        else:
+            treat_code = ACUPUNCTURE_DICT[treatment]
+    elif treatment in MASSAGE_TREAT:
+        if pres_days > 0:
+            treat_code = MASSAGE_DRUG_DICT[treatment]
+        else:
+            treat_code = MASSAGE_DICT[treatment]
+    elif treatment in DISLOCATE_TREAT:
+        if pres_days > 0:
+            treat_code = DISLOCATE_DRUG_DICT[treatment]
+        else:
+            treat_code = DISLOCATE_DICT[treatment]
+    elif treatment in CARE_TREAT:
+            treat_code = CARE_DICT[treatment]
+
+    return treat_code

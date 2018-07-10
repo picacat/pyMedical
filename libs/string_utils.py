@@ -74,3 +74,5 @@ def phonetic_to_str(in_str):
         ansi_str += phn_str
 
     return ansi_str
+
+

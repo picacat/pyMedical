@@ -2,18 +2,22 @@
 #coding: utf-8
 
 import sys
-from PyQt5 import QtWidgets, QtGui
+from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtWidgets import QMessageBox, QPushButton
 import os
 
-from libs import ui_settings
-from libs import modules
-from libs import system
+from libs import ui_utils
+from libs import module_utils
+from libs import system_utils
 from dialog import dialog_system_settings
 from dialog import dialog_ic_card
 from classes import system_settings, db
 from convert import convert
 import login
+from classes import udp_socket_server
+
+from threading import Thread
+import socket
 
 
 # 主畫面
@@ -27,10 +31,12 @@ class PyMedical(QtWidgets.QMainWindow):
 
         self.system_settings = system_settings.SystemSettings(self.database)
         self.ui = None
+        self.socket_server = udp_socket_server.UDPSocketServer()
 
         self._check_db()
         self._set_ui()
         self._set_signal()
+        self._start_udp_server()
 
     # 解構
     def __del__(self):
@@ -52,34 +58,18 @@ class PyMedical(QtWidgets.QMainWindow):
         else:
             event.ignore()
 
-    # 檢查資料庫狀態
-    def _check_db(self):
-        mysql_path = './mysql'
-        mysql_files = [f for f in os.listdir(mysql_path) if os.path.isfile(os.path.join(mysql_path, f))]
-        for file in mysql_files:
-            table_name = file.split('.sql')[0]
-            self.database.check_table_exists(table_name)
-
-        self.database.check_field_exists('icd10', 'Groups', 'VARCHAR (100) AFTER SpecialCode')
-
     # 設定GUI
     def _set_ui(self):
-        self.ui = ui_settings.load_ui_file(ui_settings.UI_PY_MEDICAL, self)
-        system.set_css(self)
-        system.set_theme(self.ui, self.system_settings)
+        self.ui = ui_utils.load_ui_file(ui_utils.UI_PY_MEDICAL, self)
         self.ui.tabWidget_window.setTabsClosable(True)
         self._set_button_enabled()
         self.ui.setWindowTitle('{0} 醫療資訊管理系統'.format(self.system_settings.field('院所名稱')))
-
-    # 設定按鈕權限
-    def _set_button_enabled(self):
-        if self.system_settings.field('使用讀卡機') == 'Y':
-            self.ui.pushButton_ic_card.setEnabled(True)
-        else:
-            self.ui.pushButton_ic_card.setEnabled(False)
+        self._set_css()
 
     # 設定信號
     def _set_signal(self):
+        self.socket_server.update_signal.connect(self._refresh_waiting_data)
+
         self.ui.action_convert.triggered.connect(self.convert)
         self.ui.pushButton_registration.clicked.connect(self.push_button_clicked)
         self.ui.pushButton_return_card.clicked.connect(self.push_button_clicked)
@@ -97,6 +87,29 @@ class PyMedical(QtWidgets.QMainWindow):
 
         self.ui.tabWidget_window.tabCloseRequested.connect(self.close_tab)
         self.ui.tabWidget_window.currentChanged.connect(self.tab_changed)
+
+    def _set_css(self):
+        system_utils.set_css(self)
+        system_utils.set_theme(self.ui, self.system_settings)
+
+    # 檢查資料庫狀態
+    def _check_db(self):
+        mysql_path = './mysql'
+        mysql_files = [f for f in os.listdir(mysql_path) if os.path.isfile(os.path.join(mysql_path, f))]
+        for file in mysql_files:
+            table_name = file.split('.sql')[0]
+            self.database.check_table_exists(table_name)
+
+        self.database.check_field_exists('icd10', 'Groups', 'VARCHAR (100) AFTER SpecialCode')
+        self.database.check_field_exists('cases', 'CompletionTime', 'DATETIME AFTER CaseDate')
+        self.database.check_field_exists('cases', 'PharmacyType', 'VARCHAR(10) AFTER ApplyType')
+
+    # 設定按鈕權限
+    def _set_button_enabled(self):
+        if self.system_settings.field('使用讀卡機') == 'Y':
+            self.ui.pushButton_ic_card.setEnabled(True)
+        else:
+            self.ui.pushButton_ic_card.setEnabled(False)
 
     def tab_changed(self, i):
         tab_name = self.ui.tabWidget_window.tabText(i)
@@ -118,8 +131,7 @@ class PyMedical(QtWidgets.QMainWindow):
         if self._tab_exists(tab_name):
             return
 
-        module_name = modules.get_module_name(tab_name)
-        new_tab = module_name(self, *args)
+        new_tab = module_utils.get_module_name(tab_name)(self, *args)
         self.ui.tabWidget_window.addTab(new_tab, tab_name)
         self.ui.tabWidget_window.setCurrentWidget(new_tab)
         self._set_focus(tab_name, new_tab)
@@ -306,6 +318,16 @@ class PyMedical(QtWidgets.QMainWindow):
             self.action_convert.setEnabled(False)
         else:
             self.action_convert.setEnabled(True)
+
+    def _start_udp_server(self):
+        self.socket_server.start()
+
+    def _refresh_waiting_data(self, data):
+        index = self.ui.tabWidget_window.currentIndex()
+        current_tab_text = self.ui.tabWidget_window.tabText(index)
+        if current_tab_text == '醫師看診作業':
+            tab = self.ui.tabWidget_window.currentWidget()
+            tab.read_wait()
 
 
 # 主程式

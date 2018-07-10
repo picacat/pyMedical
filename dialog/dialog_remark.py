@@ -4,9 +4,9 @@
 
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import Qt
-from libs import ui_settings
-from libs import system
-from libs import strings
+from libs import ui_utils
+from libs import system_utils
+from libs import string_utils
 from classes import table_widget
 
 
@@ -38,9 +38,9 @@ class DialogRemark(QtWidgets.QDialog):
 
     # 設定GUI
     def _set_ui(self):
-        self.ui = ui_settings.load_ui_file(ui_settings.UI_DIALOG_REMARK, self)
+        self.ui = ui_utils.load_ui_file(ui_utils.UI_DIALOG_REMARK, self)
         # self.setFixedSize(self.size())  # non resizable dialog
-        system.set_css(self)
+        system_utils.set_css(self)
         self.table_widget_groups = table_widget.TableWidget(self.ui.tableWidget_groups, self.database)
         self.table_widget_remark = table_widget.TableWidget(self.ui.tableWidget_remark, self.database)
         self.table_widget_groups.set_column_hidden([0])
@@ -76,8 +76,8 @@ class DialogRemark(QtWidgets.QDialog):
 
     def _set_groups_name_data(self, rec_no, rec):
         groups_name_rec = [
-            strings.xstr(rec['DictGroupsKey']),
-            strings.xstr(rec['DictGroupsName']),
+            string_utils.xstr(rec['DictGroupsKey']),
+            string_utils.xstr(rec['DictGroupsName']),
         ]
 
         for column in range(0, self.ui.tableWidget_groups.columnCount()):
@@ -97,8 +97,8 @@ class DialogRemark(QtWidgets.QDialog):
 
     def _set_remark_data(self, rec_no, rec):
         remark_rec = [
-            strings.xstr(rec['ClinicKey']),
-            strings.xstr(rec['ClinicName']),
+            string_utils.xstr(rec['ClinicKey']),
+            string_utils.xstr(rec['ClinicName']),
         ]
 
         for column in range(0, self.ui.tableWidget_remark.columnCount()):
@@ -110,5 +110,5 @@ class DialogRemark(QtWidgets.QDialog):
         remark += '，' + selected_remark \
             if str(remark).strip()[-1:] not in ['，', ',', ':', '='] and len(str(remark).strip()) > 0 \
             else selected_remark
-        self.text_edit.setText(strings.get_str(remark, 'utf8'))
+        self.text_edit.setText(string_utils.get_str(remark, 'utf8'))
         self.text_edit.document().setModified(True)

@@ -3,9 +3,9 @@
 #coding: utf-8
 
 from PyQt5 import QtWidgets
-from libs import ui_settings
-from libs import system
-from libs import strings
+from libs import ui_utils
+from libs import system_utils
+from libs import string_utils
 
 
 # 主視窗
@@ -38,9 +38,9 @@ class DialogInputDrug(QtWidgets.QDialog):
 
     # 設定GUI
     def _set_ui(self):
-        self.ui = ui_settings.load_ui_file(ui_settings.UI_DIALOG_INPUT_DRUG, self)
+        self.ui = ui_utils.load_ui_file(ui_utils.UI_DIALOG_INPUT_DRUG, self)
         self.setFixedSize(self.size())  # non resizable dialog
-        system.set_css(self)
+        system_utils.set_css(self)
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setText('存檔')
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Cancel).setText('取消')
         self._set_combo_box()
@@ -60,7 +60,7 @@ class DialogInputDrug(QtWidgets.QDialog):
                 continue
             unit_list.append(str(row['Unit']).strip())
 
-        ui_settings.set_combo_box(self.ui.comboBox_unit, unit_list)
+        ui_utils.set_combo_box(self.ui.comboBox_unit, unit_list)
 
         sql = '''
             SELECT MedicineMode FROM medicine WHERE
@@ -74,7 +74,7 @@ class DialogInputDrug(QtWidgets.QDialog):
                 continue
             medicine_mode_list.append(str(row['MedicineMode']).strip())
 
-        ui_settings.set_combo_box(self.ui.comboBox_medicine_mode, medicine_mode_list)
+        ui_utils.set_combo_box(self.ui.comboBox_medicine_mode, medicine_mode_list)
 
     def _edit_medicine(self):
         sql = 'SELECT * FROM medicine WHERE MedicineKey = {0}'.format(self.medicine_key)
@@ -85,14 +85,14 @@ class DialogInputDrug(QtWidgets.QDialog):
         self.ui.comboBox_unit.setCurrentText(row['Unit'])
         self.ui.comboBox_medicine_mode.setCurrentText(row['MedicineMode'])
         self.ui.lineEdit_ins_code.setText(row['InsCode'])
-        self.ui.lineEdit_dosage.setText(strings.xstr(row['Dosage']))
+        self.ui.lineEdit_dosage.setText(string_utils.xstr(row['Dosage']))
         self.ui.lineEdit_medicine_alias.setText(row['MedicineAlias'])
         self.ui.lineEdit_location.setText(row['Location'])
-        self.ui.lineEdit_in_price.setText(strings.xstr(row['InPrice']))
-        self.ui.lineEdit_sale_price.setText(strings.xstr(row['SalePrice']))
-        self.ui.lineEdit_quantity.setText(strings.xstr(row['Quantity']))
-        self.ui.lineEdit_safe_quantity.setText(strings.xstr(row['SafeQuantity']))
-        self.ui.textEdit_description.setPlainText(strings.get_str(row['Description'], 'utf8'))
+        self.ui.lineEdit_in_price.setText(string_utils.xstr(row['InPrice']))
+        self.ui.lineEdit_sale_price.setText(string_utils.xstr(row['SalePrice']))
+        self.ui.lineEdit_quantity.setText(string_utils.xstr(row['Quantity']))
+        self.ui.lineEdit_safe_quantity.setText(string_utils.xstr(row['SafeQuantity']))
+        self.ui.textEdit_description.setPlainText(string_utils.get_str(row['Description'], 'utf8'))
 
     def accepted_button_clicked(self):
         if self.medicine_key is None:

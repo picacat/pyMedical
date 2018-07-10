@@ -5,9 +5,9 @@
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtCore import QSettings, QSize, QPoint
 from classes import table_widget
-from libs import ui_settings
-from libs import system
-from libs import strings
+from libs import ui_utils
+from libs import system_utils
+from libs import string_utils
 from libs import nhi_utils
 
 
@@ -54,10 +54,10 @@ class DialogInputMedicine(QtWidgets.QDialog):
 
     # 設定GUI
     def _set_ui(self):
-        self.ui = ui_settings.load_ui_file(ui_settings.UI_DIALOG_INPUT_MEDICINE, self)
+        self.ui = ui_utils.load_ui_file(ui_utils.UI_DIALOG_INPUT_MEDICINE, self)
         # self.setFixedSize(self.size())  # non resizable dialog
-        system.set_css(self)
-        system.set_theme(self.ui, self.system_settings)
+        system_utils.set_css(self)
+        system_utils.set_theme(self.ui, self.system_settings)
 
         self.ui.resize(self.settings.value("dialog_medicine_size", QSize(635, 802)))
         self.ui.move(self.settings.value("dialog_medicine_pos", QPoint(205, 220)))
@@ -118,15 +118,15 @@ class DialogInputMedicine(QtWidgets.QDialog):
 
     def _set_medicine_data(self, rec_no, rec):
         if self.medicine_type == '健保藥品':
-            remark = strings.xstr(rec['InsCode'])
+            remark = string_utils.xstr(rec['InsCode'])
         else:
             remark = None
         medicine_rec = [
-            strings.xstr(rec['MedicineKey']),
-            strings.xstr(rec['MedicineType']),
-            strings.xstr(rec['MedicineName']),
-            strings.xstr(rec['Unit']),
-            strings.xstr(rec['SalePrice']),
+            string_utils.xstr(rec['MedicineKey']),
+            string_utils.xstr(rec['MedicineType']),
+            string_utils.xstr(rec['MedicineName']),
+            string_utils.xstr(rec['Unit']),
+            string_utils.xstr(rec['SalePrice']),
             remark
         ]
 

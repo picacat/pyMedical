@@ -4,9 +4,9 @@
 import sys
 
 from PyQt5 import QtWidgets
-from libs import ui_settings
-from libs import strings
-from libs import number
+from libs import ui_utils
+from libs import string_utils
+from libs import number_utils
 from libs import date_utils
 import ins_prescript_record
 from dialog import dialog_inquiry
@@ -25,9 +25,6 @@ class MedicalRecordRecentlyHistory(QtWidgets.QMainWindow):
         self.call_from = args[3]
         self.medical_record = None
         self.patient_data = None
-        self.record_saved = False
-        self.first_record = None
-        self.last_record = None
         self.ui = None
         self.MAX_MEDICINE_SET = 100
 
@@ -46,7 +43,7 @@ class MedicalRecordRecentlyHistory(QtWidgets.QMainWindow):
 
     # 設定GUI
     def _set_ui(self):
-        self.ui = ui_settings.load_ui_file(ui_settings.UI_MEDICAL_RECORD_RECENTLY_HISTORY, self)
+        self.ui = ui_utils.load_ui_file(ui_utils.UI_MEDICAL_RECORD_RECENTLY_HISTORY, self)
 
     # 設定信號
     def _set_signal(self):
@@ -156,7 +153,7 @@ class MedicalRecordRecentlyHistory(QtWidgets.QMainWindow):
     def _set_record_summary(self, rec):
         if rec['InsType'] == '健保':
             card = str(rec['Card'])
-            if number.get_integer(rec['Continuance']) >= 1:
+            if number_utils.get_integer(rec['Continuance']) >= 1:
                 card += '-' + str(rec['Continuance'])
             card = '<b>健保</b>: {0}'.format(card)
         else:
@@ -165,13 +162,13 @@ class MedicalRecordRecentlyHistory(QtWidgets.QMainWindow):
         summary = '<b>日期</b>: {0} {1}<br>'.format(str(rec['CaseDate']), card)
         summary += '<b>醫師</b>: {0}<hr>'.format(str(rec['Doctor']), card)
         if rec['Symptom'] is not None:
-            summary += '<b>主訴</b>: {0}<hr>'.format(strings.get_str(rec['Symptom'], 'utf8'))
+            summary += '<b>主訴</b>: {0}<hr>'.format(string_utils.get_str(rec['Symptom'], 'utf8'))
         if rec['Tongue'] is not None:
-            summary += '<b>舌診</b>: {0}<hr>'.format(strings.get_str(rec['Tongue'], 'utf8'))
+            summary += '<b>舌診</b>: {0}<hr>'.format(string_utils.get_str(rec['Tongue'], 'utf8'))
         if rec['Pulse'] is not None:
-            summary += '<b>脈象</b>: {0}<hr>'.format(strings.get_str(rec['Pulse'], 'utf8'))
+            summary += '<b>脈象</b>: {0}<hr>'.format(string_utils.get_str(rec['Pulse'], 'utf8'))
         if rec['Remark'] is not None:
-            summary += '<b>備註</b>: {0}<hr>'.format(strings.get_str(rec['Remark'], 'utf8'))
+            summary += '<b>備註</b>: {0}<hr>'.format(string_utils.get_str(rec['Remark'], 'utf8'))
         if rec['DiseaseCode1'] is not None and len(str(rec['DiseaseCode1']).strip()) > 0:
             summary += '<b>主診斷</b>: {0} {1}<br>'.format(str(rec['DiseaseCode1']), str(rec['DiseaseName1']))
         if rec['DiseaseCode2'] is not None and len(str(rec['DiseaseCode2']).strip()) > 0:
@@ -242,18 +239,18 @@ class MedicalRecordRecentlyHistory(QtWidgets.QMainWindow):
         sql = 'SELECT * FROM cases WHERE CaseKey = {0}'.format(case_key)
         row = self.database.select_record(sql)[0]
         if self.ui.checkBox_diagnostic.isChecked():
-            self.parent.ui.textEdit_symptom.setText(strings.get_str(row['Symptom'], 'utf8'))
-            self.parent.ui.textEdit_tongue.setText(strings.get_str(row['Tongue'], 'utf8'))
-            self.parent.ui.textEdit_pulse.setText(strings.get_str(row['Pulse'], 'utf8'))
+            self.parent.ui.textEdit_symptom.setText(string_utils.get_str(row['Symptom'], 'utf8'))
+            self.parent.ui.textEdit_tongue.setText(string_utils.get_str(row['Tongue'], 'utf8'))
+            self.parent.ui.textEdit_pulse.setText(string_utils.get_str(row['Pulse'], 'utf8'))
         if self.ui.checkBox_remark.isChecked():
-            self.parent.ui.textEdit_remark.setText(strings.get_str(row['Remark'], 'utf8'))
+            self.parent.ui.textEdit_remark.setText(string_utils.get_str(row['Remark'], 'utf8'))
         if self.ui.checkBox_disease.isChecked():
-            self.parent.ui.lineEdit_disease_code1.setText(strings.get_str(row['DiseaseCode1'], 'utf8'))
-            self.parent.ui.lineEdit_disease_name1.setText(strings.get_str(row['DiseaseName1'], 'utf8'))
-            self.parent.ui.lineEdit_disease_code2.setText(strings.get_str(row['DiseaseCode2'], 'utf8'))
-            self.parent.ui.lineEdit_disease_name2.setText(strings.get_str(row['DiseaseName2'], 'utf8'))
-            self.parent.ui.lineEdit_disease_code3.setText(strings.get_str(row['DiseaseCode3'], 'utf8'))
-            self.parent.ui.lineEdit_disease_name3.setText(strings.get_str(row['DiseaseName3'], 'utf8'))
+            self.parent.ui.lineEdit_disease_code1.setText(string_utils.get_str(row['DiseaseCode1'], 'utf8'))
+            self.parent.ui.lineEdit_disease_name1.setText(string_utils.get_str(row['DiseaseName1'], 'utf8'))
+            self.parent.ui.lineEdit_disease_code2.setText(string_utils.get_str(row['DiseaseCode2'], 'utf8'))
+            self.parent.ui.lineEdit_disease_name2.setText(string_utils.get_str(row['DiseaseName2'], 'utf8'))
+            self.parent.ui.lineEdit_disease_code3.setText(string_utils.get_str(row['DiseaseCode3'], 'utf8'))
+            self.parent.ui.lineEdit_disease_name3.setText(string_utils.get_str(row['DiseaseName3'], 'utf8'))
         if self.ui.checkBox_prescript.isChecked():
             self.copy_past_prescript(case_key)
 

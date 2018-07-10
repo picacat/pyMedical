@@ -4,7 +4,7 @@
 import sys
 
 from PyQt5 import QtWidgets
-from libs import ui_settings
+from libs import ui_utils
 
 
 # 樣板 2018.01.31
@@ -30,7 +30,7 @@ class Template(QtWidgets.QMainWindow):
 
     # 設定GUI
     def _set_ui(self):
-        self.ui = ui_settings.load_ui_file(ui_settings.UI_TEMPLATE, self)
+        self.ui = ui_utils.load_ui_file(ui_utils.UI_TEMPLATE, self)
 
     # 設定信號
     def _set_signal(self):

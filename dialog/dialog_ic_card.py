@@ -4,8 +4,8 @@
 
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QMessageBox, QPushButton
-from libs import ui_settings
-from libs import system
+from libs import ui_utils
+from libs import system_utils
 import sys
 
 if sys.platform == 'win32':
@@ -39,9 +39,9 @@ class DialogICCard(QtWidgets.QDialog):
 
     # 設定GUI
     def _set_ui(self):
-        self.ui = ui_settings.load_ui_file(ui_settings.UI_DIALOG_IC_CARD, self)
+        self.ui = ui_utils.load_ui_file(ui_utils.UI_DIALOG_IC_CARD, self)
         self.setFixedSize(self.size())  # non resizable dialog
-        system.set_css(self)
+        system_utils.set_css(self)
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setText('關閉')
 
     # 設定信號

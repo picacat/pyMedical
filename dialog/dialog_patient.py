@@ -3,8 +3,8 @@
 
 
 from PyQt5 import QtWidgets
-from libs import ui_settings
-from libs import system
+from libs import ui_utils
+from libs import system_utils
 from classes import table_widget
 
 
@@ -27,9 +27,9 @@ class DialogPatient(QtWidgets.QDialog):
 
     # 設定GUI
     def _set_ui(self):
-        self.ui = ui_settings.load_ui_file(ui_settings.UI_DIALOG_PATIENT, self)
+        self.ui = ui_utils.load_ui_file(ui_utils.UI_DIALOG_PATIENT, self)
         self.setFixedSize(self.size())  # non resizable dialog
-        system.set_css(self)
+        system_utils.set_css(self)
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setText('確定')
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Cancel).setText('取消')
         self.table_widget_patient_list = table_widget.TableWidget(self.ui.tableWidget_patient_list, self.database)

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>935</width>
-    <height>869</height>
+    <height>968</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -25,7 +25,7 @@
      <item>
       <widget class="QTabWidget" name="tabWidget_settings">
        <property name="currentIndex">
-        <number>4</number>
+        <number>6</number>
        </property>
        <widget class="QWidget" name="tab_4">
         <attribute name="icon">
@@ -963,7 +963,7 @@
            <item>
             <widget class="QGroupBox" name="groupBox_15">
              <property name="title">
-              <string>掛號收據</string>
+              <string>門診掛號單</string>
              </property>
              <property name="flat">
               <bool>true</bool>
@@ -982,7 +982,7 @@
                  </widget>
                 </item>
                 <item row="2" column="1">
-                 <widget class="QComboBox" name="comboBox_5"/>
+                 <widget class="QComboBox" name="comboBox_regist_printer"/>
                 </item>
                 <item row="0" column="1">
                  <widget class="QComboBox" name="comboBox_regist_print_mode"/>
@@ -1008,7 +1008,7 @@
                  </widget>
                 </item>
                 <item row="1" column="1">
-                 <widget class="QComboBox" name="comboBox_4"/>
+                 <widget class="QComboBox" name="comboBox_regist_form"/>
                 </item>
                </layout>
               </item>
@@ -1030,7 +1030,7 @@
                  <widget class="QComboBox" name="comboBox_reserve_print_mode"/>
                 </item>
                 <item row="2" column="1">
-                 <widget class="QComboBox" name="comboBox_14"/>
+                 <widget class="QComboBox" name="comboBox_reserve_printer"/>
                 </item>
                 <item row="0" column="0">
                  <widget class="QLabel" name="label_40">
@@ -1053,7 +1053,7 @@
                  </widget>
                 </item>
                 <item row="1" column="1">
-                 <widget class="QComboBox" name="comboBox_13"/>
+                 <widget class="QComboBox" name="comboBox_reserve_form"/>
                 </item>
                 <item row="1" column="0">
                  <widget class="QLabel" name="label_39">
@@ -1096,7 +1096,7 @@
                  </widget>
                 </item>
                 <item row="1" column="1">
-                 <widget class="QComboBox" name="comboBox_7"/>
+                 <widget class="QComboBox" name="comboBox_ins_prescript_form"/>
                 </item>
                 <item row="2" column="0">
                  <widget class="QLabel" name="label_19">
@@ -1109,7 +1109,7 @@
                  </widget>
                 </item>
                 <item row="2" column="1">
-                 <widget class="QComboBox" name="comboBox_8"/>
+                 <widget class="QComboBox" name="comboBox_ins_prescript_printer"/>
                 </item>
                 <item row="0" column="1">
                  <widget class="QComboBox" name="comboBox_ins_prescript_print_mode"/>
@@ -1151,7 +1151,7 @@
                  </widget>
                 </item>
                 <item row="1" column="1">
-                 <widget class="QComboBox" name="comboBox_27"/>
+                 <widget class="QComboBox" name="comboBox_self_prescript_form"/>
                 </item>
                 <item row="2" column="0">
                  <widget class="QLabel" name="label_55">
@@ -1164,7 +1164,7 @@
                  </widget>
                 </item>
                 <item row="2" column="1">
-                 <widget class="QComboBox" name="comboBox_28"/>
+                 <widget class="QComboBox" name="comboBox_self_prescript_printer"/>
                 </item>
                 <item row="0" column="1">
                  <widget class="QComboBox" name="comboBox_self_prescript_print_mode"/>
@@ -1191,7 +1191,7 @@
            <item>
             <widget class="QGroupBox" name="groupBox_22">
              <property name="title">
-              <string>健保收費收據</string>
+              <string>健保醫療收據</string>
              </property>
              <property name="flat">
               <bool>true</bool>
@@ -1210,7 +1210,7 @@
                  </widget>
                 </item>
                 <item row="1" column="1">
-                 <widget class="QComboBox" name="comboBox_21"/>
+                 <widget class="QComboBox" name="comboBox_ins_receipt_form"/>
                 </item>
                 <item row="2" column="0">
                  <widget class="QLabel" name="label_49">
@@ -1223,10 +1223,10 @@
                  </widget>
                 </item>
                 <item row="2" column="1">
-                 <widget class="QComboBox" name="comboBox_22"/>
+                 <widget class="QComboBox" name="comboBox_ins_receipt_printer"/>
                 </item>
                 <item row="0" column="1">
-                 <widget class="QComboBox" name="comboBox_ins_charge_print_mode"/>
+                 <widget class="QComboBox" name="comboBox_ins_receipt_print_mode"/>
                 </item>
                 <item row="1" column="0">
                  <widget class="QLabel" name="label_50">
@@ -1246,7 +1246,7 @@
            <item>
             <widget class="QGroupBox" name="groupBox_23">
              <property name="title">
-              <string>自費收費收據</string>
+              <string>自費醫療收據</string>
              </property>
              <property name="flat">
               <bool>true</bool>
@@ -1265,7 +1265,7 @@
                  </widget>
                 </item>
                 <item row="1" column="1">
-                 <widget class="QComboBox" name="comboBox_24"/>
+                 <widget class="QComboBox" name="comboBox_self_receipt_form"/>
                 </item>
                 <item row="2" column="0">
                  <widget class="QLabel" name="label_52">
@@ -1278,10 +1278,10 @@
                  </widget>
                 </item>
                 <item row="2" column="1">
-                 <widget class="QComboBox" name="comboBox_25"/>
+                 <widget class="QComboBox" name="comboBox_self_receipt_printer"/>
                 </item>
                 <item row="0" column="1">
-                 <widget class="QComboBox" name="comboBox_self_charge_print_mode"/>
+                 <widget class="QComboBox" name="comboBox_self_receipt_print_mode"/>
                 </item>
                 <item row="1" column="0">
                  <widget class="QLabel" name="label_53">
@@ -1327,7 +1327,7 @@
                  </widget>
                 </item>
                 <item row="1" column="1">
-                 <widget class="QComboBox" name="comboBox_16"/>
+                 <widget class="QComboBox" name="comboBox_bag_form"/>
                 </item>
                 <item row="2" column="0">
                  <widget class="QLabel" name="label_44">
@@ -1340,7 +1340,7 @@
                  </widget>
                 </item>
                 <item row="2" column="1">
-                 <widget class="QComboBox" name="comboBox_17"/>
+                 <widget class="QComboBox" name="comboBox_bag_printer"/>
                 </item>
                 <item row="1" column="0">
                  <widget class="QLabel" name="label_42">
@@ -1392,10 +1392,10 @@
                  </widget>
                 </item>
                 <item row="1" column="1">
-                 <widget class="QComboBox" name="comboBox_19"/>
+                 <widget class="QComboBox" name="comboBox_massage_form"/>
                 </item>
                 <item row="2" column="1">
-                 <widget class="QComboBox" name="comboBox_20"/>
+                 <widget class="QComboBox" name="comboBox_massage_printer"/>
                 </item>
                 <item row="1" column="0">
                  <widget class="QLabel" name="label_45">
@@ -1423,6 +1423,33 @@
             <bool>true</bool>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_30">
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_6">
+              <item>
+               <widget class="QLabel" name="label_58">
+                <property name="text">
+                 <string>A4報表輸出至印表機</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QComboBox" name="comboBox_report_printer"/>
+              </item>
+              <item>
+               <spacer name="horizontalSpacer_12">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+             </layout>
+            </item>
             <item>
              <widget class="QCheckBox" name="checkBox_9">
               <property name="text">
@@ -1692,7 +1719,7 @@
               <item row="0" column="0">
                <widget class="QLabel" name="label_29">
                 <property name="text">
-                 <string>工作站編號</string>
+                 <string>識別編號</string>
                 </property>
                </widget>
               </item>
@@ -1863,28 +1890,28 @@
   <tabstop>radioButton_order_medicine_type</tabstop>
   <tabstop>comboBox_regist_print_mode</tabstop>
   <tabstop>comboBox_reserve_print_mode</tabstop>
-  <tabstop>comboBox_4</tabstop>
-  <tabstop>comboBox_13</tabstop>
-  <tabstop>comboBox_5</tabstop>
-  <tabstop>comboBox_14</tabstop>
+  <tabstop>comboBox_regist_form</tabstop>
+  <tabstop>comboBox_reserve_form</tabstop>
+  <tabstop>comboBox_regist_printer</tabstop>
+  <tabstop>comboBox_reserve_printer</tabstop>
   <tabstop>comboBox_ins_prescript_print_mode</tabstop>
   <tabstop>comboBox_self_prescript_print_mode</tabstop>
-  <tabstop>comboBox_7</tabstop>
-  <tabstop>comboBox_27</tabstop>
-  <tabstop>comboBox_8</tabstop>
-  <tabstop>comboBox_28</tabstop>
-  <tabstop>comboBox_ins_charge_print_mode</tabstop>
-  <tabstop>comboBox_self_charge_print_mode</tabstop>
-  <tabstop>comboBox_21</tabstop>
-  <tabstop>comboBox_24</tabstop>
-  <tabstop>comboBox_22</tabstop>
-  <tabstop>comboBox_25</tabstop>
+  <tabstop>comboBox_ins_prescript_form</tabstop>
+  <tabstop>comboBox_self_prescript_form</tabstop>
+  <tabstop>comboBox_ins_prescript_printer</tabstop>
+  <tabstop>comboBox_self_prescript_printer</tabstop>
+  <tabstop>comboBox_ins_receipt_print_mode</tabstop>
+  <tabstop>comboBox_self_receipt_print_mode</tabstop>
+  <tabstop>comboBox_ins_receipt_form</tabstop>
+  <tabstop>comboBox_self_receipt_form</tabstop>
+  <tabstop>comboBox_ins_receipt_printer</tabstop>
+  <tabstop>comboBox_self_receipt_printer</tabstop>
   <tabstop>comboBox_bag_print_mode</tabstop>
   <tabstop>comboBox_massage_print_mode</tabstop>
-  <tabstop>comboBox_16</tabstop>
-  <tabstop>comboBox_19</tabstop>
-  <tabstop>comboBox_17</tabstop>
-  <tabstop>comboBox_20</tabstop>
+  <tabstop>comboBox_bag_form</tabstop>
+  <tabstop>comboBox_massage_form</tabstop>
+  <tabstop>comboBox_bag_printer</tabstop>
+  <tabstop>comboBox_massage_printer</tabstop>
   <tabstop>checkBox_9</tabstop>
   <tabstop>checkBox_11</tabstop>
   <tabstop>checkBox_10</tabstop>

@@ -5,8 +5,8 @@ import sys
 
 from PyQt5 import QtWidgets, QtGui
 from PyQt5.QtWidgets import QInputDialog, QMessageBox, QPushButton
-from libs import ui_settings
-from libs import strings
+from libs import ui_utils
+from libs import string_utils
 from libs import dialog_utils
 from classes import table_widget
 from dialog import dialog_input_disease
@@ -38,7 +38,7 @@ class DictDisease(QtWidgets.QMainWindow):
 
     # 設定GUI
     def _set_ui(self):
-        self.ui = ui_settings.load_ui_file(ui_settings.UI_DICT_DISEASE, self)
+        self.ui = ui_utils.load_ui_file(ui_utils.UI_DICT_DISEASE, self)
         self.table_widget_dict_groups = table_widget.TableWidget(self.ui.tableWidget_dict_groups, self.database)
         self.table_widget_dict_groups.set_column_hidden([0])
         self.table_widget_dict_groups_name = table_widget.TableWidget(self.ui.tableWidget_dict_groups_name, self.database)
@@ -81,8 +81,8 @@ class DictDisease(QtWidgets.QMainWindow):
 
     def _set_dict_groups_data(self, rec_no, rec):
         dict_groups_rec = [
-            strings.xstr(rec['DictGroupsKey']),
-            strings.xstr(rec['DictGroupsName']),
+            string_utils.xstr(rec['DictGroupsKey']),
+            string_utils.xstr(rec['DictGroupsName']),
         ]
 
         for column in range(0, self.ui.tableWidget_dict_groups.columnCount()):
@@ -90,7 +90,7 @@ class DictDisease(QtWidgets.QMainWindow):
 
     def dict_groups_changed(self):
         dict_groups_type = self.table_widget_dict_groups.field_value(1)
-        self.ui.groupBox_dict_groups_name.setTitle(strings.xstr(dict_groups_type) + '類別')
+        self.ui.groupBox_dict_groups_name.setTitle(string_utils.xstr(dict_groups_type) + '類別')
         self._read_dict_groups_name(dict_groups_type)
         self.ui.tableWidget_dict_groups.setFocus(True)
 
@@ -104,8 +104,8 @@ class DictDisease(QtWidgets.QMainWindow):
 
     def _set_dict_groups_name_data(self, rec_no, rec):
         dict_groups_name_rec = [
-            strings.xstr(rec['DictGroupsKey']),
-            strings.xstr(rec['DictGroupsName']),
+            string_utils.xstr(rec['DictGroupsKey']),
+            string_utils.xstr(rec['DictGroupsName']),
         ]
 
         for column in range(0, self.ui.tableWidget_dict_groups_name.columnCount()):
@@ -115,7 +115,7 @@ class DictDisease(QtWidgets.QMainWindow):
         dict_groups_name = self.table_widget_dict_groups_name.field_value(1)
         self.ui.groupBox_dict_disease.setTitle(
             '{0}資料 - ['.format(self.dict_type) +
-            strings.xstr(dict_groups_name) +
+            string_utils.xstr(dict_groups_name) +
             ']'
         )
         self.read_dict_disease(dict_groups_name)
@@ -129,11 +129,11 @@ class DictDisease(QtWidgets.QMainWindow):
 
     def _set_dict_disease_data(self, rec_no, rec):
         dict_disease_rec = [
-            strings.xstr(rec['ICD10Key']),
-            strings.xstr(rec['ICDCode']),
-            strings.xstr(rec['InputCode']),
-            strings.xstr(rec['SpecialCode']),
-            strings.xstr(rec['ChineseName']),
+            string_utils.xstr(rec['ICD10Key']),
+            string_utils.xstr(rec['ICDCode']),
+            string_utils.xstr(rec['InputCode']),
+            string_utils.xstr(rec['SpecialCode']),
+            string_utils.xstr(rec['ChineseName']),
         ]
 
         for column in range(0, self.ui.tableWidget_dict_disease.columnCount()):
@@ -143,7 +143,7 @@ class DictDisease(QtWidgets.QMainWindow):
                 )
             )
 
-            if strings.xstr(rec['SpecialCode']) != '':
+            if string_utils.xstr(rec['SpecialCode']) != '':
                 self.ui.tableWidget_dict_disease.item(
                     rec_no, column
                 ).setForeground(QtGui.QColor('red'))

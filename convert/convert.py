@@ -4,8 +4,8 @@
 
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QMessageBox, QPushButton
-from libs import ui_settings
-from libs import system
+from libs import ui_utils
+from libs import system_utils
 from classes import db
 from convert import cvt_utec
 
@@ -34,15 +34,15 @@ class DialogConvert(QtWidgets.QDialog):
 
     # 設定GUI
     def _set_ui(self):
-        self.ui = ui_settings.load_ui_file(ui_settings.UI_CONVERT, self)
+        self.ui = ui_utils.load_ui_file(ui_utils.UI_CONVERT, self)
         self.setFixedSize(self.size())  # non resizable dialog
-        system.set_css(self)
+        system_utils.set_css(self)
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Yes).setText('開始轉檔')
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.No).setText('關閉')
         self._set_combo_box()
 
     def _set_combo_box(self):
-        ui_settings.set_combo_box(self.ui.comboBox_utec_product, ['Med2000', 'Medical'])
+        ui_utils.set_combo_box(self.ui.comboBox_utec_product, ['Med2000', 'Medical'])
 
     # 設定信號
     def _set_signal(self):

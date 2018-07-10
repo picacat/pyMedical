@@ -5,8 +5,8 @@ import sys
 
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtWidgets import QMessageBox, QPushButton
-from libs import ui_settings
-from libs import strings
+from libs import ui_utils
+from libs import string_utils
 from classes import table_widget
 from dialog import dialog_input_regist, dialog_input_discount
 
@@ -35,7 +35,7 @@ class ChargeSettingsRegist(QtWidgets.QMainWindow):
 
     # 設定GUI
     def _set_ui(self):
-        self.ui = ui_settings.load_ui_file(ui_settings.UI_CHARGE_SETTINGS_REGIST, self)
+        self.ui = ui_utils.load_ui_file(ui_utils.UI_CHARGE_SETTINGS_REGIST, self)
         self.table_widget_regist_fee = table_widget.TableWidget(self.ui.tableWidget_regist_fee, self.database)
         self.table_widget_regist_fee.set_column_hidden([0, 1])
         self.table_widget_discount = table_widget.TableWidget(self.ui.tableWidget_discount, self.database)
@@ -136,14 +136,14 @@ class ChargeSettingsRegist(QtWidgets.QMainWindow):
     def _set_regist_fee_data(self, rec_no, rec):
         regist_fee_rec = [
             str(rec['ChargeSettingsKey']),
-            strings.xstr(rec['ChargeType']),
-            strings.xstr(rec['ItemName']),
-            strings.xstr(rec['InsType']),
-            strings.xstr(rec['ShareType']),
-            strings.xstr(rec['TreatType']),
-            strings.xstr(rec['Course']),
-            strings.xstr(rec['Amount']),
-            strings.xstr(rec['Remark']),
+            string_utils.xstr(rec['ChargeType']),
+            string_utils.xstr(rec['ItemName']),
+            string_utils.xstr(rec['InsType']),
+            string_utils.xstr(rec['ShareType']),
+            string_utils.xstr(rec['TreatType']),
+            string_utils.xstr(rec['Course']),
+            string_utils.xstr(rec['Amount']),
+            string_utils.xstr(rec['Remark']),
         ]
 
         for column in range(0, self.ui.tableWidget_regist_fee.columnCount()):
@@ -193,10 +193,10 @@ class ChargeSettingsRegist(QtWidgets.QMainWindow):
     def _set_discount_data(self, rec_no, rec):
         discount_rec = [
             str(rec['ChargeSettingsKey']),
-            strings.xstr(rec['ChargeType']),
-            strings.xstr(rec['ItemName']),
-            strings.xstr(rec['Amount']),
-            strings.xstr(rec['Remark']),
+            string_utils.xstr(rec['ChargeType']),
+            string_utils.xstr(rec['ItemName']),
+            string_utils.xstr(rec['Amount']),
+            string_utils.xstr(rec['Remark']),
         ]
 
         for column in range(0, self.ui.tableWidget_discount.columnCount()):

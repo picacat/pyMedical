@@ -2,9 +2,9 @@
 
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtCore import QSettings, QSize, QPoint
-from libs import ui_settings
-from libs import system
-from libs import strings
+from libs import ui_utils
+from libs import system_utils
+from libs import string_utils
 from classes import table_widget
 
 
@@ -40,15 +40,15 @@ class DialogPastHistory(QtWidgets.QDialog):
 
     # 設定GUI
     def _set_ui(self):
-        self.ui = ui_settings.load_ui_file(ui_settings.UI_DIALOG_PAST_HISTORY, self)
+        self.ui = ui_utils.load_ui_file(ui_utils.UI_DIALOG_PAST_HISTORY, self)
         self.ui.resize(self.settings.value("dialog_history_size", QSize(858, 769)))
         self.ui.move(self.settings.value("dialog_history_pos", QPoint(1054, 225)))
 
         self.table_widget_past_history = table_widget.TableWidget(self.ui.tableWidget_past_history, self.database)
         self.table_widget_past_history.set_column_hidden([0])
 
-        system.set_css(self)
-        system.set_theme(self.ui, self.system_settings)
+        system_utils.set_css(self)
+        system_utils.set_theme(self.ui, self.system_settings)
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setText('關閉')
 
     # 設定信號
@@ -76,14 +76,15 @@ class DialogPastHistory(QtWidgets.QDialog):
 
     def _set_table_data(self, rec_no, rec):
         wait_rec = [
-            str(rec['CaseKey']),
-            str(rec['CaseDate']),
-            str(rec['InsType']),
-            str(rec['TreatType']),
-            str(rec['Card']),
-            strings.int_to_str(rec['Continuance']).strip('0'),
-            str(rec['Doctor']),
-            str(rec['Massager']),
+            string_utils.xstr(rec['CaseKey']),
+            string_utils.xstr(rec['CaseDate']),
+            string_utils.xstr(rec['InsType']),
+            string_utils.xstr(rec['TreatType']),
+            string_utils.xstr(rec['Card']),
+            string_utils.int_to_str(rec['Continuance']).strip('0'),
+            string_utils.xstr(rec['Doctor']),
+            string_utils.xstr(rec['Massager']),
+            string_utils.xstr(rec['DiseaseName1']),
         ]
 
         for column in range(0, self.ui.tableWidget_past_history.columnCount()):

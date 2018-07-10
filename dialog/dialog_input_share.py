@@ -3,8 +3,8 @@
 #coding: utf-8
 
 from PyQt5 import QtWidgets
-from libs import ui_settings
-from libs import system
+from libs import ui_utils
+from libs import system_utils
 from libs import nhi_utils
 
 
@@ -47,9 +47,9 @@ class DialogInputShare(QtWidgets.QDialog):
 
     # 設定GUI
     def _set_ui(self):
-        self.ui = ui_settings.load_ui_file(ui_settings.UI_DIALOG_INPUT_SHARE, self)
+        self.ui = ui_utils.load_ui_file(ui_utils.UI_DIALOG_INPUT_SHARE, self)
         self.setFixedSize(self.size())  # non resizable dialog
-        system.set_css(self)
+        system_utils.set_css(self)
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setText('存檔')
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Cancel).setText('取消')
         self.ui.groupBox.setTitle(self.charge_type)
@@ -58,7 +58,7 @@ class DialogInputShare(QtWidgets.QDialog):
 
     # 設定comboBox
     def _set_combo_box(self):
-        ui_settings.set_combo_box(self.ui.comboBox_share_type, nhi_utils.SHARE_TYPE)
+        ui_utils.set_combo_box(self.ui.comboBox_share_type, nhi_utils.SHARE_TYPE)
 
         if self.charge_type == '藥品負擔':
             self.ui.label_treat_type.hide()
@@ -66,8 +66,8 @@ class DialogInputShare(QtWidgets.QDialog):
             self.ui.label_course.hide()
             self.ui.comboBox_course.hide()
         else:
-            ui_settings.set_combo_box(self.ui.comboBox_treat_type, nhi_utils.TREAT_TYPE)
-            ui_settings.set_combo_box(self.ui.comboBox_course, nhi_utils.COURSE_TYPE)
+            ui_utils.set_combo_box(self.ui.comboBox_treat_type, nhi_utils.TREAT_TYPE)
+            ui_utils.set_combo_box(self.ui.comboBox_course, nhi_utils.COURSE_TYPE)
 
     # 設定信號
     def _set_signal(self):
