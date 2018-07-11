@@ -349,7 +349,9 @@ class Registration(QtWidgets.QMainWindow):
         card = string_utils.xstr(self.ui.comboBox_card.currentText()).split(' ')[0]
 
         ic_card = self._process_ic_card(card)
-        if not ic_card:
+        if ic_card is None:  # 不須讀卡
+            pass
+        elif not ic_card:  # 取得安全簽章失敗
             return
 
         self._save_patient()
