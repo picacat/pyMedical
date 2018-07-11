@@ -2,6 +2,7 @@
 
 #coding: utf-8
 from PyQt5 import QtWidgets
+from PyQt5.QtWidgets import QMessageBox, QPushButton
 import sys
 import os
 
@@ -28,3 +29,13 @@ def set_theme(ui, settings):
         style = 'Fusion'
 
     ui.setStyle(QtWidgets.QStyleFactory.create(style))
+
+
+def show_message_box(message_icon, title, text, informative):
+    msg_box = QMessageBox()
+    msg_box.setIcon(message_icon)
+    msg_box.setWindowTitle(title)
+    msg_box.setText(text)
+    msg_box.setInformativeText(informative)
+    msg_box.addButton(QPushButton("確定"), QMessageBox.YesRole)
+    msg_box.exec_()

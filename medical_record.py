@@ -9,6 +9,7 @@ from libs import string_utils
 from libs import number_utils
 from libs import date_utils
 from libs import cshis_utils
+from libs import nhi_utils
 import ins_prescript_record
 import self_prescript_record
 import medical_record_recently_history
@@ -411,8 +412,12 @@ class MedicalRecord(QtWidgets.QMainWindow):
         self.record_saved = True
         self.update_medical_record()
         self.save_prescript()
-        if self.medical_record['InsType'] == '健保' and self.system_settings.field('產生醫令簽章位置') == '診療' and \
-           self.system_settings.field('使用讀卡機') == 'Y':
+        card = string_utils.xstr(self.medical_record['Card'])
+        if (self.medical_record['InsType'] == '健保' and
+                self.system_settings.field('產生醫令簽章位置') == '診療' and
+                self.system_settings.field('使用讀卡機') == 'Y' and
+                card not in nhi_utils.ABNORMAL_CARD and
+                card != '欠卡'):
             self._write_prescript_signature()
 
         self.close_all()

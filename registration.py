@@ -10,11 +10,12 @@ from classes import table_widget
 from classes import cshis
 
 from libs import ui_utils
+from libs import system_utils
 from libs import patient_utils
 from libs import nhi_utils
 from libs import number_utils
 from libs import string_utils
-from libs import register_utils
+from libs import registration_utils
 from libs import charge_utils
 from libs import date_utils
 from libs import validator_utils
@@ -54,10 +55,12 @@ class Registration(QtWidgets.QMainWindow):
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_REGISTRATION, self)
-        ui_utils.set_completer(self.database,
-                                  'SELECT Name FROM patient GROUP BY Name ORDER BY Name',
-                                  'Name',
-                               self.ui.lineEdit_query)
+        ui_utils.set_completer(
+            self.database,
+            'SELECT Name FROM patient GROUP BY Name ORDER BY Name',
+            'Name',
+            self.ui.lineEdit_query
+        )
         self.table_widget_wait = table_widget.TableWidget(self.ui.tableWidget_wait, self.database)
         self.table_widget_wait.set_column_hidden([0, 1])
         self.ui.lineEdit_query.setFocus()
@@ -70,42 +73,41 @@ class Registration(QtWidgets.QMainWindow):
     # 設定信號
     def _set_signal(self):
         self.ui.action_new_patient.triggered.connect(self._new_patient)
-        self.ui.action_cancel.triggered.connect(self.cancel_registration)
-        self.ui.action_ic_card.triggered.connect(self.regist_by_ic_card)
-        self.ui.action_save.triggered.connect(self.save_files)
+        self.ui.action_cancel.triggered.connect(self._cancel_registration)
+        self.ui.action_ic_card.triggered.connect(self._registration_by_ic_card)
+        self.ui.action_save.triggered.connect(self._save_files)
         self.ui.action_close.triggered.connect(self.close_registration)
-        self.ui.toolButton_query.clicked.connect(self.query_clicked)
+        self.ui.toolButton_query.clicked.connect(self._query_patient)
         self.ui.toolButton_delete_wait.clicked.connect(self.delete_wait_list)
         self.ui.toolButton_ic_cancel.clicked.connect(self.cancel_ic_card)
-        self.ui.toolButton_print_wait.clicked.connect(self.print_regist_form)
-        self.ui.toolButton_modify_patient.clicked.connect(self.modify_patient)
-        self.ui.toolButton_modify_wait.clicked.connect(self.modify_wait)
-        self.ui.lineEdit_query.returnPressed.connect(self.query_clicked)
-        self.ui.comboBox_patient_share.currentIndexChanged.connect(self.selection_changed)
-        self.ui.comboBox_patient_discount.currentIndexChanged.connect(self.selection_changed)
-        self.ui.comboBox_ins_type.currentIndexChanged.connect(self.selection_changed)
-        self.ui.comboBox_share_type.currentIndexChanged.connect(self.selection_changed)
-        self.ui.comboBox_treat_type.currentIndexChanged.connect(self.selection_changed)
-        self.ui.comboBox_card.currentIndexChanged.connect(self.selection_changed)
-        self.ui.comboBox_course.currentIndexChanged.connect(self.selection_changed)
-        self.ui.comboBox_massager.currentIndexChanged.connect(self.selection_changed)
-        self.ui.comboBox_period.currentIndexChanged.connect(self.selection_changed)
-        self.ui.comboBox_room.currentIndexChanged.connect(self.selection_changed)
-        self.ui.lineEdit_regist_fee.textChanged.connect(self.selection_changed)
-        self.ui.lineEdit_diag_share_fee.textChanged.connect(self.selection_changed)
-        self.ui.lineEdit_deposit_fee.textChanged.connect(self.selection_changed)
-        self.ui.lineEdit_traditional_health_care_fee.textChanged.connect(self.selection_changed)
+        self.ui.toolButton_print_wait.clicked.connect(self.print_registration_form)
+        self.ui.toolButton_modify_patient.clicked.connect(self._modify_patient)
+        self.ui.toolButton_modify_wait.clicked.connect(self._modify_wait)
+        self.ui.lineEdit_query.returnPressed.connect(self._query_patient)
+        self.ui.comboBox_patient_share.currentIndexChanged.connect(self._selection_changed)
+        self.ui.comboBox_patient_discount.currentIndexChanged.connect(self._selection_changed)
+        self.ui.comboBox_ins_type.currentIndexChanged.connect(self._selection_changed)
+        self.ui.comboBox_share_type.currentIndexChanged.connect(self._selection_changed)
+        self.ui.comboBox_treat_type.currentIndexChanged.connect(self._selection_changed)
+        self.ui.comboBox_card.currentIndexChanged.connect(self._selection_changed)
+        self.ui.comboBox_course.currentIndexChanged.connect(self._selection_changed)
+        self.ui.comboBox_massager.currentIndexChanged.connect(self._selection_changed)
+        self.ui.comboBox_period.currentIndexChanged.connect(self._selection_changed)
+        self.ui.comboBox_room.currentIndexChanged.connect(self._selection_changed)
+        self.ui.lineEdit_regist_fee.textChanged.connect(self._selection_changed)
+        self.ui.lineEdit_diag_share_fee.textChanged.connect(self._selection_changed)
+        self.ui.lineEdit_deposit_fee.textChanged.connect(self._selection_changed)
+        self.ui.lineEdit_traditional_health_care_fee.textChanged.connect(self._selection_changed)
 
-    def regist_by_ic_card(self):
+    def _registration_by_ic_card(self):
         ic_card = cshis.CSHIS(self.system_settings)
         if ic_card.cshis is None:
-            msg_box = QMessageBox()
-            msg_box.setIcon(QMessageBox.Critical)
-            msg_box.setWindowTitle('無法驅動讀卡機')
-            msg_box.setText("<font size='4' color='red'><b>無法載入健保讀卡機驅動程式, 無法執行健保卡掛號.</b></font>")
-            msg_box.setInformativeText("請確定讀卡機驅動程式是否正確.")
-            msg_box.addButton(QPushButton("確定"), QMessageBox.YesRole)
-            msg_box.exec_()
+            system_utils.show_message_box(
+                QMessageBox.Critical,
+                '無法驅動讀卡機',
+                '<font size="4" color="red"><b>無法載入健保讀卡機驅動程式, 無法執行健保卡掛號.</b></font>',
+                '請確定讀卡機驅動程式是否正確.'
+            )
             return
 
         if not ic_card.read_basic_data():
@@ -186,7 +188,7 @@ class Registration(QtWidgets.QMainWindow):
             self.database.exec_sql(sql)
             self._get_patient(ic_card.basic_data['patient_id'], ic_card)
 
-    def modify_patient(self):
+    def _modify_patient(self):
         patient_key = self.table_widget_wait.field_value(2)
         self.parent.open_patient_record(patient_key, '門診掛號')
 
@@ -322,6 +324,7 @@ class Registration(QtWidgets.QMainWindow):
         ui_utils.set_combo_box(self.ui.comboBox_injury_type, nhi_utils.INJURY_TYPE)
         ui_utils.set_combo_box(self.ui.comboBox_card, nhi_utils.CARD)
         ui_utils.set_combo_box(self.ui.comboBox_course, nhi_utils.COURSE)
+        ui_utils.set_combo_box(self.ui.comboBox_card_abnormal, nhi_utils.ABNORMAL_CARD_WITH_HINT, None)
         ui_utils.set_combo_box(self.ui.comboBox_period, nhi_utils.PERIOD)
         ui_utils.set_combo_box(self.ui.comboBox_room, nhi_utils.ROOM)
         ui_utils.set_combo_box(self.ui.comboBox_gender, nhi_utils.GENDER)
@@ -334,7 +337,7 @@ class Registration(QtWidgets.QMainWindow):
         self.ui.action_cancel.setText('取消掛號')
 
     # 取消掛號
-    def cancel_registration(self):
+    def _cancel_registration(self):
         self._reset_action_button_text()
         self._set_reg_mode(True)
         self.ui.groupBox_search_patient.setEnabled(True)
@@ -342,17 +345,12 @@ class Registration(QtWidgets.QMainWindow):
         self.dialog_history.close()
 
     # 掛號存檔/修正存檔
-    def save_files(self):
-        ic_card = None
+    def _save_files(self):
         card = string_utils.xstr(self.ui.comboBox_card.currentText()).split(' ')[0]
-        ins_type = self.ui.comboBox_ins_type.currentText()
-        if (ins_type == '健保' and
-                self.system_settings.field('產生安全簽章位置') == '掛號' and
-                self.system_settings.field('使用讀卡機') == 'Y' and
-                card == '自動取得'):
-            ic_card = self._write_ic_card()
-            if not ic_card:
-                return
+
+        ic_card = self._process_ic_card(card)
+        if not ic_card:
+            return
 
         self._save_patient()
         case_key = self._save_medical_record(ic_card)
@@ -368,7 +366,30 @@ class Registration(QtWidgets.QMainWindow):
         self.dialog_history.close()
 
         self.socket_client.send_data('新增掛號資料')
-        self.print_regist_form(case_key)
+        self.print_registration_form(case_key)
+
+    def _process_ic_card(self, card):
+        ic_card = None
+        ins_type = self.ui.comboBox_ins_type.currentText()
+
+        if ins_type != '健保':
+            return ic_card
+
+        if self.system_settings.field('產生安全簽章位置') != '掛號':
+            return ic_card
+
+        if self.system_settings.field('使用讀卡機') != 'Y':
+            return ic_card
+
+        if card == '欠卡':
+            return ic_card
+
+        if card in nhi_utils.ABNORMAL_CARD:
+            return ic_card
+
+        ic_card = self._write_ic_card()
+
+        return ic_card
 
     def _write_ic_card(self):
         ic_card = cshis_utils.write_ic_card(
@@ -387,7 +408,7 @@ class Registration(QtWidgets.QMainWindow):
             return False
 
     # comboBox 內容變更
-    def selection_changed(self, i):
+    def _selection_changed(self, i):
         sender_name = self.sender().objectName()
         if sender_name == 'comboBox_patient_share':
             self.ui.comboBox_share_type.setCurrentText(self.ui.comboBox_patient_share.currentText())
@@ -409,13 +430,17 @@ class Registration(QtWidgets.QMainWindow):
             self._set_charge()
         elif sender_name == 'comboBox_course':
             self._set_charge()
+            if self.ui.comboBox_course.currentText() is None:
+                self.ui.comboBox_card_abnormal.setEnabled(False)
+            else:
+                self.ui.comboBox_card_abnormal.setEnabled(True)
         elif sender_name == 'comboBox_massager':
             self._set_charge()
         elif (sender_name == 'comboBox_period' or sender_name == 'comboBox_room') and \
                 self.ui.action_save.text() == '掛號存檔':
             period = self.ui.comboBox_period.currentText()
             room = self.ui.comboBox_room.currentText()
-            reg_no = register_utils.get_reg_no(self.database, self.system_settings, room, period)  # 取得診號
+            reg_no = registration_utils.get_reg_no(self.database, self.system_settings, room, period)  # 取得診號
             self.ui.spinBox_reg_no.setValue(int(reg_no))
         elif sender_name == 'lineEdit_regist_fee':
             self._set_total_amount()
@@ -427,7 +452,7 @@ class Registration(QtWidgets.QMainWindow):
             self._set_total_amount()
 
     # 開始查詢病患資料
-    def query_clicked(self):
+    def _query_patient(self):
         keyword = str(self.ui.lineEdit_query.text())
         if keyword == '':
             return
@@ -441,13 +466,12 @@ class Registration(QtWidgets.QMainWindow):
     def _get_patient(self, keyword, ic_card=None):
         row = patient_utils.search_patient(self.ui, self.database, self.system_settings, keyword)
         if row is None: # 找不到資料
-            msg_box = QMessageBox()
-            msg_box.setIcon(QMessageBox.Critical)
-            msg_box.setWindowTitle('查無資料')
-            msg_box.setText("<font size='4' color='red'><b>找不到有關的病患資料, 請檢查關鍵字是否有誤.</b></font>")
-            msg_box.setInformativeText("請確定輸入資料的正確性, 生日請輸入YYYY-MM-DD.")
-            msg_box.addButton(QPushButton("確定"), QMessageBox.YesRole)
-            msg_box.exec_()
+            system_utils.show_message_box(
+                QMessageBox.Critical,
+                '查無資料',
+                '<font size="4" color="red"><b>找不到有關的病患資料, 請檢查關鍵字是否有誤.</b></font>',
+                '請確定輸入資料的正確性, 生日請輸入YYYY-MM-DD.'
+            )
             self.ui.lineEdit_query.setFocus()
         elif row == -1:  # 取消查詢
             self.ui.lineEdit_query.setFocus()
@@ -457,7 +481,7 @@ class Registration(QtWidgets.QMainWindow):
         self.ui.lineEdit_query.clear()
 
     # 掛號修正
-    def modify_wait(self):
+    def _modify_wait(self):
         self._set_reg_mode(False)
         self.ui.action_save.setText('修正存檔')
         self.ui.action_cancel.setText('取消修正')
@@ -480,14 +504,83 @@ class Registration(QtWidgets.QMainWindow):
         self._set_patient_data(row[0])
         self._set_registration_data(patient_key)
 
-        if not self._register_precheck(patient_key):
-            return
+        if not self._check_registration_duplicate(patient_key):
+            return False
+
+        self._registration_precheck(patient_key)
+        self._completion_course(patient_key)
         self._set_charge()
         self._show_past_history(patient_key)
 
+    # 自動連續療程
+    def _completion_course(self, patient_key):
+        today = datetime.date.today()
+        last_treat_date = (today - datetime.timedelta(days=30)).strftime('%Y-%m-%d 00:00:00')
+        sql = '''
+            SELECT Card, Continuance FROM cases WHERE
+            (CaseDate >= "{0}") AND
+            (PatientKey = {1}) AND
+            (InsType = "健保") AND
+            (Continuance >= 1) 
+            ORDER BY CaseDate DESC LIMIT 1
+        '''.format(last_treat_date, patient_key)
+        rows = self.database.select_record(sql)
+        if len(rows) <= 0:
+            return
+
+        row = rows[0]
+        if row['Continuance'] >= 6:  # 療程已滿
+            return
+
+        course = str(row['Continuance'] + 1)  # 療程自動續1次
+        self.ui.comboBox_card.setCurrentText(row['Card'])
+        self.ui.comboBox_course.setCurrentText(course)
+
     # 掛號預檢
-    def _register_precheck(self, patient_key):
-        if register_utils.check_record_duplicated(self.database, patient_key, datetime.datetime.now()):
+    def _registration_precheck(self, patient_key):
+        warning_message = []
+
+        # 檢查當月健保針傷次數
+        message = registration_utils.check_treat_times(self.database, self.system_settings, patient_key)
+        if message is not None:
+            warning_message.append(message)
+
+        # 檢查當月健保診察費次數
+        message = registration_utils.check_diag_fee_times(self.database, self.system_settings, patient_key)
+        if message is not None:
+            warning_message.append(message)
+
+        # 檢查欠卡
+        message = registration_utils.check_deposit(self.database, patient_key)
+        if message is not None:
+            warning_message.append(message)
+
+        # 檢查欠款
+        message = registration_utils.check_debt(self.database, patient_key)
+        if message is not None:
+            warning_message.append(message)
+
+        # 檢查隔日過卡
+        message = registration_utils.check_card_yesterday(self.database, patient_key)
+        if message is not None:
+            warning_message.append(message)
+
+        # 檢查上次健保給藥是否服藥完畢
+        message = registration_utils.check_prescription_finished(self.database, patient_key)
+        if message is not None:
+            warning_message.append(message)
+
+        if len(warning_message) > 0:
+            system_utils.show_message_box(
+                QMessageBox.Warning,
+                '掛號檢查結果提醒',
+                '<h4>{0}</h4>'.format('\n'.join(warning_message)),
+                '請注意! 以上的狀況提示並非資料產生錯誤, 若有疑問, 請至 [病歷查詢] 檢查該筆資料的內容.'
+            )
+
+    # 檢查當日重複就診
+    def _check_registration_duplicate(self, patient_key):
+        if registration_utils.check_record_duplicated(self.database, patient_key, datetime.datetime.now()):
             msg_box = QMessageBox()
             msg_box.setIcon(QMessageBox.Critical)
             msg_box.setWindowTitle('重複就診')
@@ -501,13 +594,12 @@ class Registration(QtWidgets.QMainWindow):
             msg_box.setInformativeText("健保規定不可同日重複就診")
             msg_box.addButton(QPushButton("改掛自費"), QMessageBox.YesRole)
             msg_box.addButton(QPushButton("取消掛號"), QMessageBox.NoRole)
-            cancel_register = msg_box.exec_()
-            if cancel_register:
-                self.cancel_registration()
+            cancel = msg_box.exec_()
+            if cancel:
+                self._cancel_registration()
                 return False
-            else:
-                self.ui.comboBox_ins_type.setCurrentText('自費')
-                return True
+
+            self.ui.comboBox_ins_type.setCurrentText('自費')
 
         return True
 
@@ -542,13 +634,12 @@ class Registration(QtWidgets.QMainWindow):
             return
 
         if not validator_utils.verify_id(patient_id):
-            msg_box = QMessageBox()
-            msg_box.setIcon(QMessageBox.Warning)
-            msg_box.setWindowTitle('身分證檢查錯誤')
-            msg_box.setText("<font size='4' color='red'><b>身分證可能有誤，請確認身分證號碼是否輸入正確!</b></font>")
-            msg_box.setInformativeText("如果確定身分證號正確，可以忽略此項警告.")
-            msg_box.addButton(QPushButton("確定"), QMessageBox.YesRole)
-            msg_box.exec_()
+            system_utils.show_message_box(
+                QMessageBox.Warning,
+                '身分證檢查錯誤',
+                '<font size="4" color="red"><b>身分證可能有誤，請確認身分證號碼是否輸入正確!</b></font>',
+                '如果確定身分證號正確，可以忽略此項警告.'
+            )
 
     # 設定掛號資料
     def _set_registration_data(self, patient_key, medical_record=None):
@@ -562,8 +653,8 @@ class Registration(QtWidgets.QMainWindow):
             ins_type = self.system_settings.field('預設門診類別')
             share_type = self.ui.comboBox_patient_share.currentText()
             room = self.system_settings.field('診療室')  # 取得預設診療室
-            reg_no = register_utils.get_reg_no(self.database, self.system_settings, room)  # 取得診號
-            period = register_utils.get_period(self.system_settings)
+            reg_no = registration_utils.get_reg_no(self.database, self.system_settings, room)  # 取得診號
+            period = registration_utils.get_period(self.system_settings)
             massager = None
             remark = None
         else:  # 掛號修正
@@ -706,7 +797,7 @@ class Registration(QtWidgets.QMainWindow):
     # 新增病歷
     def _insert_medical_record(self, ic_card=None):
         fields = ['CaseDate', 'PatientKey', 'Name', 'Visit', 'RegistType', 'Injury',
-                  'TreatType', 'Share', 'InsType', 'Card', 'Continuance', 'Period',
+                  'TreatType', 'Share', 'InsType', 'Card', 'Continuance', 'XCard', 'Period',
                   'Room', 'RegistNo', 'Massager', 'Register',
                   'ApplyType', 'PharmacyType',
                   'RegistFee', 'DiagShareFee', 'SDiagShareFee', 'DepositFee', 'SMassageFee', 'Security', 'Remark']
@@ -718,6 +809,7 @@ class Registration(QtWidgets.QMainWindow):
             self.ui.comboBox_course.currentText())
 
         card = string_utils.xstr(self.ui.comboBox_card.currentText()).split(' ')[0]
+        card_abnormal = string_utils.xstr(self.ui.comboBox_card_abnormal.currentText()).split(' ')[0]
         data = [
             string_utils.xstr(datetime.datetime.now()),
             self.ui.lineEdit_patient_key.text(),
@@ -730,6 +822,7 @@ class Registration(QtWidgets.QMainWindow):
             self.ui.comboBox_ins_type.currentText(),
             card,
             number_utils.str_to_int(self.ui.comboBox_course.currentText()),
+            card_abnormal,
             self.ui.comboBox_period.currentText(),
             self.ui.comboBox_room.currentText(),
             self.ui.spinBox_reg_no.value(),
@@ -794,7 +887,7 @@ class Registration(QtWidgets.QMainWindow):
     # 修正病歷
     def _update_medical_record(self):
         fields = ['Name', 'Visit', 'RegistType', 'Injury',
-                  'TreatType', 'Share', 'InsType', 'Card', 'Continuance', 'Period',
+                  'TreatType', 'Share', 'InsType', 'Card', 'Continuance', 'Period', 'XCard',
                   'Room', 'RegistNo', 'Massager', 'Register',
                   'ApplyType', 'PharmacyType',
                   'RegistFee', 'DiagShareFee', 'SDiagShareFee', 'DepositFee', 'SMassageFee', 'Remark']
@@ -803,6 +896,8 @@ class Registration(QtWidgets.QMainWindow):
             self.ui.comboBox_share_type.currentText(),
             self.ui.comboBox_treat_type.currentText(),
             self.ui.comboBox_course.currentText())
+        card = string_utils.xstr(self.ui.comboBox_card.currentText()).split(' ')[0]
+        card_abnormal = string_utils.xstr(self.ui.comboBox_card_abnormal.currentText()).split(' ')[0]
         data = [
             self.ui.lineEdit_name.text(),
             self.ui.comboBox_visit.currentText(),
@@ -811,8 +906,9 @@ class Registration(QtWidgets.QMainWindow):
             self.ui.comboBox_treat_type.currentText(),
             self.ui.comboBox_share_type.currentText(),
             self.ui.comboBox_ins_type.currentText(),
-            self.ui.comboBox_card.currentText(),
+            card,
             number_utils.str_to_int(self.ui.comboBox_course.currentText()),
+            card_abnormal,
             self.ui.comboBox_period.currentText(),
             self.ui.comboBox_room.currentText(),
             self.ui.spinBox_reg_no.value(),
@@ -907,25 +1003,23 @@ class Registration(QtWidgets.QMainWindow):
         '''.format(case_key)
         row = self.database.select_record(sql)[0]
         if len(row) <= 0:
-            msg_box = QMessageBox()
-            msg_box.setIcon(QMessageBox.Critical)
-            msg_box.setWindowTitle('查無資料')
-            msg_box.setText("<font size='4' color='red'><b>找不到病歷資料, 無法執行IC卡退掛作業.</b></font>")
-            msg_box.setInformativeText("請確定資料是否存在, 如不存在, 請直接刪除掛號資料.")
-            msg_box.addButton(QPushButton("確定"), QMessageBox.YesRole)
-            msg_box.exec_()
+            system_utils.show_message_box(
+                QMessageBox.Critical,
+                '查無資料',
+                '<font size="4" color="red"><b>找不到病歷資料, 無法執行IC卡退掛作業.</b></font>',
+                '請確定資料是否存在, 如不存在, 請直接刪除掛號資料.'
+            )
             return
 
         ic_card = cshis.CSHIS(self.system_settings)
         card_datetime = case_utils.extract_security_xml(row['Security'], '寫卡時間')
         if string_utils.xstr(card_datetime) == '':
-            msg_box = QMessageBox()
-            msg_box.setIcon(QMessageBox.Critical)
-            msg_box.setWindowTitle('查無資料')
-            msg_box.setText("<font size='4' color='red'><b>找不到健保IC卡讀卡資料, 無法執行IC卡退掛作業.</b></font>")
-            msg_box.setInformativeText("請確定此筆病歷是否成功的讀卡, 如不成功, 請直接刪除掛號資料.")
-            msg_box.addButton(QPushButton("確定"), QMessageBox.YesRole)
-            msg_box.exec_()
+            system_utils.show_message_box(
+                QMessageBox.Critical,
+                '查無資料',
+                '<font size="4" color="red"><b>找不到健保IC卡讀卡資料, 無法執行IC卡退掛作業.</b></font>',
+                '請確定此筆病歷是否成功的讀卡, 如不成功, 請直接刪除掛號資料.'
+            )
             return
 
         nhi_datetime = date_utils.west_datetime_to_nhi_datetime(card_datetime)
@@ -937,7 +1031,7 @@ class Registration(QtWidgets.QMainWindow):
         self.parent.open_patient_record(None, '門診掛號')
 
     # 補印收據
-    def print_regist_form(self, case_key=False):
+    def print_registration_form(self, case_key=False):
         if not case_key:
             case_key = self.table_widget_wait.field_value(1)
 

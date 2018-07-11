@@ -8,7 +8,7 @@ from libs import system_utils
 from libs import string_utils
 from libs import nhi_utils
 from libs import cshis_utils
-from libs import register_utils
+from libs import registration_utils
 from libs import date_utils
 
 
@@ -130,7 +130,7 @@ class DialogReturnCard(QtWidgets.QDialog):
         self.ui.lineEdit_card_no.setText(string_utils.xstr(row['CardNo']))
 
         return_date = date_utils.now_to_str()
-        period = register_utils.get_period(self.system_settings)
+        period = registration_utils.get_period(self.system_settings)
         self.ui.lineEdit_return_date.setText(return_date)
         self.ui.comboBox_return_period.setCurrentText(period)
         self.ui.lineEdit_return_fee.setText(string_utils.xstr(row['Fee']))

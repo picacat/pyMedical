@@ -65,7 +65,7 @@ def nhi_date_to_west_date(nhi_date):
     return west_date
 
 
-# 健保民國年轉為西元年
+# 健保民國日期時間轉為西元日期時間
 def nhi_datetime_to_west_datetime(nhi_datetime):
     if nhi_datetime is None or nhi_datetime == '':
         return nhi_datetime
