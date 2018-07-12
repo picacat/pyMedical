@@ -169,6 +169,13 @@
               </widget>
              </item>
              <item>
+              <widget class="QPushButton" name="pushButton">
+               <property name="text">
+                <string>批價作業</string>
+               </property>
+              </widget>
+             </item>
+             <item>
               <widget class="QPushButton" name="pushButton_return_card">
                <property name="text">
                 <string>健保卡欠還卡</string>

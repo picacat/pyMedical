@@ -9,15 +9,13 @@ import os
 from libs import ui_utils
 from libs import module_utils
 from libs import system_utils
+from libs import personnel_utils
 from dialog import dialog_system_settings
 from dialog import dialog_ic_card
 from classes import system_settings, db
 from convert import convert
 import login
 from classes import udp_socket_server
-
-from threading import Thread
-import socket
 
 
 # 主畫面
@@ -175,7 +173,6 @@ class PyMedical(QtWidgets.QMainWindow):
 
         if current_tab.call_from == '醫師看診作業' and not current_tab.record_saved:
             current_tab.update_medical_record()
-            current_tab.save_prescript()
 
             return closable
 
@@ -239,13 +236,23 @@ class PyMedical(QtWidgets.QMainWindow):
         try:
             row = self.database.select_record(script)[0]
         except IndexError:
-            msg_box = QMessageBox()
-            msg_box.setIcon(QMessageBox.Critical)
-            msg_box.setWindowTitle('查無病歷資料')
-            msg_box.setText("<font size='4' color='red'><b>雖然掛號資料存在, 但是病歷資料因不明原因遺失!</b></font>")
-            msg_box.setInformativeText("請至掛號作業刪除此筆掛號資料並重新掛號.")
-            msg_box.addButton(QPushButton("確定"), QMessageBox.YesRole)
-            msg_box.exec_()
+            system_utils.show_message_box(
+                QMessageBox.Critical,
+                '查無病歷資料',
+                '<font color="red"><h3>雖然掛號資料存在, 但是病歷資料因不明原因遺失!</h3></font>',
+                '請至掛號作業刪除此筆掛號資料並重新掛號.'
+            )
+            return
+
+        position_list = personnel_utils.get_personnel(self.database, '醫師')
+        if (call_from == '醫師看診作業' and
+                self.system_settings.field('使用者') not in position_list):
+            system_utils.show_message_box(
+                QMessageBox.Critical,
+                '使用者非醫師',
+                '<font color="red"><h3>登入的使用者並非醫師, 無法進行病歷看診作業!</h3></font>',
+                '請重新以醫師身份登入系統.'
+            )
             return
 
         tab_name = '{0}-{1}-病歷資料'.format(str(row['PatientKey']), str(row['Name']))

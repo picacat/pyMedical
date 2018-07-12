@@ -206,8 +206,12 @@ def check_debt(database, patient_key):
 
 
 # 檢查昨日內科或新療程刷卡
-def check_card_yesterday(database, patient_key):
+def check_card_yesterday(database, patient_key, course=None):
     message = None
+
+    if number_utils.get_integer(course) >= 2:  # 療程無隔日過卡問題, 不檢查
+        return message
+
     start_date = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d 00:00:00")
     end_date = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d 23:49:59")
     sql = '''
@@ -255,11 +259,56 @@ def check_prescription_finished(database, patient_key):
 
 
 # 療程未完成
-def check_course_complete(database, patient_key):
-    return None
+def check_course_complete(database, patient_key, course):
+    message = None
+
+    if number_utils.get_integer(course) >= 2:  # 療程無問題, 不檢查
+        return message
+
+    start_date = (datetime.datetime.now() - datetime.timedelta(days=30)).strftime("%Y-%m-%d 00:00:00")
+    end_date = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d 23:49:59")
+    sql = '''
+        SELECT CaseDate, Continuance FROM cases WHERE
+        (PatientKey = {0}) AND
+        (CaseDate BETWEEN "{1}" AND "{2}") AND
+        (InsType = "健保") AND
+        (Continuance >= 1)
+        ORDER BY CaseDate DESC LIMIT 1
+    '''.format(patient_key, start_date, end_date, tuple(nhi_utils.INS_TREAT))
+    rows = database.select_record(sql)
+
+    if len(rows) > 0:
+        if number_utils.get_integer(rows[0]['Continuance']) <= 5:
+            message = '* 療程提醒: {0}只到療程{1}, 尚未完成全部療程.<br>'.format(
+                rows[0]['CaseDate'].date(),
+                rows[0]['Continuance']
+            )
+
+    return message
 
 
 # 療程14日未完成
-def check_course_complete_in_two_weeks():
-    return None
+def check_course_complete_in_two_weeks(database, patient_key, card, course):
+    message = None
 
+    if number_utils.get_integer(course) <= 1:  # 療程首次或內科不檢查
+        return message
+
+    start_date = (datetime.datetime.now() - datetime.timedelta(days=14)).strftime("%Y-%m-%d 00:00:00")
+    end_date = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d 23:49:59")
+    sql = '''
+        SELECT Continuance FROM cases WHERE
+        (PatientKey = {0}) AND
+        (CaseDate BETWEEN "{1}" AND "{2}") AND
+        (InsType = "健保") AND
+        (Card = "{3}") AND
+        (Continuance = 1)
+        ORDER BY CaseDate DESC LIMIT 1
+    '''.format(patient_key, start_date, end_date, card)
+    print(sql)
+    rows = database.select_record(sql)
+
+    if len(rows) <= 0:
+        message = '* 療程提醒: 療程已超過14日, 尚未完成全部療程.<br>'
+
+    return message

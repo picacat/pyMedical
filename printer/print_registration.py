@@ -17,6 +17,11 @@ class PrintRegistration:
         self.database = args[0]
         self.system_settings = args[1]
         self.case_key = args[2]
+        try:
+            self.printable = args[3]
+        except IndexError:
+            self.printable = None
+
         self.ui = None
 
         self._set_ui()
@@ -38,7 +43,10 @@ class PrintRegistration:
         pass
 
     def print(self):
-        if self.system_settings.field('列印門診掛號單') == '不印':
+        if self.printable is None:
+            self.printable = self.system_settings.field('列印門診掛號單')
+
+        if self.printable == '不印':
             return
 
         if self.system_settings.field('列印門診掛號單') == '詢問':

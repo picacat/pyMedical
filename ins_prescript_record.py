@@ -109,7 +109,7 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
         if item is None or item.text() == '':
             return
 
-        medicine_type = 'AND (MedicineType = "單方" OR MedicineType = "複方" OR MedicineType = "成方")'
+        medicine_type = 'AND (MedicineType IN ("單方", "複方", "成方"))'
         sql = '''
             SELECT * FROM medicine WHERE 
             (MedicineName like "{0}%" OR InputCode LIKE "{0}%" OR MedicineCode = "{0}" OR InsCode = "{0}") 
@@ -197,11 +197,11 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
             dialog.exec_()
             dialog.deleteLater()
 
-    def append_prescript(self, row):
+    def append_prescript(self, row, dosage=None):
         prescript_rec = [
             [0, '-1'],
             [1, row['MedicineName']],
-            # [2, strings.xstr(row['Dosage'])],
+            [2, string_utils.xstr(dosage)],
             [3, row['Unit']],
             [4, None],
             [5, string_utils.xstr(self.ui.tableWidget_prescript.currentRow() + 1)],
@@ -598,18 +598,52 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
 
     # 拷貝過去病歷的處方
     def copy_past_prescript(self, case_key):
+        self._copy_past_medicine(case_key)
+        self._copy_past_treat(case_key)
+
+    def _copy_past_medicine(self, case_key):
         self.ui.tableWidget_prescript.clearContents()
         self.ui.tableWidget_prescript.setRowCount(0)
         sql = '''
-            SELECT * FROM prescript WHERE CaseKey = {0} AND 
-                MedicineSet = {1} ORDER BY PrescriptKey'''.format(case_key, self.medicine_set)
+            SELECT * FROM prescript WHERE 
+                CaseKey = {0} AND 
+                MedicineSet = {1} AND
+                MedicineType in ("單方", "複方") 
+                ORDER BY PrescriptKey'''.format(case_key, self.medicine_set)
         rows = self.database.select_record(sql)
         for row in rows:
             if row['MedicineName'] is None:
                 continue
 
             self.append_null_medicine()
-            self.append_prescript(row)
+            self.append_prescript(row, row['Dosage'])
+
+    def _copy_past_treat(self, case_key):
+        self.ui.tableWidget_treat.clearContents()
+        self.ui.tableWidget_treat.setRowCount(1)
+        self._set_treat_ui()
+        sql = '''
+            SELECT Treatment FROM cases WHERE 
+                CaseKey = {0} 
+        '''.format(case_key)
+        row = self.database.select_record(sql)[0]
+        treatment = row['Treatment']
+        self.combo_box_treatment.setCurrentText(treatment)
+
+        rows = self.database.select_record(sql)
+        sql = '''
+            SELECT * FROM prescript WHERE 
+                CaseKey = {0} AND 
+                MedicineType IN ("穴道", "處置") AND 
+                MedicineSet = {1} ORDER BY PrescriptKey
+        '''.format(case_key, self.medicine_set)
+        rows = self.database.select_record(sql)
+        for row in rows:
+            if row['MedicineName'] is None:
+                continue
+
+            self.append_null_treat()
+            self.append_treat(row)
 
     # 處置內容變更
     def _combo_box_treat_changed(self):

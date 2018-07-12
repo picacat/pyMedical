@@ -146,6 +146,11 @@
             </column>
             <column>
              <property name="text">
+              <string>診別</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
               <string>診號</string>
              </property>
             </column>

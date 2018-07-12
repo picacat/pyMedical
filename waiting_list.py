@@ -8,6 +8,7 @@ import datetime
 from libs import ui_utils
 from libs import date_utils
 from libs import string_utils
+from libs import nhi_utils
 from classes import table_widget
 
 
@@ -33,6 +34,14 @@ class WaitingList(QtWidgets.QMainWindow):
     def close_all(self):
         pass
 
+    def close_tab(self):
+        current_tab = self.parent.ui.tabWidget_window.currentIndex()
+        self.parent.close_tab(current_tab)
+
+    def close_waiting_list(self):
+        self.close_all()
+        self.close_tab()
+
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_WAITING_LIST, self)
@@ -47,19 +56,30 @@ class WaitingList(QtWidgets.QMainWindow):
 
     def _set_table_width(self):
         width = [70, 70,
-                 70, 80, 40, 90, 60, 60, 70, 50,
+                 70, 80, 40, 90, 40, 60, 60, 70, 50,
                  80, 80, 80, 60, 80, 40, 80, 220]
         self.table_widget_waiting_list.set_table_heading_width(width)
 
     def read_wait(self):
+        room = ''  # 預設顯示診別為全部
+        sort = 'ORDER BY FIELD(Period, {0}), RegistNo'.format(str(nhi_utils.PERIOD)[1:-1])  # 預設為診號排序
+
+        if self.system_settings.field('候診名單顯示診別') == '指定診別':
+            room = 'AND Room = {0}'.format(self.system_settings.field('診療室'))
+
+        if self.system_settings.field('看診排序') == '時間排序':
+            sort = 'ORDER BY CaseDate'
+
         sql = '''
             SELECT wait.*, patient.Gender, patient.Birthday FROM wait 
             LEFT JOIN patient ON wait.PatientKey = patient.PatientKey 
             WHERE 
-            DoctorDone = "False"
-            ORDER BY CaseDate, RegistNo
-        '''
+            DoctorDone = "False" {0}
+            {1}
+        '''.format(room, sort)
+
         self.table_widget_waiting_list.set_db_data(sql, self._set_table_data)
+
         row_count = self.table_widget_waiting_list.row_count()
         if row_count > 0:
             self._set_tool_button(True)
@@ -89,6 +109,7 @@ class WaitingList(QtWidgets.QMainWindow):
                     string_utils.xstr(rec['Name']),
                     string_utils.xstr(rec['Gender']),
                     age,
+                    string_utils.xstr(rec['Room']),
                     string_utils.xstr(rec['RegistNo']),
                     registration_time,
                     wait_time,
@@ -105,9 +126,9 @@ class WaitingList(QtWidgets.QMainWindow):
 
         for column in range(0, self.ui.tableWidget_waiting_list.columnCount()):
             self.ui.tableWidget_waiting_list.setItem(rec_no, column, QtWidgets.QTableWidgetItem(wait_rec[column]))
-            if column in [2, 6, 8]:
+            if column in [2, 5, 6, 7, 9, 16]:
                 self.ui.tableWidget_waiting_list.item(rec_no, column).setTextAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
-            elif column in [4, 13]:
+            elif column in [4, 14]:
                 self.ui.tableWidget_waiting_list.item(rec_no, column).setTextAlignment(QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter)
 
             if rec['InsType'] == '自費':
@@ -116,24 +137,3 @@ class WaitingList(QtWidgets.QMainWindow):
     def open_medical_record(self):
         case_key = self.table_widget_waiting_list.field_value(1)
         self.parent.open_medical_record(case_key, '醫師看診作業')
-
-    def close_tab(self):
-        current_tab = self.parent.ui.tabWidget_window.currentIndex()
-        self.parent.close_tab(current_tab)
-
-    def close_waiting_list(self):
-        self.close_all()
-        self.close_tab()
-
-
-# 主程式
-def main():
-    app = QtWidgets.QApplication(sys.argv)
-    widget = WaitingList()
-    widget.show()
-    sys.exit(app.exec_())
-
-
-# 程式開始
-if __name__ == '__main__':
-    main()

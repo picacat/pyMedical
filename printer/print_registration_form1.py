@@ -36,7 +36,7 @@ class PrintRegistrationForm1:
 
     # 設定GUI
     def _set_ui(self):
-        self.font = QtGui.QFont("Noto Sans Mono", 10, QtGui.QFont.Normal)
+        self.font = QtGui.QFont("Noto Sans Mono", 10, QtGui.QFont.PreferQuality)
 
     def _set_signal(self):
         pass

@@ -17,7 +17,7 @@ def get_printer_list():
 def get_printer(system_settings, printer_name):
     # printer = QPrinter(QPrinter.HighResolution)
     printer = QPrinter(QPrinter.ScreenResolution)
-    # printer = QPrinter()
+    # printer = QPrinter(QPrinter.PrinterResolution)
     printer.setPrinterName(system_settings.field(printer_name))
 
     return printer

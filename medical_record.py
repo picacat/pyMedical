@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 #coding: utf-8
 
-import sys
-
 from PyQt5 import QtWidgets, QtCore, QtGui
+
+from classes import udp_socket_client
 from libs import ui_utils
 from libs import string_utils
 from libs import number_utils
@@ -189,7 +189,8 @@ class MedicalRecord(QtWidgets.QMainWindow):
 
     def _set_patient_data(self):
         name = self.patient_data['Name']
-        age_year, age_month = date_utils.get_age(self.patient_data['Birthday'], self.medical_record['CaseDate'])
+        age_year, age_month = date_utils.get_age(
+            self.patient_data['Birthday'], self.medical_record['CaseDate'])
         if age_year is None:
             age = ''
         else:
@@ -408,32 +409,83 @@ class MedicalRecord(QtWidgets.QMainWindow):
             self, self.database, self.system_settings, self.case_key, self.call_from)
         self.ui.tabWidget_past_record.addTab(self.tab_medical_record_fees, '批價明細')
 
+    # 病歷存檔
     def save_medical_record(self):
         self.record_saved = True
-        self.update_medical_record()
-        self.save_prescript()
+        self._set_necessary_fields()
+
+        doctor_done = False
+        if self.call_from == '醫師看診作業':
+            doctor_done = True
+
+        self.update_medical_record(doctor_done)
+
         card = string_utils.xstr(self.medical_record['Card'])
-        if (self.medical_record['InsType'] == '健保' and
-                self.system_settings.field('產生醫令簽章位置') == '診療' and
-                self.system_settings.field('使用讀卡機') == 'Y' and
-                card not in nhi_utils.ABNORMAL_CARD and
-                card != '欠卡'):
+        if ((self.medical_record['InsType'] == '健保') and
+                (self.call_from == '醫師看診作業') and
+                (self.system_settings.field('產生醫令簽章位置') == '診療') and
+                (self.system_settings.field('使用讀卡機') == 'Y') and
+                (card not in nhi_utils.ABNORMAL_CARD) and
+                (card != '欠卡')):
             self._write_prescript_signature()
 
         self.close_all()
         self.close_tab()
+
+    # 設定必要欄位
+    def _set_necessary_fields(self):
+        if (self.medical_record['InsType'] != '健保'):
+            return
+
+        if (self.call_from != '醫師看診作業'):
+            return
+
+        self._set_doctor()
+        self._set_treatment_and_course()
+
+    # 設定主治醫師姓名
+    def _set_doctor(self):
+        self.tab_registration.ui.comboBox_doctor.setCurrentText(self.system_settings.field('使用者'))
+
+    # 設定就醫類別及療程
+    def _set_treatment_and_course(self):
+        treatment = string_utils.xstr(self.tab_list[0].combo_box_treatment.currentText())
+        course = number_utils.get_integer(self.tab_registration.ui.comboBox_course.currentText())
+        if treatment in nhi_utils.INS_TREAT:
+            self.tab_registration.ui.comboBox_treat_type.setCurrentText(treatment)
+            if course <= 0:
+                self.tab_registration.ui.comboBox_course.setCurrentText('1')
+        elif treatment == '':
+            self.tab_registration.ui.comboBox_treat_type.setCurrentText('內科')
+            if course >= 1:
+                self.tab_registration.ui.comboBox_course.setCurrentText(None)
 
     def _write_prescript_signature(self):
         cshis_utils.write_prescript_signature(
             self.database, self.system_settings, self.case_key)
 
     # 病歷存檔
-    def update_medical_record(self):
+    def update_medical_record(self, doctor_done=False):
         self.update_diagnosis_data()
         self.update_treat_data()
         self.update_ins_fees_data()
         self.update_cash_fees_data()
         self.tab_registration.save_record()
+        self.save_prescript()
+
+        if doctor_done:
+            self._set_doctor_done()
+            self._set_wait_done()
+            socket_client = udp_socket_client.UDPSocketClient()
+            socket_client.send_data('醫師看診作業完成')
+
+    def _set_doctor_done(self):
+        self.database.exec_sql(
+            'UPDATE cases SET DoctorDone = "True" WHERE CaseKey = {0}'.format(self.case_key))
+
+    def _set_wait_done(self):
+        self.database.exec_sql(
+            'UPDATE wait SET DoctorDone = "True" WHERE CaseKey = {0}'.format(self.case_key))
 
     # 診斷資料存檔
     def update_diagnosis_data(self):

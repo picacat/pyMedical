@@ -1,31 +1,30 @@
 #!/usr/bin/env python3
 #coding: utf-8
 
-from PyQt5 import QtGui, QtWidgets, QtCore
-from PyQt5.QtWidgets import QMessageBox, QPushButton
 import datetime
 import re
 
-from classes import table_widget
-from classes import cshis
+from PyQt5 import QtGui, QtWidgets, QtCore
+from PyQt5.QtWidgets import QMessageBox, QPushButton
 
-from libs import ui_utils
-from libs import system_utils
-from libs import patient_utils
+from classes import cshis
+from classes import table_widget
+from classes import udp_socket_client
+from dialog import dialog_past_history
+from libs import case_utils
+from libs import charge_utils
+from libs import cshis_utils
+from libs import date_utils
 from libs import nhi_utils
 from libs import number_utils
-from libs import string_utils
-from libs import registration_utils
-from libs import charge_utils
-from libs import date_utils
-from libs import validator_utils
-from libs import cshis_utils
-from libs import case_utils
+from libs import patient_utils
 from libs import personnel_utils
-
+from libs import registration_utils
+from libs import string_utils
+from libs import system_utils
+from libs import ui_utils
+from libs import validator_utils
 from printer import print_registration
-from dialog import dialog_past_history
-from classes import udp_socket_client
 
 
 # 門診掛號 2018.01.22
@@ -51,6 +50,14 @@ class Registration(QtWidgets.QMainWindow):
     # 關閉
     def close_all(self):
         pass
+
+    def close_tab(self):
+        current_tab = self.parent.ui.tabWidget_window.currentIndex()
+        self.parent.close_tab(current_tab)
+
+    def close_registration(self):
+        self.close_all()
+        self.close_tab()
 
     # 設定GUI
     def _set_ui(self):
@@ -80,7 +87,7 @@ class Registration(QtWidgets.QMainWindow):
         self.ui.toolButton_query.clicked.connect(self._query_patient)
         self.ui.toolButton_delete_wait.clicked.connect(self.delete_wait_list)
         self.ui.toolButton_ic_cancel.clicked.connect(self.cancel_ic_card)
-        self.ui.toolButton_print_wait.clicked.connect(self.print_registration_form)
+        self.ui.toolButton_print_wait.clicked.connect(self.print_wait)
         self.ui.toolButton_modify_patient.clicked.connect(self._modify_patient)
         self.ui.toolButton_modify_wait.clicked.connect(self._modify_wait)
         self.ui.lineEdit_query.returnPressed.connect(self._query_patient)
@@ -188,6 +195,10 @@ class Registration(QtWidgets.QMainWindow):
             self.database.exec_sql(sql)
             self._get_patient(ic_card.basic_data['patient_id'], ic_card)
 
+    # 初診掛號
+    def _new_patient(self):
+        self.parent.open_patient_record(None, '門診掛號')
+
     def _modify_patient(self):
         patient_key = self.table_widget_wait.field_value(2)
         self.parent.open_patient_record(patient_key, '門診掛號')
@@ -271,6 +282,8 @@ class Registration(QtWidgets.QMainWindow):
         self.ui.groupBox_patient.setEnabled(not enabled)
         self.ui.groupBox_registration.setEnabled(not enabled)
 
+        self.ui.comboBox_card_abnormal.setEnabled(False)
+
         self._clear_group_box_patient()
         self._clear_group_box_registration()
 
@@ -314,6 +327,7 @@ class Registration(QtWidgets.QMainWindow):
 
     # 設定 comboBox
     def _set_combobox(self):
+
         ui_utils.set_combo_box(self.ui.comboBox_patient_share, nhi_utils.SHARE_TYPE)
         ui_utils.set_combo_box(self.ui.comboBox_patient_discount, '掛號優待', self.database)
         ui_utils.set_combo_box(self.ui.comboBox_ins_type, nhi_utils.INS_TYPE)
@@ -344,71 +358,6 @@ class Registration(QtWidgets.QMainWindow):
         self.ui.lineEdit_query.setFocus()
         self.dialog_history.close()
 
-    # 掛號存檔/修正存檔
-    def _save_files(self):
-        card = string_utils.xstr(self.ui.comboBox_card.currentText()).split(' ')[0]
-
-        ic_card = self._process_ic_card(card)
-        if ic_card is None:  # 不須讀卡
-            pass
-        elif not ic_card:  # 取得安全簽章失敗
-            return
-
-        self._save_patient()
-        case_key = self._save_medical_record(ic_card)
-        self.insert_wait(case_key)
-        if card == '欠卡':
-            self._insert_deposit(case_key)
-
-        self._set_reg_mode(True)
-        self.ui.groupBox_search_patient.setEnabled(True)
-        self.read_wait()
-        self._reset_action_button_text()
-        self.ui.lineEdit_query.setFocus()
-        self.dialog_history.close()
-
-        self.socket_client.send_data('新增掛號資料')
-        self.print_registration_form(case_key)
-
-    def _process_ic_card(self, card):
-        ic_card = None
-        ins_type = self.ui.comboBox_ins_type.currentText()
-
-        if ins_type != '健保':
-            return ic_card
-
-        if self.system_settings.field('產生安全簽章位置') != '掛號':
-            return ic_card
-
-        if self.system_settings.field('使用讀卡機') != 'Y':
-            return ic_card
-
-        if card == '欠卡':
-            return ic_card
-
-        if card in nhi_utils.ABNORMAL_CARD:
-            return ic_card
-
-        ic_card = self._write_ic_card()
-
-        return ic_card
-
-    def _write_ic_card(self):
-        ic_card = cshis_utils.write_ic_card(
-            '掛號寫卡',
-            self.database,
-            self.system_settings,
-            self.ui.lineEdit_patient_key.text(),
-            self.ui.comboBox_course.currentText(),
-            cshis_utils.NORMAL_CARD,
-        )
-
-        if ic_card:
-            self.ui.comboBox_card.setCurrentText(ic_card.treat_data['seq_number'])
-            return ic_card
-        else:
-            return False
-
     # comboBox 內容變更
     def _selection_changed(self, i):
         sender_name = self.sender().objectName()
@@ -430,16 +379,18 @@ class Registration(QtWidgets.QMainWindow):
             self._set_charge()
         elif sender_name == 'comboBox_card':
             self._set_charge()
+            self.ui.comboBox_course.setCurrentText(None)
         elif sender_name == 'comboBox_course':
             self._set_charge()
-            if self.ui.comboBox_course.currentText() is None:
-                self.ui.comboBox_card_abnormal.setEnabled(False)
-            else:
+            if number_utils.get_integer(self.ui.comboBox_course.currentText()) >= 2:
                 self.ui.comboBox_card_abnormal.setEnabled(True)
+            else:
+                self.ui.comboBox_card_abnormal.setCurrentText(None)
+                self.ui.comboBox_card_abnormal.setEnabled(False)
         elif sender_name == 'comboBox_massager':
             self._set_charge()
-        elif (sender_name == 'comboBox_period' or sender_name == 'comboBox_room') and \
-                self.ui.action_save.text() == '掛號存檔':
+        elif ((sender_name == 'comboBox_period' or sender_name == 'comboBox_room') and
+              (self.ui.action_save.text() == '掛號存檔')):
             period = self.ui.comboBox_period.currentText()
             room = self.ui.comboBox_room.currentText()
             reg_no = registration_utils.get_reg_no(self.database, self.system_settings, room, period)  # 取得診號
@@ -493,8 +444,11 @@ class Registration(QtWidgets.QMainWindow):
 
         case_key = self.table_widget_wait.field_value(1)
         sql = 'SELECT * FROM cases WHERE CaseKey = {0}'.format(case_key)
-        medical_record = self.database.select_record(sql)[0]
+        rows = self.database.select_record(sql)
+        if len(rows) <= 0:
+            return
 
+        medical_record = rows[0]
         self._set_patient_data(patient_record)
         self._set_registration_data(patient_key, medical_record)
         self._set_charge(medical_record)
@@ -510,11 +464,13 @@ class Registration(QtWidgets.QMainWindow):
             return False
 
         self._registration_precheck(patient_key)
-        self._completion_course(patient_key)
+        if self.ui.comboBox_ins_type.currentText() == '健保':  # 健保才自動連續療程
+            self._completion_course(patient_key)
+
         self._set_charge()
         self._show_past_history(patient_key)
 
-    # 自動連續療程
+    # 自動連續療程 - 30天內
     def _completion_course(self, patient_key):
         today = datetime.date.today()
         last_treat_date = (today - datetime.timedelta(days=30)).strftime('%Y-%m-%d 00:00:00')
@@ -540,6 +496,9 @@ class Registration(QtWidgets.QMainWindow):
 
     # 掛號預檢
     def _registration_precheck(self, patient_key):
+        if self.ui.comboBox_ins_type.currentText() != '健保':  # 自費不檢查
+            return
+
         warning_message = []
 
         # 檢查當月健保針傷次數
@@ -740,6 +699,187 @@ class Registration(QtWidgets.QMainWindow):
     def _show_past_history(self, patient_key):
         self.dialog_history.show_past_history(patient_key)
 
+    # 刪除候診名單
+    def delete_wait_list(self, skip_warning=None):
+        if not skip_warning:
+            name = self.table_widget_wait.field_value(3)
+            msg_box = QMessageBox()
+            msg_box.setIcon(QMessageBox.Warning)
+            msg_box.setWindowTitle('刪除掛號資料')
+            msg_box.setText("<font size='4' color='red'><b>確定刪除 <font color='blue'>{0}</font> 的掛號資料?</b></font>"
+                            .format(name))
+            msg_box.setInformativeText("注意！資料刪除後, 將無法回復!")
+            msg_box.addButton(QPushButton("取消"), QMessageBox.NoRole)
+            msg_box.addButton(QPushButton("確定"), QMessageBox.YesRole)
+            delete_record = msg_box.exec_()
+            if not delete_record:
+                return
+
+        wait_key = self.table_widget_wait.field_value(0)
+        case_key = self.table_widget_wait.field_value(1)
+
+        self.database.delete_record('wait', 'WaitKey', wait_key)
+        self.database.delete_record('deposit', 'CaseKey', case_key)
+        self.database.delete_record('debt', 'CaseKey', case_key)
+        self.database.delete_record('cases', 'CaseKey', case_key)
+        self.database.delete_record('prescript', 'CaseKey', case_key)
+        self.ui.tableWidget_wait.removeRow(self.ui.tableWidget_wait.currentRow())
+        if self.ui.tableWidget_wait.rowCount() <= 0:
+            self._set_tool_button(False)
+        self.socket_client.send_data('刪除掛號資料')
+
+    # IC卡退掛
+    def cancel_ic_card(self):
+        name = self.table_widget_wait.field_value(3)
+        msg_box = QMessageBox()
+        msg_box.setIcon(QMessageBox.Warning)
+        msg_box.setWindowTitle('健保IC卡退掛')
+        msg_box.setText("<font size='4' color='red'><b>確定將<font color='blue'>{0}</font>的IC卡掛號資料退掛?</b></font>"
+                        .format(name))
+        msg_box.setInformativeText("注意！IC卡退掛後, 將回復原來健保卡序!")
+        msg_box.addButton(QPushButton("取消"), QMessageBox.NoRole)
+        msg_box.addButton(QPushButton("確定"), QMessageBox.YesRole)
+        cancel_ic_card = msg_box.exec_()
+        if not cancel_ic_card:
+            return
+
+        case_key = self.table_widget_wait.field_value(1)
+        sql = '''
+            SELECT Security FROM cases WHERE
+            CaseKey = {0}
+        '''.format(case_key)
+        row = self.database.select_record(sql)[0]
+        if len(row) <= 0:
+            system_utils.show_message_box(
+                QMessageBox.Critical,
+                '查無資料',
+                '<font size="4" color="red"><b>找不到病歷資料, 無法執行IC卡退掛作業.</b></font>',
+                '請確定資料是否存在, 如不存在, 請直接刪除掛號資料.'
+            )
+            return
+
+        ic_card = cshis.CSHIS(self.system_settings)
+        card_datetime = case_utils.extract_security_xml(row['Security'], '寫卡時間')
+        if string_utils.xstr(card_datetime) == '':
+            system_utils.show_message_box(
+                QMessageBox.Critical,
+                '查無資料',
+                '<font size="4" color="red"><b>找不到健保IC卡讀卡資料, 無法執行IC卡退掛作業.</b></font>',
+                '請確定此筆病歷是否成功的讀卡, 如不成功, 請直接刪除掛號資料.'
+            )
+            return
+
+        nhi_datetime = date_utils.west_datetime_to_nhi_datetime(card_datetime)
+        if ic_card.return_seq_number(nhi_datetime):
+            self.delete_wait_list(True)
+
+    # 掛號存檔/修正存檔
+    def _save_files(self):
+        card = string_utils.xstr(self.ui.comboBox_card.currentText()).split(' ')[0]
+
+        if not self._verify_registration_data(card):
+            return
+
+        ic_card = self._process_ic_card(card)
+        if ic_card is None:  # 不須讀卡
+            pass
+        elif not ic_card:  # 取得安全簽章失敗
+            return
+
+        self._save_patient()
+        case_key = self._save_medical_record(ic_card)
+        self._save_wait(case_key)
+        self._save_deposit(case_key, card)
+
+        self.dialog_history.close()
+        self._set_reg_mode(True)
+        self.ui.groupBox_search_patient.setEnabled(True)
+        self.ui.lineEdit_query.setFocus()
+        self._reset_action_button_text()
+        self.read_wait()
+
+        self.socket_client.send_data('新增掛號資料')
+        self.print_registration_form(case_key)
+
+    # 存檔前檢查
+    def _verify_registration_data(self, card):
+        if self.ui.comboBox_ins_type.currentText() != '健保':  # 自費不檢查
+            return True
+
+        patient_key = self.ui.lineEdit_patient_key.text()
+        warning_message = []
+        course = self.ui.comboBox_course.currentText()
+
+        # 檢查隔日過卡
+        message = registration_utils.check_card_yesterday(
+            self.database, patient_key, course)
+        if message is not None:
+            warning_message.append(message)
+
+        message = registration_utils.check_course_complete(
+            self.database, patient_key, course)
+        if message is not None:
+            warning_message.append(message)
+
+        message = registration_utils.check_course_complete_in_two_weeks(
+            self.database, patient_key, card, course)
+        if message is not None:
+            warning_message.append(message)
+
+        if len(warning_message) > 0:
+            msg_box = QMessageBox()
+            msg_box.setIcon(QMessageBox.Warning)
+            msg_box.setWindowTitle('掛號存檔前檢查結果')
+            msg_box.setText(
+                '<h3>{0}</h3>'.format('\n'.join(warning_message)),
+            )
+            msg_box.setInformativeText('請詢問主治醫師此病患是否繼續以此方式掛號, 或變更其他方式掛號')
+            msg_box.addButton(QPushButton("繼續掛號"), QMessageBox.YesRole)
+            msg_box.addButton(QPushButton("取消掛號"), QMessageBox.NoRole)
+            cancel = msg_box.exec_()
+            if cancel:
+                self._cancel_registration()
+                return False
+
+        return True
+
+    def _process_ic_card(self, card):
+        ic_card = None
+        card_abnormal = string_utils.xstr(self.ui.comboBox_card_abnormal.currentText()).split(' ')[0]
+
+        if self.ui.comboBox_ins_type.currentText() != '健保':
+            return ic_card
+
+        if card in ('欠卡', '不需取得') or card in nhi_utils.ABNORMAL_CARD:
+            return ic_card
+
+        if card_abnormal in nhi_utils.ABNORMAL_CARD:
+            return ic_card
+
+        if (self.system_settings.field('產生安全簽章位置') != '掛號' or
+                self.system_settings.field('使用讀卡機') != 'Y'):
+            return ic_card
+
+        ic_card = self._write_ic_card()
+
+        return ic_card
+
+    def _write_ic_card(self):
+        ic_card = cshis_utils.write_ic_card(
+            '掛號寫卡',
+            self.database,
+            self.system_settings,
+            self.ui.lineEdit_patient_key.text(),
+            self.ui.comboBox_course.currentText(),
+            cshis_utils.NORMAL_CARD,
+        )
+
+        if ic_card:
+            self.ui.comboBox_card.setCurrentText(ic_card.treat_data['seq_number'])
+            return ic_card
+        else:
+            return False
+
     # 病患資料存檔
     def _save_patient(self):
         patient_modified = False
@@ -750,7 +890,7 @@ class Registration(QtWidgets.QMainWindow):
                 self.ui.lineEdit_cellphone.isModified() or \
                 self.ui.lineEdit_address.isModified() or \
                 self.ui.lineEdit_patient_remark.isModified():
-                patient_modified = True
+            patient_modified = True
 
         sql = 'SELECT * FROM patient WHERE PatientKey = {0}'.format(self.ui.lineEdit_patient_key.text())
         try:
@@ -844,6 +984,13 @@ class Registration(QtWidgets.QMainWindow):
 
         return case_key
 
+    def _save_wait(self, case_key):
+        if self.ui.action_save.text() == '掛號存檔':
+            self.insert_wait(case_key)
+        else:
+            wait_key = self.table_widget_wait.field_value(0)
+            self.update_wait(wait_key)
+
     # 新增候診名單
     def insert_wait(self, case_key):
         fields = ['CaseKey', 'CaseDate', 'PatientKey', 'Name', 'Visit', 'RegistType',
@@ -868,6 +1015,20 @@ class Registration(QtWidgets.QMainWindow):
             self.ui.comboBox_remark.currentText(),
         ]
         self.database.insert_record('wait', fields, data)
+
+    def _save_deposit(self, case_key, card):
+        if card != '欠卡':
+            return
+
+        sql = '''
+            SELECT * FROM deposit WHERE
+                CaseKey = {0}
+        '''.format(case_key)
+        rows = self.database.select_record(sql)
+        if len(rows) > 0:
+            return
+
+        self._insert_deposit(case_key)
 
     def _insert_deposit(self, case_key):
         fields = [
@@ -926,9 +1087,7 @@ class Registration(QtWidgets.QMainWindow):
             self.ui.comboBox_remark.currentText(),
         ]
         case_key = self.table_widget_wait.field_value(1)
-        wait_key = self.table_widget_wait.field_value(0)
         self.database.update_record('cases', fields, 'CaseKey', case_key, data)
-        self.update_wait(wait_key)
 
         return case_key
 
@@ -954,98 +1113,17 @@ class Registration(QtWidgets.QMainWindow):
         ]
         self.database.update_record('wait', fields, 'WaitKey', wait_key, data)
 
-    # 刪除候診名單
-    def delete_wait_list(self, skip_warning=None):
-        if not skip_warning:
-            name = self.table_widget_wait.field_value(3)
-            msg_box = QMessageBox()
-            msg_box.setIcon(QMessageBox.Warning)
-            msg_box.setWindowTitle('刪除掛號資料')
-            msg_box.setText("<font size='4' color='red'><b>確定刪除 <font color='blue'>{0}</font> 的掛號資料?</b></font>"
-                            .format(name))
-            msg_box.setInformativeText("注意！資料刪除後, 將無法回復!")
-            msg_box.addButton(QPushButton("取消"), QMessageBox.NoRole)
-            msg_box.addButton(QPushButton("確定"), QMessageBox.YesRole)
-            delete_record = msg_box.exec_()
-            if not delete_record:
-                return
-
-        wait_key = self.table_widget_wait.field_value(0)
-        case_key = self.table_widget_wait.field_value(1)
-
-        self.database.delete_record('wait', 'WaitKey', wait_key)
-        self.database.delete_record('deposit', 'CaseKey', case_key)
-        self.database.delete_record('debt', 'CaseKey', case_key)
-        self.database.delete_record('cases', 'CaseKey', case_key)
-        self.database.delete_record('prescript', 'CaseKey', case_key)
-        self.ui.tableWidget_wait.removeRow(self.ui.tableWidget_wait.currentRow())
-        if self.ui.tableWidget_wait.rowCount() <= 0:
-            self._set_tool_button(False)
-        self.socket_client.send_data('刪除掛號資料')
-
-    # IC卡退掛
-    def cancel_ic_card(self):
-        name = self.table_widget_wait.field_value(3)
-        msg_box = QMessageBox()
-        msg_box.setIcon(QMessageBox.Warning)
-        msg_box.setWindowTitle('健保IC卡退掛')
-        msg_box.setText("<font size='4' color='red'><b>確定將<font color='blue'>{0}</font>的IC卡掛號資料退掛?</b></font>"
-                        .format(name))
-        msg_box.setInformativeText("注意！IC卡退掛後, 將回復原來健保卡序!")
-        msg_box.addButton(QPushButton("取消"), QMessageBox.NoRole)
-        msg_box.addButton(QPushButton("確定"), QMessageBox.YesRole)
-        cancel_ic_card = msg_box.exec_()
-        if not cancel_ic_card:
-            return
-
-        case_key = self.table_widget_wait.field_value(1)
-        sql = '''
-            SELECT Security FROM cases WHERE
-            CaseKey = {0}
-        '''.format(case_key)
-        row = self.database.select_record(sql)[0]
-        if len(row) <= 0:
-            system_utils.show_message_box(
-                QMessageBox.Critical,
-                '查無資料',
-                '<font size="4" color="red"><b>找不到病歷資料, 無法執行IC卡退掛作業.</b></font>',
-                '請確定資料是否存在, 如不存在, 請直接刪除掛號資料.'
-            )
-            return
-
-        ic_card = cshis.CSHIS(self.system_settings)
-        card_datetime = case_utils.extract_security_xml(row['Security'], '寫卡時間')
-        if string_utils.xstr(card_datetime) == '':
-            system_utils.show_message_box(
-                QMessageBox.Critical,
-                '查無資料',
-                '<font size="4" color="red"><b>找不到健保IC卡讀卡資料, 無法執行IC卡退掛作業.</b></font>',
-                '請確定此筆病歷是否成功的讀卡, 如不成功, 請直接刪除掛號資料.'
-            )
-            return
-
-        nhi_datetime = date_utils.west_datetime_to_nhi_datetime(card_datetime)
-        if ic_card.return_seq_number(nhi_datetime):
-            self.delete_wait_list(True)
-
-    # 初診掛號
-    def _new_patient(self):
-        self.parent.open_patient_record(None, '門診掛號')
-
     # 補印收據
-    def print_registration_form(self, case_key=False):
+    def print_wait(self):
+        case_key = self.table_widget_wait.field_value(1)
+        self.print_registration_form(case_key, '列印')
+
+    # 列印收據
+    def print_registration_form(self, case_key=False, printable=None):
         if not case_key:
             case_key = self.table_widget_wait.field_value(1)
 
         print_regist = print_registration.PrintRegistration(
-            self, self.database, self.system_settings, case_key)
+            self, self.database, self.system_settings, case_key, printable)
         print_regist.print()
         del print_regist
-
-    def close_tab(self):
-        current_tab = self.parent.ui.tabWidget_window.currentIndex()
-        self.parent.close_tab(current_tab)
-
-    def close_registration(self):
-        self.close_all()
-        self.close_tab()

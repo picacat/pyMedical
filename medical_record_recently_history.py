@@ -52,7 +52,7 @@ class MedicalRecordRecentlyHistory(QtWidgets.QMainWindow):
         self.ui.toolButton_previous.clicked.connect(self.prev_past_record)
         self.ui.toolButton_next.clicked.connect(self.next_past_record)
         self.ui.toolButton_last.clicked.connect(self.last_past_record)
-        self.ui.toolButton_copy.clicked.connect(self.on_copy_button_clicked)
+        self.ui.toolButton_copy.clicked.connect(self.copy_past_medical_record)
 
     def _read_data(self):
         sql = 'SELECT * FROM cases WHERE CaseKey = {0}'.format(self.case_key)
@@ -211,7 +211,11 @@ class MedicalRecordRecentlyHistory(QtWidgets.QMainWindow):
                         <td>{0}</td>
                         <td align="right">{1}{2}</td>
                     </tr>
-                '''.format(row['MedicineName'], row['Dosage'], row['Unit'])
+                '''.format(
+                    string_utils.xstr(row['MedicineName']),
+                    string_utils.xstr(row['Dosage']),
+                    string_utils.xstr(row['Unit'])
+                )
 
             if i == 1:
                 medicine_title = '健保處方'
@@ -232,10 +236,11 @@ class MedicalRecordRecentlyHistory(QtWidgets.QMainWindow):
         return all_prescript
 
     # 拷貝病歷
-    def on_copy_button_clicked(self):
+    def copy_past_medical_record(self):
         case_key = self.ui.textEdit_past.property('case_key')
         if case_key == '':
             return
+
         sql = 'SELECT * FROM cases WHERE CaseKey = {0}'.format(case_key)
         row = self.database.select_record(sql)[0]
         if self.ui.checkBox_diagnostic.isChecked():
@@ -262,5 +267,5 @@ class MedicalRecordRecentlyHistory(QtWidgets.QMainWindow):
         self.ui.checkBox_prescript.setChecked(not self.ui.checkBox_prescript.isChecked())
 
     def copy_past_prescript(self, case_key):
-        if self.parent.tab_ins_prescript is not None:
-            self.parent.tab_ins_prescript.copy_past_prescript(case_key)
+        if self.parent.tab_list[0] is not None:
+            self.parent.tab_list[0].copy_past_prescript(case_key)

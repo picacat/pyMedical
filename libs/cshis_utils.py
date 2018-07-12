@@ -306,7 +306,7 @@ def insert_correct_ic_card(database, ic_card, patient_key):
             </font>
             '''
         )
-        msg_box.setInformativeText("請確定讀卡機使用正常使用")
+        msg_box.setInformativeText("請確定讀卡機使用正常")
         msg_box.addButton(QPushButton("確定"), QMessageBox.YesRole)
         msg_box.exec_()
         return False

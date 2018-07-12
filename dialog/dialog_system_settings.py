@@ -139,7 +139,6 @@ class DialogSettings(QtWidgets.QDialog):
     def _read_doctor_settings(self):
         self.ui.spinBox_room.setValue(number_utils.get_integer(self.system_settings.field('診療室')))
         self._set_check_box(self.ui.checkBox_copy_past, '自動顯示過去病歷')
-        self._set_check_box(self.ui.checkBox_copy_remark, '拷貝病歷備註')
         self.ui.spinBox_packages.setValue(number_utils.get_integer(self.system_settings.field('給藥包數')))
         self.ui.spinBox_days.setValue(number_utils.get_integer(self.system_settings.field('給藥天數')))
         self.ui.comboBox_instruction.setCurrentText(self.system_settings.field('用藥指示'))
@@ -148,6 +147,10 @@ class DialogSettings(QtWidgets.QDialog):
                                 self.ui.radioButton_dosage3],
                                ['日劑量', '次劑量', '總量'],
                                '劑量模式')
+        self._set_radio_button([self.ui.radioButton_self_room,
+                                self.ui.radioButton_all_room],
+                               ['指定診別', '所有診別'],
+                               '候診名單顯示診別')
         self._set_radio_button([self.ui.radioButton_order_no,
                                 self.ui.radioButton_order_time],
                                ['診號排序', '時間排序'],
@@ -268,7 +271,6 @@ class DialogSettings(QtWidgets.QDialog):
     def _save_doctor_settings(self):
         self.system_settings.post('診療室', self.ui.spinBox_room.value())
         self._save_check_box(self.ui.checkBox_copy_past, '自動顯示過去病歷')
-        self._save_check_box(self.ui.checkBox_copy_remark, '拷貝病歷備註')
         self.system_settings.post('給藥包數', self.ui.spinBox_packages.value())
         self.system_settings.post('給藥天數', self.ui.spinBox_days.value())
         self.system_settings.post('用藥指示', self.ui.comboBox_instruction.currentText())
@@ -278,6 +280,10 @@ class DialogSettings(QtWidgets.QDialog):
                                  self.ui.radioButton_dosage3],
                                 ['日劑量', '次劑量', '總量'],
                                 '劑量模式')
+        self._save_radio_button([self.ui.radioButton_self_room,
+                                 self.ui.radioButton_all_room],
+                                ['指定診別', '所有診別'],
+                                '候診名單顯示診別')
         self._save_radio_button([self.ui.radioButton_order_no,
                                  self.ui.radioButton_order_time],
                                 ['診號排序', '時間排序'],

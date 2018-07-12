@@ -36,7 +36,7 @@ class PrintRegistrationForm2:
 
     # 設定GUI
     def _set_ui(self):
-        self.font = QtGui.QFont("Noto Sans Mono", 12, QtGui.QFont.Normal)
+        self.font = QtGui.QFont("Noto Sans Mono", 10, QtGui.QFont.PreferQuality)
 
     def _set_signal(self):
         pass
@@ -77,6 +77,7 @@ class PrintRegistrationForm2:
         document = QtGui.QTextDocument()
         document.setDefaultFont(self.font)
         document.setPageSize(paper_size)
+        document.documentLayout().setPaintDevice(self.printer)
         document.setDocumentMargin(10)
         document.setHtml(self._html())
         document.print(self.printer)
@@ -94,8 +95,8 @@ class PrintRegistrationForm2:
         html = '''
             <html>
             <body>
-                <p style="font-size:28px"><b>{0} 門診掛號單</b></p>
-                <table cellspacing=0 cellpadding=8 style='border-width:1px; border-style: solid; border-color: #000000'>
+                <p style="font-size:24px"><b>{0} 門診掛號單</b></p>
+                <table cellspacing=0 cellpadding=8 style="border-width:1px 1px 1px; border-style: solid; border-color: #000000">
                     <tr>
                         <td>掛號時間</td><td>{1}</td>
                         <td>病患姓名</td><td>{2:0>6}-{3}</td>

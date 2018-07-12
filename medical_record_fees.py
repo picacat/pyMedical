@@ -109,10 +109,10 @@ class MedicalRecordFees(QtWidgets.QMainWindow):
             self.ui.tableWidget_ins_fees.setItem(
                 i, 0, QtWidgets.QTableWidgetItem(''))
 
-        treatment = self.parent.tab_ins_prescript.combo_box_treatment.currentText()
+        treatment = self.parent.tab_list[0].combo_box_treatment.currentText()
 
         ins_diag_fee = charge_utils.get_ins_diag_fee(self.database, self.system_settings)
-        pres_days = number_utils.get_integer(self.parent.tab_ins_prescript.ui.comboBox_pres_days.currentText())
+        pres_days = number_utils.get_integer(self.parent.tab_list[0].ui.comboBox_pres_days.currentText())
         ins_drug_fee = charge_utils.get_ins_drug_fee(self.database, pres_days)
         ins_pharmacy_fee = charge_utils.get_ins_pharmacy_fee(self.database, self.system_settings, ins_drug_fee)
         ins_acupuncture_fee = charge_utils.get_ins_acupuncture_fee(self.database, treatment, ins_drug_fee)
