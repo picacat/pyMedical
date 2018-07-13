@@ -34,7 +34,7 @@ class PyMedical(QtWidgets.QMainWindow):
         self._check_db()
         self._set_ui()
         self._set_signal()
-        self._start_udp_server()
+        self._start_udp_socket_server()
 
     # 解構
     def __del__(self):
@@ -63,29 +63,45 @@ class PyMedical(QtWidgets.QMainWindow):
         self._set_button_enabled()
         self.ui.setWindowTitle('{0} 醫療資訊管理系統'.format(self.system_settings.field('院所名稱')))
         self._set_css()
+        self.set_status_bar()
+
+    # 設定 status bar
+    def set_status_bar(self):
+        self.label_station_no = QtWidgets.QLabel()
+        self.label_station_no.setFixedWidth(200)
+        self.ui.statusbar.addPermanentWidget(self.label_station_no)
+
+        self.label_user_name = QtWidgets.QLabel()
+        self.label_user_name.setFixedWidth(200)
+        self.ui.statusbar.addPermanentWidget(self.label_user_name)
 
     # 設定信號
     def _set_signal(self):
         self.socket_server.update_signal.connect(self._refresh_waiting_data)
 
-        self.ui.action_convert.triggered.connect(self.convert)
-        self.ui.pushButton_registration.clicked.connect(self.push_button_clicked)
-        self.ui.pushButton_return_card.clicked.connect(self.push_button_clicked)
-        self.ui.pushButton_checkout.clicked.connect(self.push_button_clicked)
-        self.ui.pushButton_waiting_list.clicked.connect(self.push_button_clicked)
-        self.ui.pushButton_medical_record_list.clicked.connect(self.push_button_clicked)
-        self.ui.pushButton_record_statistics.clicked.connect(self.push_button_clicked)
-        self.ui.pushButton_patient_list.clicked.connect(self.push_button_clicked)
-        self.ui.pushButton_settings.clicked.connect(self.open_settings)
-        self.ui.pushButton_charge.clicked.connect(self.push_button_clicked)
-        self.ui.pushButton_users.clicked.connect(self.push_button_clicked)
-        self.ui.pushButton_diagnostic.clicked.connect(self.push_button_clicked)
-        self.ui.pushButton_medicine.clicked.connect(self.push_button_clicked)
-        self.ui.pushButton_ic_card.clicked.connect(self.open_ic_card)
+        self.ui.pushButton_registration.clicked.connect(self.push_button_clicked)           # 掛號作業
+        self.ui.pushButton_return_card.clicked.connect(self.push_button_clicked)            # 健保卡欠還卡
+        self.ui.pushButton_checkout.clicked.connect(self.push_button_clicked)               # 櫃台結帳
+        self.ui.pushButton_waiting_list.clicked.connect(self.push_button_clicked)           # 醫師看診作業
+        self.ui.pushButton_medical_record_list.clicked.connect(self.push_button_clicked)    # 病歷查詢
+        self.ui.pushButton_record_statistics.clicked.connect(self.push_button_clicked)      # 病歷統計
+        self.ui.pushButton_patient_list.clicked.connect(self.push_button_clicked)           # 病患資料
+        self.ui.pushButton_settings.clicked.connect(self.open_settings)                     # 系統設定
+        self.ui.pushButton_charge.clicked.connect(self.push_button_clicked)                 # 收費資料
+        self.ui.pushButton_users.clicked.connect(self.push_button_clicked)                  # 使用者管理
+        self.ui.pushButton_diagnostic.clicked.connect(self.push_button_clicked)             # 診察資料
+        self.ui.pushButton_medicine.clicked.connect(self.push_button_clicked)               # 處方資料
+        self.ui.pushButton_ic_card.clicked.connect(self.open_ic_card)                       # 健保卡讀卡機
 
-        self.ui.tabWidget_window.tabCloseRequested.connect(self.close_tab)
-        self.ui.tabWidget_window.currentChanged.connect(self.tab_changed)
+        self.ui.pushButton_logout.clicked.connect(self.logout)                              # 登出
+        self.ui.pushButton_quit.clicked.connect(self.close)                                 # 離開系統
 
+        self.ui.action_convert.triggered.connect(self.convert)                              # 轉檔作業
+
+        self.ui.tabWidget_window.tabCloseRequested.connect(self.close_tab)                  # 關閉分頁
+        self.ui.tabWidget_window.currentChanged.connect(self.tab_changed)                   # 切換分頁
+
+    # 設定 css style
     def _set_css(self):
         system_utils.set_css(self)
         system_utils.set_theme(self.ui, self.system_settings)
@@ -109,6 +125,7 @@ class PyMedical(QtWidgets.QMainWindow):
         else:
             self.ui.pushButton_ic_card.setEnabled(False)
 
+    # tab 切換
     def tab_changed(self, i):
         tab_name = self.ui.tabWidget_window.tabText(i)
         tab = self.ui.tabWidget_window.currentWidget()
@@ -134,6 +151,7 @@ class PyMedical(QtWidgets.QMainWindow):
         self.ui.tabWidget_window.setCurrentWidget(new_tab)
         self._set_focus(tab_name, new_tab)
 
+    # 設定 focus
     @staticmethod
     def _set_focus(widget_name, widget):
         if widget_name == "門診掛號":
@@ -165,6 +183,7 @@ class PyMedical(QtWidgets.QMainWindow):
         elif tab_name.find('病患資料') != -1:
             self._set_tab(current_tab.call_from)
 
+    # 關閉分頁
     def _tab_is_closable(self, tab_name, current_tab):
         closable = True
 
@@ -231,6 +250,7 @@ class PyMedical(QtWidgets.QMainWindow):
 
                 return
 
+    # 開啟病歷資料
     def open_medical_record(self, case_key, call_from=None):
         script = ('select CaseKey, PatientKey, Name from cases where CaseKey = {0}'.format(case_key))
         try:
@@ -258,6 +278,7 @@ class PyMedical(QtWidgets.QMainWindow):
         tab_name = '{0}-{1}-病歷資料'.format(str(row['PatientKey']), str(row['Name']))
         self._add_tab(tab_name, (self.database, self.system_settings, row['CaseKey'], call_from))
 
+    # 開啟病患資料
     def open_patient_record(self, patient_key, call_from=None, ic_card=None):
         if patient_key is None:
             tab_name = '新病患資料'
@@ -280,6 +301,7 @@ class PyMedical(QtWidgets.QMainWindow):
         tab_name = '{0}-{1}-病患資料'.format(str(row['PatientKey']), str(row['Name']))
         self._add_tab(tab_name, (self.database, self.system_settings, row['PatientKey'], call_from, None))
 
+    # 初診掛號
     def set_new_patient(self, new_patient_key):
         current_tab = None
         for i in range(self.ui.tabWidget_window.count()):
@@ -295,9 +317,11 @@ class PyMedical(QtWidgets.QMainWindow):
         dialog = dialog_system_settings.DialogSettings(self.ui, self.database, self.system_settings)
         dialog.exec_()
         dialog.deleteLater()
+        self.system_settings = system_settings.SystemSettings(self.database)
+        self.label_station_no.setText('工作站編號: {0}'.format(self.system_settings.field('工作站編號')))
         self._set_button_enabled()
 
-    # 系統設定
+    # 健保卡讀卡機
     def open_ic_card(self):
         dialog = dialog_ic_card.DialogICCard(self.ui, self.database, self.system_settings)
         dialog.exec_()
@@ -309,32 +333,42 @@ class PyMedical(QtWidgets.QMainWindow):
         dialog.exec_()
         dialog.deleteLater()
 
-    def set_status_bar(self):
-        label_station_no = QtWidgets.QLabel()
-        label_station_no.setText('工作站編號: {0}'.format(self.system_settings.field('工作站編號')))
-        label_station_no.setFixedWidth(200)
-        self.ui.statusbar.addPermanentWidget(label_station_no)
-
-        label_user_name = QtWidgets.QLabel()
-        label_user_name.setText('使用者: {0}'.format(self.system_settings.field('使用者')))
-        label_user_name.setFixedWidth(200)
-        self.ui.statusbar.addPermanentWidget(label_user_name)
-
+    # 設定權限
     def set_root_permission(self):
         if self.system_settings.field('使用者') != '超級使用者':
             self.action_convert.setEnabled(False)
         else:
             self.action_convert.setEnabled(True)
 
-    def _start_udp_server(self):
+    # 驅動 udp socket server
+    def _start_udp_socket_server(self):
         self.socket_server.start()
 
+    # 重新顯示病歷登錄候診名單
     def _refresh_waiting_data(self, data):
         index = self.ui.tabWidget_window.currentIndex()
         current_tab_text = self.ui.tabWidget_window.tabText(index)
         if current_tab_text == '醫師看診作業':
             tab = self.ui.tabWidget_window.currentWidget()
             tab.read_wait()
+
+    # 重新顯示狀態列
+    def refresh_status_bar(self):
+        self.label_user_name.setText('使用者: {0}'.format(self.system_settings.field('使用者')))
+        self.label_station_no.setText('工作站編號: {0}'.format(self.system_settings.field('工作站編號')))
+
+    # 登出
+    def logout(self):
+        login_dialog = login.Login(self, self.database, self.system_settings)
+        login_dialog.exec_()
+        if not login_dialog.login_ok:
+            return
+
+        user_name = login_dialog.user_name
+        self.system_settings.post('使用者', user_name)
+        self.refresh_status_bar()
+
+        login_dialog.deleteLater()
 
 
 # 主程式
@@ -351,7 +385,7 @@ def main():
     login_dialog.deleteLater()
     user_name = login_dialog.user_name
     py_medical.system_settings.post('使用者', user_name)
-    py_medical.set_status_bar()
+    py_medical.refresh_status_bar()
     py_medical.set_root_permission()
     py_medical.showMaximized()
     sys.exit(app.exec_())

@@ -53,8 +53,6 @@ class PrintRegistrationForm2:
     def print_painter(self):
         self.current_print = self.print_painter
         self.printer.setPaperSize(QtCore.QSizeF(241, 93), QPrinter.Millimeter)
-        self.printer.setFullPage(True)
-        self.printer.setPageMargins(0.08, 0.08, 0.08, 0.08, QPrinter.Inch)  # left, right, top, bottom
 
         painter = QtGui.QPainter()
         painter.setFont(self.font)
@@ -66,19 +64,9 @@ class PrintRegistrationForm2:
     def print_html(self):
         self.current_print = self.print_html
         self.printer.setPaperSize(QtCore.QSizeF(241, 93), QPrinter.Millimeter)
-        # self.printer.setPaperSize(QPrinter.A4)
-        self.printer.setFullPage(True)
-        self.printer.setPageMargins(0.08, 0.08, 0.08, 0.08, QPrinter.Inch)  # left, right, top, bottom
 
-        paper_size = QtCore.QSizeF()
-        paper_size.setWidth(self.printer.width())
-        paper_size.setHeight(self.printer.height())
-
-        document = QtGui.QTextDocument()
-        document.setDefaultFont(self.font)
-        document.setPageSize(paper_size)
-        document.documentLayout().setPaintDevice(self.printer)
-        document.setDocumentMargin(10)
+        document = printer_utils.get_document(self.printer, self.font)
+        document.setDocumentMargin(printer_utils.get_document_margin())
         document.setHtml(self._html())
         document.print(self.printer)
 
@@ -123,9 +111,19 @@ class PrintRegistrationForm2:
             </body>
             </html>
         '''.format(
-            self.system_settings.field('院所名稱'), row['CaseDate'], row['PatientKey'], row['Name'],
-            row['InsType'], row['Share'], card, row['RegistFee'], row['SDiagShareFee'], row['DepositFee'],
-            total_amount, row['Register'], row['Room'], row['RegistNo'],
+            self.system_settings.field('院所名稱'),
+            row['CaseDate'],
+            row['PatientKey'],
+            row['Name'],
+            row['InsType'],
+            row['Share'], card,
+            row['RegistFee'],
+            row['SDiagShareFee'],
+            row['DepositFee'],
+            total_amount,
+            row['Register'],
+            row['Room'],
+            row['RegistNo'],
         )
 
         return html

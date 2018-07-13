@@ -53,8 +53,6 @@ class PrintRegistrationForm1:
     def print_painter(self):
         self.current_print = self.print_painter
         self.printer.setPaperSize(QtCore.QSizeF(80, 80), QPrinter.Millimeter)
-        self.printer.setFullPage(True)
-        self.printer.setPageMargins(0.08, 0.08, 0.08, 0.08, QPrinter.Inch)  # left, right, top, bottom
 
         painter = QtGui.QPainter()
         painter.setFont(self.font)
@@ -66,16 +64,8 @@ class PrintRegistrationForm1:
     def print_html(self):
         self.current_print = self.print_html
         self.printer.setPaperSize(QtCore.QSizeF(80, 80), QPrinter.Millimeter)
-        self.printer.setFullPage(True)
-        self.printer.setPageMargins(0.08, 0.08, 0.08, 0.08, QPrinter.Inch)  # left, right, top, bottom
 
-        paper_size = QtCore.QSizeF()
-        paper_size.setWidth(self.printer.width())
-        paper_size.setHeight(self.printer.height())
-
-        document = QtGui.QTextDocument()
-        document.setDefaultFont(self.font)
-        document.setPageSize(paper_size)
+        document = printer_utils.get_document(self.printer, self.font)
         document.setDocumentMargin(10)
         document.setHtml(self._html())
         document.print(self.printer)

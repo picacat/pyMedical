@@ -405,5 +405,5 @@ class DialogSettings(QtWidgets.QDialog):
 
     # 更改工作站編號
     def spin_button_value_changed(self):
-        self.system_settings = system_settings.Settings(self.database, self.ui.spinBox_station_no.value())
+        self.system_settings = system_settings.SystemSettings(self.database, self.ui.spinBox_station_no.value())
         self._read_settings()
