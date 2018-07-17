@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>1212</width>
-    <height>893</height>
+    <height>927</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -56,6 +56,12 @@
       <layout class="QVBoxLayout" name="verticalLayout_10">
        <item>
         <widget class="QLabel" name="label_title">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
          <property name="font">
           <font>
            <weight>50</weight>
@@ -66,13 +72,37 @@
          <property name="styleSheet">
           <string notr="true"/>
          </property>
+         <property name="frameShape">
+          <enum>QFrame::NoFrame</enum>
+         </property>
+         <property name="frameShadow">
+          <enum>QFrame::Plain</enum>
+         </property>
+         <property name="lineWidth">
+          <number>1</number>
+         </property>
+         <property name="midLineWidth">
+          <number>0</number>
+         </property>
          <property name="text">
           <string>滿地富醫療資訊管理系統</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+         <property name="margin">
+          <number>0</number>
          </property>
         </widget>
        </item>
        <item>
         <widget class="QLabel" name="label_eng_title">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
          <property name="font">
           <font>
            <weight>50</weight>
@@ -166,12 +196,18 @@
                <property name="text">
                 <string>門診掛號</string>
                </property>
+               <property name="flat">
+                <bool>false</bool>
+               </property>
               </widget>
              </item>
              <item>
-              <widget class="QPushButton" name="pushButton">
+              <widget class="QPushButton" name="pushButton_cashier">
                <property name="text">
                 <string>批價作業</string>
+               </property>
+               <property name="flat">
+                <bool>false</bool>
                </property>
               </widget>
              </item>
@@ -180,6 +216,9 @@
                <property name="text">
                 <string>健保卡欠還卡</string>
                </property>
+               <property name="flat">
+                <bool>false</bool>
+               </property>
               </widget>
              </item>
              <item>
@@ -187,12 +226,28 @@
                <property name="text">
                 <string>掛號櫃台結帳</string>
                </property>
+               <property name="flat">
+                <bool>false</bool>
+               </property>
               </widget>
              </item>
              <item>
               <widget class="QPushButton" name="pushButton_patient_list">
                <property name="text">
                 <string>病患查詢</string>
+               </property>
+               <property name="flat">
+                <bool>false</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="pushButton_ic_record_upload">
+               <property name="text">
+                <string>健保IC卡資料上傳</string>
+               </property>
+               <property name="flat">
+                <bool>false</bool>
                </property>
               </widget>
              </item>

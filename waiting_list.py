@@ -52,6 +52,7 @@ class WaitingList(QtWidgets.QMainWindow):
     # 設定信號
     def _set_signal(self):
         self.ui.tableWidget_waiting_list.doubleClicked.connect(self.open_medical_record)
+        self.ui.action_medical_record.triggered.connect(self.open_medical_record)
         self.ui.action_close.triggered.connect(self.close_waiting_list)
 
     def _set_table_width(self):

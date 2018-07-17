@@ -4,9 +4,12 @@
 import sys
 
 from PyQt5 import QtWidgets, QtCore
+from PyQt5.QtWidgets import QMessageBox
+
 import datetime
 from libs import ui_utils
 from libs import string_utils
+from libs import system_utils
 from classes import table_widget
 from dialog import dialog_return_card
 
@@ -52,11 +55,12 @@ class ReturnCard(QtWidgets.QMainWindow):
     def _set_signal(self):
         self.ui.action_close.triggered.connect(self.close_return_card)
         self.ui.action_return_card.triggered.connect(self.return_card)
-        self.ui.tableWidget_return_card.doubleClicked.connect(self.return_card)
+        self.ui.action_open_medical_record.triggered.connect(self.open_medical_record)
+        self.ui.tableWidget_return_card.doubleClicked.connect(self.open_medical_record)
 
     # 設定欄位寬度
     def _set_table_width(self):
-        width = [80, 80, 80, 80, 120, 130, 150, 180, 180, 60, 80, 40, 100, 100, 80]
+        width = [80, 80, 80, 80, 120, 130, 150, 180, 180, 60, 80, 40, 100, 100, 80, 70]
         self.table_widget_return_card.set_table_heading_width(width)
 
     # 讀取欠卡資料
@@ -66,16 +70,24 @@ class ReturnCard(QtWidgets.QMainWindow):
             return_date = since_date.strftime('%Y-%m-01')
 
         sql = '''
-            SELECT deposit.*, cases.Card, cases.Continuance, patient.Birthday, patient.ID, patient.CardNo 
+            SELECT 
+                deposit.*, 
+                cases.Card, cases.Continuance, cases.DoctorDone, 
+                patient.Birthday, patient.ID, patient.CardNo 
             FROM deposit 
-            LEFT JOIN cases ON cases.CaseKey = deposit.CaseKey
-            LEFT JOIN patient ON patient.PatientKey = deposit.PatientKey
+                LEFT JOIN cases ON cases.CaseKey = deposit.CaseKey
+                LEFT JOIN patient ON patient.PatientKey = deposit.PatientKey
             WHERE DepositDate >= "{0}"
             ORDER BY DepositDate DESC
         '''.format(return_date)
         self.table_widget_return_card.set_db_data(sql, self._set_table_data)
 
     def _set_table_data(self, row_no, row_data):
+        if string_utils.xstr(row_data['DoctorDone']) == 'True':
+            doctor_done = '是'
+        else:
+            doctor_done = '否'
+
         return_card_data = [
             string_utils.xstr(row_data['DepositKey']),
             string_utils.xstr(row_data['CaseKey']),
@@ -92,6 +104,7 @@ class ReturnCard(QtWidgets.QMainWindow):
             string_utils.xstr(row_data['Register']),
             string_utils.xstr(row_data['Refunder']),
             string_utils.xstr(row_data['Fee']),
+            doctor_done,
         ]
 
         for column in range(0, self.ui.tableWidget_return_card.columnCount()):
@@ -101,16 +114,19 @@ class ReturnCard(QtWidgets.QMainWindow):
             if column in [2, 14]:
                 self.ui.tableWidget_return_card.item(row_no, column).setTextAlignment(
                     QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
-            elif column in [8]:
+            elif column in [9, 15]:
                 self.ui.tableWidget_return_card.item(row_no, column).setTextAlignment(
                     QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter)
 
     def refresh_record(self):
         sql = '''
-            SELECT deposit.*, cases.Card, cases.Continuance, patient.Birthday, patient.ID, patient.CardNo 
+            SELECT 
+                deposit.*, 
+                cases.Card, cases.Continuance, cases.DoctorDone, 
+                patient.Birthday, patient.ID, patient.CardNo 
             FROM deposit 
-            LEFT JOIN cases ON cases.CaseKey = deposit.CaseKey
-            LEFT JOIN patient ON patient.PatientKey = deposit.PatientKey
+                LEFT JOIN cases ON cases.CaseKey = deposit.CaseKey
+                LEFT JOIN patient ON patient.PatientKey = deposit.PatientKey
             WHERE DepositKey = {0}
         '''.format(self.table_widget_return_card.field_value(0))
         row = self.database.select_record(sql)
@@ -120,6 +136,21 @@ class ReturnCard(QtWidgets.QMainWindow):
     # 還卡
     def return_card(self):
         if self.table_widget_return_card.field_value(10) != '欠卡':
+            system_utils.show_message_box(
+                QMessageBox.Critical,
+                '不需還卡',
+                '<font size="4" color="red"><b>此筆病歷的卡序不是"欠卡", 不需執行還卡作業.</b></font>',
+                '請確定此人是否已經還卡.'
+            )
+            return
+
+        if self.table_widget_return_card.field_value(15) != '是':
+            system_utils.show_message_box(
+                QMessageBox.Critical,
+                '暫時無法還卡',
+                '<font size="4" color="red"><b>此筆病歷尚未看診完畢, 暫時不需執行還卡作業.</b></font>',
+                '請確定此人看診完畢後, 再執行還卡作業, 已利系統進行健保卡病歷及處方寫入的程序.'
+            )
             return
 
         dialog = dialog_return_card.DialogReturnCard(
@@ -132,3 +163,7 @@ class ReturnCard(QtWidgets.QMainWindow):
             self.refresh_record()
 
         dialog.deleteLater()
+
+    def open_medical_record(self):
+        case_key = self.table_widget_return_card.field_value(1)
+        self.parent.open_medical_record(case_key, '欠還卡作業')

@@ -10,6 +10,7 @@ from libs import nhi_utils
 from libs import cshis_utils
 from libs import registration_utils
 from libs import date_utils
+from libs import case_utils
 
 
 # 主視窗
@@ -58,52 +59,6 @@ class DialogReturnCard(QtWidgets.QDialog):
         ui_utils.set_combo_box(self.ui.comboBox_case_share, nhi_utils.SHARE_TYPE)
         ui_utils.set_combo_box(self.ui.comboBox_card, nhi_utils.ABNORMAL_CARD_WITH_HINT, '自動產生')
 
-    def _write_ic_card(self):
-        ic_card = cshis_utils.write_ic_card(
-            '掛號寫卡',
-            self.database,
-            self.system_settings, self.ui.lineEdit_patient_key.text(),
-            self.ui.comboBox_continuance.currentText(),
-            cshis_utils.RETURN_CARD
-        )
-        if not ic_card:
-            return
-
-        self.update_cases(ic_card)
-        self.update_wait(ic_card)
-        self.update_return_card()
-
-    def update_cases(self, ic_card):
-        fields = [
-            'Card', 'Security',
-        ]
-        data = [
-            ic_card.treat_data['seq_number'],
-            ic_card.treat_data_to_xml() if ic_card else None,
-        ]
-        self.database.update_record('cases', fields, 'CaseKey', self.case_key, data)
-
-    def update_wait(self, ic_card):
-        sql = '''
-            UPDATE wait SET Card = "{0}" WHERE CaseKey = {1}
-        '''.format(ic_card.treat_data['seq_number'], self.case_key)
-        self.database.exec_sql(sql)
-
-    def update_return_card(self):
-        fields = [
-            'ReturnDate', 'Period', 'Refunder'
-        ]
-        data = [
-            self.ui.lineEdit_return_date.text(),
-            self.ui.comboBox_return_period.currentText(),
-            self.system_settings.field('使用者')
-        ]
-        self.database.update_record('deposit', fields, 'DepositKey', self.deposit_key, data)
-
-    def accepted_button_clicked(self):
-        if self.ui.comboBox_card.currentText() == '自動產生':
-            self._write_ic_card()
-
     # 讀取資料
     def _read_data(self):
         sql = '''
@@ -137,4 +92,96 @@ class DialogReturnCard(QtWidgets.QDialog):
         self.ui.comboBox_case_share.setCurrentText(row['Share'])
         self.ui.lineEdit_share_fee.setText(string_utils.xstr(row['DiagShareFee']))
         self.ui.comboBox_card.setCurrentText('自動產生')
-        self.ui.comboBox_continuance.setCurrentText(row['Continuance'])
+        self.ui.comboBox_continuance.setCurrentText(string_utils.xstr(row['Continuance']))
+
+    # 還卡
+    def accepted_button_clicked(self):
+        ic_card = None
+        if self.ui.comboBox_card.currentText() == '自動產生':
+            ic_card = self._write_ic_card(cshis_utils.RETURN_CARD)
+            self.update_cases_by_ic_card(ic_card)
+            self._write_ic_treatments(cshis_utils.RETURN_CARD)
+            self._write_prescript_signature()
+            self.update_wait_by_ic_card(ic_card)
+        else:
+            self.update_cases_by_abnormal_card()
+            self.update_wait_by_abnormal_card()
+
+        self.update_return_card()
+
+    def _write_ic_card(self, treat_after_check):
+        ic_card = cshis_utils.write_ic_card(
+            '掛號寫卡',
+            self.database,
+            self.system_settings, self.ui.lineEdit_patient_key.text(),
+            self.ui.comboBox_continuance.currentText(),
+            treat_after_check
+        )
+        if not ic_card:
+            return None
+
+        return ic_card
+
+    # 寫入病名, 費用
+    def _write_ic_treatments(self, treat_after_check):
+        cshis_utils.write_ic_treatment(
+            self.database, self.system_settings, self.case_key, treat_after_check)
+
+    # 寫入醫令簽章
+    def _write_prescript_signature(self):
+        cshis_utils.write_prescript_signature(
+            self.database, self.system_settings, self.case_key)
+
+    def update_cases_by_ic_card(self, ic_card):
+        if ic_card is None:
+            return
+
+        fields = [
+            'Card', 'Security',
+        ]
+
+        security = ic_card.treat_data_to_xml(ic_card.treat_data)
+        treat_after_check = '2'
+        security = case_utils.write_security_xml(security, 'treat_after_check', treat_after_check)
+        security = case_utils.write_security_xml(security, 'prescript_sign_time', date_utils.now_to_str())
+
+        data = [
+            ic_card.treat_data['seq_number'],
+            security,
+        ]
+        self.database.update_record('cases', fields, 'CaseKey', self.case_key, data)
+
+    def update_cases_by_abnormal_card(self):
+        card = string_utils.xstr(self.ui.comboBox_card.currentText()).split(' ')[0]
+        self.database.exec_sql('UPDATE cases SET Card = "{0}" WHERE CaseKey = {1}'.format(
+            card,
+            self.case_key
+        ))
+
+    def update_wait_by_ic_card(self, ic_card):
+        if ic_card is None:
+            return
+
+        sql = '''
+            UPDATE wait SET Card = "{0}" WHERE CaseKey = {1}
+        '''.format(ic_card.treat_data['seq_number'], self.case_key)
+        self.database.exec_sql(sql)
+
+    def update_wait_by_abnormal_card(self):
+        card = string_utils.xstr(self.ui.comboBox_card.currentText()).split(' ')[0]
+        self.database.exec_sql('UPDATE wait SET Card = "{0}" WHERE CaseKey = {1}'.format(
+            card,
+            self.case_key
+        ))
+
+    def update_return_card(self):
+        fields = [
+            'ReturnDate', 'Period', 'Refunder'
+        ]
+        data = [
+            self.ui.lineEdit_return_date.text(),
+            self.ui.comboBox_return_period.currentText(),
+            self.system_settings.field('使用者')
+        ]
+        self.database.update_record('deposit', fields, 'DepositKey', self.deposit_key, data)
+

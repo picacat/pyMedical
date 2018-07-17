@@ -19,7 +19,7 @@ def get_document_margin():
     if sys.platform == 'win32':
         return 0
     else:
-        return 0  # EPSON LQ-310 resolution 240 * 180
+        return 0  # EPSON LQ-310 (driver: EPSON 24-pin series, resolution 360 * 180, paper size: US Letter
 
 
 # 取得 text document

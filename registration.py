@@ -378,8 +378,7 @@ class Registration(QtWidgets.QMainWindow):
         elif sender_name == 'comboBox_treat_type':
             self._set_charge()
         elif sender_name == 'comboBox_card':
-            self._set_charge()
-            self.ui.comboBox_course.setCurrentText(None)
+           self._set_charge()
         elif sender_name == 'comboBox_course':
             self._set_charge()
             if number_utils.get_integer(self.ui.comboBox_course.currentText()) >= 2:
@@ -745,17 +744,22 @@ class Registration(QtWidgets.QMainWindow):
 
         case_key = self.table_widget_wait.field_value(1)
         sql = '''
-            SELECT Security FROM cases WHERE
+            SELECT Continuance, Security FROM cases WHERE
             CaseKey = {0}
         '''.format(case_key)
-        row = self.database.select_record(sql)[0]
-        if len(row) <= 0:
+        rows = self.database.select_record(sql)
+        if len(rows) <= 0:
             system_utils.show_message_box(
                 QMessageBox.Critical,
                 '查無資料',
                 '<font size="4" color="red"><b>找不到病歷資料, 無法執行IC卡退掛作業.</b></font>',
                 '請確定資料是否存在, 如不存在, 請直接刪除掛號資料.'
             )
+            return
+
+        row = rows[0]
+        if number_utils.get_integer(row['Continuance']) >= 2:  # 療程不須退掛, 直接刪除
+            self.delete_wait_list(True)
             return
 
         ic_card = cshis.CSHIS(self.system_settings)
@@ -860,22 +864,25 @@ class Registration(QtWidgets.QMainWindow):
                 self.system_settings.field('使用讀卡機') != 'Y'):
             return ic_card
 
-        ic_card = self._write_ic_card()
+        ic_card = self._write_ic_card(cshis_utils.NORMAL_CARD)
 
         return ic_card
 
-    def _write_ic_card(self):
+    def _write_ic_card(self, treat_after_check):
         ic_card = cshis_utils.write_ic_card(
             '掛號寫卡',
             self.database,
             self.system_settings,
             self.ui.lineEdit_patient_key.text(),
             self.ui.comboBox_course.currentText(),
-            cshis_utils.NORMAL_CARD,
+            treat_after_check
         )
 
         if ic_card:
-            self.ui.comboBox_card.setCurrentText(ic_card.treat_data['seq_number'])
+            seq_number = string_utils.xstr(ic_card.treat_data['seq_number'])  # 有產生卡號才更新
+            if seq_number != '':
+                self.ui.comboBox_card.setCurrentText(seq_number)
+
             return ic_card
         else:
             return False
@@ -952,6 +959,18 @@ class Registration(QtWidgets.QMainWindow):
 
         card = string_utils.xstr(self.ui.comboBox_card.currentText()).split(' ')[0]
         card_abnormal = string_utils.xstr(self.ui.comboBox_card_abnormal.currentText()).split(' ')[0]
+        if ic_card is None:
+            doc = case_utils.create_security_xml()
+            security = doc.toprettyxml(indent='\t')
+        else:
+            security = ic_card.treat_data_to_xml(ic_card.treat_data)
+
+        treat_after_check = '1'
+        if card == '欠卡':
+            treat_after_check = '2'
+
+        security = case_utils.write_security_xml(security, 'treat_after_check', treat_after_check)
+
         data = [
             string_utils.xstr(datetime.datetime.now()),
             self.ui.lineEdit_patient_key.text(),
@@ -977,7 +996,7 @@ class Registration(QtWidgets.QMainWindow):
             self.ui.lineEdit_diag_share_fee.text(),
             self.ui.lineEdit_deposit_fee.text(),
             self.ui.lineEdit_traditional_health_care_fee.text(),
-            ic_card.treat_data_to_xml() if ic_card else None,
+            security,
             self.ui.comboBox_remark.currentText(),
         ]
         case_key = self.database.insert_record('cases', fields, data)

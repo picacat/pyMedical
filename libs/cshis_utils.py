@@ -472,6 +472,59 @@ def write_treat_signature(database, system_settings, case_row, dosage_row, patie
     database.insert_record('presextend', fields, data)
 
 
+# 寫入病名及費用
+def write_ic_treatment(database, system_settings, case_key, treat_after_check):
+    ic_card = cshis.CSHIS(system_settings)
+
+    sql = '''
+        SELECT PatientKey, DiseaseCode1, DiseaseCode2, DiseaseCode3, 
+        DiagShareFee, DrugShareFee, InsTotalFee, Security FROM cases WHERE
+        CaseKey = {0} 
+    '''.format(case_key)
+    case_row = database.select_record(sql)[0]
+
+    sql = '''
+        SELECT ID, Birthday FROM patient WHERE
+        PatientKey = {0} 
+    '''.format(case_row['PatientKey'])
+    patient_row = database.select_record(sql)[0]
+
+    registration_datetime = case_utils.extract_security_xml(case_row['Security'], '寫卡時間')
+    registration_nhi_datetime = date_utils.west_datetime_to_nhi_datetime(registration_datetime)
+    patient_id = string_utils.xstr(patient_row['ID'])
+    patient_birthday = string_utils.xstr(patient_row['Birthday'])
+    birthday_nhi_datetime = date_utils.west_date_to_nhi_date(patient_birthday)
+
+    disease_code1 = string_utils.xstr(case_row['DiseaseCode1'])
+    disease_code2 = string_utils.xstr(case_row['DiseaseCode2'])
+    disease_code3 = string_utils.xstr(case_row['DiseaseCode3'])
+    data_write = '{0}{1}{2}{3}{4}{5}{6}'.format(
+        treat_after_check,
+        '{0:<7}'.format(disease_code1),
+        '{0:<7}'.format(disease_code2),
+        '{0:<7}'.format(disease_code3),
+        ' ' * 7,
+        ' ' * 7,
+        ' ' * 7,
+    )
+    doctor_id = ic_card.write_treatment_code(registration_nhi_datetime, patient_id, birthday_nhi_datetime, data_write)
+
+    ins_total_fee = string_utils.xstr(case_row['InsTotalFee'])
+    share_fee = string_utils.xstr(
+        (number_utils.get_integer(case_row['DiagShareFee']) +
+         number_utils.get_integer(case_row['DrugShareFee']))
+    )
+    data_write = '{0}{1}{2}{3}{4}'.format(
+        '{0:0>8}'.format(ins_total_fee),
+        '{0:0>8}'.format(share_fee),
+        '0' * 8,
+        '0' * 7,
+        '0' * 7,
+        )
+    ic_card.write_treatment_fee(registration_nhi_datetime, patient_id, birthday_nhi_datetime, data_write)
+
+    return doctor_id
+
 # 寫入處方簽章
 def write_prescript_signature(database, system_settings, case_key):
     sql = '''
@@ -504,4 +557,3 @@ def write_prescript_signature(database, system_settings, case_key):
 
     if len(prescript_rows) > 0:
         write_medicine_signature(database, system_settings, case_row, patient_row, prescript_rows, dosage_row)
-

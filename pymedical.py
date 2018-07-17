@@ -36,6 +36,7 @@ class PyMedical(QtWidgets.QMainWindow):
         self._set_signal()
         self._start_udp_socket_server()
 
+
     # 解構
     def __del__(self):
         self.database.close_database()
@@ -80,14 +81,18 @@ class PyMedical(QtWidgets.QMainWindow):
         self.socket_server.update_signal.connect(self._refresh_waiting_data)
 
         self.ui.pushButton_registration.clicked.connect(self.push_button_clicked)           # 掛號作業
+        self.ui.pushButton_cashier.clicked.connect(self.push_button_clicked)                # 批價作業
         self.ui.pushButton_return_card.clicked.connect(self.push_button_clicked)            # 健保卡欠還卡
-        self.ui.pushButton_checkout.clicked.connect(self.push_button_clicked)               # 櫃台結帳
+        self.ui.pushButton_checkout.clicked.connect(self.push_button_clicked)               # 掛號櫃台結帳
+        self.ui.pushButton_patient_list.clicked.connect(self.push_button_clicked)           # 病患查詢
+        self.ui.pushButton_ic_record_upload.clicked.connect(self.push_button_clicked)       # 健保IC卡資料上傳
+
         self.ui.pushButton_waiting_list.clicked.connect(self.push_button_clicked)           # 醫師看診作業
         self.ui.pushButton_medical_record_list.clicked.connect(self.push_button_clicked)    # 病歷查詢
         self.ui.pushButton_record_statistics.clicked.connect(self.push_button_clicked)      # 病歷統計
-        self.ui.pushButton_patient_list.clicked.connect(self.push_button_clicked)           # 病患資料
+
         self.ui.pushButton_settings.clicked.connect(self.open_settings)                     # 系統設定
-        self.ui.pushButton_charge.clicked.connect(self.push_button_clicked)                 # 收費資料
+        self.ui.pushButton_charge.clicked.connect(self.push_button_clicked)                 # 收費設定
         self.ui.pushButton_users.clicked.connect(self.push_button_clicked)                  # 使用者管理
         self.ui.pushButton_diagnostic.clicked.connect(self.push_button_clicked)             # 診察資料
         self.ui.pushButton_medicine.clicked.connect(self.push_button_clicked)               # 處方資料
@@ -156,6 +161,8 @@ class PyMedical(QtWidgets.QMainWindow):
     def _set_focus(widget_name, widget):
         if widget_name == "門診掛號":
             widget.ui.lineEdit_query.setFocus()
+        if widget_name == "健保IC卡資料上傳":
+            widget.open_dialog()
         elif widget_name == "醫師看診作業":
             widget.ui.tableWidget_waiting_list.setFocus()
         elif widget_name == "新病患資料":

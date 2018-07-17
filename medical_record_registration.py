@@ -162,16 +162,40 @@ class MedicalRecordRegistration(QtWidgets.QMainWindow):
         self.ui.comboBox_massager.setCurrentText(string_utils.xstr(row['Massager']))
 
     def _set_ic_card_data(self, row):
+        upload_type_dict = {
+            None: '',
+            '': '',
+            '0': '0 - 尚未上傳',
+            '1': '1 - 正常上傳',
+            '2': '2 - 異常上傳',
+            '3': '3 - 正常補正',
+            '4': '4 - 異常補正',
+        }
+
+        treat_after_check_dict = {
+            None: '',
+            '': '',
+            '1': '1 - 正常',
+            '2': '2 - 補卡',
+        }
         card_datetime = case_utils.extract_security_xml(row['Security'], '寫卡時間')
         seq_number = case_utils.extract_security_xml(row['Security'], '健保卡序')
         clinic_id = case_utils.extract_security_xml(row['Security'], '院所代號')
         sam_id = case_utils.extract_security_xml(row['Security'], '安全模組')
         signature = case_utils.extract_security_xml(row['Security'], '安全簽章')
+        upload_time = case_utils.extract_security_xml(row['Security'], '上傳時間')
+        upload_type = case_utils.extract_security_xml(row['Security'], '資料格式')
+        treat_after_check = case_utils.extract_security_xml(row['Security'], '補卡註記')
+        prescript_sign_time = case_utils.extract_security_xml(row['Security'], '醫令時間')
 
         self.ui.lineEdit_ic_registration.setText(card_datetime)
         self.ui.lineEdit_seq_number.setText(seq_number)
         self.ui.lineEdit_clinic_id.setText(clinic_id)
         self.ui.lineEdit_sam_id.setText(sam_id)
+        self.ui.lineEdit_upload_time.setText(upload_time)
+        self.ui.lineEdit_upload_type.setText(upload_type_dict[upload_type])
+        self.ui.lineEdit_treat_after_check.setText(treat_after_check_dict[treat_after_check])
+        self.ui.lineEdit_prescript_sign_time.setText(prescript_sign_time)
         self.ui.textEdit_signature.setPlainText(signature)
 
     def _set_ins_data(self, row):
@@ -181,10 +205,19 @@ class MedicalRecordRegistration(QtWidgets.QMainWindow):
         self.ui.comboBox_treat_type.setCurrentText(string_utils.xstr(row['TreatType']))
         self.ui.comboBox_injury_type.setCurrentText(string_utils.xstr(row['Injury']))
 
-        self.ui.comboBox_xcard.insertItem(1, string_utils.xstr(row['XCard']))
-        self.ui.comboBox_xcard.setCurrentText(string_utils.xstr(row['XCard']))
-        self.ui.comboBox_card.insertItem(1, string_utils.xstr(row['Card']))
-        self.ui.comboBox_card.setCurrentText(string_utils.xstr(row['Card']))
+        xcard = string_utils.xstr(row['XCard'])
+        if xcard in nhi_utils.ABNORMAL_CARD:
+            xcard = nhi_utils.ABNORMAL_CARD_DICT[xcard]
+
+        self.ui.comboBox_xcard.setCurrentText(xcard)
+
+        card =  string_utils.xstr(row['Card'])
+        if card in nhi_utils.ABNORMAL_CARD:
+            card = nhi_utils.ABNORMAL_CARD_DICT[card]
+
+        if card not in nhi_utils.ABNORMAL_CARD_WITH_HINT + nhi_utils.CARD:
+            self.ui.comboBox_card.insertItem(1, card)
+        self.ui.comboBox_card.setCurrentText(card)
 
         self.ui.comboBox_course.setCurrentText(string_utils.xstr(row['Continuance']))
         self.ui.lineEdit_special_code.setText(string_utils.xstr(row['SpecialCode']))

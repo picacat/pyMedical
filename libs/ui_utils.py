@@ -59,6 +59,7 @@ UI_DIALOG_REMARK = "dialog_remark.ui"
 UI_DIALOG_DISTINGUISH = "dialog_distinguish.ui"
 UI_DIALOG_CURE = "dialog_cure.ui"
 UI_DIALOG_RETURN_CARD = "dialog_return_card.ui"
+UI_DIALOG_IC_RECORD_UPLOAD = "dialog_ic_record_upload.ui"
 
 UI_DICT_DIAGNOSTIC = "dict_diagnostic.ui"
 UI_DICT_SYMPTOM = "dict_symptom.ui"
@@ -72,9 +73,10 @@ UI_DICT_MEDICINE = "dict_medicine.ui"
 UI_DICT_DRUG = "dict_drug.ui"
 UI_DICT_TREAT = "dict_treat.ui"
 UI_DICT_COMPOUND = "dict_compound.ui"
-UI_USERS = "users.ui"
 
+UI_USERS = "users.ui"
 UI_CONVERT = "convert.ui"
+UI_IC_RECORD_UPLOAD = 'ic_record_upload.ui'
 
 THEME = ['Fusion', 'Windows', 'Cleanlooks', 'gtk2', 'motif', 'plastic', 'cde', 'qt5-ct-style']
 WIN32_THEME = ['Fusion', 'Windows', 'WindowsXP', 'WindowsVista']

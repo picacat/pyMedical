@@ -10,6 +10,7 @@ from libs import number_utils
 from libs import date_utils
 from libs import cshis_utils
 from libs import nhi_utils
+from libs import case_utils
 import ins_prescript_record
 import self_prescript_record
 import medical_record_recently_history
@@ -427,7 +428,9 @@ class MedicalRecord(QtWidgets.QMainWindow):
                 (self.system_settings.field('使用讀卡機') == 'Y') and
                 (card not in nhi_utils.ABNORMAL_CARD) and
                 (card != '欠卡')):
+            self._write_ic_treatments(cshis_utils.NORMAL_CARD)
             self._write_prescript_signature()
+            self._update_prescript_sign_time()
 
         self.close_all()
         self.close_tab()
@@ -460,6 +463,12 @@ class MedicalRecord(QtWidgets.QMainWindow):
             if course >= 1:
                 self.tab_registration.ui.comboBox_course.setCurrentText(None)
 
+    # 寫入病名, 費用
+    def _write_ic_treatments(self, treat_after_check):
+        cshis_utils.write_ic_treatment(
+            self.database, self.system_settings, self.case_key, treat_after_check)
+
+    # 寫入醫令簽章
     def _write_prescript_signature(self):
         cshis_utils.write_prescript_signature(
             self.database, self.system_settings, self.case_key)
@@ -481,7 +490,8 @@ class MedicalRecord(QtWidgets.QMainWindow):
 
     def _set_doctor_done(self):
         self.database.exec_sql(
-            'UPDATE cases SET DoctorDone = "True" WHERE CaseKey = {0}'.format(self.case_key))
+            'UPDATE cases SET DoctorDone = "True", CompletionTime = "{0}" WHERE CaseKey = {1}'.format(
+                date_utils.now_to_str(), self.case_key))
 
     def _set_wait_done(self):
         self.database.exec_sql(
@@ -549,6 +559,7 @@ class MedicalRecord(QtWidgets.QMainWindow):
             'InsTotalFee', 'DiagShareFee', 'DrugShareFee', 'InsApplyFee', 'AgentFee',
         ]
 
+        self.calculate_ins_fees()
         data = [
             self.tab_medical_record_fees.ui.tableWidget_ins_fees.item(i, 0).text()
             for i in range(len(fields))
@@ -568,6 +579,24 @@ class MedicalRecord(QtWidgets.QMainWindow):
         data = [
             self.tab_medical_record_fees.ui.tableWidget_cash_fees.item(i, 0).text()
             for i in range(len(fields))
+        ]
+
+        self.database.update_record('cases', fields, 'CaseKey', self.case_key, data)
+
+    # 更新健保寫卡資料
+    def _update_prescript_sign_time(self):
+        sql = 'SELECT Security FROM cases WHERE CaseKey = {0}'.format(self.case_key)
+        row = self.database.select_record(sql)[0]
+
+        security = case_utils.write_security_xml(
+            string_utils.get_str(row['Security'], 'utf-8'), 'prescript_sign_time', date_utils.now_to_str())
+
+        fields = [
+            'Security',
+        ]
+
+        data = [
+            security,
         ]
 
         self.database.update_record('cases', fields, 'CaseKey', self.case_key, data)

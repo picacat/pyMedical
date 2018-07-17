@@ -112,6 +112,11 @@
           <string>欠卡金額</string>
          </property>
         </column>
+        <column>
+         <property name="text">
+          <string>已完診</string>
+         </property>
+        </column>
        </widget>
       </item>
      </layout>
@@ -133,6 +138,7 @@
     <bool>false</bool>
    </attribute>
    <addaction name="action_return_card"/>
+   <addaction name="action_open_medical_record"/>
    <addaction name="separator"/>
    <addaction name="action_close"/>
   </widget>
@@ -171,6 +177,15 @@
    </property>
    <property name="text">
     <string>關閉視窗</string>
+   </property>
+  </action>
+  <action name="action_open_medical_record">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/fileopen.svg</normaloff>../icons/fileopen.svg</iconset>
+   </property>
+   <property name="text">
+    <string>調閱病歷</string>
    </property>
   </action>
  </widget>
