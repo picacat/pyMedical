@@ -337,11 +337,11 @@ class Registration(QtWidgets.QMainWindow):
         ui_utils.set_combo_box(self.ui.comboBox_treat_type, nhi_utils.TREAT_TYPE)
         ui_utils.set_combo_box(self.ui.comboBox_injury_type, nhi_utils.INJURY_TYPE)
         ui_utils.set_combo_box(self.ui.comboBox_card, nhi_utils.CARD)
-        ui_utils.set_combo_box(self.ui.comboBox_course, nhi_utils.COURSE)
+        ui_utils.set_combo_box(self.ui.comboBox_course, nhi_utils.COURSE, None)
         ui_utils.set_combo_box(self.ui.comboBox_card_abnormal, nhi_utils.ABNORMAL_CARD_WITH_HINT, None)
         ui_utils.set_combo_box(self.ui.comboBox_period, nhi_utils.PERIOD)
         ui_utils.set_combo_box(self.ui.comboBox_room, nhi_utils.ROOM)
-        ui_utils.set_combo_box(self.ui.comboBox_gender, nhi_utils.GENDER)
+        ui_utils.set_combo_box(self.ui.comboBox_gender, nhi_utils.GENDER, None)
         ui_utils.set_combo_box(
             self.ui.comboBox_massager,
             personnel_utils.get_personnel(self.database, '推拿師父'), None)
@@ -965,11 +965,19 @@ class Registration(QtWidgets.QMainWindow):
         else:
             security = ic_card.treat_data_to_xml(ic_card.treat_data)
 
-        treat_after_check = '1'
+        upload_type = '1'  # 上傳格式
+        if card in nhi_utils.ABNORMAL_CARD or card_abnormal in nhi_utils.ABNORMAL_CARD:
+            upload_type = '2'
+
+        security = case_utils.update_xml_doc(
+            self.database, security, 'upload_type', upload_type)
+
+        treat_after_check = '1'  # 補卡註記
         if card == '欠卡':
             treat_after_check = '2'
 
-        security = case_utils.write_security_xml(security, 'treat_after_check', treat_after_check)
+        security = case_utils.update_xml_doc(
+            self.database, security, 'treat_after_check', treat_after_check)
 
         data = [
             string_utils.xstr(datetime.datetime.now()),

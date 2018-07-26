@@ -155,7 +155,49 @@ def extract_security_xml(xml_field, field):
 
 
 # 寫入病歷檔安全簽章XML
-def write_security_xml(xml_field, field_name, field_value):
+def update_xml_doc(database, xml_field, field_name, field_value):
+    sql = """ 
+        SELECT UPDATEXML('{0}', '{1}', '{2}')
+    """.format(
+        xml_field,
+        '//{0}'.format(field_name),
+        '<{0}>{1}</{0}>'.format(field_name, field_value)
+    )
+    row = database.select_record(sql, False)[0]
+
+    return row[0]
+
+
+# 寫入病歷檔安全簽章XML
+def update_xml(database, table_name, field_name, xml_field, field_value, primary_key, key_value):
+    sql = """ 
+        UPDATE {0} SET {1} = UPDATEXML({1}, '{2}', '{3}') WHERE {4} = {5}
+    """.format(
+        table_name,
+        field_name,
+        '//{0}'.format(xml_field),
+        '<{0}>{1}</{0}>'.format(xml_field, field_value),
+        primary_key,
+        key_value
+    )
+    database.exec_sql(sql)
+
+
+def extract_xml(database, case_key, xml_field):
+    sql = '''
+            SELECT ExtractValue(Security, "//{0}") AS XMLValue
+            FROM cases WHERE
+                CaseKey = {1}
+        '''.format(xml_field, case_key)
+    row = database.select_record(sql)[0]
+    xml_value =string_utils.get_str(row['XMLValue'], 'utf-8')  # 1-正常上傳 2-異常上傳 3-正常補正 4-異常補正
+
+    return xml_value
+
+
+'''
+# 寫入病歷檔安全簽章XML
+def update_xml_doc(xml_field, field_name, field_value):
     ic_card_xml = ''.join(string_utils.get_str(xml_field, 'utf-8'))
 
     root = ET.fromstring(ic_card_xml)[0]
@@ -164,3 +206,4 @@ def write_security_xml(xml_field, field_name, field_value):
     doc = create_security_xml(treat_data)
 
     return doc.toprettyxml(indent='\t')
+'''

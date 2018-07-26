@@ -56,9 +56,9 @@ class DialogInputUser(QtWidgets.QDialog):
 
     # 設定 comboBox
     def _set_combo_box(self):
-        ui_utils.set_combo_box(self.ui.comboBox_gender, nhi_utils.GENDER)
-        ui_utils.set_combo_box(self.ui.comboBox_position, nhi_utils.POSITION)
-        ui_utils.set_combo_box(self.ui.comboBox_fulltime, nhi_utils.FULLTIME)
+        ui_utils.set_combo_box(self.ui.comboBox_gender, nhi_utils.GENDER, None)
+        ui_utils.set_combo_box(self.ui.comboBox_position, nhi_utils.POSITION, None)
+        ui_utils.set_combo_box(self.ui.comboBox_fulltime, nhi_utils.FULLTIME, None)
 
     def _read_person(self):
         sql = 'SELECT * FROM person WHERE PersonKey = {0}'.format(self.person_key)

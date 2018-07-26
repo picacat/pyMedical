@@ -128,7 +128,6 @@ class ChargeSettingsNHI(QtWidgets.QMainWindow):
     def _read_nhi(self):
         sql = 'SELECT * FROM charge_settings WHERE ChargeType in {0} ORDER BY FIELD(ChargeType, {1}), InsCode'.\
             format(tuple(nhi_utils.CHARGE_TYPE), str(nhi_utils.CHARGE_TYPE)[1:-1])
-        print(sql)
         self.table_widget_nhi.set_db_data(sql, self._set_nhi_data)
         row_count = self.table_widget_nhi.row_count()
         if row_count <= 0:

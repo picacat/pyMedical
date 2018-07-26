@@ -55,7 +55,7 @@ class DialogReturnCard(QtWidgets.QDialog):
     # 設定comboBox
     def _set_combo_box(self):
         ui_utils.set_combo_box(self.ui.comboBox_return_period, nhi_utils.PERIOD)
-        ui_utils.set_combo_box(self.ui.comboBox_continuance, nhi_utils.COURSE)
+        ui_utils.set_combo_box(self.ui.comboBox_continuance, nhi_utils.COURSE, None)
         ui_utils.set_combo_box(self.ui.comboBox_case_share, nhi_utils.SHARE_TYPE)
         ui_utils.set_combo_box(self.ui.comboBox_card, nhi_utils.ABNORMAL_CARD_WITH_HINT, '自動產生')
 
@@ -142,9 +142,12 @@ class DialogReturnCard(QtWidgets.QDialog):
 
         security = ic_card.treat_data_to_xml(ic_card.treat_data)
         treat_after_check = '2'
-        security = case_utils.write_security_xml(security, 'treat_after_check', treat_after_check)
-        security = case_utils.write_security_xml(security, 'prescript_sign_time', date_utils.now_to_str())
-
+        security = case_utils.update_xml_doc(
+            self.database, security, 'treat_after_check', treat_after_check)
+        security = case_utils.update_xml_doc(
+            self.database, security, 'prescript_sign_time', date_utils.now_to_str())
+        security = case_utils.update_xml_doc(
+            self.database, security, 'upload_type', '1')
         data = [
             ic_card.treat_data['seq_number'],
             security,

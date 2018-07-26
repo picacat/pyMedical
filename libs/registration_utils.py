@@ -305,7 +305,6 @@ def check_course_complete_in_two_weeks(database, patient_key, card, course):
         (Continuance = 1)
         ORDER BY CaseDate DESC LIMIT 1
     '''.format(patient_key, start_date, end_date, card)
-    print(sql)
     rows = database.select_record(sql)
 
     if len(rows) <= 0:

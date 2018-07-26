@@ -15,6 +15,10 @@ from dict_medicine import *
 from medical_record_list import *
 from patient import *
 
+from ins_check import *
+from ins_apply import *
+from ins_judge import *
+
 from template import *
 
 module_dict = {
@@ -36,6 +40,10 @@ module_dict = {
 
     '病歷查詢': MedicalRecordList,
     '病患資料': Patient,
+
+    '申報預檢': InsCheck,
+    '健保申報': InsApply,
+    '健保抽審': InsJudge,
 }
 
 

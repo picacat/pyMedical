@@ -80,28 +80,31 @@ class PyMedical(QtWidgets.QMainWindow):
     def _set_signal(self):
         self.socket_server.update_signal.connect(self._refresh_waiting_data)
 
-        self.ui.pushButton_registration.clicked.connect(self.push_button_clicked)           # 掛號作業
-        self.ui.pushButton_cashier.clicked.connect(self.push_button_clicked)                # 批價作業
-        self.ui.pushButton_return_card.clicked.connect(self.push_button_clicked)            # 健保卡欠還卡
-        self.ui.pushButton_checkout.clicked.connect(self.push_button_clicked)               # 掛號櫃台結帳
-        self.ui.pushButton_patient_list.clicked.connect(self.push_button_clicked)           # 病患查詢
-        self.ui.pushButton_ic_record_upload.clicked.connect(self.push_button_clicked)       # 健保IC卡資料上傳
+        self.ui.pushButton_registration.clicked.connect(self._open_subroutine)           # 掛號作業
+        self.ui.pushButton_cashier.clicked.connect(self._open_subroutine)                # 批價作業
+        self.ui.pushButton_return_card.clicked.connect(self._open_subroutine)            # 健保卡欠還卡
+        self.ui.pushButton_checkout.clicked.connect(self._open_subroutine)               # 掛號櫃台結帳
+        self.ui.pushButton_patient_list.clicked.connect(self._open_subroutine)           # 病患查詢
+        self.ui.pushButton_ic_record_upload.clicked.connect(self._open_subroutine)       # 健保IC卡資料上傳
 
-        self.ui.pushButton_waiting_list.clicked.connect(self.push_button_clicked)           # 醫師看診作業
-        self.ui.pushButton_medical_record_list.clicked.connect(self.push_button_clicked)    # 病歷查詢
-        self.ui.pushButton_record_statistics.clicked.connect(self.push_button_clicked)      # 病歷統計
+        self.ui.pushButton_waiting_list.clicked.connect(self._open_subroutine)           # 醫師看診作業
+        self.ui.pushButton_medical_record_list.clicked.connect(self._open_subroutine)    # 病歷查詢
+        self.ui.pushButton_record_statistics.clicked.connect(self._open_subroutine)      # 病歷統計
 
         self.ui.pushButton_settings.clicked.connect(self.open_settings)                     # 系統設定
-        self.ui.pushButton_charge.clicked.connect(self.push_button_clicked)                 # 收費設定
-        self.ui.pushButton_users.clicked.connect(self.push_button_clicked)                  # 使用者管理
-        self.ui.pushButton_diagnostic.clicked.connect(self.push_button_clicked)             # 診察資料
-        self.ui.pushButton_medicine.clicked.connect(self.push_button_clicked)               # 處方資料
+        self.ui.pushButton_charge.clicked.connect(self._open_subroutine)                 # 收費設定
+        self.ui.pushButton_users.clicked.connect(self._open_subroutine)                  # 使用者管理
+        self.ui.pushButton_diagnostic.clicked.connect(self._open_subroutine)             # 診察資料
+        self.ui.pushButton_medicine.clicked.connect(self._open_subroutine)               # 處方資料
         self.ui.pushButton_ic_card.clicked.connect(self.open_ic_card)                       # 健保卡讀卡機
 
         self.ui.pushButton_logout.clicked.connect(self.logout)                              # 登出
         self.ui.pushButton_quit.clicked.connect(self.close)                                 # 離開系統
 
         self.ui.action_convert.triggered.connect(self.convert)                              # 轉檔作業
+        self.ui.action_ins_check.triggered.connect(self._open_subroutine)                   # 申報預檢
+        self.ui.action_ins_apply.triggered.connect(self._open_subroutine)                   # 申報預檢
+        self.ui.action_ins_judge.triggered.connect(self._open_subroutine)                   # 申報預檢
 
         self.ui.tabWidget_window.tabCloseRequested.connect(self.close_tab)                  # 關閉分頁
         self.ui.tabWidget_window.currentChanged.connect(self.tab_changed)                   # 切換分頁
@@ -142,7 +145,7 @@ class PyMedical(QtWidgets.QMainWindow):
             tab.read_return_card()
 
     # 按鍵驅動
-    def push_button_clicked(self):
+    def _open_subroutine(self):
         tab_name = self.sender().text()
         self._add_tab(tab_name, self.database, self.system_settings)
 
@@ -170,6 +173,8 @@ class PyMedical(QtWidgets.QMainWindow):
         elif widget_name == "病歷查詢":
             widget.open_dialog()
         elif widget_name == "病患查詢":
+            widget.open_dialog()
+        elif widget_name == "申報預檢":
             widget.open_dialog()
 
     # 關閉 tab
@@ -331,6 +336,16 @@ class PyMedical(QtWidgets.QMainWindow):
     # 健保卡讀卡機
     def open_ic_card(self):
         dialog = dialog_ic_card.DialogICCard(self.ui, self.database, self.system_settings)
+        if dialog.ic_card is None:
+            system_utils.show_message_box(
+                QMessageBox.Critical,
+                '無法驅動讀卡機',
+                '<font size="4" color="red"><b>無法載入健保讀卡機驅動程式, 無法執行健保卡掛號.</b></font>',
+                '請確定讀卡機驅動程式是否正確.'
+            )
+            dialog.deleteLater()
+            return
+
         dialog.exec_()
         dialog.deleteLater()
 

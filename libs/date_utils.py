@@ -1,4 +1,5 @@
 import datetime
+import calendar
 
 
 # 取得年齡
@@ -67,7 +68,7 @@ def nhi_date_to_west_date(nhi_date):
 
 # 健保民國日期時間轉為西元日期時間
 def nhi_datetime_to_west_datetime(nhi_datetime):
-    if nhi_datetime is None or nhi_datetime == '':
+    if nhi_datetime in [None, '']:
         return nhi_datetime
 
     year, month, day = int(nhi_datetime[:3]), int(nhi_datetime[3:5]), int(nhi_datetime[5:7])
@@ -85,6 +86,9 @@ def nhi_datetime_to_west_datetime(nhi_datetime):
 
 # 西元日期時間轉健保日期時間
 def west_datetime_to_nhi_datetime(in_datetime):
+    if in_datetime in [None, '']:
+        return in_datetime
+
     if type(in_datetime) is str:
         in_datetime = datetime.datetime.strptime(in_datetime, '%Y-%m-%d %H:%M:%S')
 
@@ -111,3 +115,24 @@ def west_date_to_nhi_date(in_date):
 # 取得現在時間
 def now_to_str():
     return datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+
+# 取得現在日期
+def date_to_str():
+    return datetime.datetime.now().strftime("%Y-%m-%d")
+
+
+def get_start_date_by_year_month(year, month):
+    start_date = '{0}-{1}-01 00:00:00'.format(
+        year, month
+    )
+
+    return start_date
+
+def get_end_date_by_year_month(year, month):
+    last_day = calendar.monthrange(year, month)[1]
+    end_date = '{0}-{1}-{2} 23:59:59'.format(
+        year, month, last_day
+    )
+
+    return end_date

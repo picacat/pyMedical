@@ -101,8 +101,8 @@ class Database:
         return assignment_list[:-1]
 
     # 讀取記錄
-    def select_record(self, sql):
-        cursor = self.cnx.cursor(dictionary=True)
+    def select_record(self, sql, dictionary=True):
+        cursor = self.cnx.cursor(dictionary=dictionary)
         cursor.execute(sql)
         rows = cursor.fetchall()
         cursor.close()

@@ -607,10 +607,20 @@
     </property>
     <addaction name="action_convert"/>
    </widget>
+   <widget class="QMenu" name="menu_5">
+    <property name="title">
+     <string>申報作業</string>
+    </property>
+    <addaction name="action_ins_check"/>
+    <addaction name="action_ins_apply"/>
+    <addaction name="separator"/>
+    <addaction name="action_ins_judge"/>
+   </widget>
    <addaction name="menu"/>
    <addaction name="menu_2"/>
    <addaction name="menu_3"/>
    <addaction name="menu_4"/>
+   <addaction name="menu_5"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="action_convert">
@@ -620,6 +630,45 @@
    </property>
    <property name="text">
     <string>轉檔</string>
+   </property>
+  </action>
+  <action name="action_ins_check">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/dialog-question.png</normaloff>../icons/dialog-question.png</iconset>
+   </property>
+   <property name="text">
+    <string>申報預檢</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+1</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::WindowShortcut</enum>
+   </property>
+  </action>
+  <action name="action_ins_apply">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/mail-send.svg</normaloff>../icons/mail-send.svg</iconset>
+   </property>
+   <property name="text">
+    <string>健保申報</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+2</string>
+   </property>
+  </action>
+  <action name="action_ins_judge">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/accessories-dictionary.png</normaloff>../icons/accessories-dictionary.png</iconset>
+   </property>
+   <property name="text">
+    <string>健保抽審</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+3</string>
    </property>
   </action>
  </widget>

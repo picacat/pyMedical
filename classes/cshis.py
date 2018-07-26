@@ -4,7 +4,6 @@ from PyQt5 import QtCore
 from PyQt5.QtWidgets import QMessageBox
 
 import ctypes
-from xml.dom.minidom import Document
 from threading import Thread
 from queue import Queue
 
@@ -582,3 +581,59 @@ class CSHIS:
         else:
             return True
 
+    '''
+        IC卡資料上傳
+        csUploadData(
+            char * pUploadFileName          [in] 要上傳的檔案名稱，名稱內具備完整的路徑
+            char * pFileSize                [in/out] 要上傳的檔案大小及DC回傳接收的檔案大小 (以Bytes為單位)
+            char * pNumber                  [in/out] 要上傳檔案的筆數及DC回傳接收的檔案筆數
+            char * pBuffer                  [out] 回傳內容及順序如下: 共50 Bytes
+                                                  安全模組代碼(1-12)
+                                                  醫事服務機構代碼(13-22)
+                                                  上傳日期時間(23-36)
+                                                  接收日期時間(37-50)
+            int * iBufferLen                [in/out] iBufferLen，為HIS準備之buffer，HIS呼叫此API時，
+                                                     傳入準備的buffer長度；CS亦利用此buffer傳出填入到
+                                                     buffer中的資料長度(buffer的尾端不必補\0)
+        );
+    '''
+    def upload_file_thread(self, out_queue, xml_file_name, file_size, record_count):
+        p_upload_file_name = ctypes.c_char_p(xml_file_name.encode('ascii'))
+        p_file_size = ctypes.c_char_p(file_size.encode('ascii'))
+        p_number = ctypes.c_char_p(record_count.encode('ascii'))
+        buffer = ctypes.create_string_buffer(50)  # c: char *
+        buffer_len = ctypes.c_int()  # c: int *
+        buffer_len.value = len(buffer)
+        self._open_com()
+        error_code = self.cshis.csUploadData(
+            p_upload_file_name,
+            p_file_size,
+            p_number,
+            buffer,
+            ctypes.byref(buffer_len))
+        self._close_com()
+
+        out_queue.put((error_code, buffer))
+
+    # IC卡資料上傳
+    def upload_file(self, xml_file_name, file_size, record_count):
+        title = '健保IC卡資料上傳'
+        message = '<font size="4" color="red"><b>健保IC卡資料上傳中, 請稍後...</b></font>'
+        hint = '正在與與健保IDC資訊中心連線, 會花費一些時間.'
+        msg_box = self._message_box(title, message, hint)
+        msg_box.show()
+        msg_queue = Queue()
+
+        QtCore.QCoreApplication.processEvents()
+        t = Thread(target=self.upload_file_thread, args=(
+            msg_queue, xml_file_name, str(file_size), str(record_count)))
+        t.start()
+        (error_code, buffer) = msg_queue.get()
+        msg_box.close()
+
+        if error_code != 0:
+            cshis_utils.show_ic_card_message(error_code, '健保卡資料上傳')
+            return False
+
+        self.xml_feedback_data = cshis_utils.decode_xml_data(buffer)
+        return True

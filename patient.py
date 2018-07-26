@@ -66,12 +66,12 @@ class Patient(QtWidgets.QMainWindow):
         self.ui.lineEdit_id.editingFinished.connect(self._validate_id)
 
     def _set_combobox(self):
-        ui_utils.set_combo_box(self.ui.comboBox_gender, nhi_utils.GENDER)
-        ui_utils.set_combo_box(self.ui.comboBox_nationality, nhi_utils.NATIONALITY)
+        ui_utils.set_combo_box(self.ui.comboBox_gender, nhi_utils.GENDER, None)
+        ui_utils.set_combo_box(self.ui.comboBox_nationality, nhi_utils.NATIONALITY, None)
         ui_utils.set_combo_box(self.ui.comboBox_ins_type, nhi_utils.INSURED_TYPE)
-        ui_utils.set_combo_box(self.ui.comboBox_marriage, nhi_utils.MARRIAGE)
-        ui_utils.set_combo_box(self.ui.comboBox_education, nhi_utils.EDUCATION)
-        ui_utils.set_combo_box(self.ui.comboBox_occupation, nhi_utils.OCCUPATION)
+        ui_utils.set_combo_box(self.ui.comboBox_marriage, nhi_utils.MARRIAGE, None)
+        ui_utils.set_combo_box(self.ui.comboBox_education, nhi_utils.EDUCATION, None)
+        ui_utils.set_combo_box(self.ui.comboBox_occupation, nhi_utils.OCCUPATION, None)
         ui_utils.set_combo_box(self.ui.comboBox_discount, '掛號優待', self.database)
 
     def _validate_birthday(self):

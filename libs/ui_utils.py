@@ -2,6 +2,7 @@ import os
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtWidgets import QMessageBox, QPushButton
 from PyQt5 import uic
+from libs import  nhi_utils
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname("__file__")))
 
@@ -26,6 +27,12 @@ UI_RETURN_CARD = "return_card.ui"
 UI_REGISTRATION = "registration.ui"
 UI_TEMPLATE = "template.ui"
 UI_WAITING_LIST = "waiting_list.ui"
+
+UI_INS_CHECK = "ins_check.ui"
+UI_CHECK_ERRORS = "check_errors.ui"
+UI_CHECK_COURSE = "check_course.ui"
+UI_INS_APPLY = "ins_apply.ui"
+UI_INS_JUDGE = "ins_judge.ui"
 
 UI_CHARGE_SETTINGS = "charge_settings.ui"
 UI_CHARGE_SETTINGS_NHI = "charge_settings_nhi.ui"
@@ -60,6 +67,8 @@ UI_DIALOG_DISTINGUISH = "dialog_distinguish.ui"
 UI_DIALOG_CURE = "dialog_cure.ui"
 UI_DIALOG_RETURN_CARD = "dialog_return_card.ui"
 UI_DIALOG_IC_RECORD_UPLOAD = "dialog_ic_record_upload.ui"
+
+UI_DIALOG_INS_CHECK = "dialog_ins_check.ui"
 
 UI_DICT_DIAGNOSTIC = "dict_diagnostic.ui"
 UI_DICT_SYMPTOM = "dict_symptom.ui"
@@ -98,20 +107,21 @@ def load_ui_file(ui_file, self):
         return None
 
 
-def _get_discount_type(database):
-    discount_type = [None]
+def get_discount_type(database):
+    discount_type = []
     sql = 'SELECT * from charge_settings where ChargeType = "掛號費優待"'
     rows = database.select_record(sql)
     for row in rows:
         discount_type.append(row['ItemName'])
 
-    return discount_type
+    return [None] + nhi_utils.DISCOUNT + discount_type
 
 
 # 設定 comboBox item
 def set_combo_box(combobox, items, *args):
+    combobox.setMaxVisibleItems(30)
     if items == '掛號優待':
-        items = _get_discount_type(args[0])
+        items = get_discount_type(args[0])
         args = []
 
     for arg in args:

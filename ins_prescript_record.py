@@ -55,18 +55,9 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
         self.combo_box_treatment.currentTextChanged.connect(self._combo_box_treat_changed)
 
     def _set_combo_box(self):
-        ui_utils.set_combo_box(
-            self.ui.comboBox_package,
-            nhi_utils.PACKAGE
-        )
-        ui_utils.set_combo_box(
-            self.ui.comboBox_pres_days,
-            nhi_utils.PRESDAYS
-        )
-        ui_utils.set_combo_box(
-            self.ui.comboBox_instruction,
-            nhi_utils.INSTRUCTION
-        )
+        ui_utils.set_combo_box(self.ui.comboBox_package, nhi_utils.PACKAGE, None)
+        ui_utils.set_combo_box(self.ui.comboBox_pres_days, nhi_utils.PRESDAYS, None)
+        ui_utils.set_combo_box(self.ui.comboBox_instruction, nhi_utils.INSTRUCTION, None)
 
     # 設定信號
     def _set_signal(self):
@@ -176,7 +167,6 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
             (MedicineName like "{0}%" OR InputCode LIKE "{0}%" OR MedicineCode = "{0}" OR InsCode = "{0}") 
             {1}
         '''.format(item.text(), medicine_type)
-        print(sql)
         rows = self.database.select_record(sql)
         if len(rows) <= 0:
             if self.table_widget_treat.field_value(0) is None:

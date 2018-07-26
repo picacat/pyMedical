@@ -11,6 +11,7 @@ from libs import nhi_utils
 from libs import personnel_utils
 from libs import case_utils
 from libs import system_utils
+from libs import cshis_utils
 
 
 # 病歷資料 2018.01.31
@@ -118,7 +119,7 @@ class MedicalRecordRegistration(QtWidgets.QMainWindow):
         ui_utils.set_combo_box(self.ui.comboBox_injury_type, nhi_utils.INJURY_TYPE, None)
         ui_utils.set_combo_box(self.ui.comboBox_xcard, nhi_utils.ABNORMAL_CARD_WITH_HINT, None)
         ui_utils.set_combo_box(self.ui.comboBox_card, nhi_utils.ABNORMAL_CARD_WITH_HINT, None, '欠卡')
-        ui_utils.set_combo_box(self.ui.comboBox_course, nhi_utils.COURSE)
+        ui_utils.set_combo_box(self.ui.comboBox_course, nhi_utils.COURSE, None)
 
     def _read_case_registration(self):
         sql = '''
@@ -162,22 +163,6 @@ class MedicalRecordRegistration(QtWidgets.QMainWindow):
         self.ui.comboBox_massager.setCurrentText(string_utils.xstr(row['Massager']))
 
     def _set_ic_card_data(self, row):
-        upload_type_dict = {
-            None: '',
-            '': '',
-            '0': '0 - 尚未上傳',
-            '1': '1 - 正常上傳',
-            '2': '2 - 異常上傳',
-            '3': '3 - 正常補正',
-            '4': '4 - 異常補正',
-        }
-
-        treat_after_check_dict = {
-            None: '',
-            '': '',
-            '1': '1 - 正常',
-            '2': '2 - 補卡',
-        }
         card_datetime = case_utils.extract_security_xml(row['Security'], '寫卡時間')
         seq_number = case_utils.extract_security_xml(row['Security'], '健保卡序')
         clinic_id = case_utils.extract_security_xml(row['Security'], '院所代號')
@@ -193,8 +178,8 @@ class MedicalRecordRegistration(QtWidgets.QMainWindow):
         self.ui.lineEdit_clinic_id.setText(clinic_id)
         self.ui.lineEdit_sam_id.setText(sam_id)
         self.ui.lineEdit_upload_time.setText(upload_time)
-        self.ui.lineEdit_upload_type.setText(upload_type_dict[upload_type])
-        self.ui.lineEdit_treat_after_check.setText(treat_after_check_dict[treat_after_check])
+        self.ui.lineEdit_upload_type.setText(cshis_utils.UPLOAD_TYPE_DICT[upload_type])
+        self.ui.lineEdit_treat_after_check.setText(cshis_utils.TREAT_AFTER_CHECK_DICT[treat_after_check])
         self.ui.lineEdit_prescript_sign_time.setText(prescript_sign_time)
         self.ui.textEdit_signature.setPlainText(signature)
 

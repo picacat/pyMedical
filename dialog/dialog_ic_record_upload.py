@@ -60,30 +60,41 @@ class DialogICRecordUpload(QtWidgets.QDialog):
     def get_sql(self):
         start_date = self.ui.dateEdit_start_date.date().toString('yyyy-MM-dd 00:00:00')
         end_date = self.ui.dateEdit_end_date.date().toString('yyyy-MM-dd 23:59:59')
-        uploaded = 'AND (Security LIKE "%<upload_time></upload_time>%")'
 
         script = '''
-            SELECT CaseKey, DATE_FORMAT(CaseDate, '%Y-%m-%d %H:%i') AS CaseDate, 
-            cases.PatientKey, cases.Name, Period, cases.InsType, 
-            Share, RegistNo, Card, Continuance, TreatType, 
-            PresDays1, PresDays2, DiseaseCode1, DiseaseName1,
-            Doctor, Massager, Room, RegistFee, SDiagShareFee, SDrugShareFee,
-            TotalFee, patient.Gender, patient.Birthday
+            SELECT 
+                *, DATE_FORMAT(CaseDate, "%Y-%m-%d %H:%i") AS CaseDate, 
+                cases.InsType as CaseInsType,
+                ExtractValue(Security, "//registered_date") AS RegisteredDate,
+                ExtractValue(Security, "//sam_id") AS SAMID,
+                ExtractValue(Security, "//clinic_id") AS ClinicID,
+                ExtractValue(Security, "//upload_type") AS UploadType,
+                ExtractValue(Security, "//treat_after_check") AS TreatAfterCheck,
+                ExtractValue(Security, "//security_signature") AS SecuritySignature,
+                patient.Gender, patient.Birthday
             FROM cases
-            LEFT JOIN patient ON patient.PatientKey = cases.PatientKey
+                LEFT JOIN patient ON patient.PatientKey = cases.PatientKey
             WHERE
-            (CaseDate BETWEEN "{0}" AND "{1}") {2}
-        '''.format(start_date, end_date, uploaded)
+                ((CaseDate BETWEEN "{0}" AND "{1}") OR 
+                 (ExtractValue(Security, "//registered_date") BETWEEN "{0}" AND "{1}")) AND
+                (cases.InsType = "健保") AND
+                (Card NOT IN ("欠卡") AND Card IS NOT NULL)
+        '''.format(start_date, end_date)
 
         period = self.ui.comboBox_period.currentText()
         if period != '全部':
-            script += " and Period = '{0}'".format(period)
+            script += " AND Period = '{0}'".format(period)
 
         doctor = self.ui.comboBox_doctor.currentText()
         if doctor != '全部':
-            script += " and Doctor = '{0}'".format(doctor)
+            script += " AND Doctor = '{0}'".format(doctor)
 
-        script = script + " order by CaseDate, cases.Room, RegistNo"
+        if self.ui.radioButton_normal.isChecked():
+            script += 'AND (ExtractValue(Security, "//upload_time") = "")'
+        else:
+            script += 'AND (ExtractValue(Security, "//upload_time") != "")'
+
+        script += ' ORDER BY CaseDate, cases.Room, RegistNo'
 
         return script
 

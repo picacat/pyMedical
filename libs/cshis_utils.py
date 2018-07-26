@@ -1,6 +1,7 @@
 # 2018.04.30
 from PyQt5.QtWidgets import QMessageBox, QPushButton
 import sys
+import os
 import ctypes
 from classes import cshis
 from libs import date_utils
@@ -10,6 +11,7 @@ from libs import nhi_utils
 from libs import string_utils
 from libs import case_utils
 from libs import prescript_utils
+from libs import system_utils
 
 NORMAL_CARD = '1'
 RETURN_CARD = '2'
@@ -167,6 +169,30 @@ TREAT_DATA = {
     'register_duplicated': None,
 }
 
+XML_FEEDBACK_DATA = {
+    'sam_id': None,
+    'clinic_id': None,
+    'upload_time': None,
+    'receive_time': None,
+}
+
+
+UPLOAD_TYPE_DICT = {
+    None: '',
+    '': '',
+    '0': '0 - 尚未上傳',
+    '1': '1 - 正常上傳',
+    '2': '2 - 異常上傳',
+    '3': '3 - 正常補正',
+    '4': '4 - 異常補正',
+}
+
+TREAT_AFTER_CHECK_DICT = {
+    None: '',
+    '': '',
+    '1': '1 - 正常',
+    '2': '2 - 補卡',
+}
 
 # 取得健保讀卡機函數
 def get_cshis():
@@ -254,6 +280,30 @@ def decode_treat_data(buffer):
     treat_data_info['register_duplicated'] = buffer[295:296].decode('ascii').strip()
 
     return treat_data_info
+
+
+def decode_xml_data(buffer):
+    xml_feedback_data_info = XML_FEEDBACK_DATA
+    xml_feedback_data_info['sam_id'] = buffer[:12].decode('ascii').strip()
+    xml_feedback_data_info['clinic_id'] = buffer[12:22].decode('ascii').strip()
+    xml_feedback_data_info['upload_time'] = '{0}-{1}-{2} {3}:{4}:{5}'.format(
+        buffer[22:26].decode('ascii').strip(),
+        buffer[26:28].decode('ascii').strip(),
+        buffer[28:30].decode('ascii').strip(),
+        buffer[30:32].decode('ascii').strip(),
+        buffer[32:34].decode('ascii').strip(),
+        buffer[34:36].decode('ascii').strip(),
+    )
+    xml_feedback_data_info['receive_time'] = '{0}-{1}-{2} {3}:{4}:{5}'.format(
+        buffer[36:40].decode('ascii').strip(),
+        buffer[40:42].decode('ascii').strip(),
+        buffer[42:44].decode('ascii').strip(),
+        buffer[44:46].decode('ascii').strip(),
+        buffer[46:48].decode('ascii').strip(),
+        buffer[48:50].decode('ascii').strip(),
+    )
+
+    return xml_feedback_data_info
 
 
 # 顯示讀卡機錯誤
@@ -450,7 +500,6 @@ def write_treat_signature(database, system_settings, case_row, dosage_row, patie
         '{0:0>7}'.format(total_dosage),                 # 總量 7 bytes: 00000.0
         '03',                                           # 交付處方註記 2 bytes: 01-自行調劑 02-交付調劑 03-自行執行
     )
-    print(data_write)
 
     ic_card = cshis.CSHIS(system_settings)
     treat_sign = ic_card.write_prescript_sign(
@@ -557,3 +606,22 @@ def write_prescript_signature(database, system_settings, case_key):
 
     if len(prescript_rows) > 0:
         write_medicine_signature(database, system_settings, case_row, patient_row, prescript_rows, dosage_row)
+
+
+# 健保IC卡資料上傳
+def upload_data(system_settings, xml_file_name, record_count):
+    ic_card = cshis.CSHIS(system_settings)
+    if ic_card.cshis is None:
+        system_utils.show_message_box(
+            QMessageBox.Critical,
+            '無法驅動讀卡機',
+            '<font size="4" color="red"><b>無法載入健保讀卡機驅動程式, 無法執行健保卡掛號.</b></font>',
+            '請確定讀卡機驅動程式是否正確.'
+        )
+        return
+
+    file_size = os.path.getsize(xml_file_name)
+    if not ic_card.upload_file(xml_file_name, file_size, record_count):
+        return None
+    else:
+        return ic_card

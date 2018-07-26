@@ -585,21 +585,10 @@ class MedicalRecord(QtWidgets.QMainWindow):
 
     # 更新健保寫卡資料
     def _update_prescript_sign_time(self):
-        sql = 'SELECT Security FROM cases WHERE CaseKey = {0}'.format(self.case_key)
-        row = self.database.select_record(sql)[0]
-
-        security = case_utils.write_security_xml(
-            string_utils.get_str(row['Security'], 'utf-8'), 'prescript_sign_time', date_utils.now_to_str())
-
-        fields = [
-            'Security',
-        ]
-
-        data = [
-            security,
-        ]
-
-        self.database.update_record('cases', fields, 'CaseKey', self.case_key, data)
+        case_utils.update_xml(
+            self.database, 'cases', 'Security', 'prescript_sign_time',
+            date_utils.now_to_str(), 'CaseKey', self.case_key
+        )
 
     def save_prescript(self):
         for medicine_set, tab_prescript in zip(range(1, self.max_tab+1), self.tab_list):
