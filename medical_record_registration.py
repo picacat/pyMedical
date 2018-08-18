@@ -217,19 +217,12 @@ class MedicalRecordRegistration(QtWidgets.QMainWindow):
 
     def _set_treat_sign_data(self, rec_no, rec):
         sql = '''
-            SELECT * FROM dosage WHERE
-            CaseKey = {0}
-        '''.format(self.case_key)
-        rows = self.database.select_record(sql)
-        dosage_row = rows[0] if len(rows) > 0 else None
-
-        sql = '''
             SELECT Treatment FROM cases WHERE
             CaseKey = {0}
         '''.format(self.case_key)
         row = self.database.select_record(sql)[0]
         treatment = string_utils.xstr(row['Treatment'])
-        ins_code = nhi_utils.get_treat_code(treatment, dosage_row)
+        ins_code = nhi_utils.get_treat_code(self.database, self.case_key)
         prescript_sign_rec = [
             treatment,
             ins_code,

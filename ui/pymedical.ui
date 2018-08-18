@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>1212</width>
-    <height>927</height>
+    <height>941</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -18,21 +18,6 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QHBoxLayout" name="horizontalLayout">
-    <property name="spacing">
-     <number>0</number>
-    </property>
-    <property name="leftMargin">
-     <number>0</number>
-    </property>
-    <property name="topMargin">
-     <number>0</number>
-    </property>
-    <property name="rightMargin">
-     <number>0</number>
-    </property>
-    <property name="bottomMargin">
-     <number>0</number>
-    </property>
     <item>
      <widget class="QFrame" name="frameSidebar">
       <property name="maximumSize">
@@ -45,7 +30,7 @@
        <string notr="true"/>
       </property>
       <property name="frameShape">
-       <enum>QFrame::StyledPanel</enum>
+       <enum>QFrame::NoFrame</enum>
       </property>
       <property name="frameShadow">
        <enum>QFrame::Raised</enum>
@@ -561,19 +546,32 @@
      </widget>
     </item>
     <item>
-     <widget class="QTabWidget" name="tabWidget_window">
-      <property name="currentIndex">
+     <layout class="QVBoxLayout" name="verticalLayout_9">
+      <property name="leftMargin">
        <number>0</number>
       </property>
-      <property name="movable">
-       <bool>true</bool>
+      <property name="topMargin">
+       <number>6</number>
       </property>
-      <widget class="QWidget" name="tab">
-       <attribute name="title">
-        <string>首頁</string>
-       </attribute>
-      </widget>
-     </widget>
+      <property name="rightMargin">
+       <number>6</number>
+      </property>
+      <item>
+       <widget class="QTabWidget" name="tabWidget_window">
+        <property name="currentIndex">
+         <number>0</number>
+        </property>
+        <property name="movable">
+         <bool>true</bool>
+        </property>
+        <widget class="QWidget" name="tab">
+         <attribute name="title">
+          <string>首頁</string>
+         </attribute>
+        </widget>
+       </widget>
+      </item>
+     </layout>
     </item>
    </layout>
   </widget>
@@ -590,16 +588,22 @@
     <property name="title">
      <string>掛號作業</string>
     </property>
+    <addaction name="action_registration"/>
+    <addaction name="action_cashier"/>
+    <addaction name="action_return_card"/>
+    <addaction name="action_checkout"/>
+    <addaction name="separator"/>
+    <addaction name="action_patient_list"/>
+    <addaction name="separator"/>
+    <addaction name="action_ins_record_upload"/>
    </widget>
    <widget class="QMenu" name="menu_2">
     <property name="title">
      <string>診療作業</string>
     </property>
-   </widget>
-   <widget class="QMenu" name="menu_3">
-    <property name="title">
-     <string>批價作業</string>
-    </property>
+    <addaction name="action_waiting_list"/>
+    <addaction name="action_medical_record_list"/>
+    <addaction name="action_medical_record_statistics"/>
    </widget>
    <widget class="QMenu" name="menu_4">
     <property name="title">
@@ -616,11 +620,29 @@
     <addaction name="separator"/>
     <addaction name="action_ins_judge"/>
    </widget>
+   <widget class="QMenu" name="menu_3">
+    <property name="title">
+     <string>設定</string>
+    </property>
+    <addaction name="action_settings"/>
+    <addaction name="action_charge"/>
+    <addaction name="action_doctor_nurse_table"/>
+    <addaction name="separator"/>
+    <addaction name="action_users"/>
+    <addaction name="separator"/>
+    <addaction name="action_diagnostic"/>
+    <addaction name="action_medicine"/>
+    <addaction name="separator"/>
+    <addaction name="action_ic_card"/>
+    <addaction name="separator"/>
+    <addaction name="action_show_side_bar"/>
+    <addaction name="separator"/>
+   </widget>
    <addaction name="menu"/>
    <addaction name="menu_2"/>
+   <addaction name="menu_5"/>
    <addaction name="menu_3"/>
    <addaction name="menu_4"/>
-   <addaction name="menu_5"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="action_convert">
@@ -669,6 +691,168 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+3</string>
+   </property>
+  </action>
+  <action name="action_registration">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/add-files-to-archive.svg</normaloff>../icons/add-files-to-archive.svg</iconset>
+   </property>
+   <property name="text">
+    <string>門診掛號</string>
+   </property>
+  </action>
+  <action name="action_return_card">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/contact-new.svg</normaloff>../icons/contact-new.svg</iconset>
+   </property>
+   <property name="text">
+    <string>健保卡欠還卡</string>
+   </property>
+  </action>
+  <action name="action_checkout">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/accessories-calculator.png</normaloff>../icons/accessories-calculator.png</iconset>
+   </property>
+   <property name="text">
+    <string>掛號櫃台結帳</string>
+   </property>
+  </action>
+  <action name="action_patient_list">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/emblem-documents.png</normaloff>../icons/emblem-documents.png</iconset>
+   </property>
+   <property name="text">
+    <string>病患查詢</string>
+   </property>
+  </action>
+  <action name="action_ins_record_upload">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/mail-send.png</normaloff>../icons/mail-send.png</iconset>
+   </property>
+   <property name="text">
+    <string>健保IC卡資料上傳</string>
+   </property>
+  </action>
+  <action name="action_cashier">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/software-update-urgent.png</normaloff>../icons/software-update-urgent.png</iconset>
+   </property>
+   <property name="text">
+    <string>批價作業</string>
+   </property>
+  </action>
+  <action name="action_settings">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/preferences-system.png</normaloff>../icons/preferences-system.png</iconset>
+   </property>
+   <property name="text">
+    <string>系統設定</string>
+   </property>
+  </action>
+  <action name="action_charge">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/edit-select-all.svg</normaloff>../icons/edit-select-all.svg</iconset>
+   </property>
+   <property name="text">
+    <string>收費設定</string>
+   </property>
+  </action>
+  <action name="action_users">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/system-users.png</normaloff>../icons/system-users.png</iconset>
+   </property>
+   <property name="text">
+    <string>使用者管理</string>
+   </property>
+  </action>
+  <action name="action_diagnostic">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/user-info.png</normaloff>../icons/user-info.png</iconset>
+   </property>
+   <property name="text">
+    <string>診察資料</string>
+   </property>
+  </action>
+  <action name="action_medicine">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/accessories-dictionary.png</normaloff>../icons/accessories-dictionary.png</iconset>
+   </property>
+   <property name="text">
+    <string>處方資料</string>
+   </property>
+  </action>
+  <action name="action_ic_card">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/ic_card.jpg</normaloff>../icons/ic_card.jpg</iconset>
+   </property>
+   <property name="text">
+    <string>健保卡讀卡機</string>
+   </property>
+  </action>
+  <action name="action_waiting_list">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/accessories-text-editor.png</normaloff>../icons/accessories-text-editor.png</iconset>
+   </property>
+   <property name="text">
+    <string>醫師看診作業</string>
+   </property>
+  </action>
+  <action name="action_medical_record_list">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/folder-saved-search.png</normaloff>../icons/folder-saved-search.png</iconset>
+   </property>
+   <property name="text">
+    <string>病歷查詢</string>
+   </property>
+  </action>
+  <action name="action_medical_record_statistics">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/x-office-calendar.png</normaloff>../icons/x-office-calendar.png</iconset>
+   </property>
+   <property name="text">
+    <string>病歷統計</string>
+   </property>
+  </action>
+  <action name="action_show_side_bar">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/preferences-desktop-accessibility.png</normaloff>../icons/preferences-desktop-accessibility.png</iconset>
+   </property>
+   <property name="text">
+    <string>顯示/關閉側邊欄</string>
+   </property>
+   <property name="shortcut">
+    <string>F4</string>
+   </property>
+  </action>
+  <action name="action_doctor_nurse_table">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/system-users.png</normaloff>../icons/system-users.png</iconset>
+   </property>
+   <property name="text">
+    <string>護士跟診表</string>
    </property>
   </action>
  </widget>

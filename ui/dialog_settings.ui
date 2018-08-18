@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>935</width>
-    <height>968</height>
+    <height>963</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -1832,6 +1832,25 @@
                </widget>
               </item>
              </layout>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="QGroupBox" name="groupBox_32">
+           <property name="title">
+            <string>其他設定</string>
+           </property>
+           <property name="flat">
+            <bool>true</bool>
+           </property>
+           <layout class="QGridLayout" name="gridLayout_17">
+            <item row="0" column="0">
+             <widget class="QCheckBox" name="checkBox_side_bar">
+              <property name="text">
+               <string>顯示功能表側邊欄</string>
+              </property>
+             </widget>
             </item>
            </layout>
           </widget>

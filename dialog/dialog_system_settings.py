@@ -212,6 +212,7 @@ class DialogSettings(QtWidgets.QDialog):
         self.ui.spinBox_station_no.setValue(number_utils.get_integer(self.system_settings.field('工作站編號')))
         self.ui.lineEdit_position.setText(self.system_settings.field('工作站位置'))
         self.ui.comboBox_theme.setCurrentText(self.system_settings.field('外觀主題'))
+        self._set_check_box(self.ui.checkBox_side_bar, '顯示側邊欄')
 
     ####################################################################################################################
     # 設定檔存檔
@@ -346,6 +347,7 @@ class DialogSettings(QtWidgets.QDialog):
         self.system_settings.post('工作站編號', str(self.ui.spinBox_station_no.value()))
         self.system_settings.post('工作站位置', self.ui.lineEdit_position.text())
         self.system_settings.post('外觀主題', self.ui.comboBox_theme.currentText())
+        self._save_check_box(self.ui.checkBox_side_bar, '顯示側邊欄')
 
     ####################################################################################################################
     # 讀取 check_box 的資料

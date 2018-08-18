@@ -9,6 +9,7 @@ from medical_record import *
 
 from charge_settings import *
 from users import *
+from dialog.doctor_nurse_table import *
 from dict_diagnostic import *
 from dict_medicine import *
 
@@ -34,6 +35,7 @@ module_dict = {
     '病歷統計': Template,
 
     '收費設定': ChargeSettings,
+    '護士跟診表': DoctorNurseTable,
     '使用者管理': Users,
     '診察資料': DictDiagnostic,
     '處方資料': DictMedicine,

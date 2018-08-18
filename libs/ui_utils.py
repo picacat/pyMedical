@@ -1,8 +1,11 @@
 import os
-from PyQt5 import QtWidgets, QtCore
+from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtWidgets import QMessageBox, QPushButton
 from PyQt5 import uic
 from libs import  nhi_utils
+
+ICON_NO = QtGui.QIcon('./icons/gtk-no.svg')
+ICON_OK = QtGui.QIcon('./icons/gtk-ok.svg')
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname("__file__")))
 
@@ -29,10 +32,19 @@ UI_TEMPLATE = "template.ui"
 UI_WAITING_LIST = "waiting_list.ui"
 
 UI_INS_CHECK = "ins_check.ui"
+UI_INS_APPLY = "ins_apply.ui"
+UI_INS_APPLY_LIST = "ins_apply_list.ui"
+UI_INS_APPLY_TAB = "ins_apply_tab.ui"
+UI_INS_JUDGE = "ins_judge.ui"
+
+UI_DOCTOR_NURSE_TABLE = "doctor_nurse_table.ui"
+
 UI_CHECK_ERRORS = "check_errors.ui"
 UI_CHECK_COURSE = "check_course.ui"
-UI_INS_APPLY = "ins_apply.ui"
-UI_INS_JUDGE = "ins_judge.ui"
+UI_CHECK_MEDICAL_RECORD_COUNT = "check_medical_record_count.ui"
+UI_CHECK_PRESCRIPT_DAYS = "check_prescript_days.ui"
+UI_CHECK_INS_DRUG = "check_ins_drug.ui"
+UI_CHECK_INS_TREAT = "check_ins_treat.ui"
 
 UI_CHARGE_SETTINGS = "charge_settings.ui"
 UI_CHARGE_SETTINGS_NHI = "charge_settings_nhi.ui"
@@ -69,6 +81,8 @@ UI_DIALOG_RETURN_CARD = "dialog_return_card.ui"
 UI_DIALOG_IC_RECORD_UPLOAD = "dialog_ic_record_upload.ui"
 
 UI_DIALOG_INS_CHECK = "dialog_ins_check.ui"
+UI_DIALOG_INS_APPLY = "dialog_ins_apply.ui"
+UI_DIALOG_NURSE_SCHEDULE = "dialog_nurse_schedule.ui"
 
 UI_DICT_DIAGNOSTIC = "dict_diagnostic.ui"
 UI_DICT_SYMPTOM = "dict_symptom.ui"

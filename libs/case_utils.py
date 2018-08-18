@@ -1,6 +1,7 @@
 import xml.etree.ElementTree as ET
 from xml.dom.minidom import Document
 from libs import string_utils
+from libs import number_utils
 
 
 def get_security_xml_dict(root):
@@ -207,3 +208,19 @@ def update_xml_doc(xml_field, field_name, field_value):
 
     return doc.toprettyxml(indent='\t')
 '''
+
+
+def get_pres_days(database, case_key):
+    sql = '''
+        SELECT * FROM dosage WHERE 
+            MedicineSet = 1 AND
+            CaseKey = {0}
+    '''.format(case_key)
+    rows = database.select_record(sql)
+
+    if len(rows) > 0:
+        pres_days = number_utils.get_integer(rows[0]['Days'])
+    else:
+        pres_days = 0
+
+    return pres_days

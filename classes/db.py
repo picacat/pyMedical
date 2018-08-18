@@ -53,7 +53,9 @@ class Database:
                     user=config['db']['user'],
                     host=config['db']['host'],
                     password=config['db']['password'],
-                    buffered=True)
+                    buffered=True,
+                    use_pure=True
+                )
                 cursor = self.cnx.cursor(dictionary=True)
                 cursor.execute('CREATE DATABASE IF NOT EXISTS {0}'.format(config['db']['database']))
                 cursor.execute('USE {0}'.format(config['db']['database']))
@@ -65,7 +67,9 @@ class Database:
                     user=kwargs['user'],
                     password=kwargs['password'],
                     database=kwargs['database'],
-                    buffered=True)
+                    buffered=True,
+                    use_pure=True
+                )
         except mysql.errors.ProgrammingError:
             if kwargs == {}:
                 msg_box = QMessageBox()

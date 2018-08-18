@@ -110,7 +110,7 @@ def check_record_duplicated(database, patient_key, case_date):
 # 取得當月健保針傷門診就診次數
 def get_treat_times(database, patient_key):
     start_date = datetime.datetime.now().strftime("%Y-%m-01 00:00:00")
-    end_date = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d 23:49:59")
+    end_date = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d 23:59:59")
 
     sql = '''
         SELECT CaseKey from cases WHERE
@@ -140,7 +140,7 @@ def check_treat_times(database, system_settings, patient_key):
 # 取得當月健保有診察費就診次數
 def get_diag_fee_times(database, patient_key):
     start_date = datetime.datetime.now().strftime("%Y-%m-01 00:00:00")
-    end_date = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d 23:49:59")
+    end_date = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d 23:59:59")
 
     sql = '''
         SELECT CaseKey from cases WHERE
@@ -171,7 +171,7 @@ def check_diag_fee_times(database, system_settings, patient_key):
 def check_deposit(database, patient_key):
     message = None
     start_date = datetime.datetime.now().strftime("%Y-%m-01 00:00:00")
-    end_date = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d 23:49:59")
+    end_date = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d 23:59:59")
     sql = '''
         SELECT CaseDate FROM cases WHERE
         (PatientKey = {0}) AND
@@ -213,7 +213,7 @@ def check_card_yesterday(database, patient_key, course=None):
         return message
 
     start_date = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d 00:00:00")
-    end_date = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d 23:49:59")
+    end_date = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d 23:59:59")
     sql = '''
         SELECT CaseKey FROM cases WHERE
         (PatientKey = {0}) AND
@@ -232,7 +232,7 @@ def check_card_yesterday(database, patient_key, course=None):
 # 檢查上次給藥是否用完
 def check_prescription_finished(database, patient_key):
     message = None
-    end_date = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d 23:49:59")
+    end_date = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d 23:59:59")
     sql = '''
         SELECT cases.CaseDate, dosage.Days FROM cases
         LEFT JOIN dosage on dosage.CaseKey = cases.CaseKey
@@ -266,7 +266,7 @@ def check_course_complete(database, patient_key, course):
         return message
 
     start_date = (datetime.datetime.now() - datetime.timedelta(days=30)).strftime("%Y-%m-%d 00:00:00")
-    end_date = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d 23:49:59")
+    end_date = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d 23:59:59")
     sql = '''
         SELECT CaseDate, Continuance FROM cases WHERE
         (PatientKey = {0}) AND
@@ -295,7 +295,7 @@ def check_course_complete_in_two_weeks(database, patient_key, card, course):
         return message
 
     start_date = (datetime.datetime.now() - datetime.timedelta(days=14)).strftime("%Y-%m-%d 00:00:00")
-    end_date = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d 23:49:59")
+    end_date = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d 23:59:59")
     sql = '''
         SELECT Continuance FROM cases WHERE
         (PatientKey = {0}) AND

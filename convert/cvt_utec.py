@@ -27,6 +27,8 @@ class CvtUtec():
             self.cvt_groups()
         if self.parent.ui.checkBox_dosage.isChecked():
             self.cvt_dosage()
+        if self.parent.ui.checkBox_medical_record.isChecked():
+            self.cvt_medical_record()
 
     # 類別詞庫轉檔
     def cvt_groups(self):
@@ -1651,3 +1653,47 @@ class CvtUtec():
                         row['Instruction{0}'.format(i)]
                     ]
                     self.database.insert_record('dosage', fields, data)
+
+    def cvt_medical_record(self):
+        self.progress_bar.setMaximum(10)
+        self.progress_bar.setValue(0)
+
+        sql = 'UPDATE cases SET PharmacyType = "不申報" WHERE ApplyType = "調劑不報"'
+        self.database.exec_sql(sql)
+        self.progress_bar.setValue(self.progress_bar.value() + 1)
+
+        sql = 'UPDATE cases SET PharmacyType = "申報" WHERE PharmacyType IS NULL'
+        self.database.exec_sql(sql)
+        self.progress_bar.setValue(self.progress_bar.value() + 1)
+
+        sql = 'UPDATE cases SET ApplyType = "申報" WHERE ApplyType != "不申報"'
+        self.database.exec_sql(sql)
+        self.progress_bar.setValue(self.progress_bar.value() + 1)
+
+        sql = 'UPDATE cases SET TreatType = "內科" WHERE TreatType = "一般"'
+        self.database.exec_sql(sql)
+        self.progress_bar.setValue(self.progress_bar.value() + 1)
+
+        sql = 'UPDATE cases SET TreatType = "針灸治療" WHERE TreatType = "針灸給藥"'
+        self.database.exec_sql(sql)
+        self.progress_bar.setValue(self.progress_bar.value() + 1)
+
+        sql = 'UPDATE cases SET TreatType = "電針治療" WHERE TreatType = "電針給藥"'
+        self.database.exec_sql(sql)
+        self.progress_bar.setValue(self.progress_bar.value() + 1)
+
+        sql = 'UPDATE cases SET TreatType = "複雜性針灸" WHERE TreatType = "複針給藥"'
+        self.database.exec_sql(sql)
+        self.progress_bar.setValue(self.progress_bar.value() + 1)
+
+        sql = 'UPDATE cases SET TreatType = "傷科治療" WHERE TreatType = "傷科給藥"'
+        self.database.exec_sql(sql)
+        self.progress_bar.setValue(self.progress_bar.value() + 1)
+
+        sql = 'UPDATE cases SET TreatType = "複雜性傷科" WHERE TreatType = "複傷給藥"'
+        self.database.exec_sql(sql)
+        self.progress_bar.setValue(self.progress_bar.value() + 1)
+
+        sql = 'UPDATE cases SET TreatType = "脫臼整復" WHERE TreatType = "脫臼給藥"'
+        self.database.exec_sql(sql)
+        self.progress_bar.setValue(self.progress_bar.value() + 1)

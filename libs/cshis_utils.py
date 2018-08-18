@@ -486,7 +486,9 @@ def write_treat_signature(database, system_settings, case_row, dosage_row, patie
     patient_birthday = string_utils.xstr(patient_row['Birthday'])
     birthday_nhi_datetime = date_utils.west_date_to_nhi_date(patient_birthday)
 
-    treat_code = nhi_utils.get_treat_code(string_utils.xstr(case_row['Treatment']), dosage_row)
+    treat_code = nhi_utils.get_treat_code(
+        database, case_row['CaseKey']
+    )
     usage = ''  # 處置免填
     days = 0
     total_dosage = 1

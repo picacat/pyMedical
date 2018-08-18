@@ -1,5 +1,6 @@
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtCore import Qt
+from libs import string_utils
 
 
 # tableWidget 設定 2018.03.29
@@ -83,3 +84,28 @@ class TableWidget:
         )
         self.table_widget.item(row_index, column_index).setTextAlignment(
             QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+
+    def set_row_color(self, row_index, color):
+        for column in range(self.table_widget.columnCount()):
+            self.table_widget.item(
+                row_index, column).setForeground(color)
+
+    def find_error(self, field_no):
+        self.table_widget.setFocus(True)
+        for row_no in range(self.table_widget.currentRow()+1,
+                            self.table_widget.rowCount()):
+            self.table_widget.setCurrentCell(row_no, field_no)
+            error_message = string_utils.xstr(
+                self.table_widget.item(row_no, field_no).text()
+            )
+            if error_message != '':
+                break
+
+        if (self.table_widget.currentRow() ==
+                self.table_widget.rowCount() - 1):
+            self.table_widget.setCurrentCell(0, field_no)
+            error_message = string_utils.xstr(
+                self.table_widget.item(0, field_no).text()
+            )
+            if error_message == '':
+                self.find_error(field_no)

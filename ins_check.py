@@ -5,15 +5,17 @@ import sys
 
 from PyQt5 import QtWidgets, QtGui, QtCore
 import datetime
+from classes import table_widget
+
 from libs import ui_utils
 from dialog import dialog_ins_check
-from libs import date_utils
-from libs import string_utils
-from libs import nhi_utils
-from classes import table_widget
 
 import check_errors
 import check_course
+import check_medical_record_count
+import check_prescript_days
+import check_ins_drug
+import check_ins_treat
 
 # 候診名單 2018.01.31
 class InsCheck(QtWidgets.QMainWindow):
@@ -27,6 +29,7 @@ class InsCheck(QtWidgets.QMainWindow):
         self.apply_year = None
         self.apply_month = None
         self.apply_type = None
+
         self._set_ui()
         self._set_signal()
 
@@ -52,7 +55,6 @@ class InsCheck(QtWidgets.QMainWindow):
 
     # 設定信號
     def _set_signal(self):
-        self.ui.action_medical_record.triggered.connect(self.open_medical_record)
         self.ui.action_recheck.triggered.connect(self.open_dialog)
         self.ui.action_close.triggered.connect(self.close_app)
 
@@ -77,23 +79,104 @@ class InsCheck(QtWidgets.QMainWindow):
             else:
                 self.apply_type = '補報'
 
-            self._check_everything()
+            self.duplicated_days = dialog.ui.spinBox_duplicated_days.value()
+            self.treat_limit = dialog.ui.spinBox_treat_limit.value()
+            self.diag_limit = dialog.ui.spinBox_diag_limit.value()
+
+            self._check_ins_data()
 
         dialog.close_all()
         dialog.deleteLater()
 
-    def _check_everything(self):
+    def _check_ins_data(self):
+        self._create_tabs()
+        self._read_ins_data()
+        self._start_check()
+
+    def _create_tabs(self):
         self.ui.tabWidget_ins_data.clear()
 
-        tab_check_errors = check_errors.CheckErrors(
+        self.tab_check_errors = check_errors.CheckErrors(
             self, self.database, self.system_settings,
             self.apply_year, self.apply_month, self.apply_type
         )
-        tab_check_course = check_course.CheckCourse(
+        self.tab_check_course = check_course.CheckCourse(
             self, self.database, self.system_settings,
             self.apply_year, self.apply_month, self.apply_type
         )
-        self.ui.tabWidget_ins_data.addTab(tab_check_errors, '錯誤檢查')
-        tab_check_errors.start_check()
-        self.ui.tabWidget_ins_data.addTab(tab_check_course, '療程檢查')
-        tab_check_course.start_check()
+        self.tab_check_medical_record_count = check_medical_record_count.CheckMedicalRecordCount(
+            self, self.database, self.system_settings,
+            self.apply_year, self.apply_month, self.apply_type, self.treat_limit, self.diag_limit,
+        )
+        self.tab_check_prescript_days = check_prescript_days.CheckPrescriptDays(
+            self, self.database, self.system_settings,
+            self.apply_year, self.apply_month, self.apply_type, self.duplicated_days,
+        )
+        self.tab_check_ins_drug = check_ins_drug.CheckInsDrug(
+            self, self.database, self.system_settings,
+            self.apply_year, self.apply_month, self.apply_type,
+        )
+        self.tab_check_ins_treat = check_ins_treat.CheckInsTreat(
+            self, self.database, self.system_settings,
+            self.apply_year, self.apply_month, self.apply_type,
+        )
+
+    def _read_ins_data(self):
+        self.ui.progressBar.setValue(0)
+        progress_maximum = 0
+
+        self.tab_check_errors.read_data()
+        progress_maximum += self.tab_check_errors.row_count()
+
+        self.tab_check_course.read_data()
+        progress_maximum += self.tab_check_errors.row_count()
+
+        self.tab_check_prescript_days.read_data()
+        progress_maximum += self.tab_check_errors.row_count()
+
+        self.tab_check_ins_drug.read_data()
+        progress_maximum += self.tab_check_errors.row_count()
+
+        self.tab_check_ins_treat.read_data()
+        progress_maximum += self.tab_check_ins_treat.row_count()
+
+        if progress_maximum > 0:
+            self.ui.progressBar.setMaximum(progress_maximum)
+
+    def _start_check(self):
+        self.tab_check_errors.start_check()
+        self.tab_check_course.start_check()
+        self.tab_check_medical_record_count.start_check()
+        self.tab_check_prescript_days.start_check()
+        self.tab_check_ins_drug.start_check()
+        self.tab_check_ins_treat.start_check()
+
+        self.ui.tabWidget_ins_data.addTab(self.tab_check_errors, '欄位錯誤檢查')
+        self.ui.tabWidget_ins_data.addTab(self.tab_check_course, '療程檢查')
+        self.ui.tabWidget_ins_data.addTab(self.tab_check_medical_record_count, '門診次數檢查')
+        self.ui.tabWidget_ins_data.addTab(self.tab_check_prescript_days, '用藥天數檢查')
+        self.ui.tabWidget_ins_data.addTab(self.tab_check_ins_drug, '健保藥碼檢查')
+        self.ui.tabWidget_ins_data.addTab(self.tab_check_ins_treat, '健保處置檢查')
+
+        self.ui.tabWidget_ins_data.setCurrentIndex(0)
+
+        self._set_tab_icon()
+
+    def _set_tab_icon(self):
+        tab_icon_list = [ui_utils.ICON_OK for i in range(self.ui.tabWidget_ins_data.count())]
+
+        if (self.tab_check_errors.error_count() > 0):
+            tab_icon_list[0] = ui_utils.ICON_NO
+        if (self.tab_check_course.error_count() > 0):
+            tab_icon_list[1] = ui_utils.ICON_NO
+        if (self.tab_check_medical_record_count.error_count() > 0):
+            tab_icon_list[2] = ui_utils.ICON_NO
+        if (self.tab_check_prescript_days.error_count() > 0):
+            tab_icon_list[3] = ui_utils.ICON_NO
+        if (self.tab_check_ins_drug.error_count() > 0):
+            tab_icon_list[4] = ui_utils.ICON_NO
+        if (self.tab_check_ins_treat.error_count() > 0):
+            tab_icon_list[5] = ui_utils.ICON_NO
+
+        for i, icon in zip(range(len(tab_icon_list)), tab_icon_list):
+            self.ui.tabWidget_ins_data.setTabIcon(i, icon)

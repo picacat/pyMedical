@@ -66,6 +66,13 @@ class PyMedical(QtWidgets.QMainWindow):
         self._set_css()
         self.set_status_bar()
 
+        if self.system_settings.field('顯示側邊欄') == 'Y':
+            self.ui.frameSidebar.show()
+            self.ui.action_show_side_bar.setChecked(True)
+        else:
+            self.ui.frameSidebar.hide()
+            self.ui.action_show_side_bar.setChecked(False)
+
     # 設定 status bar
     def set_status_bar(self):
         self.label_station_no = QtWidgets.QLabel()
@@ -105,6 +112,26 @@ class PyMedical(QtWidgets.QMainWindow):
         self.ui.action_ins_check.triggered.connect(self._open_subroutine)                   # 申報預檢
         self.ui.action_ins_apply.triggered.connect(self._open_subroutine)                   # 申報預檢
         self.ui.action_ins_judge.triggered.connect(self._open_subroutine)                   # 申報預檢
+
+        self.ui.action_registration.triggered.connect(self._open_subroutine)
+        self.ui.action_cashier.triggered.connect(self._open_subroutine)
+        self.ui.action_return_card.triggered.connect(self._open_subroutine)
+        self.ui.action_checkout.triggered.connect(self._open_subroutine)
+        self.ui.action_patient_list.triggered.connect(self._open_subroutine)
+        self.ui.action_ins_record_upload.triggered.connect(self._open_subroutine)
+
+        self.ui.action_waiting_list.triggered.connect(self._open_subroutine)
+        self.ui.action_medical_record_list.triggered.connect(self._open_subroutine)
+        self.ui.action_medical_record_statistics.triggered.connect(self._open_subroutine)
+
+        self.ui.action_settings.triggered.connect(self.open_settings)
+        self.ui.action_charge.triggered.connect(self._open_subroutine)
+        self.ui.action_doctor_nurse_table.triggered.connect(self._open_subroutine)
+        self.ui.action_users.triggered.connect(self._open_subroutine)
+        self.ui.action_diagnostic.triggered.connect(self._open_subroutine)
+        self.ui.action_medicine.triggered.connect(self._open_subroutine)
+        self.ui.action_ic_card.triggered.connect(self.open_ic_card)
+        self.ui.action_show_side_bar.triggered.connect(self.switch_side_bar)
 
         self.ui.tabWidget_window.tabCloseRequested.connect(self.close_tab)                  # 關閉分頁
         self.ui.tabWidget_window.currentChanged.connect(self.tab_changed)                   # 切換分頁
@@ -175,6 +202,8 @@ class PyMedical(QtWidgets.QMainWindow):
         elif widget_name == "病患查詢":
             widget.open_dialog()
         elif widget_name == "申報預檢":
+            widget.open_dialog()
+        elif widget_name == "健保申報":
             widget.open_dialog()
 
     # 關閉 tab
@@ -389,8 +418,15 @@ class PyMedical(QtWidgets.QMainWindow):
         user_name = login_dialog.user_name
         self.system_settings.post('使用者', user_name)
         self.refresh_status_bar()
+        self.set_root_permission()
 
         login_dialog.deleteLater()
+
+    def switch_side_bar(self):
+        if self.ui.action_show_side_bar.isChecked():
+            self.ui.frameSidebar.show()
+        else:
+            self.ui.frameSidebar.hide()
 
 
 # 主程式

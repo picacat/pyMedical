@@ -4,6 +4,7 @@ from PyQt5.QtWidgets import QMessageBox, QPushButton
 from libs import number_utils
 from libs import string_utils
 from libs import nhi_utils
+from libs import case_utils
 
 
 # 基本掛號費
@@ -120,14 +121,21 @@ def get_deposit_fee(database, card):
     return deposit_fee
 
 
-# 取得門診負擔
-def get_diag_share_fee(database, share_type, treat_type, course):
+# 取得門診負擔 (treat_type 取代 treatment的原因: 掛號時須取得門診負擔, 以treat_type代表)
+def get_diag_share_fee(database, share_type, treatment, course):
     diag_share_fee = 0
     course_type = nhi_utils.get_course_type(course)
+    if treatment in nhi_utils.ACUPUNCTURE_TREAT:
+        treatment = '針灸治療'
+    elif treatment in nhi_utils.MASSAGE_TREAT:
+        treatment = '傷科治療'
+    else:
+        treatment = '內科'
+
     sql = '''
             SELECT * FROM charge_settings WHERE ChargeType = "門診負擔" AND 
             ShareType = "{0}" AND TreatType = "{1}" AND Course = "{2}"
-          '''.format(share_type, treat_type, course_type)
+    '''.format(share_type, treatment, course_type)
     try:
         row = database.select_record(sql)[0]
     except IndexError:
@@ -208,8 +216,11 @@ def get_traditional_health_care_fee(database, ins_type, massager):
 
 # 取得健保門診診察費
 # 取第一段診察費, 分有無護理人員, 支援醫師等到申報才調整
-def get_ins_diag_fee(database, system_settings):
+def get_ins_diag_fee(database, system_settings, course=1):
     ins_diag_fee = 0
+
+    if course >= 2:  # 療程無診察費
+        return ins_diag_fee
 
     nurse = system_settings.field('護士人數')
     if int(nurse) > 0:
@@ -225,7 +236,7 @@ def get_ins_diag_fee(database, system_settings):
     if len(row) <= 0:
         return ins_diag_fee
 
-    ins_diag_fee = row[0]['Amount']
+    ins_diag_fee = number_utils.get_integer(row[0]['Amount'])
 
     return ins_diag_fee
 
@@ -255,13 +266,13 @@ def get_ins_drug_fee(database, pres_days):
 # 取得健保調劑費
 # 調劑費 = 0: 不申報調劑費, 沒有申報藥費
 # 調劑費 > 0: 藥師調劑, 醫師調劑
-def get_ins_pharmacy_fee(database, system_settings, ins_drug_fee):
+def get_ins_pharmacy_fee(database, system_settings, ins_drug_fee, pharmacy_type='申報'):
     ins_pharmacy_fee = 0
 
     if ins_drug_fee == 0:
         return ins_pharmacy_fee
 
-    if system_settings.field('申報藥事服務費') == 'N':
+    if pharmacy_type == '不申報':
         return ins_pharmacy_fee
 
     pharmacist = system_settings.field('藥師人數')
@@ -401,3 +412,99 @@ def get_ins_agent_fee(database, share_type, treatment, course, ins_drug_fee):
         ins_agent_fee = diag_share_fee + drug_share_fee
 
     return ins_agent_fee
+
+def get_ins_fee(database, system_settings, share, course, pres_days, pharmacy_type, treatment):
+    ins_fee = {}
+
+    ins_fee['diag_fee'] = get_ins_diag_fee(
+        database, system_settings, course)
+    ins_fee['drug_fee'] = get_ins_drug_fee(database, pres_days)
+    ins_fee['pharmacy_fee'] = get_ins_pharmacy_fee(
+        database, system_settings, ins_fee['drug_fee'],
+        pharmacy_type
+    )
+    ins_fee['acupuncture_fee'] = get_ins_acupuncture_fee(
+        database, treatment, ins_fee['drug_fee'])
+    ins_fee['massage_fee'] = get_ins_massage_fee(
+        database, treatment, ins_fee['drug_fee'])
+    ins_fee['dislocate_fee'] = get_ins_dislocate_fee(
+        database, treatment, ins_fee['drug_fee'])
+    ins_fee['care_fee'] = get_ins_care_fee(
+        database, treatment)
+
+    ins_fee['ins_total_fee'] = (
+            ins_fee['diag_fee'] +
+            ins_fee['drug_fee'] +
+            ins_fee['pharmacy_fee'] +
+            ins_fee['acupuncture_fee'] +
+            ins_fee['massage_fee'] +
+            ins_fee['dislocate_fee'] +
+            ins_fee['care_fee']
+    )
+
+    ins_fee['diag_share_fee'] = get_diag_share_fee(
+        database, share, treatment, course,
+    )
+    ins_fee['drug_share_fee'] = get_drug_share_fee(
+        database, share, ins_fee['drug_fee'],
+    )
+
+    ins_fee['ins_apply_fee'] = (
+            ins_fee['ins_total_fee'] -
+            ins_fee['diag_share_fee'] -
+            ins_fee['drug_share_fee']
+    )
+    ins_fee['agent_fee'] = get_ins_agent_fee(
+        database, share, treatment, course, ins_fee['drug_fee'],
+    )
+
+    return ins_fee
+
+
+# 重新批價
+def calculate_ins_fee(database, system_settings, case_key):
+    sql = '''
+        SELECT 
+            CaseKey, Share, Continuance, PharmacyType, Treatment 
+        FROM cases 
+        WHERE 
+            CaseKey = {0}
+    '''.format(case_key)
+    rows = database.select_record(sql)
+    if len(rows) > 0:
+        row = rows[0]
+    else:
+        return
+
+    pres_days = case_utils.get_pres_days(database, case_key)
+    share = string_utils.xstr(row['Share'])
+    course = number_utils.get_integer(row['Continuance'])
+    pharmacy_type = string_utils.xstr(row['PharmacyType'])
+    treatment = string_utils.xstr(row['Treatment'])
+
+    ins_fee = get_ins_fee(
+        database, system_settings,
+        share, course, pres_days, pharmacy_type, treatment)
+
+    fields = [
+        'DiagFee', 'InterDrugFee', 'PharmacyFee',
+        'AcupunctureFee', 'MassageFee', 'DislocateFee', 'ExamFee',
+        'InsTotalFee', 'DiagShareFee', 'DrugShareFee', 'InsApplyFee', 'AgentFee',
+    ]
+
+    data = [
+        ins_fee['diag_fee'],
+        ins_fee['drug_fee'],
+        ins_fee['pharmacy_fee'],
+        ins_fee['acupuncture_fee'],
+        ins_fee['massage_fee'],
+        ins_fee['dislocate_fee'],
+        ins_fee['care_fee'],
+        ins_fee['ins_total_fee'],
+        ins_fee['diag_share_fee'],
+        ins_fee['drug_share_fee'],
+        ins_fee['ins_apply_fee'],
+        ins_fee['agent_fee']
+    ]
+
+    database.update_record('cases', fields, 'CaseKey', case_key, data)

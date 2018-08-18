@@ -4,6 +4,7 @@
 import sys
 
 from PyQt5 import QtWidgets, QtGui, QtCore
+from PyQt5.QtWidgets import QMessageBox
 import datetime
 
 from classes import table_widget
@@ -15,6 +16,9 @@ from libs import string_utils
 from libs import validator_utils
 from libs import personnel_utils
 from libs import nhi_utils
+from libs import charge_utils
+from libs import system_utils
+from libs import case_utils
 
 
 # 候診名單 2018.01.31
@@ -60,52 +64,66 @@ class CheckErrors(QtWidgets.QMainWindow):
         self.table_widget_errors.set_column_hidden([0])
         width = [
             100, 120, 60, 80, 80, 120, 120, 100, 80, 100,
-            80, 60, 60, 60, 60, 60, 60, 60, 250,
+            80, 60, 60, 60, 60, 60, 60, 60, 240,
         ]
         self.table_widget_errors.set_table_heading_width(width)
 
     # 設定信號
     def _set_signal(self):
         self.ui.tableWidget_errors.doubleClicked.connect(self.open_medical_record)
+        self.ui.toolButton_calculate_ins_fee.clicked.connect(self._calculate_ins_fee)
         # self.ui.action_close.triggered.connect(self.close_app)
 
     def open_medical_record(self):
         case_key = self.table_widget_errors.field_value(0)
         self.parent.open_medical_record(case_key)
 
-    def start_check(self):
+    def read_data(self):
         start_date = date_utils.get_start_date_by_year_month(
             self.apply_year, self.apply_month)
         end_date = date_utils.get_end_date_by_year_month(
             self.apply_year, self.apply_month)
-        if self.apply_type == '申報':
-            apply_condition = \
-                'AND (ApplyType = "{0}" OR ApplyType = "調劑不報" OR ApplyType = "")'.format(
-                    self.apply_type)  # for 友杏
-        else:
-            apply_condition = 'AND (ApplyType = "{0}"))'.format(self.apply_type)
-
         sql = '''
             SELECT 
-                cases.*, patient.*
+                cases.*, patient.Birthday, patient.ID
             FROM cases 
                 LEFT JOIN patient ON patient.PatientKey = cases.PatientKey
             WHERE
                 (CaseDate BETWEEN "{0}" AND "{1}") AND
                 (cases.InsType = "健保") AND
-                (Card != "欠卡") {2}
+                (Card != "欠卡") AND
+                (ApplyType = "{2}") 
             ORDER BY CaseDate
-        '''.format(start_date, end_date, apply_condition)
-        rows = self.database.select_record(sql)
+        '''.format(start_date, end_date, self.apply_type)
+        self.rows = self.database.select_record(sql)
 
+    def row_count(self):
+        return len(self.rows)
+
+    def start_check(self):
         self.ui.tableWidget_errors.setRowCount(0)
-        for row in rows:
+        for row in self.rows:
             error_messages = []
             error_messages += self._check_patient(row)
             error_messages += self._check_medical_record(row)
+            error_messages += self._check_charge(row)
 
             if len(error_messages) > 0:
                 self._insert_error_record(row, error_messages)
+
+            self.parent.ui.progressBar.setValue(
+                self.parent.ui.progressBar.value() + 1
+            )
+
+        self.ui.tableWidget_errors.setAlternatingRowColors(True)
+
+        if self.error_count() <= 0:
+            self.ui.toolButton_calculate_ins_fee.setEnabled(False)
+        else:
+            self.ui.toolButton_calculate_ins_fee.setEnabled(True)
+
+    def error_count(self):
+        return self.ui.tableWidget_errors.rowCount()
 
     def _insert_error_record(self, row, error_messages):
         row_no = self.ui.tableWidget_errors.rowCount()
@@ -150,11 +168,19 @@ class CheckErrors(QtWidgets.QMainWindow):
                     row_no, column_no).setTextAlignment(
                     QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
                 )
+        color = QtGui.QColor('red')
+        self.ui.tableWidget_errors.item(row_no, 18).setForeground(color)
 
     def _check_patient(self, row):
         error_messages = []
 
         if self._check_patient_error_exists(row['PatientKey']):
+            return error_messages
+
+        rows = self.database.select_record(
+            'SELECT PatientKey FROM patient WHERE PatientKey = {0}'.format(row['PatientKey']))
+        if len(rows) <= 0:
+            error_messages.append('病患資料不存在')
             return error_messages
 
         if string_utils.xstr(row['Name']) == '':
@@ -187,16 +213,101 @@ class CheckErrors(QtWidgets.QMainWindow):
 
         if string_utils.xstr(row['Card']) == '':
             error_messages.append('卡序空白')
+
         if string_utils.xstr(row['Doctor']) == '':
             error_messages.append('無醫師')
         elif string_utils.xstr(row['Doctor']) not in self.doctor_list:
             error_messages.append('非醫師')
+
         if (string_utils.xstr(row['Treatment']) in nhi_utils.INS_TREAT and
                 number_utils.get_integer(row['Continuance']) < 1):
-            error_messages.append('非療程')
+            error_messages.append('無療程序號')
+
+        if (number_utils.get_integer(row['Continuance']) >= 1 and
+                string_utils.xstr(row['Treatment']) not in nhi_utils.INS_TREAT):
+            error_messages.append('療程內無處置')
+
         if string_utils.xstr(row['DiseaseCode1']) == '':
             error_messages.append('無主診斷碼')
         elif string_utils.xstr(row['DiseaseCode1'])[0] in [str(i) for i in range(10)]:
             error_messages.append('非ICD10碼')
 
+        if string_utils.get_str(row['Symptom'], 'utf-8') == '':
+            error_messages.append('無主訴')
+
         return error_messages
+
+    def _check_charge(self, row):
+        error_messages = []
+
+        share = string_utils.xstr(row['Share'])
+        course = number_utils.get_integer(row['Continuance'])
+        pharmacy_type = string_utils.xstr(row['PharmacyType'])
+        treatment = string_utils.xstr(row['Treatment'])
+
+        diag_fee =  number_utils.get_integer(row['DiagFee'])
+        inter_drug_fee =  number_utils.get_integer(row['InterDrugFee'])
+        pharmacy_fee =  number_utils.get_integer(row['PharmacyFee'])
+        acupuncture_fee =  number_utils.get_integer(row['AcupunctureFee'])
+        massage_fee =  number_utils.get_integer(row['MassageFee'])
+        dislocate_fee =  number_utils.get_integer(row['DislocateFee'])
+        total_fee =  number_utils.get_integer(row['InsTotalFee'])
+        apply_fee =  number_utils.get_integer(row['InsApplyFee'])
+        agent_fee =  number_utils.get_integer(row['AgentFee'])
+        diag_share_fee =  number_utils.get_integer(row['DiagShareFee'])
+        drug_share_fee =  number_utils.get_integer(row['DrugShareFee'])
+
+        pres_days = case_utils.get_pres_days(self.database, row['CaseKey'])
+        ins_fee = charge_utils.get_ins_fee(
+            self.database, self.system_settings,
+            share, course, pres_days, pharmacy_type, treatment
+        )
+
+        if course <= 1:
+            if diag_fee <= 0:
+                error_messages.append('未申報診察費')
+            elif diag_fee != ins_fee['diag_fee']:
+                error_messages.append('診察費金額有誤')
+        else:
+            if diag_fee > 0:
+                error_messages.append('不可申報診察費')
+
+        if inter_drug_fee != ins_fee['drug_fee']:
+            error_messages.append('藥費有誤')
+        if pharmacy_fee != ins_fee['pharmacy_fee']:
+            error_messages.append('調劑費有誤')
+        if acupuncture_fee != ins_fee['acupuncture_fee']:
+            error_messages.append('針灸費有誤')
+        if massage_fee != ins_fee['massage_fee']:
+            error_messages.append('傷科費有誤')
+        if dislocate_fee != ins_fee['dislocate_fee']:
+            error_messages.append('脫臼費有誤')
+        if diag_share_fee != ins_fee['diag_share_fee']:
+            error_messages.append('門診負擔有誤')
+        if drug_share_fee != ins_fee['drug_share_fee']:
+            error_messages.append('藥品負擔有誤')
+        if total_fee != ins_fee['ins_total_fee']:
+            error_messages.append('合計金額有誤')
+        if apply_fee != ins_fee['ins_apply_fee']:
+            error_messages.append('申報金額有誤')
+        if agent_fee != ins_fee['agent_fee']:
+            error_messages.append('代辦費有誤')
+
+        return error_messages
+
+    # 重新批價
+    def _calculate_ins_fee(self):
+        self.ui.tableWidget_errors.setFocus(True)
+        self.parent.ui.progressBar.setMaximum(self.ui.tableWidget_errors.rowCount()-1)
+        self.parent.ui.progressBar.setValue(0)
+
+        for row_no in range(self.ui.tableWidget_errors.rowCount()):
+            self.ui.tableWidget_errors.setCurrentCell(row_no, 0)
+            case_key = self.ui.tableWidget_errors.item(row_no, 0).text()
+            charge_utils.calculate_ins_fee(self.database, self.system_settings, case_key)
+
+            self.parent.ui.progressBar.setValue(
+                self.parent.ui.progressBar.value() + 1
+            )
+
+        self.parent._check_ins_data()

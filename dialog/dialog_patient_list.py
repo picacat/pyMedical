@@ -5,6 +5,7 @@
 from PyQt5 import QtWidgets
 from libs import system_utils
 from libs import ui_utils
+from libs import string_utils
 
 
 # 主視窗
@@ -42,10 +43,42 @@ class DialogPatientList(QtWidgets.QDialog):
 
     # 設定 mysql script
     def get_sql(self):
-        script = 'SELECT * FROM patient '
-        script += ' ORDER BY PatientKey'
+        sql = 'SELECT * FROM patient '
+        start = string_utils.xstr(self.ui.lineEdit_start.text())
+        end = string_utils.xstr(self.ui.lineEdit_end.text())
 
-        return script
+        if self.ui.radioButton_all.isChecked():
+            sql = 'SELECT * FROM patient '
+            if self.ui.radioButton_range.isChecked():
+                sql += '''
+                    WHERE (PatientKey BETWEEN {0} AND {1})
+                '''.format(start, end)
+        elif self.ui.radioButton_keyword.isChecked():
+            keyword = string_utils.xstr(self.ui.lineEdit_keyword.text())
+            if keyword.isnumeric():
+                if len(keyword) >= 7:
+                    sql = '''
+                        SELECT * FROM patient WHERE Telephone like "%{0}%" or Cellphone like "%{0}%"
+                    '''.format(keyword)
+                else:
+                    sql = 'SELECT * FROM patient WHERE PatientKey = {0}'.format(keyword)
+            else:
+                sql = '''
+                    SELECT * FROM patient WHERE 
+                        (Name LIKE "%{0}%") OR
+                        (ID LIKE "{0}%") OR
+                        (Birthday = "{0}") OR
+                        (Address LIKE "%{0}%") OR
+                        (EMail LIKE "%{0}%")
+                '''.format(keyword)
+                if self.ui.radioButton_range.isChecked():
+                    sql += '''
+                        AND (PatientKey BETWEEN {0} AND {1})
+                    '''.format(start, end)
+
+        sql += ' ORDER BY PatientKey'
+
+        return sql
 
     def accepted_button_clicked(self):
         pass

@@ -37,3 +37,18 @@ def get_personnel_id(database, name):
         return ''
     else:
         return string_utils.xstr(rows[0]['ID'])
+
+
+def get_personnel_position(database, name):
+    if string_utils.xstr(name) == '':
+        return ''
+
+    sql = '''
+        SELECT * FROM person WHERE
+        Name = "{0}"
+    '''.format(name)
+    rows = database.select_record(sql)
+    if len(rows) <= 0:
+        return ''
+    else:
+        return string_utils.xstr(rows[0]['Position'])

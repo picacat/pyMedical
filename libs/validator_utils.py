@@ -32,7 +32,11 @@ def verify_id(in_id):
         'Z': '33'
     }
 
-    code1 = area_code[in_id[0]]
+    try:
+        code1 = area_code[in_id[0]]
+    except IndexError:
+        return False
+
     code2 = in_id[1]
     if code2 in ['A', 'B', 'C', 'D', 'Y', 'X']:
         code2 = area_code[in_id[1]][-1]

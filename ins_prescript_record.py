@@ -242,7 +242,7 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
     def _set_table_width(self):
         medicine_width = [
             70,
-            200, 60, 50, 50,
+            200, 55, 50, 50,
             100, 100, 100, 100, 100, 100, 100, 100
         ]
         treat_width = [

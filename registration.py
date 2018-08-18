@@ -305,7 +305,7 @@ class Registration(QtWidgets.QMainWindow):
         self.ui.comboBox_patient_share.setCurrentIndex(0)
         self.ui.comboBox_patient_discount.setCurrentIndex(0)
         self.ui.comboBox_gender.setCurrentIndex(0)
-        self.ui.label_age.setText('年齡')
+        self.ui.lineEdit_age.setText(None)
 
     # 清除掛號資料欄位
     def _clear_group_box_registration(self):
@@ -405,7 +405,7 @@ class Registration(QtWidgets.QMainWindow):
 
     # 開始查詢病患資料
     def _query_patient(self):
-        keyword = str(self.ui.lineEdit_query.text())
+        keyword = string_utils.xstr(self.ui.lineEdit_query.text())
         if keyword == '':
             return
 
@@ -578,7 +578,7 @@ class Registration(QtWidgets.QMainWindow):
             age = 'N/A'
         else:
             age = '{0}歲{1}月'.format(age_year, age_month)
-        self.ui.label_age.setText(age)
+        self.ui.lineEdit_age.setText(age)
         self.ui.lineEdit_telephone.setText(string_utils.xstr(row['Telephone']))
         self.ui.lineEdit_cellphone.setText(string_utils.xstr(row['Cellphone']))
         self.ui.lineEdit_address.setText(string_utils.xstr(row['Address']).strip(None))

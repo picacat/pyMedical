@@ -25,7 +25,7 @@
     <show-object-properties value="true" />
     <loaded-nodes>
       <connection connection-id="85dd102d-4da3-4481-ba69-4172ba68c41d">
-        <schema name="yiler" object-types="column, function, table, view" />
+        <schema name="yiler" object-types="column, function, procedure, table, view" />
       </connection>
     </loaded-nodes>
   </component>
@@ -36,6 +36,18 @@
   </component>
   <component name="DBNavigator.Project.DatabaseSessionManager">
     <connection id="85dd102d-4da3-4481-ba69-4172ba68c41d" />
+  </component>
+  <component name="DBNavigator.Project.DatasetFilterManager">
+    <filter-list connection-id="85dd102d-4da3-4481-ba69-4172ba68c41d" dataset="yiler.insapply" active-filter-id="26d6602e-dae4-47be-bb69-e0f91993b58b">
+      <filter id="26d6602e-dae4-47be-bb69-e0f91993b58b" name="Filter" temporary="false" custom-name="false" type="custom">
+        <condition><![CDATA[ApplyDate = '10608' order by CaseType, Sequence]]></condition>
+      </filter>
+    </filter-list>
+    <filter-list connection-id="85dd102d-4da3-4481-ba69-4172ba68c41d" dataset="yiler.cases" active-filter-id="5efdff87-579d-4d66-ac7d-f9931f236bd2">
+      <filter id="5efdff87-579d-4d66-ac7d-f9931f236bd2" name="1000" temporary="false" custom-name="false" type="basic" join-type="AND">
+        <condition column="CaseKey" operator="=" value="1000" active="true" />
+      </filter>
+    </filter-list>
   </component>
   <component name="DBNavigator.Project.EditorStateManager">
     <last-used-providers />
@@ -250,7 +262,7 @@
         <data-length-threshold value="250" />
       </values-list-popup>
       <general>
-        <fetch-block-size value="100" />
+        <fetch-block-size value="10000" />
         <fetch-timeout value="30" />
         <trim-whitespaces value="true" />
         <convert-empty-strings-to-null value="true" />

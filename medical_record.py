@@ -99,6 +99,7 @@ class MedicalRecord(QtWidgets.QMainWindow):
         self.tab_registration = medical_record_registration.MedicalRecordRegistration(
             self, self.database, self.system_settings, self.case_key, self.call_from)
         self.ui.tabWidget_medical.addTab(self.tab_registration, '門診資料')
+        self.disease_code_changed()
 
     # 設定信號
     def _set_signal(self):
