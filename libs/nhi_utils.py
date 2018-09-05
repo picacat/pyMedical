@@ -6,15 +6,40 @@ from libs import string_utils
 from libs import case_utils
 from libs import personnel_utils
 
+XML_OUT_PATH = './nhi_upload'
 MAX_DIAG_DAYS = 26  # 合理門診量最大日期
+APPLY_TYPE_CODE = {
+    '申報': '1',
+    '補報': '2',
+}
 
 MAX_TREAT_DRUG = 120  # 針傷給藥限量
-TREAT_DRUG_CODE = ['B41', 'B43', 'B45', 'B53', 'B62', 'B80', 'B85', 'B90']
+TREAT_DRUG_CODE = ['B41', 'B43', 'B45', 'B53', 'B62', 'B80', 'B85', 'B90']  # 針傷給藥代碼
+TREAT_CODE = ['B42', 'B44', 'B46', 'B54', 'B61', 'B63', 'B81', 'B86', 'B91']  # 針傷未開藥代碼
+TREAT_ALL_CODE = [   # 所有針傷處置代碼
+    'B41', 'B42', 'B43', 'B44', 'B45', 'B46',
+    'B53', 'B54', 'B55', 'B56', 'B57',
+    'B61', 'B62', 'B63',
+    'B80', 'B81', 'B82', 'B83', 'B84', 'B85', 'B85', 'B86', 'B87', 'B88', 'B89',
+    'B90', 'B91', 'B92', 'B93', 'B94',
+]
+
+MAX_COMPLICATED_TREAT = 30
+COMPLICATED_TREAT_CODE = [
+    'B55', 'B56', 'B57',
+    'B82', 'B83', 'B84', 'B87', 'B88', 'B89',
+    'B92', 'B93', 'B94',
+]
+
+EXCLUDE_DIAG_ADJUST = ['22', '25', '30', 'B6']
 
 DIAG_SECTION1 = 30  # 合理門診量第一段
 DIAG_SECTION2 = 50
 DIAG_SECTION3 = 70
 DIAG_SECTION4 = 150
+
+TREAT_SECTION1 = 30  # 針傷合理量第一段
+TREAT_SECTION2 = 45
 
 INS_CLASS = '60'  # 60-中醫科
 INS_TYPE = ['健保', '自費']
@@ -137,6 +162,12 @@ FREQUENCY = {
     2: 'BID',
     3: 'TID',
     4: 'QID',
+}
+
+USAGE = {
+    '飯前': 'AC',
+    '飯後': 'PC',
+    '飯後睡前': 'PC',
 }
 
 CHARGE_TYPE = ['診察費', '藥費', '調劑費', '處置費', '檢驗費', '照護費']
@@ -290,7 +321,7 @@ def get_case_type(database, system_settings, row):
 
 
 # 取得門診負擔 (treat_type 取代 treatment的原因: 掛號時須取得門診負擔, 以treat_type代表)
-def get_diag_share_code(database, share_type, treatment, course):
+def get_diag_share_code(database, share_type, treatment, course, case_row=None):
     diag_share_code = ''
     course_type = get_course_type(course)
 
@@ -312,6 +343,12 @@ def get_diag_share_code(database, share_type, treatment, course):
 
     if len(row) > 0:
         diag_share_code = string_utils.xstr(row['InsCode'])
+
+    if case_row is not None:
+        if number_utils.get_integer(case_row['DrugShareFee']) > 0:
+            diag_share_code = 'S20'
+        elif (number_utils.get_integer(case_row['DiagShareFee']) > 0 and course >= 2):
+            diag_share_code = 'S20'
 
     return diag_share_code
 
@@ -395,7 +432,7 @@ def get_pharmacist_id(database, system_settings, row):
     return pharmacist_id
 
 
-def get_diag_code(system_settings, treat_type, diag_fee):
+def get_diag_code(database, system_settings, doctor_name, treat_type, diag_fee):
     diag_code = None
     if diag_fee <= 0:
         return diag_code
@@ -408,6 +445,10 @@ def get_diag_code(system_settings, treat_type, diag_fee):
         diag_code = 'A01'  # 診察費第一段有護士
     else:
         diag_code = 'A02'  # 診察費第一段無護士
+
+    position = personnel_utils.get_personnel_position(database, doctor_name)
+    if position == '支援醫師':
+        diag_code = 'A02'
 
     return diag_code
 
@@ -422,11 +463,14 @@ def get_pharmacy_code(system_settings, row, pres_days, pharmacy_code='000000'):
     else:
         course = 0
 
-    if pres_days > 0:
-        if string_utils.xstr(row['PharmacyType']) == '申報':
+    if pres_days <= 0:
+        pharmacy_code[course] = '0'
+    elif string_utils.xstr(row['PharmacyType']) == '申報':
+        pharmacist = system_settings.field('藥師人數')
+        if int(pharmacist) > 0:
             pharmacy_code[course] = '1'
         else:
-            pharmacy_code[course] = '0'
+            pharmacy_code[course] = '2'
     else:
         pharmacy_code[course] = '0'
 
@@ -448,7 +492,7 @@ def get_treat_records(database, row, ins_apply_row=None):
                 'Percent': number_utils.get_integer(ins_apply_row['Percent2'])},
             {
                 'CaseKey': number_utils.get_integer(ins_apply_row['CaseKey3']),
-                'TreatCode': string_utils.xstr(ins_apply_row['TreatCode1']),
+                'TreatCode': string_utils.xstr(ins_apply_row['TreatCode3']),
                 'TreatFee': number_utils.get_integer(ins_apply_row['TreatFee3']),
                 'Percent': number_utils.get_integer(ins_apply_row['Percent3'])},
             {
@@ -542,3 +586,56 @@ def get_start_date(database, row):
 
     return rows[0]['CaseDate']
 
+
+def nurse_schedule_on_duty(database, case_key, doctor_name):
+    on_duty = False
+
+    sql = '''
+        SELECT CaseDate, Period 
+        FROM cases
+        WHERE 
+            CaseKey = {0}
+    '''.format(case_key)
+    rows = database.select_record(sql)
+    if len(rows) <= 0:
+        return on_duty
+
+    case_date = rows[0]['CaseDate'].date()
+    period = string_utils.xstr(rows[0]['Period'])
+
+    sql = '''
+        SELECT *
+        FROM nurse_schedule
+        WHERE
+            ScheduleDate = "{0}" AND
+            Doctor = "{1}"
+    '''.format(case_date, doctor_name)
+    rows = database.select_record(sql)
+    if len(rows) <= 0:
+        return on_duty
+
+    if period == '早班':
+        nurse = rows[0]['Nurse1']
+    elif period == '午班':
+        nurse = rows[0]['Nurse2']
+    elif period == '晚班':
+        nurse = rows[0]['Nurse3']
+
+    if string_utils.xstr(nurse) != '':
+        on_duty = True
+
+    return on_duty
+
+def get_ins_xml_file_name(apply_type, apply_date):
+    xml_file_name = '{0}/APPLY-{1}-{2}.xml'.format(
+        XML_OUT_PATH,
+        apply_type,
+        apply_date,
+    )
+
+    return xml_file_name
+
+def get_apply_date(apply_year, apply_month):
+    apply_date = '{0:0>3}{1:0>2}'.format(apply_year-1911, apply_month)
+
+    return apply_date

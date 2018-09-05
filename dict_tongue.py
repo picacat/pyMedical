@@ -84,8 +84,11 @@ class DictTongue(QtWidgets.QMainWindow):
             string_utils.xstr(rec['DictGroupsName']),
         ]
 
-        for column in range(0, self.ui.tableWidget_dict_groups.columnCount()):
-            self.ui.tableWidget_dict_groups.setItem(rec_no, column, QtWidgets.QTableWidgetItem(dict_groups_rec[column]))
+        for column in range(len(dict_groups_rec)):
+            self.ui.tableWidget_dict_groups.setItem(
+                rec_no, column,
+                QtWidgets.QTableWidgetItem(dict_groups_rec[column])
+            )
 
     def dict_groups_changed(self):
         dict_groups_type = self.table_widget_dict_groups.field_value(1)
@@ -107,8 +110,11 @@ class DictTongue(QtWidgets.QMainWindow):
             string_utils.xstr(rec['DictGroupsName']),
         ]
 
-        for column in range(0, self.ui.tableWidget_dict_groups_name.columnCount()):
-            self.ui.tableWidget_dict_groups_name.setItem(rec_no, column, QtWidgets.QTableWidgetItem(dict_groups_name_rec[column]))
+        for column in range(len(dict_groups_name_rec)):
+            self.ui.tableWidget_dict_groups_name.setItem(
+                rec_no, column,
+                QtWidgets.QTableWidgetItem(dict_groups_name_rec[column])
+            )
 
     def dict_groups_name_changed(self):
         dict_groups_name = self.table_widget_dict_groups_name.field_value(1)
@@ -132,8 +138,11 @@ class DictTongue(QtWidgets.QMainWindow):
             string_utils.xstr(rec['ClinicName']),
         ]
 
-        for column in range(0, self.ui.tableWidget_dict_tongue.columnCount()):
-            self.ui.tableWidget_dict_tongue.setItem(rec_no, column, QtWidgets.QTableWidgetItem(dict_tongue_rec[column]))
+        for column in range(len(dict_tongue_rec)):
+            self.ui.tableWidget_dict_tongue.setItem(
+                rec_no, column,
+                QtWidgets.QTableWidgetItem(dict_tongue_rec[column])
+            )
 
     # 新增舌診類別
     def _add_dict_groups(self):

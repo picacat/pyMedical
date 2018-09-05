@@ -87,10 +87,18 @@ class DialogPastHistory(QtWidgets.QDialog):
             string_utils.xstr(rec['DiseaseName1']),
         ]
 
-        for column in range(0, self.ui.tableWidget_past_history.columnCount()):
-            self.ui.tableWidget_past_history.setItem(rec_no, column, QtWidgets.QTableWidgetItem(wait_rec[column]))
+        for column in range(len(wait_rec)):
+            self.ui.tableWidget_past_history.setItem(
+                rec_no, column, QtWidgets.QTableWidgetItem(wait_rec[column])
+            )
             if column in [5]:
-                self.ui.tableWidget_past_history.item(rec_no, column).setTextAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+                self.ui.tableWidget_past_history.item(
+                    rec_no, column).setTextAlignment(
+                    QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
+                )
 
             if rec['InsType'] == '自費':
-                self.ui.tableWidget_past_history.item(rec_no, column).setForeground(QtGui.QColor('blue'))
+                self.ui.tableWidget_past_history.item(
+                    rec_no, column).setForeground(
+                    QtGui.QColor('blue')
+                )

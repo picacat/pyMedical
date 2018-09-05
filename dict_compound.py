@@ -81,8 +81,11 @@ class DictCompound(QtWidgets.QMainWindow):
             string_utils.xstr(rec['SalePrice']),
         ]
 
-        for column in range(0, self.ui.tableWidget_dict_compound.columnCount()):
-            self.ui.tableWidget_dict_compound.setItem(rec_no, column, QtWidgets.QTableWidgetItem(dict_compound_rec[column]))
+        for column in range(len(dict_compound_rec)):
+            self.ui.tableWidget_dict_compound.setItem(
+                rec_no, column,
+                QtWidgets.QTableWidgetItem(dict_compound_rec[column])
+            )
 
     def dict_compound_changed(self):
         compound_key = self.table_widget_dict_compound.field_value(0)
@@ -114,14 +117,19 @@ class DictCompound(QtWidgets.QMainWindow):
             string_utils.xstr(row['SalePrice']),
         ]
 
-        for column in range(0, self.ui.tableWidget_dict_medicine.columnCount()):
-            self.ui.tableWidget_dict_medicine.setItem(rec_no, column, QtWidgets.QTableWidgetItem(dict_medicine_rec[column]))
+        for column in range(len(dict_medicine_rec)):
+            self.ui.tableWidget_dict_medicine.setItem(
+                rec_no, column,
+                QtWidgets.QTableWidgetItem(dict_medicine_rec[column])
+            )
             if column in [4, 5]:
                 self.ui.tableWidget_dict_medicine.item(rec_no, column).setTextAlignment(
-                    QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+                    QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
+                )
             elif column in [3]:
                 self.ui.tableWidget_dict_medicine.item(rec_no, column).setTextAlignment(
-                    QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter)
+                    QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
+                )
 
     # 主程式控制關閉此分頁
     def close_tab(self):

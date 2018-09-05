@@ -33,6 +33,9 @@ class InsApplyTab(QtWidgets.QMainWindow):
         self.clinic_id = args[6]
         self.ui = None
 
+        self.apply_date = nhi_utils.get_apply_date(self.apply_year, self.apply_month)
+        self.apply_type_code = nhi_utils.APPLY_TYPE_CODE[self.apply_type]
+
         self._set_ui()
         self._set_signal()
         self._add_ins_apply_list()
@@ -62,12 +65,6 @@ class InsApplyTab(QtWidgets.QMainWindow):
         pass
 
     def _add_ins_apply_list(self):
-        apply_date = '{0:0>3}{1:0>2}'.format(self.apply_year-1911, self.apply_month)
-        if self.apply_type == '申報':
-            apply_type = '1'
-        else:
-            apply_type = '2'
-
         sql = '''
             SELECT *
             FROM insapply 
@@ -77,7 +74,7 @@ class InsApplyTab(QtWidgets.QMainWindow):
                 ApplyPeriod = "{2}" AND
                 ClinicID = "{3}"
             GROUP BY CaseType
-        '''.format(apply_date, apply_type, self.period, self.clinic_id)
+        '''.format(self.apply_date, self.apply_type_code, self.period, self.clinic_id)
         rows = self.database.select_record(sql)
         for row in rows:
             case_type = string_utils.xstr(row['CaseType'])

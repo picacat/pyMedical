@@ -130,11 +130,16 @@ class DialogInputMedicine(QtWidgets.QDialog):
             remark
         ]
 
-        for column in range(0, self.ui.tableWidget_medicine.columnCount()):
-            self.ui.tableWidget_medicine.setItem(rec_no, column, QtWidgets.QTableWidgetItem(medicine_rec[column]))
+        for column in range(len(medicine_rec)):
+            self.ui.tableWidget_medicine.setItem(
+                rec_no, column,
+                QtWidgets.QTableWidgetItem(medicine_rec[column])
+            )
             if column in [3]:
-                self.ui.tableWidget_medicine.item(rec_no, column).setTextAlignment(
-                    QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter)
+                self.ui.tableWidget_medicine.item(
+                    rec_no, column).setTextAlignment(
+                    QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
+                )
 
     def add_medicine(self):
         prescript_rec = [

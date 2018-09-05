@@ -127,15 +127,27 @@ class MedicalRecordList(QtWidgets.QMainWindow):
             string_utils.int_to_str(rec['TotalFee']),
         ]
 
-        for column in range(0, self.ui.tableWidget_medical_record_list.columnCount()):
-            self.ui.tableWidget_medical_record_list.setItem(rec_no, column, QtWidgets.QTableWidgetItem(medical_record[column]))
+        for column in range(len(medical_record)):
+            self.ui.tableWidget_medical_record_list.setItem(
+                rec_no, column,
+                QtWidgets.QTableWidgetItem(medical_record[column])
+            )
             if column in [3, 4, 5, 13, 14, 18, 19, 20, 21]:
-                self.ui.tableWidget_medical_record_list.item(rec_no, column).setTextAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+                self.ui.tableWidget_medical_record_list.item(
+                    rec_no, column).setTextAlignment(
+                    QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
+                )
             elif column in [7]:
-                self.ui.tableWidget_medical_record_list.item(rec_no, column).setTextAlignment(QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter)
+                self.ui.tableWidget_medical_record_list.item(
+                    rec_no, column).setTextAlignment(
+                    QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
+                )
 
             if number_utils.get_integer(rec['TotalFee']) > 0 or rec['InsType'] == '自費':
-                self.ui.tableWidget_medical_record_list.item(rec_no, column).setForeground(QtGui.QColor('blue'))
+                self.ui.tableWidget_medical_record_list.item(
+                    rec_no, column).setForeground(
+                    QtGui.QColor('blue')
+                )
 
     def delete_medical_record(self):
         name = self.table_widget_medical_record_list.field_value(6)

@@ -229,7 +229,7 @@ class MedicalRecordRegistration(QtWidgets.QMainWindow):
             string_utils.xstr(rec['Content']),
         ]
 
-        for column in range(0, self.ui.tableWidget_prescript_sign.columnCount()):
+        for column in range(len(prescript_sign_rec)):
             self.ui.tableWidget_prescript_sign.setItem(
                 rec_no, column, QtWidgets.QTableWidgetItem(prescript_sign_rec[column])
             )
@@ -259,9 +259,10 @@ class MedicalRecordRegistration(QtWidgets.QMainWindow):
             string_utils.xstr(rec['Content']),
         ]
 
-        for column in range(0, self.ui.tableWidget_prescript_sign.columnCount()):
+        for column in range(len(prescript_sign_rec)):
             self.ui.tableWidget_prescript_sign.setItem(
-                rec_no, column, QtWidgets.QTableWidgetItem(prescript_sign_rec[column])
+                rec_no, column,
+                QtWidgets.QTableWidgetItem(prescript_sign_rec[column])
             )
 
     def save_record(self):

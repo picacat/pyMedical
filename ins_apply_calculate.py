@@ -31,14 +31,10 @@ class InsApplyCalculate(QtWidgets.QMainWindow):
         self.apply_type = args[7]
         self.clinic_id = args[8]
         self.ins_calculated_table = []
-
         self.ui = None
-        self.apply_date = '{0:0>3}{1:0>2}'.format(self.apply_year-1911, self.apply_month)
-        if self.apply_type == '申報':
-            self.apply_type = '1'
-        else:
-            self.apply_type = '2'
 
+        self.apply_date = nhi_utils.get_apply_date(self.apply_year, self.apply_month)
+        self.apply_type_code = nhi_utils.APPLY_TYPE_CODE[self.apply_type]
         self.start_date = self.start_date.toString("yyyy-MM-dd 00:00:00")
         self.end_date = self.end_date.toString("yyyy-MM-dd 23:59:59")
         self._set_ui()
@@ -70,6 +66,7 @@ class InsApplyCalculate(QtWidgets.QMainWindow):
 
     def calculate_ins_data(self):
         self._set_doctor_table()
+        self._set_part_time_doctor()
 
     def _set_doctor_table(self):
         sql = '''
@@ -83,16 +80,17 @@ class InsApplyCalculate(QtWidgets.QMainWindow):
                 CaseDate BETWEEN "{4}" AND "{5}"
             GROUP BY DoctorID
         '''.format(
-            self.apply_date, self.apply_type, self.period, self.clinic_id,
+            self.apply_date, self.apply_type_code, self.period, self.clinic_id,
             self.start_date, self.end_date
         )
         rows = self.database.select_record(sql)
 
         for row in rows:
             self._init_doctor_data(row)
-            self._calculate_diag_section()
-
-        print(self.ins_calculated_table)
+            position = personnel_utils.get_personnel_position(self.database, row['DoctorName'])
+            if position == '醫師':
+                self._calculate_diag_section()
+                self._calculate_treat_section()
 
     def _init_doctor_data(self, row):
         doctor_data = {
@@ -101,13 +99,18 @@ class InsApplyCalculate(QtWidgets.QMainWindow):
             'doctor_id': None,
             'diag_days': 0,
             'total_count': 0,
-            'treat_drug': 0,
             'diag_count': 0,
+            'treat_count': 0,
+            'treat_drug': 0,
+            'complicated_massage': 0,
             'diag_section1': 0,
             'diag_section2': 0,
             'diag_section3': 0,
             'diag_section4': 0,
             'diag_section5': 0,
+            'treat_section1': 0,
+            'treat_section2': 0,
+            'treat_section3': 0,
         }
         doctor_data['doctor_name'] = row['DoctorName']
         doctor_data['doctor_id'] = row['DoctorID']
@@ -120,15 +123,22 @@ class InsApplyCalculate(QtWidgets.QMainWindow):
         doctor_data['total_count'] = self._get_total_count(
             doctor_data['doctor_name']
         )
+        doctor_data['diag_count'] = self._get_diag_count(
+            doctor_data['doctor_id']
+        )
+        doctor_data['treat_count'] = self._get_treat_count(
+            doctor_data['doctor_name']
+        )
         doctor_data['treat_drug'] = self._get_treat_drug(
             doctor_data['doctor_name']
         )
-        doctor_data['diag_count'] = self._get_diag_count(
-            doctor_data['doctor_id']
+        doctor_data['complicated_massage'] = self._get_complicated_massage(
+            doctor_data['doctor_name']
         )
 
         self.ins_calculated_table.append(doctor_data)
 
+    # 取得醫師總看診日數
     def _get_diag_days(self, doctor_id):
         sql = '''
             SELECT InsApplyKey
@@ -142,7 +152,7 @@ class InsApplyCalculate(QtWidgets.QMainWindow):
                 DoctorID = "{6}"
             GROUP BY DATE(CaseDate)
         '''.format(
-            self.apply_date, self.apply_type, self.period, self.clinic_id,
+            self.apply_date, self.apply_type_code, self.period, self.clinic_id,
             self.start_date, self.end_date, doctor_id,
         )
         rows = self.database.select_record(sql)
@@ -153,6 +163,7 @@ class InsApplyCalculate(QtWidgets.QMainWindow):
 
         return diag_days
 
+    # 取得醫師總看診人次
     def _get_total_count(self, doctor_name):
         total_count = 0
         sql = '''
@@ -164,7 +175,7 @@ class InsApplyCalculate(QtWidgets.QMainWindow):
                 ApplyPeriod = "{2}" AND
                 ClinicID = "{3}"
         '''.format(
-            self.apply_date, self.apply_type, self.period, self.clinic_id,
+            self.apply_date, self.apply_type_code, self.period, self.clinic_id,
         )
         rows = self.database.select_record(sql)
         for row in rows:
@@ -187,6 +198,49 @@ class InsApplyCalculate(QtWidgets.QMainWindow):
 
         return total_count
 
+    # 取得醫師針傷總人次
+    def _get_treat_count(self, doctor_name):
+        treat_count = 0
+        sql = '''
+            SELECT 
+                CaseKey1, CaseKey2, CaseKey3, CaseKey4, CaseKey5, CaseKey6,
+                TreatCode1, TreatCode2, TreatCode3, TreatCode4, TreatCode5, TreatCode6
+            FROM insapply 
+            WHERE
+                ApplyDate = "{0}" AND
+                ApplyType = "{1}" AND
+                ApplyPeriod = "{2}" AND
+                ClinicID = "{3}" AND
+                CaseType IN ("29")
+        '''.format(
+            self.apply_date, self.apply_type_code, self.period, self.clinic_id,
+        )
+        rows = self.database.select_record(sql)
+        for row in rows:
+            for i in range(1, 7):
+                treat_code = string_utils.xstr(row['TreatCode{0}'.format(i)])
+                if treat_code not in nhi_utils.TREAT_ALL_CODE:
+                    continue
+
+                case_key = number_utils.get_integer(row['CaseKey{0}'.format(i)])
+                if case_key <= 0:
+                    continue
+
+                sql = '''
+                    SELECT Doctor FROM cases 
+                    WHERE
+                        CaseKey = {0}
+                '''.format(case_key)
+                doctor_rows = self.database.select_record(sql)
+                if len(doctor_rows) <= 0:
+                    continue
+
+                if string_utils.xstr(doctor_rows[0]['Doctor']) == doctor_name:
+                    treat_count += 1
+
+        return treat_count
+
+    # 取得醫師針傷給藥總人次
     def _get_treat_drug(self, doctor_name):
         treat_drug = 0
         sql = '''
@@ -199,9 +253,9 @@ class InsApplyCalculate(QtWidgets.QMainWindow):
                 ApplyType = "{1}" AND
                 ApplyPeriod = "{2}" AND
                 ClinicID = "{3}" AND
-                CaseType NOT IN ("21", "24")
+                CaseType IN ("29")
         '''.format(
-            self.apply_date, self.apply_type, self.period, self.clinic_id,
+            self.apply_date, self.apply_type_code, self.period, self.clinic_id,
         )
         rows = self.database.select_record(sql)
         for row in rows:
@@ -228,6 +282,49 @@ class InsApplyCalculate(QtWidgets.QMainWindow):
 
         return treat_drug
 
+    # 取得醫師複雜性傷科總人次
+    def _get_complicated_massage(self, doctor_name):
+        treat_drug = 0
+        sql = '''
+            SELECT 
+                CaseKey1, CaseKey2, CaseKey3, CaseKey4, CaseKey5, CaseKey6,
+                TreatCode1, TreatCode2, TreatCode3, TreatCode4, TreatCode5, TreatCode6
+            FROM insapply 
+            WHERE
+                ApplyDate = "{0}" AND
+                ApplyType = "{1}" AND
+                ApplyPeriod = "{2}" AND
+                ClinicID = "{3}" AND
+                CaseType IN ("29")
+        '''.format(
+            self.apply_date, self.apply_type_code, self.period, self.clinic_id,
+        )
+        rows = self.database.select_record(sql)
+        for row in rows:
+            for i in range(1, 7):
+                treat_code = string_utils.xstr(row['TreatCode{0}'.format(i)])
+                if treat_code not in nhi_utils.COMPLICATED_TREAT_CODE:
+                    continue
+
+                case_key = number_utils.get_integer(row['CaseKey{0}'.format(i)])
+                if case_key <= 0:
+                    continue
+
+                sql = '''
+                    SELECT Doctor FROM cases 
+                    WHERE
+                        CaseKey = {0}
+                '''.format(case_key)
+                doctor_rows = self.database.select_record(sql)
+                if len(doctor_rows) <= 0:
+                    continue
+
+                if string_utils.xstr(doctor_rows[0]['Doctor']) == doctor_name:
+                    treat_drug += 1
+
+        return treat_drug
+
+    # 計算診察費人次, 特定照護-30不列入計算
     def _get_diag_count(self, doctor_id):
         sql = '''
             SELECT CaseKey1, CaseKey2, CaseKey3, CaseKey4, CaseKey5, CaseKey6
@@ -238,11 +335,13 @@ class InsApplyCalculate(QtWidgets.QMainWindow):
                 ApplyPeriod = "{2}" AND
                 ClinicID = "{3}" AND
                 DoctorID = "{4}" AND
-                DiagFee > 0
+                DiagFee > 0 AND
+                CaseType NOT IN {5}
         '''.format(
-            self.apply_date, self.apply_type, self.period, self.clinic_id,
-            doctor_id,
+            self.apply_date, self.apply_type_code, self.period, self.clinic_id,
+            doctor_id, tuple(nhi_utils.EXCLUDE_DIAG_ADJUST)
         )
+
         rows = self.database.select_record(sql)
         diag_count = len(rows)
 
@@ -321,3 +420,195 @@ class InsApplyCalculate(QtWidgets.QMainWindow):
         diag_section5 = diag_count - diag_section1 - diag_section2 - diag_section3 - diag_section4
 
         return diag_section5
+
+    def _calculate_treat_section(self):
+        for row in self.ins_calculated_table:
+            row['treat_section1'] = self._get_treat_section1(
+                row['diag_days'],
+                row['treat_count'],
+            )
+            row['treat_section2'] = self._get_treat_section2(
+                row['diag_days'],
+                row['treat_count'],
+                row['treat_section1'],
+            )
+            row['treat_section3'] = self._get_treat_section3(
+                row['treat_count'],
+                row['treat_section1'],
+                row['treat_section2'],
+            )
+
+    def _get_treat_section1(self, diag_days, treat_count):
+        treat_section1 = treat_count
+        treat_section1_limit = diag_days * nhi_utils.TREAT_SECTION1
+
+        if treat_section1 > treat_section1_limit:
+            treat_section1 = treat_section1_limit
+
+        return treat_section1
+
+    def _get_treat_section2(self, diag_days, treat_count, treat_section1):
+        treat_section2 = treat_count - treat_section1
+        treat_section2_limit = diag_days * (nhi_utils.TREAT_SECTION2 - nhi_utils.TREAT_SECTION1)
+
+        if treat_section2 > treat_section2_limit:
+            treat_section2 = treat_section2_limit
+
+        return treat_section2
+
+    def _get_treat_section3(self, treat_count, treat_section1, treat_section2):
+        treat_section3 = treat_count - treat_section1 - treat_section2
+
+        return treat_section3
+
+    def _set_part_time_doctor(self):
+        self._set_part_time_doctor_diag_balance()
+        self._set_part_time_doctor_treat_balance()
+
+    def _set_part_time_doctor_diag_balance(self):
+        (section1_balance,
+         section2_balance,
+         section3_balance,
+         section4_balance) = self._get_full_time_doctor_diag_balance()
+
+        for ins_calculated_row in self.ins_calculated_table:
+            if ins_calculated_row['doctor_type'] == '醫師':
+                continue
+
+            diag_count = ins_calculated_row['diag_count']
+            if section1_balance > 0:
+                if diag_count < section1_balance:
+                    ins_calculated_row['diag_section1'] = diag_count
+                    diag_count = 0
+                else:
+                    ins_calculated_row['diag_section1'] = section1_balance
+                    diag_count -= section1_balance
+
+                section1_balance -= ins_calculated_row['diag_section1']
+
+            if diag_count <= 0:
+                continue
+
+            if section2_balance > 0:
+                if diag_count < section2_balance:
+                    ins_calculated_row['diag_section2'] = diag_count
+                    diag_count = 0
+                else:
+                    ins_calculated_row['diag_section2'] = section2_balance
+                    diag_count -= section2_balance
+
+                section2_balance -= ins_calculated_row['diag_section2']
+
+            if diag_count <= 0:
+                continue
+
+            if section3_balance > 0:
+                if diag_count < section3_balance:
+                    ins_calculated_row['diag_section3'] = diag_count
+                    diag_count = 0
+                else:
+                    ins_calculated_row['diag_section3'] = section3_balance
+                    diag_count -= section3_balance
+
+                section3_balance -= ins_calculated_row['diag_section3']
+
+            if diag_count <= 0:
+                continue
+
+            if section4_balance > 0:
+                if diag_count < section4_balance:
+                    ins_calculated_row['diag_section4'] = diag_count
+                    diag_count = 0
+                else:
+                    ins_calculated_row['diag_section4'] = section4_balance
+                    diag_count -= section4_balance
+
+                section4_balance -= ins_calculated_row['diag_section4']
+
+            if diag_count <= 0:
+                continue
+
+            ins_calculated_row['diag_section5'] = diag_count
+
+    def _get_full_time_doctor_diag_balance(self):
+        section1_balance = 0
+        section2_balance = 0
+        section3_balance = 0
+        section4_balance = 0
+
+        for ins_calculated_row in self.ins_calculated_table:
+            if ins_calculated_row['doctor_type'] == '支援醫師':
+                continue
+
+            diag_days = ins_calculated_row['diag_days']
+            diag_section1_limit = diag_days * nhi_utils.DIAG_SECTION1
+            diag_section2_limit = diag_days * (nhi_utils.DIAG_SECTION2 - nhi_utils.DIAG_SECTION1)
+            diag_section3_limit = diag_days * (nhi_utils.DIAG_SECTION3 - nhi_utils.DIAG_SECTION2)
+            diag_section4_limit = diag_days * (nhi_utils.DIAG_SECTION4 - nhi_utils.DIAG_SECTION3)
+
+            if ins_calculated_row['diag_section1'] < diag_section1_limit:
+                section1_balance += diag_section1_limit - ins_calculated_row['diag_section1']
+            if ins_calculated_row['diag_section2'] < diag_section2_limit:
+                section2_balance += diag_section2_limit - ins_calculated_row['diag_section2']
+            if ins_calculated_row['diag_section3'] < diag_section3_limit:
+                section3_balance += diag_section3_limit - ins_calculated_row['diag_section3']
+            if ins_calculated_row['diag_section4'] < diag_section4_limit:
+                section4_balance += diag_section4_limit - ins_calculated_row['diag_section4']
+
+        return section1_balance, section2_balance, section3_balance, section4_balance
+
+    def _set_part_time_doctor_treat_balance(self):
+        (section1_balance,
+         section2_balance) = self._get_full_time_doctor_treat_balance()
+
+        for ins_calculated_row in self.ins_calculated_table:
+            if ins_calculated_row['doctor_type'] == '醫師':
+                continue
+
+            treat_count = ins_calculated_row['treat_count']
+            if section1_balance > 0:
+                if treat_count < section1_balance:
+                    ins_calculated_row['treat_section1'] = treat_count
+                    treat_count = 0
+                else:
+                    ins_calculated_row['treat_section1'] = section1_balance
+                    treat_count -= section1_balance
+
+                section1_balance -= ins_calculated_row['treat_section1']
+
+            if treat_count <= 0:
+                continue
+
+            if section2_balance > 0:
+                if treat_count < section2_balance:
+                    ins_calculated_row['treat_section2'] = treat_count
+                    treat_count = 0
+                else:
+                    ins_calculated_row['treat_section2'] = section2_balance
+                    treat_count -= section2_balance
+
+                section2_balance -= ins_calculated_row['treat_section2']
+
+            if treat_count <= 0:
+                continue
+
+            ins_calculated_row['treat_section3'] = treat_count
+
+    def _get_full_time_doctor_treat_balance(self):
+        section1_balance = 0
+        section2_balance = 0
+
+        for ins_calculated_row in self.ins_calculated_table:
+            if ins_calculated_row['doctor_type'] == '支援醫師':
+                continue
+
+            diag_days = ins_calculated_row['diag_days']
+            treat_section1_limit = diag_days * nhi_utils.TREAT_SECTION1
+            treat_section2_limit = diag_days * (nhi_utils.TREAT_SECTION2 - nhi_utils.TREAT_SECTION1)
+
+            if ins_calculated_row['treat_section1'] < treat_section1_limit:
+                section1_balance += treat_section1_limit - ins_calculated_row['treat_section1']
+            if ins_calculated_row['treat_section2'] < treat_section2_limit:
+                section2_balance += treat_section2_limit - ins_calculated_row['treat_section2']
+
+        return section1_balance, section2_balance

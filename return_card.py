@@ -107,16 +107,21 @@ class ReturnCard(QtWidgets.QMainWindow):
             doctor_done,
         ]
 
-        for column in range(0, self.ui.tableWidget_return_card.columnCount()):
-            self.ui.tableWidget_return_card.setItem(row_no,
-                                                    column,
-                                                    QtWidgets.QTableWidgetItem(return_card_data[column]))
+        for column in range(len(return_card_data)):
+            self.ui.tableWidget_return_card.setItem(
+                row_no, column,
+                QtWidgets.QTableWidgetItem(return_card_data[column])
+            )
             if column in [2, 14]:
-                self.ui.tableWidget_return_card.item(row_no, column).setTextAlignment(
-                    QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+                self.ui.tableWidget_return_card.item(
+                    row_no, column).setTextAlignment(
+                    QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
+                )
             elif column in [9, 15]:
-                self.ui.tableWidget_return_card.item(row_no, column).setTextAlignment(
-                    QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter)
+                self.ui.tableWidget_return_card.item(
+                    row_no, column).setTextAlignment(
+                    QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
+                )
 
     def refresh_record(self):
         sql = '''

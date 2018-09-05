@@ -214,31 +214,46 @@ def get_traditional_health_care_fee(database, ins_type, massager):
     return traditional_health_care_fee
 
 
+def get_ins_fee_from_ins_code(database, ins_code):
+    ins_fee = 0
+
+    sql = '''
+        SELECT * FROM charge_settings WHERE
+        InsCode = "{0}"
+    '''.format(ins_code)
+    row = database.select_record(sql)
+    if len(row) <= 0:
+        return ins_fee
+
+    ins_fee = number_utils.get_integer(row[0]['Amount'])
+
+    return ins_fee
+
+
 # 取得健保門診診察費
 # 取第一段診察費, 分有無護理人員, 支援醫師等到申報才調整
-def get_ins_diag_fee(database, system_settings, course=1):
+def get_ins_diag_fee(database, system_settings, course=1, diag_code=None):
     ins_diag_fee = 0
 
     if course >= 2:  # 療程無診察費
         return ins_diag_fee
 
-    nurse = system_settings.field('護士人數')
-    if int(nurse) > 0:
-        diag_code = 'A01'
-    else:
-        diag_code = 'A02'
+    if diag_code is None:
+        nurse = system_settings.field('護士人數')
+        if int(nurse) > 0:
+            diag_code = 'A01'
+        else:
+            diag_code = 'A02'
 
-    sql = '''
-        SELECT * FROM charge_settings WHERE
-        InsCode = "{0}"
-    '''.format(diag_code)
-    row = database.select_record(sql)
-    if len(row) <= 0:
-        return ins_diag_fee
-
-    ins_diag_fee = number_utils.get_integer(row[0]['Amount'])
+    ins_diag_fee = get_ins_fee_from_ins_code(database, diag_code)
 
     return ins_diag_fee
+
+
+def get_diag_fee_from_diag_code(database, diag_code):
+    diag_fee = get_ins_fee_from_ins_code(database, diag_code)
+
+    return diag_fee
 
 
 # 取得健保藥費
@@ -250,15 +265,7 @@ def get_ins_drug_fee(database, pres_days):
         return ins_drug_fee
 
     drug_code = 'A21'
-    sql = '''
-        SELECT * FROM charge_settings WHERE
-        InsCode = "{0}"
-    '''.format(drug_code)
-    row = database.select_record(sql)
-    if len(row) <= 0:
-        return ins_drug_fee
-
-    ins_drug_fee = row[0]['Amount'] * pres_days
+    ins_drug_fee = get_ins_fee_from_ins_code(database, drug_code) * pres_days
 
     return ins_drug_fee
 
@@ -281,15 +288,7 @@ def get_ins_pharmacy_fee(database, system_settings, ins_drug_fee, pharmacy_type=
     else:
         pharmacy_code = 'A32'
 
-    sql = '''
-        SELECT * FROM charge_settings WHERE
-        InsCode = "{0}"
-    '''.format(pharmacy_code)
-    row = database.select_record(sql)
-    if len(row) <= 0:
-        return ins_pharmacy_fee
-
-    ins_pharmacy_fee = row[0]['Amount']
+    ins_pharmacy_fee = get_ins_fee_from_ins_code(database, pharmacy_code)
 
     return ins_pharmacy_fee
 
@@ -306,15 +305,7 @@ def get_ins_acupuncture_fee(database, treatment, ins_drug_fee):
     else:
         acupuncture_code = nhi_utils.ACUPUNCTURE_DICT[treatment]
 
-    sql = '''
-        SELECT * FROM charge_settings WHERE
-        InsCode = "{0}"
-    '''.format(acupuncture_code)
-    row = database.select_record(sql)
-    if len(row) <= 0:
-        return ins_acupuncture_fee
-
-    ins_acupuncture_fee = row[0]['Amount']
+    ins_acupuncture_fee = get_ins_fee_from_ins_code(database, acupuncture_code)
 
     return ins_acupuncture_fee
 
@@ -331,15 +322,7 @@ def get_ins_massage_fee(database, treatment, ins_drug_fee):
     else:
         massage_code = nhi_utils.MASSAGE_DICT[treatment]
 
-    sql = '''
-        SELECT * FROM charge_settings WHERE
-        InsCode = "{0}"
-    '''.format(massage_code)
-    row = database.select_record(sql)
-    if len(row) <= 0:
-        return ins_massage_fee
-
-    ins_massage_fee = row[0]['Amount']
+    ins_massage_fee = get_ins_fee_from_ins_code(database, massage_code)
 
     return ins_massage_fee
 
@@ -356,15 +339,7 @@ def get_ins_dislocate_fee(database, treatment, ins_drug_fee):
     else:
         dislocate_code = nhi_utils.DISLOCATE_DICT[treatment]
 
-    sql = '''
-        SELECT * FROM charge_settings WHERE
-        InsCode = "{0}"
-    '''.format(dislocate_code)
-    row = database.select_record(sql)
-    if len(row) <= 0:
-        return ins_dislocate_fee
-
-    ins_dislocate_fee = row[0]['Amount']
+    ins_dislocate_fee = get_ins_fee_from_ins_code(database, dislocate_code)
 
     return ins_dislocate_fee
 
@@ -377,16 +352,7 @@ def get_ins_care_fee(database, treatment):
         return ins_care_fee
 
     care_code = nhi_utils.CARE_DICT[treatment]
-
-    sql = '''
-        SELECT * FROM charge_settings WHERE
-        InsCode = "{0}"
-    '''.format(care_code)
-    row = database.select_record(sql)
-    if len(row) <= 0:
-        return ins_care_fee
-
-    ins_care_fee = row[0]['Amount']
+    ins_care_fee = get_ins_fee_from_ins_code(database, care_code)
 
     return ins_care_fee
 
@@ -508,3 +474,65 @@ def calculate_ins_fee(database, system_settings, case_key):
     ]
 
     database.update_record('cases', fields, 'CaseKey', case_key, data)
+
+
+def update_ins_apply_diag_fee(database, system_settings, ins_apply_key, diag_code):
+    sql = 'SELECT * FROM insapply WHERE InsApplyKey = {0}'.format(ins_apply_key)
+    rows = database.select_record(sql)
+    if len(rows) <= 0:
+        return
+
+    row = rows[0]
+    diag_fee = get_ins_diag_fee(
+        database, system_settings, 0, diag_code
+    )
+
+    ins_total_fee = row['InsTotalFee'] - row['DiagFee'] + diag_fee
+    ins_apply_fee = row['InsApplyFee'] - row['DiagFee'] + diag_fee
+
+    fields = ['DiagCode', 'DiagFee', 'InsTotalFee', 'InsApplyFee']
+    data = [
+        diag_code,
+        diag_fee,
+        ins_total_fee,
+        ins_apply_fee,
+    ]
+
+    database.update_record('insapply', fields, 'InsApplyKey', ins_apply_key, data)
+
+
+def update_treat_fee(database, ins_apply_key, course, treat_percent):
+    sql = 'SELECT * FROM insapply WHERE InsApplyKey = {0}'.format(ins_apply_key)
+    rows = database.select_record(sql)
+    if len(rows) <= 0:
+        return
+
+    row = rows[0]
+    treat_fee = row['TreatFee{0}'.format(course)]
+    adjusted_treat_fee = treat_fee / 100 * treat_percent
+
+    total_treat_fee = row['TreatFee'] - treat_fee + adjusted_treat_fee
+    ins_total_fee = row['InsTotalFee'] - treat_fee + adjusted_treat_fee
+    ins_apply_fee = row['InsApplyFee'] - treat_fee + adjusted_treat_fee
+
+
+    if row['Sequence'] == 8:
+        print('TotalTreatFee:', total_treat_fee, '  TreatFee:', treat_fee, '   Adjusted TreatFee:', adjusted_treat_fee)
+
+    fields = [
+        'TreatFee',
+        'InsTotalFee',
+        'InsApplyFee',
+        'Percent{0}'.format(course),
+        'TreatFee{0}'.format(course),
+    ]
+
+    data = [
+        total_treat_fee,
+        ins_total_fee,
+        ins_apply_fee,
+        treat_percent,
+        adjusted_treat_fee,
+    ]
+
+    database.update_record('insapply', fields, 'InsApplyKey', ins_apply_key, data)

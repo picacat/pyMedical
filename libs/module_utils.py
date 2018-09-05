@@ -9,7 +9,7 @@ from medical_record import *
 
 from charge_settings import *
 from users import *
-from dialog.doctor_nurse_table import *
+from doctor_nurse_table import *
 from dict_diagnostic import *
 from dict_medicine import *
 

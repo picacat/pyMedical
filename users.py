@@ -96,12 +96,16 @@ class Users(QtWidgets.QMainWindow):
             string_utils.xstr(rec['Remark']),
         ]
 
-        for column in range(0, self.ui.tableWidget_users.columnCount()):
-            self.ui.tableWidget_users.setItem(rec_no, column, QtWidgets.QTableWidgetItem(users_rec[column]))
+        for column in range(len(users_rec)):
+            self.ui.tableWidget_users.setItem(
+                rec_no, column,
+                QtWidgets.QTableWidgetItem(users_rec[column])
+            )
 
             if column in [3]:
                 self.ui.tableWidget_users.item(rec_no, column).setTextAlignment(
-                    QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter)
+                    QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
+                )
 
     def open_user_dialog(self):
         person_key = self.table_widget_users.field_value(0)

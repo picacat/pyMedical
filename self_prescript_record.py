@@ -203,19 +203,27 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
             string_utils.xstr(rec['DosageMode']),
         ]
 
-        for column in range(0, self.ui.tableWidget_prescript.columnCount()):
-            self.ui.tableWidget_prescript.setItem(rec_no,
-                                                  column,
-                                                  QtWidgets.QTableWidgetItem(prescript_rec[column]))
+        for column in range(len(prescript_rec)):
+            self.ui.tableWidget_prescript.setItem(
+                rec_no, column,
+                QtWidgets.QTableWidgetItem(prescript_rec[column])
+            )
             if column in [2]:
-                self.ui.tableWidget_prescript.item(rec_no, column).setTextAlignment(
-                    QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+                self.ui.tableWidget_prescript.item(
+                    rec_no, column).setTextAlignment(
+                    QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
+                )
             elif column in [3]:
-                self.ui.tableWidget_prescript.item(rec_no, column).setTextAlignment(
-                    QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter)
+                self.ui.tableWidget_prescript.item(
+                    rec_no, column).setTextAlignment(
+                    QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
+                )
 
             if rec['InsCode'] == '':
-                self.ui.tableWidget_prescript.item(rec_no, column).setForeground(QtGui.QColor('blue'))
+                self.ui.tableWidget_prescript.item(
+                    rec_no, column).setForeground(
+                    QtGui.QColor('blue')
+                )
 
     # 增加處方資料
     def append_null_medicine(self):

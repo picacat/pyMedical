@@ -90,5 +90,8 @@ class DialogInputDisease(QtWidgets.QDialog):
             string_utils.xstr(rec['ChineseName']),
         ]
 
-        for column in range(0, self.ui.tableWidget_disease.columnCount()):
-            self.ui.tableWidget_disease.setItem(rec_no, column, QtWidgets.QTableWidgetItem(disease_rec[column]))
+        for column in range(len(disease_rec)):
+            self.ui.tableWidget_disease.setItem(
+                rec_no, column,
+                QtWidgets.QTableWidgetItem(disease_rec[column])
+            )

@@ -77,8 +77,11 @@ class DictDrug(QtWidgets.QMainWindow):
             string_utils.xstr(rec['DictGroupsName']),
         ]
 
-        for column in range(0, self.ui.tableWidget_dict_groups.columnCount()):
-            self.ui.tableWidget_dict_groups.setItem(rec_no, column, QtWidgets.QTableWidgetItem(dict_groups_rec[column]))
+        for column in range(len(dict_groups_rec)):
+            self.ui.tableWidget_dict_groups.setItem(
+                rec_no, column,
+                QtWidgets.QTableWidgetItem(dict_groups_rec[column])
+            )
 
     def dict_groups_changed(self):
         dict_groups_type = self.table_widget_dict_groups.field_value(1)
@@ -111,14 +114,19 @@ class DictDrug(QtWidgets.QMainWindow):
             string_utils.xstr(rec['SafeQuantity']),
         ]
 
-        for column in range(0, self.ui.tableWidget_dict_drug.columnCount()):
-            self.ui.tableWidget_dict_drug.setItem(rec_no, column, QtWidgets.QTableWidgetItem(dict_drug_rec[column]))
+        for column in range(len(dict_drug_rec)):
+            self.ui.tableWidget_dict_drug.setItem(
+                rec_no, column,
+                QtWidgets.QTableWidgetItem(dict_drug_rec[column])
+            )
             if column in [6, 10, 11, 12, 13]:
                 self.ui.tableWidget_dict_drug.item(rec_no, column).setTextAlignment(
-                    QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+                    QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
+                )
             elif column in [5]:
                 self.ui.tableWidget_dict_drug.item(rec_no, column).setTextAlignment(
-                    QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter)
+                    QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
+                )
 
     # 新增主訴類別
     def _add_dict_groups(self):

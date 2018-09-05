@@ -125,15 +125,27 @@ class WaitingList(QtWidgets.QMainWindow):
                     string_utils.xstr(rec['Remark']),
         ]
 
-        for column in range(0, self.ui.tableWidget_waiting_list.columnCount()):
-            self.ui.tableWidget_waiting_list.setItem(rec_no, column, QtWidgets.QTableWidgetItem(wait_rec[column]))
+        for column in range(len(wait_rec)):
+            self.ui.tableWidget_waiting_list.setItem(
+                rec_no, column,
+                QtWidgets.QTableWidgetItem(wait_rec[column])
+            )
             if column in [2, 5, 6, 7, 9, 16]:
-                self.ui.tableWidget_waiting_list.item(rec_no, column).setTextAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+                self.ui.tableWidget_waiting_list.item(
+                    rec_no, column).setTextAlignment(
+                    QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
+                )
             elif column in [4, 14]:
-                self.ui.tableWidget_waiting_list.item(rec_no, column).setTextAlignment(QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter)
+                self.ui.tableWidget_waiting_list.item(
+                    rec_no, column).setTextAlignment(
+                    QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
+                )
 
             if rec['InsType'] == '自費':
-                self.ui.tableWidget_waiting_list.item(rec_no, column).setForeground(QtGui.QColor('blue'))
+                self.ui.tableWidget_waiting_list.item(
+                    rec_no, column).setForeground(
+                    QtGui.QColor('blue')
+                )
 
     def open_medical_record(self):
         case_key = self.table_widget_waiting_list.field_value(1)

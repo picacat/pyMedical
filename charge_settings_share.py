@@ -163,11 +163,16 @@ class ChargeSettingsShare(QtWidgets.QMainWindow):
             string_utils.xstr(rec['Remark']),
         ]
 
-        for column in range(0, self.ui.tableWidget_diag_share.columnCount()):
-            self.ui.tableWidget_diag_share.setItem(rec_no, column, QtWidgets.QTableWidgetItem(diag_share_rec[column]))
+        for column in range(len(diag_share_rec)):
+            self.ui.tableWidget_diag_share.setItem(
+                rec_no, column,
+                QtWidgets.QTableWidgetItem(diag_share_rec[column])
+            )
             if column in [7]:
-                self.ui.tableWidget_diag_share.item(rec_no, column).setTextAlignment(
-                    QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+                self.ui.tableWidget_diag_share.item(
+                    rec_no, column).setTextAlignment(
+                    QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
+                )
 
     def _diag_share_add(self):
         dialog = dialog_input_share.DialogInputShare(self, self.database, self.system_settings, None, '門診負擔')
@@ -266,11 +271,15 @@ class ChargeSettingsShare(QtWidgets.QMainWindow):
             string_utils.xstr(rec['Remark']),
         ]
 
-        for column in range(0, self.ui.tableWidget_drug_share.columnCount()):
-            self.ui.tableWidget_drug_share.setItem(rec_no, column, QtWidgets.QTableWidgetItem(drug_share_rec[column]))
+        for column in range(len(drug_share_rec)):
+            self.ui.tableWidget_drug_share.setItem(
+                rec_no, column,
+                QtWidgets.QTableWidgetItem(drug_share_rec[column])
+            )
             if column in [5]:
                 self.ui.tableWidget_drug_share.item(rec_no, column).setTextAlignment(
-                    QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+                    QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
+                )
 
     def _drug_share_add(self):
         dialog = dialog_input_share.DialogInputShare(self, self.database, self.system_settings, None, '藥品負擔')

@@ -81,8 +81,11 @@ class DialogSymptom(QtWidgets.QDialog):
             string_utils.xstr(rec['DictGroupsName']),
         ]
 
-        for column in range(0, self.ui.tableWidget_groups.columnCount()):
-            self.ui.tableWidget_groups.setItem(rec_no, column, QtWidgets.QTableWidgetItem(groups_name_rec[column]))
+        for column in range(len(groups_name_rec)):
+            self.ui.tableWidget_groups.setItem(
+                rec_no, column,
+                QtWidgets.QTableWidgetItem(groups_name_rec[column])
+            )
 
     def groups_name_changed(self):
         groups_name = self.table_widget_groups.field_value(1)
@@ -102,8 +105,11 @@ class DialogSymptom(QtWidgets.QDialog):
             string_utils.xstr(rec['ClinicName']),
         ]
 
-        for column in range(0, self.ui.tableWidget_symptom.columnCount()):
-            self.ui.tableWidget_symptom.setItem(rec_no, column, QtWidgets.QTableWidgetItem(symptom_rec[column]))
+        for column in range(len(symptom_rec)):
+            self.ui.tableWidget_symptom.setItem(
+                rec_no, column,
+                QtWidgets.QTableWidgetItem(symptom_rec[column])
+            )
 
     def add_symptom(self):
         selected_symptom = self.table_widget_symptom.field_value(1)

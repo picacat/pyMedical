@@ -77,8 +77,11 @@ class DictTreat(QtWidgets.QMainWindow):
             string_utils.xstr(rec['DictGroupsName']),
         ]
 
-        for column in range(0, self.ui.tableWidget_dict_groups.columnCount()):
-            self.ui.tableWidget_dict_groups.setItem(rec_no, column, QtWidgets.QTableWidgetItem(dict_groups_rec[column]))
+        for column in range(len(dict_groups_rec)):
+            self.ui.tableWidget_dict_groups.setItem(
+                rec_no, column,
+                QtWidgets.QTableWidgetItem(dict_groups_rec[column])
+            )
 
     def dict_groups_changed(self):
         dict_groups_type = self.table_widget_dict_groups.field_value(1)
@@ -106,14 +109,19 @@ class DictTreat(QtWidgets.QMainWindow):
             string_utils.xstr(rec['SalePrice']),
         ]
 
-        for column in range(0, self.ui.tableWidget_dict_treat.columnCount()):
-            self.ui.tableWidget_dict_treat.setItem(rec_no, column, QtWidgets.QTableWidgetItem(dict_treat_rec[column]))
+        for column in range(len(dict_treat_rec)):
+            self.ui.tableWidget_dict_treat.setItem(
+                rec_no, column,
+                QtWidgets.QTableWidgetItem(dict_treat_rec[column])
+            )
             if column in [8]:
                 self.ui.tableWidget_dict_treat.item(rec_no, column).setTextAlignment(
-                    QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+                    QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
+                )
             elif column in [5]:
                 self.ui.tableWidget_dict_treat.item(rec_no, column).setTextAlignment(
-                    QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter)
+                    QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
+                )
 
     # 新增主訴類別
     def _add_dict_groups(self):

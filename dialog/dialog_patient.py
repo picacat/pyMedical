@@ -59,8 +59,11 @@ class DialogPatient(QtWidgets.QDialog):
                        str(rec['Cellphone']),
                        str(rec['Address'])]
 
-        for column in range(0, self.ui.tableWidget_patient_list.columnCount()):
-            self.ui.tableWidget_patient_list.setItem(rec_no, column, QtWidgets.QTableWidgetItem(patient_rec[column]))
+        for column in range(len(patient_rec)):
+            self.ui.tableWidget_patient_list.setItem(
+                rec_no, column,
+                QtWidgets.QTableWidgetItem(patient_rec[column])
+            )
 
     def button_accepted(self):
         self.patient_key = self.table_widget_patient_list.field_value(0)

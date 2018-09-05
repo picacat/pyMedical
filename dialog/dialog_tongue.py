@@ -80,8 +80,11 @@ class DialogTongue(QtWidgets.QDialog):
             string_utils.xstr(rec['DictGroupsName']),
         ]
 
-        for column in range(0, self.ui.tableWidget_groups.columnCount()):
-            self.ui.tableWidget_groups.setItem(rec_no, column, QtWidgets.QTableWidgetItem(groups_name_rec[column]))
+        for column in range(len(groups_name_rec)):
+            self.ui.tableWidget_groups.setItem(
+                rec_no, column,
+                QtWidgets.QTableWidgetItem(groups_name_rec[column])
+            )
 
     def groups_name_changed(self):
         groups_name = self.table_widget_groups.field_value(1)
@@ -101,8 +104,11 @@ class DialogTongue(QtWidgets.QDialog):
             string_utils.xstr(rec['ClinicName']),
         ]
 
-        for column in range(0, self.ui.tableWidget_tongue.columnCount()):
-            self.ui.tableWidget_tongue.setItem(rec_no, column, QtWidgets.QTableWidgetItem(tongue_rec[column]))
+        for column in range(len(tongue_rec)):
+            self.ui.tableWidget_tongue.setItem(
+                rec_no, column,
+                QtWidgets.QTableWidgetItem(tongue_rec[column])
+            )
 
     def add_tongue(self):
         selected_tongue = self.table_widget_tongue.field_value(1)

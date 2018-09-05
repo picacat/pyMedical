@@ -107,8 +107,11 @@ class DialogDisease(QtWidgets.QDialog):
             string_utils.xstr(rec['DictGroupsName']),
         ]
 
-        for column in range(0, self.ui.tableWidget_groups_name.columnCount()):
-            self.ui.tableWidget_groups_name.setItem(rec_no, column, QtWidgets.QTableWidgetItem(groups_name_rec[column]))
+        for column in range(len(groups_name_rec)):
+            self.ui.tableWidget_groups_name.setItem(
+                rec_no, column,
+                QtWidgets.QTableWidgetItem(groups_name_rec[column])
+            )
 
     def groups_name_changed(self):
         groups_name = self.table_widget_groups_name.field_value(1)
@@ -130,11 +133,13 @@ class DialogDisease(QtWidgets.QDialog):
             string_utils.xstr(rec['ChineseName']),
         ]
 
-        for column in range(0, self.ui.tableWidget_disease.columnCount()):
+        for column in range(len(disease_rec)):
             self.ui.tableWidget_disease.setItem(
-                rec_no, column, QtWidgets.QTableWidgetItem(disease_rec[column])
+                rec_no, column,
+                QtWidgets.QTableWidgetItem(disease_rec[column])
             )
             if string_utils.xstr(rec['SpecialCode']) != '':
                 self.ui.tableWidget_disease.item(
-                    rec_no, column
-                ).setForeground(QtGui.QColor('red'))
+                    rec_no, column).setForeground(
+                    QtGui.QColor('red')
+                )

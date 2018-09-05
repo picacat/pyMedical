@@ -199,11 +199,16 @@ class ChargeSettingsNHI(QtWidgets.QMainWindow):
             string_utils.xstr(rec['Remark']),
         ]
 
-        for column in range(0, self.ui.tableWidget_nhi.columnCount()):
-            self.ui.tableWidget_nhi.setItem(rec_no, column, QtWidgets.QTableWidgetItem(nhi_rec[column]))
+        for column in range(len(nhi_rec)):
+            self.ui.tableWidget_nhi.setItem(
+                rec_no, column,
+                QtWidgets.QTableWidgetItem(nhi_rec[column])
+            )
             if column in [4]:
-                self.ui.tableWidget_nhi.item(rec_no, column).setTextAlignment(
-                    QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+                self.ui.tableWidget_nhi.item(
+                    rec_no, column).setTextAlignment(
+                    QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
+                )
 
     def _nhi_add(self):
         dialog = dialog_input_nhi.DialogInputNHI(self, self.database, self.system_settings, None)

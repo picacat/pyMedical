@@ -15,6 +15,7 @@ from libs import nhi_utils
 from libs import number_utils
 from libs import case_utils
 from libs import personnel_utils
+from libs import charge_utils
 
 
 # 候診名單 2018.01.31
@@ -37,6 +38,7 @@ class InsApplyGenerateFile(QtWidgets.QMainWindow):
             '21': 0,
             '22': 0,
             '24': 0,
+            '25': 0,
             '29': 0,
             '30': 0,
             'B6': 0,
@@ -164,6 +166,29 @@ class InsApplyGenerateFile(QtWidgets.QMainWindow):
         pres_days = case_utils.get_pres_days(self.database, row['CaseKey'])
         treat_records = nhi_utils.get_treat_records(self.database, row)
 
+        drug_fee = number_utils.get_integer(row['InterDrugFee'])
+        treat_fee = (
+            number_utils.get_integer(row['AcupunctureFee']) +
+            number_utils.get_integer(row['MassageFee']) +
+            number_utils.get_integer(row['DislocateFee']) +
+            number_utils.get_integer(row['ExamFee'])
+        )
+        diag_code = nhi_utils.get_diag_code(
+            self.database,
+            self.system_settings,
+            string_utils.xstr(row['Doctor']),
+            string_utils.xstr(row['TreatType']),
+            number_utils.get_integer(row['DiagFee']),
+        )
+        diag_fee = charge_utils.get_diag_fee_from_diag_code(self.database, diag_code)
+        pharmacy_fee = number_utils.get_integer(row['PharmacyFee'])
+        ins_total_fee = drug_fee + treat_fee + diag_fee + pharmacy_fee
+        share_fee = (
+            number_utils.get_integer(row['DiagShareFee']) +
+            number_utils.get_integer(row['DrugShareFee'])
+        )
+        ins_apply_fee = ins_total_fee - share_fee
+
         fields = [
             'ClinicID', 'ApplyDate', 'ApplyPeriod', 'ApplyType', 'CaseType', 'Sequence',
             'SpecialCode1', 'SpecialCode2', 'SpecialCode3', 'SpecialCode4',
@@ -203,7 +228,8 @@ class InsApplyGenerateFile(QtWidgets.QMainWindow):
                 self.database,
                 string_utils.xstr(row['Share']),
                 string_utils.xstr(row['Treatment']),
-                number_utils.get_integer(row['Continuance'])
+                number_utils.get_integer(row['Continuance']),
+                row,
             ),
             nhi_utils.get_visit(row),
             string_utils.xstr(row['DiseaseCode1']),
@@ -216,26 +242,13 @@ class InsApplyGenerateFile(QtWidgets.QMainWindow):
                 self.database, string_utils.xstr(row['Doctor'])
             ),
             nhi_utils.get_pharmacist_id(self.database, self.system_settings, row),
-            number_utils.get_integer(row['InterDrugFee']),
-            (number_utils.get_integer(row['AcupunctureFee']) +
-             number_utils.get_integer(row['MassageFee']) +
-             number_utils.get_integer(row['DislocateFee']) +
-             number_utils.get_integer(row['ExamFee'])),
-            nhi_utils.get_diag_code(
-                self.system_settings,
-                string_utils.xstr(row['TreatType']),
-                number_utils.get_integer(row['DiagFee']),
-            ),
-            number_utils.get_integer(row['DiagFee']),
+            drug_fee, treat_fee,
+            diag_code, diag_fee,
             nhi_utils.get_pharmacy_code(
                 self.system_settings,
                 row, pres_days,
             ),
-            number_utils.get_integer(row['PharmacyFee']),
-            number_utils.get_integer(row['InsTotalFee']),
-            (number_utils.get_integer(row['DiagShareFee']) +
-             number_utils.get_integer(row['DrugShareFee'])),
-            number_utils.get_integer(row['InsApplyFee']),
+            pharmacy_fee, ins_total_fee, share_fee, ins_apply_fee,
             number_utils.get_integer(row['AgentFee']),
             number_utils.get_integer(row['PatientKey']),
             string_utils.xstr(row['Name']),

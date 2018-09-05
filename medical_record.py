@@ -11,6 +11,7 @@ from libs import date_utils
 from libs import cshis_utils
 from libs import nhi_utils
 from libs import case_utils
+from libs import system_utils
 import ins_prescript_record
 import self_prescript_record
 import medical_record_recently_history
@@ -40,7 +41,9 @@ class MedicalRecord(QtWidgets.QMainWindow):
         self.ui = None
         self._init_tab()
 
-        self._read_data()
+        if not self._read_data():
+            return
+
         self._set_ui()
         self._set_signal()
         self._set_data()
@@ -180,10 +183,32 @@ class MedicalRecord(QtWidgets.QMainWindow):
                     disease_list[i+1][0].setText(None)
 
     def _read_data(self):
-        sql = 'SELECT * FROM cases WHERE CaseKey = {0}'.format(self.case_key)
-        self.medical_record = self.database.select_record(sql)[0]
-        sql = 'SELECT * FROM patient WHERE PatientKey = {0}'.format(self.medical_record['PatientKey'])
-        self.patient_data = self.database.select_record(sql)[0]
+        read_success = True
+
+        try:
+            sql = 'SELECT * FROM cases WHERE CaseKey = {0}'.format(self.case_key)
+            self.medical_record = self.database.select_record(sql)[0]
+        except IndexError:
+            system_utils.show_message_box(
+                QtWidgets.QMessageBox.Critical,
+                '資料遺失',
+                '<font size="4" color="red"><b>找不到病歷資料, 請重新掛號.</b></font>',
+                '資料不明原因遺失.'
+            )
+            read_success = False
+        try:
+            sql = 'SELECT * FROM patient WHERE PatientKey = {0}'.format(self.medical_record['PatientKey'])
+            self.patient_data = self.database.select_record(sql)[0]
+        except IndexError:
+            system_utils.show_message_box(
+                QtWidgets.QMessageBox.Critical,
+                '資料遺失',
+                '<font size="4" color="red"><b>找不到病患資料, 請新掛號.</b></font>',
+                '資料不明原因遺失.'
+            )
+            read_success = False
+
+        return read_success
 
     def _set_data(self):
         self._set_patient_data()

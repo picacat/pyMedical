@@ -84,8 +84,11 @@ class DictCure(QtWidgets.QMainWindow):
             string_utils.xstr(rec['DictGroupsName']),
         ]
 
-        for column in range(0, self.ui.tableWidget_dict_groups.columnCount()):
-            self.ui.tableWidget_dict_groups.setItem(rec_no, column, QtWidgets.QTableWidgetItem(dict_groups_rec[column]))
+        for column in range(len(dict_groups_rec)):
+            self.ui.tableWidget_dict_groups.setItem(
+                rec_no, column,
+                QtWidgets.QTableWidgetItem(dict_groups_rec[column])
+            )
 
     def dict_groups_changed(self):
         dict_groups_type = self.table_widget_dict_groups.field_value(1)
@@ -107,8 +110,11 @@ class DictCure(QtWidgets.QMainWindow):
             string_utils.xstr(rec['DictGroupsName']),
         ]
 
-        for column in range(0, self.ui.tableWidget_dict_groups_name.columnCount()):
-            self.ui.tableWidget_dict_groups_name.setItem(rec_no, column, QtWidgets.QTableWidgetItem(dict_groups_name_rec[column]))
+        for column in range(len(dict_groups_name_rec)):
+            self.ui.tableWidget_dict_groups_name.setItem(
+                rec_no, column,
+                QtWidgets.QTableWidgetItem(dict_groups_name_rec[column])
+            )
 
     def dict_groups_name_changed(self):
         dict_groups_name = self.table_widget_dict_groups_name.field_value(1)
@@ -134,8 +140,11 @@ class DictCure(QtWidgets.QMainWindow):
             string_utils.xstr(rec['ClinicName']),
         ]
 
-        for column in range(0, self.ui.tableWidget_dict_cure.columnCount()):
-            self.ui.tableWidget_dict_cure.setItem(rec_no, column, QtWidgets.QTableWidgetItem(dict_cure_rec[column]))
+        for column in range(len(dict_cure_rec)):
+            self.ui.tableWidget_dict_cure.setItem(
+                rec_no, column, QtWidgets.
+                    QTableWidgetItem(dict_cure_rec[column])
+            )
 
     # 新增主訴類別
     def _add_dict_groups(self):

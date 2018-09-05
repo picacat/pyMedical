@@ -88,12 +88,21 @@ class PatientList(QtWidgets.QMainWindow):
             string_utils.xstr(rec['Address']),
         ]
 
-        for column in range(0, self.ui.tableWidget_patient_list.columnCount()):
-            self.ui.tableWidget_patient_list.setItem(rec_no, column, QtWidgets.QTableWidgetItem(patient_record[column]))
+        for column in range(len(patient_record)):
+            self.ui.tableWidget_patient_list.setItem(
+                rec_no, column,
+                QtWidgets.QTableWidgetItem(patient_record[column])
+            )
             if column in [0]:
-                self.ui.tableWidget_patient_list.item(rec_no, column).setTextAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+                self.ui.tableWidget_patient_list.item(
+                    rec_no, column).setTextAlignment(
+                    QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
+                )
             elif column in [2]:
-                self.ui.tableWidget_patient_list.item(rec_no, column).setTextAlignment(QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter)
+                self.ui.tableWidget_patient_list.item(
+                    rec_no, column).setTextAlignment(
+                    QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
+                )
 
     def delete_patient_record(self):
         name = self.table_widget_patient_list.field_value(1)

@@ -80,8 +80,11 @@ class DialogCure(QtWidgets.QDialog):
             string_utils.xstr(rec['DictGroupsName']),
         ]
 
-        for column in range(0, self.ui.tableWidget_groups.columnCount()):
-            self.ui.tableWidget_groups.setItem(rec_no, column, QtWidgets.QTableWidgetItem(groups_name_rec[column]))
+        for column in range(len(groups_name_rec)):
+            self.ui.tableWidget_groups.setItem(
+                rec_no, column,
+                QtWidgets.QTableWidgetItem(groups_name_rec[column])
+            )
 
     def groups_name_changed(self):
         groups_name = self.table_widget_groups.field_value(1)
@@ -101,8 +104,11 @@ class DialogCure(QtWidgets.QDialog):
             string_utils.xstr(rec['ClinicName']),
         ]
 
-        for column in range(0, self.ui.tableWidget_cure.columnCount()):
-            self.ui.tableWidget_cure.setItem(rec_no, column, QtWidgets.QTableWidgetItem(cure_rec[column]))
+        for column in range(len(cure_rec)):
+            self.ui.tableWidget_cure.setItem(
+                rec_no, column,
+                QtWidgets.QTableWidgetItem(cure_rec[column])
+            )
 
     def add_cure(self):
         selected_cure = self.table_widget_cure.field_value(1)

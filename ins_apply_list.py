@@ -4,16 +4,11 @@
 import sys
 
 from PyQt5 import QtWidgets, QtGui, QtCore
-from PyQt5.QtWidgets import QMessageBox, QPushButton
-import datetime
 
 from classes import table_widget
 from libs import ui_utils
-from libs import date_utils
 from libs import string_utils
 from libs import nhi_utils
-from libs import number_utils
-from dialog import dialog_ins_apply
 
 
 # 候診名單 2018.01.31
@@ -31,6 +26,9 @@ class InsApplyList(QtWidgets.QMainWindow):
         self.clinic_id = args[6]
         self.case_type = args[7]
         self.ui = None
+
+        self.apply_date = nhi_utils.get_apply_date(self.apply_year, self.apply_month)
+        self.apply_type_code = nhi_utils.APPLY_TYPE_CODE[self.apply_type]
 
         self._set_ui()
         self._set_signal()
@@ -68,11 +66,6 @@ class InsApplyList(QtWidgets.QMainWindow):
         self.parent.open_medical_record(case_key, '健保申報')
 
     def read_data(self):
-        apply_date = '{0:0>3}{1:0>2}'.format(self.apply_year-1911, self.apply_month)
-        if self.apply_type == '申報':
-            apply_type = '1'
-        else:
-            apply_type = '2'
 
         sql = '''
             SELECT *
@@ -84,7 +77,7 @@ class InsApplyList(QtWidgets.QMainWindow):
                 ClinicID = "{3}" AND
                 CaseType = "{4}"
             ORDER BY Sequence
-        '''.format(apply_date, apply_type, self.period, self.clinic_id, self.case_type)
+        '''.format(self.apply_date, self.apply_type_code, self.period, self.clinic_id, self.case_type)
 
         self.table_widget_ins_apply_list.set_db_data(sql, self._set_table_data)
 

@@ -312,19 +312,27 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
             string_utils.xstr(rec['DosageMode']),
         ]
 
-        for column in range(0, self.ui.tableWidget_prescript.columnCount()):
-            self.ui.tableWidget_prescript.setItem(rec_no,
-                                                  column,
-                                                  QtWidgets.QTableWidgetItem(prescript_rec[column]))
+        for column in range(len(prescript_rec)):
+            self.ui.tableWidget_prescript.setItem(
+                rec_no, column,
+                QtWidgets.QTableWidgetItem(prescript_rec[column])
+            )
             if column in [2]:
-                self.ui.tableWidget_prescript.item(rec_no, column).setTextAlignment(
-                    QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+                self.ui.tableWidget_prescript.item(
+                    rec_no, column).setTextAlignment(
+                    QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
+                )
             elif column in [3]:
-                self.ui.tableWidget_prescript.item(rec_no, column).setTextAlignment(
-                    QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter)
+                self.ui.tableWidget_prescript.item(
+                    rec_no, column).setTextAlignment(
+                    QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
+                )
 
             if rec['InsCode'] == '':
-                self.ui.tableWidget_prescript.item(rec_no, column).setForeground(QtGui.QColor('blue'))
+                self.ui.tableWidget_prescript.item(
+                    rec_no, column).setForeground(
+                    QtGui.QColor('blue')
+                )
 
     def _read_treat(self):
         self.combo_box_treatment.setCurrentText('')
@@ -335,8 +343,8 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
         sql = """ 
             SELECT * FROM prescript WHERE 
             (CaseKey = {0}) AND (MedicineSet = {1}) AND
-            (MedicineType in {2}) AND
-            (MedicineName not in {3})
+            (MedicineType IN {2}) AND
+            (MedicineName NOT IN {3})
             ORDER BY PrescriptKey
         """.format(self.case_key, self.medicine_set, tuple(medicine_groups), tuple(nhi_utils.INS_TREAT))
         self.table_widget_treat.set_db_data(sql, self._set_treat_data, None, 1)
@@ -353,9 +361,11 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
             string_utils.xstr(rec['InsCode']),
         ]
 
-        for column in range(0, self.ui.tableWidget_treat.columnCount()):
+        for column in range(len(treat_rec)):
             self.ui.tableWidget_treat.setItem(
-                rec_no, column, QtWidgets.QTableWidgetItem(treat_rec[column]))
+                rec_no, column,
+                QtWidgets.QTableWidgetItem(treat_rec[column])
+            )
 
     # 增加處方資料
     def append_null_medicine(self):

@@ -210,12 +210,12 @@ def update_xml_doc(xml_field, field_name, field_value):
 '''
 
 
-def get_pres_days(database, case_key):
+def get_pres_days(database, case_key, medicine_set=1):
     sql = '''
-        SELECT * FROM dosage WHERE 
-            MedicineSet = 1 AND
-            CaseKey = {0}
-    '''.format(case_key)
+        SELECT Days FROM dosage WHERE 
+            CaseKey = {0} AND
+            MedicineSet = {1}
+    '''.format(case_key, medicine_set)
     rows = database.select_record(sql)
 
     if len(rows) > 0:
@@ -224,3 +224,33 @@ def get_pres_days(database, case_key):
         pres_days = 0
 
     return pres_days
+
+def get_packages(database, case_key, medicine_set=1):
+    sql = '''
+        SELECT Packages FROM dosage WHERE 
+            CaseKey = {0} AND
+            MedicineSet = {1} 
+    '''.format(case_key, medicine_set)
+    rows = database.select_record(sql)
+
+    if len(rows) > 0:
+        package = number_utils.get_integer(rows[0]['Packages'])
+    else:
+        package = 0
+
+    return package
+
+def get_instruction(database, case_key, medicine_set=1):
+    sql = '''
+        SELECT Instruction FROM dosage WHERE 
+            CaseKey = {0} AND
+            MedicineSet = {1} 
+    '''.format(case_key, medicine_set)
+    rows = database.select_record(sql)
+
+    if len(rows) > 0:
+        instruction = string_utils.xstr(rows[0]['Instruction'])
+    else:
+        instruction = None
+
+    return instruction

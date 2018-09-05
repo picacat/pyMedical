@@ -146,11 +146,16 @@ class ChargeSettingsRegist(QtWidgets.QMainWindow):
             string_utils.xstr(rec['Remark']),
         ]
 
-        for column in range(0, self.ui.tableWidget_regist_fee.columnCount()):
-            self.ui.tableWidget_regist_fee.setItem(rec_no, column, QtWidgets.QTableWidgetItem(regist_fee_rec[column]))
+        for column in range(len(regist_fee_rec)):
+            self.ui.tableWidget_regist_fee.setItem(
+                rec_no, column,
+                QtWidgets.QTableWidgetItem(regist_fee_rec[column])
+            )
             if column in [7]:
-                self.ui.tableWidget_regist_fee.item(rec_no, column).setTextAlignment(
-                    QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+                self.ui.tableWidget_regist_fee.item(
+                    rec_no, column).setTextAlignment(
+                    QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
+                )
 
     def _set_regist_fee_basic_data(self):
         fields = ['ChargeType', 'ItemName', 'InsType', 'ShareType', 'TreatType', 'Course',
@@ -199,11 +204,15 @@ class ChargeSettingsRegist(QtWidgets.QMainWindow):
             string_utils.xstr(rec['Remark']),
         ]
 
-        for column in range(0, self.ui.tableWidget_discount.columnCount()):
-            self.ui.tableWidget_discount.setItem(rec_no, column, QtWidgets.QTableWidgetItem(discount_rec[column]))
+        for column in range(len(discount_rec)):
+            self.ui.tableWidget_discount.setItem(
+                rec_no, column,
+                QtWidgets.QTableWidgetItem(discount_rec[column])
+            )
             if column in [3]:
                 self.ui.tableWidget_discount.item(rec_no, column).setTextAlignment(
-                    QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+                    QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
+                )
 
     def _set_discount_basic_data(self):
         fields = ['ChargeType', 'ItemName', 'InsType', 'ShareType', 'TreatType',

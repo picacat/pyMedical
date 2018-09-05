@@ -36,7 +36,6 @@ class ICRecordUpload(QtWidgets.QMainWindow):
         }
         self.ui = None
         self.upload_type = '1'  # 預設-正常上傳
-        self.xml_out_path = './nhi_upload'
 
         self._set_ui()
         self._set_signal()
@@ -145,15 +144,27 @@ class ICRecordUpload(QtWidgets.QMainWindow):
             error_message,
         ]
 
-        for column in range(0, self.ui.tableWidget_ic_record.columnCount()):
-            self.ui.tableWidget_ic_record.setItem(rec_no, column, QtWidgets.QTableWidgetItem(medical_record[column]))
+        for column in range(len(medical_record)):
+            self.ui.tableWidget_ic_record.setItem(
+                rec_no, column,
+                QtWidgets.QTableWidgetItem(medical_record[column])
+            )
             if column in [4, 5, 6, 14, 15, 19, 20, 21, 22]:
-                self.ui.tableWidget_ic_record.item(rec_no, column).setTextAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+                self.ui.tableWidget_ic_record.item(
+                    rec_no, column).setTextAlignment(
+                    QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
+                )
             elif column in [1, 8]:
-                self.ui.tableWidget_ic_record.item(rec_no, column).setTextAlignment(QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter)
+                self.ui.tableWidget_ic_record.item(
+                    rec_no, column).setTextAlignment(
+                    QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
+                )
 
             if number_utils.get_integer(rec['TotalFee']) > 0 or rec['InsType'] == '自費':
-                self.ui.tableWidget_ic_record.item(rec_no, column).setForeground(QtGui.QColor('blue'))
+                self.ui.tableWidget_ic_record.item(
+                    rec_no, column).setForeground(
+                    QtGui.QColor('blue')
+                )
 
     def _check_error(self, medical_record):
         if string_utils.xstr(medical_record['DoctorDone']) == 'False':
@@ -233,7 +244,7 @@ class ICRecordUpload(QtWidgets.QMainWindow):
     # 上傳資料
     def upload_xml_file(self):
         xml_file_name = '{0}/IC-{1}-{2}.xml'.format(
-            self.xml_out_path,
+            nhi_utils.XML_OUT_PATH,
             self.upload_type,
             date_utils.date_to_str()
         )

@@ -53,13 +53,13 @@ class Database:
                     user=config['db']['user'],
                     host=config['db']['host'],
                     password=config['db']['password'],
+                    charset=config['db']['charset'],
                     buffered=True,
                     use_pure=True
                 )
                 cursor = self.cnx.cursor(dictionary=True)
                 cursor.execute('CREATE DATABASE IF NOT EXISTS {0}'.format(config['db']['database']))
                 cursor.execute('USE {0}'.format(config['db']['database']))
-                cursor.execute('set names {encoding}'.format(encoding=config['db']['encoding']))
                 cursor.close()
             else:
                 self.cnx = mysql.connect(
@@ -67,6 +67,7 @@ class Database:
                     user=kwargs['user'],
                     password=kwargs['password'],
                     database=kwargs['database'],
+                    charset=kwargs['charset'],
                     buffered=True,
                     use_pure=True
                 )

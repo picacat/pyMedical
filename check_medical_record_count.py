@@ -138,9 +138,11 @@ class CheckMedicalRecordCount(QtWidgets.QMainWindow):
             str(exceed_count)
         ]
 
-        for column in range(0, self.ui.tableWidget_patient_treat.columnCount()):
+        for column in range(len(patient_row)):
             self.ui.tableWidget_patient_treat.setItem(
-                rec_no, column, QtWidgets.QTableWidgetItem(patient_row[column]))
+                rec_no, column,
+                QtWidgets.QTableWidgetItem(patient_row[column])
+            )
             if column in [0, 2, 3]:
                 self.ui.tableWidget_patient_treat.item(
                     rec_no, column).setTextAlignment(
@@ -172,9 +174,11 @@ class CheckMedicalRecordCount(QtWidgets.QMainWindow):
             str(exceed_count)
         ]
 
-        for column in range(0, self.ui.tableWidget_patient_diag.columnCount()):
+        for column in range(len(patient_row)):
             self.ui.tableWidget_patient_diag.setItem(
-                rec_no, column, QtWidgets.QTableWidgetItem(patient_row[column]))
+                rec_no, column, QtWidgets.
+                    QTableWidgetItem(patient_row[column])
+            )
             if column in [0, 2, 3]:
                 self.ui.tableWidget_patient_diag.item(
                     rec_no, column).setTextAlignment(

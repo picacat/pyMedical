@@ -1,0 +1,343 @@
+#!/usr/bin/env python3
+#coding: utf-8
+
+import sys
+
+from PyQt5 import QtWidgets, QtGui, QtCore
+from PyQt5.QtWidgets import QMessageBox, QPushButton
+import os.path
+from lxml import etree as ET
+
+import datetime
+
+from classes import table_widget
+from libs import ui_utils
+from libs import date_utils
+from libs import string_utils
+from libs import nhi_utils
+from libs import number_utils
+
+
+# 候診名單 2018.01.31
+class InsCheckApplyFee(QtWidgets.QMainWindow):
+    # 初始化
+    def __init__(self, parent=None, *args):
+        super(InsCheckApplyFee, self).__init__(parent)
+        self.parent = parent
+        self.database = args[0]
+        self.system_settings = args[1]
+        self.apply_year = args[2]
+        self.apply_month = args[3]
+        self.start_date = args[4]
+        self.end_date = args[5]
+        self.period = args[6]
+        self.apply_type = args[7]
+        self.clinic_id = args[8]
+        self.ins_generate_date = args[9]
+        self.ins_total_fee = args[10]
+        self.ui = None
+
+        self.apply_date = nhi_utils.get_apply_date(self.apply_year, self.apply_month)
+        self.apply_type_code = nhi_utils.APPLY_TYPE_CODE[self.apply_type]
+
+        self._set_ui()
+        self._set_signal()
+        self._check_ins_apply_fee()
+
+    # 解構
+    def __del__(self):
+        self.close_all()
+
+    # 關閉
+    def close_all(self):
+        pass
+
+    def close_tab(self):
+        current_tab = self.parent.ui.tabWidget_window.currentIndex()
+        self.parent.close_tab(current_tab)
+
+    def close_app(self):
+        self.close_all()
+        self.close_tab()
+
+    # 設定GUI
+    def _set_ui(self):
+        self.ui = ui_utils.load_ui_file(ui_utils.UI_INS_CHECK_APPLY_FEE, self)
+        self.ui.tableWidget_xml.setAlternatingRowColors(True)
+        self.table_widget_error_message = table_widget.TableWidget(
+            self.ui.tableWidget_error_message, self.database
+        )
+        self._set_table_width()
+
+    def _set_table_width(self):
+        width = [100, 100, 120, 800]
+        self.table_widget_error_message.set_table_heading_width(width)
+
+    # 設定信號
+    def _set_signal(self):
+        pass
+
+    def _check_ins_apply_fee(self):
+        self.ui.tableWidget_error_message.setRowCount(0)
+        self.ui.tableWidget_xml.setRowCount(4)
+
+        self._parse_ins_calculated_data()
+
+        xml_file_name = nhi_utils.get_ins_xml_file_name(self.apply_type_code, self.apply_date)
+        if not os.path.isfile(xml_file_name):
+            return
+
+        tree = ET.parse(xml_file_name)
+
+        root = tree.getroot()
+        self._parse_tdata(root)
+        self._parse_ddata(root)
+
+        for row in range(self.ui.tableWidget_xml.rowCount()):
+            for column in range(1, self.ui.tableWidget_xml.columnCount()):
+                item = self.ui.tableWidget_xml.item(row, column)
+                if item is not None:
+                    item.setTextAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+
+
+    def _parse_ins_calculated_data(self):
+        row_no = 0
+        self.ui.tableWidget_xml.setItem(
+            row_no, 0, QtWidgets.QTableWidgetItem(string_utils.xstr('申報檔案'))
+        )
+        self.ui.tableWidget_xml.setItem(
+            row_no, 1, QtWidgets.QTableWidgetItem(string_utils.xstr(
+                self.ins_total_fee['total_count']))
+        )
+        self.ui.tableWidget_xml.setItem(
+            row_no, 7, QtWidgets.QTableWidgetItem(string_utils.xstr(
+                self.ins_total_fee['share_amount']))
+        )
+        self.ui.tableWidget_xml.setItem(
+            row_no, 8, QtWidgets.QTableWidgetItem(string_utils.xstr(
+                self.ins_total_fee['total_amount']))
+        )
+
+    def _parse_tdata(self, root):
+        tdata = root.xpath('//outpatient/tdata')[0]
+
+        tdata = self._convert_node_to_dict(tdata)
+        total_count = number_utils.get_integer(tdata['t37'])
+        total_fee = number_utils.get_integer(tdata['t38'])
+        total_share_fee = number_utils.get_integer(tdata['t40'])
+
+        row_no = 1
+        self.ui.tableWidget_xml.setItem(
+            row_no, 0, QtWidgets.QTableWidgetItem(string_utils.xstr('總表段'))
+        )
+        self.ui.tableWidget_xml.setItem(
+            row_no, 1, QtWidgets.QTableWidgetItem(string_utils.xstr(total_count))
+        )
+        self.ui.tableWidget_xml.setItem(
+            row_no, 7, QtWidgets.QTableWidgetItem(string_utils.xstr(total_share_fee))
+        )
+        self.ui.tableWidget_xml.setItem(
+            row_no, 8, QtWidgets.QTableWidgetItem(string_utils.xstr(total_fee))
+        )
+
+    def _parse_ddata(self, root):
+
+        dbody = root.xpath('//outpatient/ddata/dbody')
+
+        ddata_fee = {
+            'case_type': None,
+            'sequence': None,
+            'name': None,
+            'total_count': 0,
+            'diag_fee': 0,
+            'drug_fee': 0,
+            'pharmacy_fee': 0,
+            'treat_fee': 0,
+            'total_fee': 0,
+            'share_fee': 0,
+            'apply_fee': 0,
+            'agent_fee': 0,
+        }
+        pdata_fee = {
+            'total_count': 0,
+            'diag_fee': 0,
+            'drug_fee': 0,
+            'pharmacy_fee': 0,
+            'treat_fee': 0,
+            'total_fee': 0,
+            'share_fee': 0,
+            'apply_fee': 0,
+            'agent_fee': 0,
+        }
+
+        for row_no, ddata in zip(range(len(dbody)), dbody):
+            dhead = root.xpath('//outpatient/ddata/dhead')[row_no]
+            dhead_data = self._convert_node_to_dict(dhead)
+
+            ddata_fee['case_type'] = dhead_data['d1']
+            ddata_fee['sequence'] = dhead_data['d2']
+            ddata_fee['total_count'] += 1
+
+            xdata = self._convert_node_to_dict(ddata)
+            ddata_fee['name'] = xdata['d49']
+
+            try:
+                diag_fee = number_utils.get_integer(xdata['d36'])
+                ddata_fee['diag_fee'] += diag_fee
+            except KeyError:
+                diag_fee = 0
+            try:
+                drug_fee = number_utils.get_integer(xdata['d32'])
+                ddata_fee['drug_fee'] += drug_fee
+            except KeyError:
+                drug_fee = 0
+            try:
+                pharmacy_fee = number_utils.get_integer(xdata['d38'])
+                ddata_fee['pharmacy_fee'] += pharmacy_fee
+            except KeyError:
+                pharmacy_fee = 0
+            try:
+                treat_fee = number_utils.get_integer(xdata['d33'])
+                ddata_fee['treat_fee'] += treat_fee
+            except KeyError:
+                treat_fee = 0
+            try:
+                total_fee = number_utils.get_integer(xdata['d39'])
+                ddata_fee['total_fee'] += total_fee
+            except KeyError:
+                total_fee = 0
+            try:
+                share_fee = number_utils.get_integer(xdata['d40'])
+                ddata_fee['share_fee'] += share_fee
+            except KeyError:
+                share_fee = 0
+            try:
+                apply_fee = number_utils.get_integer(xdata['d41'])
+                ddata_fee['apply_fee'] += apply_fee
+            except KeyError:
+                apply_fee = 0
+            try:
+                ddata_fee['agent_fee'] += number_utils.get_integer(xdata['d43'])
+            except KeyError:
+                pass
+
+            result = self._parse_pdata(ddata, ddata_fee)
+            error_message = []
+            if result['diag_fee'] != diag_fee:
+                error_message.append('診察費不平衡, 清單段: {0}, 醫令段: {1}'.format(
+                    diag_fee, result['diag_fee']
+                ))
+            if result['drug_fee'] != drug_fee:
+                error_message.append('藥費不平衡, 清單段: {0}, 醫令段: {1}'.format(
+                    drug_fee, result['drug_fee']
+                ))
+            if result['treat_fee'] != treat_fee:
+                error_message.append('處置費不平衡, 清單段: {0}, 醫令段: {1}'.format(
+                    treat_fee, result['treat_fee']
+                ))
+            if result['pharmacy_fee'] != pharmacy_fee:
+                error_message.append('調劑費不平衡, 清單段: {0}, 醫令段: {1}'.format(
+                    pharmacy_fee, result['pharmacy_fee']
+                ))
+
+            if len(error_message) > 0:
+                self.ui.tableWidget_error_message.setRowCount(self.ui.tableWidget_error_message.rowCount() + 1)
+                data = [
+                    ddata_fee['case_type'],
+                    ddata_fee['sequence'],
+                    ddata_fee['name'],
+                    ', '.join(error_message),
+                ]
+
+                row_no = self.ui.tableWidget_error_message.rowCount() - 1
+                for i in range(len(data)):
+                    self.ui.tableWidget_error_message.setItem(
+                        row_no, i, QtWidgets.QTableWidgetItem(string_utils.xstr(data[i]))
+                    )
+
+            pdata_fee['total_count'] += result['total_count']
+            pdata_fee['diag_fee'] += result['diag_fee']
+            pdata_fee['drug_fee'] += result['drug_fee']
+            pdata_fee['pharmacy_fee'] += result['pharmacy_fee']
+            pdata_fee['treat_fee'] += result['treat_fee']
+            pdata_fee['total_fee'] += result['total_fee']
+            pdata_fee['share_fee'] += result['share_fee']
+            pdata_fee['apply_fee'] += result['apply_fee']
+            pdata_fee['agent_fee'] += result['agent_fee']
+
+
+        data = [
+            '清單段',
+            ddata_fee['total_count'],
+            ddata_fee['diag_fee'],
+            ddata_fee['drug_fee'],
+            ddata_fee['pharmacy_fee'],
+            ddata_fee['treat_fee'],
+            ddata_fee['total_fee'],
+            ddata_fee['share_fee'],
+            ddata_fee['apply_fee'],
+            ddata_fee['agent_fee'],
+        ]
+
+        row_no = 2
+        for i in range(len(data)):
+            self.ui.tableWidget_xml.setItem(
+                row_no, i, QtWidgets.QTableWidgetItem(string_utils.xstr(data[i]))
+            )
+
+        data = [
+            '醫令段',
+            pdata_fee['total_count'],
+            pdata_fee['diag_fee'],
+            pdata_fee['drug_fee'],
+            pdata_fee['pharmacy_fee'],
+            pdata_fee['treat_fee'],
+            pdata_fee['total_fee'],
+            pdata_fee['share_fee'],
+            pdata_fee['apply_fee'],
+            pdata_fee['agent_fee'],
+        ]
+
+        row_no = 3
+        for i in range(len(data)):
+            self.ui.tableWidget_xml.setItem(
+                row_no, i, QtWidgets.QTableWidgetItem(string_utils.xstr(data[i]))
+            )
+
+    def _parse_pdata(self, ddata, ddata_fee):
+        pdata = ddata.xpath('./pdata')
+
+        pdata_fee = {
+            'total_count': 0,
+            'diag_fee': 0,
+            'drug_fee': 0,
+            'pharmacy_fee': 0,
+            'treat_fee': 0,
+            'total_fee': 0,
+            'share_fee': 0,
+            'apply_fee': 0,
+            'agent_fee': 0,
+        }
+        for row in pdata:
+            pdata_fee['total_count'] += 1
+
+            xdata = self._convert_node_to_dict(row)
+            price = number_utils.get_integer(xdata['p12'])
+            if string_utils.xstr(xdata['p3']) == '0':
+                pdata_fee['diag_fee'] += price
+            elif string_utils.xstr(xdata['p3']) == '1':
+                pdata_fee['drug_fee'] += price
+            elif string_utils.xstr(xdata['p3']) == '2':
+                pdata_fee['treat_fee'] += price
+            elif string_utils.xstr(xdata['p3']) == '9':
+                pdata_fee['pharmacy_fee'] += price
+
+        return pdata_fee
+
+    def _convert_node_to_dict(self, node):
+        node_dict = {}
+        for node_data in node:
+            node_dict[node_data.tag] = node_data.text
+
+        return node_dict
+

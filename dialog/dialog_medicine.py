@@ -134,8 +134,11 @@ class DialogMedicine(QtWidgets.QDialog):
             string_utils.xstr(rec['DictGroupsName']),
         ]
 
-        for column in range(0, self.ui.tableWidget_dict_groups.columnCount()):
-            self.ui.tableWidget_dict_groups.setItem(rec_no, column, QtWidgets.QTableWidgetItem(dict_groups_rec[column]))
+        for column in range(len(dict_groups_rec)):
+            self.ui.tableWidget_dict_groups.setItem(
+                rec_no, column,
+                QtWidgets.QTableWidgetItem(dict_groups_rec[column])
+            )
 
     def dict_groups_changed(self):
         dict_groups_type = self.table_widget_dict_groups.field_value(1)
@@ -164,14 +167,21 @@ class DialogMedicine(QtWidgets.QDialog):
             string_utils.xstr(rec['MedicineType']),
         ]
 
-        for column in range(0, self.ui.tableWidget_medicine.columnCount()):
-            self.ui.tableWidget_medicine.setItem(rec_no, column, QtWidgets.QTableWidgetItem(medicine_rec[column]))
+        for column in range(len(medicine_rec)):
+            self.ui.tableWidget_medicine.setItem(
+                rec_no, column,
+                QtWidgets.QTableWidgetItem(medicine_rec[column])
+            )
             if column in [4]:
-                self.ui.tableWidget_medicine.item(rec_no, column).setTextAlignment(
-                    QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+                self.ui.tableWidget_medicine.item(
+                    rec_no, column).setTextAlignment(
+                    QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
+                )
             elif column in [3]:
-                self.ui.tableWidget_medicine.item(rec_no, column).setTextAlignment(
-                    QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter)
+                self.ui.tableWidget_medicine.item(
+                    rec_no, column).setTextAlignment(
+                    QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
+                )
 
     def phonetic_button_clicked(self):
         input_code = str(self.ui.lineEdit_input_code.text()).strip()

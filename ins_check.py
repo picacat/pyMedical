@@ -4,8 +4,6 @@
 import sys
 
 from PyQt5 import QtWidgets, QtGui, QtCore
-import datetime
-from classes import table_widget
 
 from libs import ui_utils
 from dialog import dialog_ins_check

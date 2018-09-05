@@ -65,6 +65,7 @@ class DialogConvert(QtWidgets.QDialog):
             host=self.ui.lineEdit_host.text(),
             user=self.ui.lineEdit_user.text(),
             password=self.ui.lineEdit_password.text(),
+            charset=self.ui.lineEdit_charset.text(),
             database=self.ui.lineEdit_database.text()
         )
         if not self.source_db.connected():

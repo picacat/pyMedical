@@ -45,11 +45,14 @@ class DialogSettings(QtWidgets.QDialog):
         self.ui.spinBox_station_no.valueChanged.connect(self.spin_button_value_changed)
 
     def _set_combo_box(self):
-        if sys.platform == 'win32':
-            ui_utils.set_combo_box(self.ui.comboBox_theme, ui_utils.WIN32_THEME)
-        else:
-            ui_utils.set_combo_box(self.ui.comboBox_theme, ui_utils.THEME)
-
+        # if sys.platform == 'win32':
+        #     ui_utils.set_combo_box(self.ui.comboBox_theme, ui_utils.WIN32_THEME)
+        # else:
+        #     ui_utils.set_combo_box(self.ui.comboBox_theme, ui_utils.THEME)
+        ui_utils.set_combo_box(
+            self.ui.comboBox_theme,
+            QtWidgets.QStyleFactory.keys()
+        )
         ui_utils.set_combo_box(self.ui.comboBox_division, nhi_utils.DIVISION)
         ui_utils.set_combo_box(self.ui.comboBox_instruction, ['飯前', '飯後', '飯後睡前'])
         self._set_combo_box_printer()

@@ -36,6 +36,9 @@ UI_INS_APPLY = "ins_apply.ui"
 UI_INS_APPLY_LIST = "ins_apply_list.ui"
 UI_INS_APPLY_TAB = "ins_apply_tab.ui"
 UI_INS_JUDGE = "ins_judge.ui"
+UI_INS_APPLY_CALCULATED_DATA = "ins_apply_calculated_data.ui"
+UI_INS_APPLY_TOTAL_FEE = "ins_apply_total_fee.ui"
+UI_INS_CHECK_APPLY_FEE = "ins_check_apply_fee.ui"
 
 UI_DOCTOR_NURSE_TABLE = "doctor_nurse_table.ui"
 

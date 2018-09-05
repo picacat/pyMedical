@@ -68,6 +68,8 @@ class DialogInsApply(QtWidgets.QDialog):
 
         self.ui.dateEdit_start.setDate(QtCore.QDate(year, month, 1))
         self.ui.dateEdit_end.setDate(QtCore.QDate(year, month, last_day))
+        self.ui.dateEdit_ins_generate_date.setDate(datetime.datetime.today())
 
     def accepted_button_clicked(self):
         pass
+

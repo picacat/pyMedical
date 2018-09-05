@@ -242,15 +242,27 @@ class Registration(QtWidgets.QMainWindow):
             string_utils.xstr(rec['Massager']),
         ]
 
-        for column in range(0, self.ui.tableWidget_wait.columnCount()):
-            self.ui.tableWidget_wait.setItem(rec_no, column, QtWidgets.QTableWidgetItem(wait_rec[column]))
+        for column in range(len(wait_rec)):
+            self.ui.tableWidget_wait.setItem(
+                rec_no, column,
+                QtWidgets.QTableWidgetItem(wait_rec[column])
+            )
             if column in [2, 11, 12, 13]:
-                self.ui.tableWidget_wait.item(rec_no, column).setTextAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+                self.ui.tableWidget_wait.item(
+                    rec_no, column).setTextAlignment(
+                    QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
+                )
             elif column in [4, 9]:
-                self.ui.tableWidget_wait.item(rec_no, column).setTextAlignment(QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter)
+                self.ui.tableWidget_wait.item(
+                    rec_no, column).setTextAlignment(
+                    QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
+                )
 
             if rec['InsType'] == '自費':
-                self.ui.tableWidget_wait.item(rec_no, column).setForeground(QtGui.QColor('blue'))
+                self.ui.tableWidget_wait.item(
+                    rec_no, column).setForeground(
+                    QtGui.QColor('blue')
+                )
 
     def _set_tool_button(self, enabled):
         self.ui.toolButton_modify_wait.setEnabled(enabled)
