@@ -207,6 +207,13 @@
               </widget>
              </item>
              <item>
+              <widget class="QPushButton" name="pushButton_debt">
+               <property name="text">
+                <string>欠還款作業</string>
+               </property>
+              </widget>
+             </item>
+             <item>
               <widget class="QPushButton" name="pushButton_checkout">
                <property name="text">
                 <string>掛號櫃台結帳</string>
@@ -408,13 +415,6 @@
               <widget class="QPushButton" name="pushButton_charge">
                <property name="text">
                 <string>收費設定</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QPushButton" name="pushButton_users">
-               <property name="text">
-                <string>使用者管理</string>
                </property>
               </widget>
              </item>

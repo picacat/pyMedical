@@ -86,6 +86,7 @@ class MedicalRecordFees(QtWidgets.QMainWindow):
             [12, row['DiscountFee']],
             [13, row['TotalFee']],
             [14, row['ReceiptFee']],
+            [15, row['DebtFee']],
         ]
 
         for fees in ins_fees:

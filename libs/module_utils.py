@@ -1,9 +1,13 @@
 
 from registration import *
+from reservation import *
 from return_card import *
+from income import *
+from debt import *
 from patient_list import *
 from ic_record_upload import *
 
+from cashier import *
 from waiting_list import *
 from medical_record import *
 
@@ -24,9 +28,11 @@ from template import *
 
 module_dict = {
     '門診掛號': Registration,
-    '批價作業': Template,
+    '預約掛號': Reservation,
+    '批價作業': Cashier,
     '健保卡欠還卡': ReturnCard,
-    '掛號櫃台結帳': Template,
+    '欠還款作業': Debt,
+    '掛號櫃台結帳': Income,
     '病患查詢': PatientList,
     '健保IC卡資料上傳': ICRecordUpload,
 

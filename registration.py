@@ -80,6 +80,7 @@ class Registration(QtWidgets.QMainWindow):
     # 設定信號
     def _set_signal(self):
         self.ui.action_new_patient.triggered.connect(self._new_patient)
+        self.ui.action_reservation.triggered.connect(self._reservation)
         self.ui.action_cancel.triggered.connect(self._cancel_registration)
         self.ui.action_ic_card.triggered.connect(self._registration_by_ic_card)
         self.ui.action_save.triggered.connect(self._save_files)
@@ -285,7 +286,7 @@ class Registration(QtWidgets.QMainWindow):
 
         self.ui.action_ic_card.setEnabled(enabled)
         self.ui.action_new_patient.setEnabled(enabled)
-        self.ui.action_reg_reserve.setEnabled(enabled)
+        self.ui.action_reservation.setEnabled(enabled)
         self.ui.action_cancel.setEnabled(not enabled)
         self.ui.action_save.setEnabled(not enabled)
 
@@ -339,7 +340,6 @@ class Registration(QtWidgets.QMainWindow):
 
     # 設定 comboBox
     def _set_combobox(self):
-
         ui_utils.set_combo_box(self.ui.comboBox_patient_share, nhi_utils.SHARE_TYPE)
         ui_utils.set_combo_box(self.ui.comboBox_patient_discount, '掛號優待', self.database)
         ui_utils.set_combo_box(self.ui.comboBox_ins_type, nhi_utils.INS_TYPE)
@@ -1166,3 +1166,6 @@ class Registration(QtWidgets.QMainWindow):
             self, self.database, self.system_settings, case_key, printable)
         print_regist.print()
         del print_regist
+
+    def _reservation(self):
+        self.parent.open_reservation(None)

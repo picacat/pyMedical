@@ -100,12 +100,15 @@ class ChargeSettingsRegist(QtWidgets.QMainWindow):
             self.ui.tableWidget_regist_fee.setCurrentCell(current_row, 3)
 
         dialog.close_all()
+        dialog.deleteLater()
 
     def _regist_fee_edit(self):
         key = self.table_widget_regist_fee.field_value(0)
         dialog = dialog_input_regist.DialogInputRegist(self, self.database, self.system_settings, key)
         dialog.exec_()
         dialog.close_all()
+        dialog.deleteLater()
+
         sql = 'SELECT * FROM charge_settings WHERE ChargeSettingsKey = {0}'.format(key)
         row_data = self.database.select_record(sql)[0]
         self._set_regist_fee_data(self.ui.tableWidget_regist_fee.currentRow(), row_data)
@@ -249,6 +252,7 @@ class ChargeSettingsRegist(QtWidgets.QMainWindow):
             self.ui.tableWidget_discount.setCurrentCell(current_row, 3)
 
         dialog.close_all()
+        dialog.deleteLater()
 
     def _discount_delete(self):
         msg_box = QMessageBox()
@@ -271,6 +275,8 @@ class ChargeSettingsRegist(QtWidgets.QMainWindow):
         dialog = dialog_input_discount.DialogInputDiscount(self, self.database, self.system_settings, key)
         dialog.exec_()
         dialog.close_all()
+        dialog.deleteLater()
+
         sql = 'SELECT * FROM charge_settings WHERE ChargeSettingsKey = {0}'.format(key)
         row_data = self.database.select_record(sql)[0]
         self._set_discount_data(self.ui.tableWidget_discount.currentRow(), row_data)

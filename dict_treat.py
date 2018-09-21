@@ -218,6 +218,7 @@ class DictTreat(QtWidgets.QMainWindow):
             self._read_dict_treat(dict_groups_type)
 
         dialog.close_all()
+        dialog.deleteLater()
 
     # 移除主訴
     def _remove_treat(self):
@@ -241,6 +242,8 @@ class DictTreat(QtWidgets.QMainWindow):
         dialog = dialog_input_drug.DialogInputDrug(self, self.database, self.system_settings, key)
         dialog.exec_()
         dialog.close_all()
+        dialog.deleteLater()
+
         sql = 'SELECT * FROM medicine WHERE MedicineKey = {0}'.format(key)
         row_data = self.database.select_record(sql)[0]
         self._set_dict_treat_data(self.ui.tableWidget_dict_treat.currentRow(), row_data)

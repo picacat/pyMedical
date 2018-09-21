@@ -25,7 +25,7 @@
     <show-object-properties value="true" />
     <loaded-nodes>
       <connection connection-id="85dd102d-4da3-4481-ba69-4172ba68c41d">
-        <schema name="yiler" object-types="column, constraint, function, index, procedure, table, dataset trigger, view" />
+        <schema name="yiler" object-types="table" />
       </connection>
     </loaded-nodes>
   </component>

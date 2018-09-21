@@ -196,12 +196,15 @@ class ChargeSettingsShare(QtWidgets.QMainWindow):
             self.ui.tableWidget_diag_share.setCurrentCell(current_row, 3)
 
         dialog.close_all()
+        dialog.deleteLater()
 
     def _diag_share_edit(self):
         key = self.table_widget_diag_share.field_value(0)
         dialog = dialog_input_share.DialogInputShare(self, self.database, self.system_settings, key, '門診負擔')
         dialog.exec_()
         dialog.close_all()
+        dialog.deleteLater()
+
         sql = 'SELECT * FROM charge_settings WHERE ChargeSettingsKey = {0}'.format(key)
         row_data = self.database.select_record(sql)[0]
         self._set_diag_share_data(self.ui.tableWidget_diag_share.currentRow(), row_data)
@@ -303,6 +306,7 @@ class ChargeSettingsShare(QtWidgets.QMainWindow):
             self.ui.tableWidget_drug_share.setCurrentCell(current_row, 3)
 
         dialog.close_all()
+        dialog.deleteLater()
 
     def _drug_share_delete(self):
         msg_box = QMessageBox()
@@ -325,6 +329,8 @@ class ChargeSettingsShare(QtWidgets.QMainWindow):
         dialog = dialog_input_share.DialogInputShare(self, self.database, self.system_settings, key, '藥品負擔')
         dialog.exec_()
         dialog.close_all()
+        dialog.deleteLater()
+
         sql = 'SELECT * FROM charge_settings WHERE ChargeSettingsKey = {0}'.format(key)
         row_data = self.database.select_record(sql)[0]
         self._set_drug_share_data(self.ui.tableWidget_drug_share.currentRow(), row_data)

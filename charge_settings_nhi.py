@@ -232,6 +232,7 @@ class ChargeSettingsNHI(QtWidgets.QMainWindow):
             self.ui.tableWidget_nhi.setCurrentCell(current_row, 3)
 
         dialog.close_all()
+        dialog.deleteLater()
 
     def _nhi_edit(self):
         key = self.table_widget_nhi.field_value(0)

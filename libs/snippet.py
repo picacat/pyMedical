@@ -38,7 +38,7 @@ def set_past_record(self):
         text_edit.setReadOnly(True)
         button = QtWidgets.QPushButton('拷貝病歷')
         button.setProperty("caseKey", rec['CaseKey'])
-        button.clicked.connect(self.copy_past_medical_record)
+        button.clicked.connect(self.copy_past_medical_record_button_clicked)
 
         group_layout.addWidget(text_edit)
         group_layout.addWidget(button)

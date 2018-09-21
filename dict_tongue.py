@@ -286,6 +286,7 @@ class DictTongue(QtWidgets.QMainWindow):
             self._read_dict_tongue(dict_groups_name)
 
         dialog.close_all()
+        dialog.deleteLater()
 
     # 移除舌診
     def _remove_tongue(self):
@@ -309,6 +310,8 @@ class DictTongue(QtWidgets.QMainWindow):
         dialog = dialog_input_diagnostic.DialogInputDiagnostic(self, self.database, self.system_settings, key)
         dialog.exec_()
         dialog.close_all()
+        dialog.deleteLater()
+
         sql = 'SELECT * FROM clinic WHERE ClinicKey = {0}'.format(key)
         row_data = self.database.select_record(sql)[0]
         self._set_dict_tongue_data(self.ui.tableWidget_dict_tongue.currentRow(), row_data)

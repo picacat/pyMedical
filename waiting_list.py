@@ -73,10 +73,10 @@ class WaitingList(QtWidgets.QMainWindow):
 
         sql = '''
             SELECT wait.*, patient.Gender, patient.Birthday FROM wait 
-            LEFT JOIN patient ON wait.PatientKey = patient.PatientKey 
+                LEFT JOIN patient ON wait.PatientKey = patient.PatientKey 
             WHERE 
-            DoctorDone = "False" {0}
-            {1}
+                DoctorDone = "False" {0}
+                {1}
         '''.format(room, sort)
 
         self.table_widget_waiting_list.set_db_data(sql, self._set_table_data)

@@ -5,6 +5,7 @@ import sys
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtWidgets import QMessageBox, QPushButton
 import os
+import datetime
 
 from libs import ui_utils
 from libs import module_utils
@@ -90,6 +91,7 @@ class PyMedical(QtWidgets.QMainWindow):
         self.ui.pushButton_registration.clicked.connect(self._open_subroutine)           # 掛號作業
         self.ui.pushButton_cashier.clicked.connect(self._open_subroutine)                # 批價作業
         self.ui.pushButton_return_card.clicked.connect(self._open_subroutine)            # 健保卡欠還卡
+        self.ui.pushButton_debt.clicked.connect(self._open_subroutine)                   # 欠還款作業
         self.ui.pushButton_checkout.clicked.connect(self._open_subroutine)               # 掛號櫃台結帳
         self.ui.pushButton_patient_list.clicked.connect(self._open_subroutine)           # 病患查詢
         self.ui.pushButton_ic_record_upload.clicked.connect(self._open_subroutine)       # 健保IC卡資料上傳
@@ -100,7 +102,6 @@ class PyMedical(QtWidgets.QMainWindow):
 
         self.ui.pushButton_settings.clicked.connect(self.open_settings)                     # 系統設定
         self.ui.pushButton_charge.clicked.connect(self._open_subroutine)                 # 收費設定
-        self.ui.pushButton_users.clicked.connect(self._open_subroutine)                  # 使用者管理
         self.ui.pushButton_diagnostic.clicked.connect(self._open_subroutine)             # 診察資料
         self.ui.pushButton_medicine.clicked.connect(self._open_subroutine)               # 處方資料
         self.ui.pushButton_ic_card.clicked.connect(self.open_ic_card)                       # 健保卡讀卡機
@@ -153,6 +154,18 @@ class PyMedical(QtWidgets.QMainWindow):
         self.database.check_field_exists('cases', 'CompletionTime', 'DATETIME AFTER CaseDate')
         self.database.check_field_exists('cases', 'PharmacyType', 'VARCHAR(10) AFTER ApplyType')
 
+        self._reset_wait()
+
+    # 候診名單歸零
+    def _reset_wait(self):
+        today = datetime.datetime.today().strftime('%Y-%m-%d 00:00:00')
+        sql = '''
+            DELETE FROM wait 
+            WHERE
+                CaseDate < "{0}"
+        '''.format(today)
+        self.database.exec_sql(sql)
+
     # 設定按鈕權限
     def _set_button_enabled(self):
         if self.system_settings.field('使用讀卡機') == 'Y':
@@ -164,12 +177,12 @@ class PyMedical(QtWidgets.QMainWindow):
     def tab_changed(self, i):
         tab_name = self.ui.tabWidget_window.tabText(i)
         tab = self.ui.tabWidget_window.currentWidget()
-        if tab_name == '門診掛號':
-            tab.read_wait()
-        elif tab_name == '醫師看診作業':
+        if tab_name in ['門診掛號', '醫師看診作業', '批價作業']:
             tab.read_wait()
         elif tab_name == '健保卡欠還卡':
             tab.read_return_card()
+        elif tab_name == '欠還款作業':
+            tab.read_debt()
 
     # 按鍵驅動
     def _open_subroutine(self):
@@ -191,20 +204,20 @@ class PyMedical(QtWidgets.QMainWindow):
     def _set_focus(widget_name, widget):
         if widget_name == "門診掛號":
             widget.ui.lineEdit_query.setFocus()
-        if widget_name == "健保IC卡資料上傳":
+
+        if widget_name in [
+            '掛號櫃台結帳',
+            '病患查詢',
+            '病歷查詢',
+            '健保IC卡資料上傳',
+            '申報預檢',
+            '健保申報',
+        ]:
             widget.open_dialog()
         elif widget_name == "醫師看診作業":
             widget.ui.tableWidget_waiting_list.setFocus()
         elif widget_name == "新病患資料":
             widget.ui.lineEdit_name.setFocus()
-        elif widget_name == "病歷查詢":
-            widget.open_dialog()
-        elif widget_name == "病患查詢":
-            widget.open_dialog()
-        elif widget_name == "申報預檢":
-            widget.open_dialog()
-        elif widget_name == "健保申報":
-            widget.open_dialog()
 
     # 關閉 tab
     def close_tab(self, current_index):
@@ -342,6 +355,11 @@ class PyMedical(QtWidgets.QMainWindow):
         tab_name = '{0}-{1}-病患資料'.format(str(row['PatientKey']), str(row['Name']))
         self._add_tab(tab_name, (self.database, self.system_settings, row['PatientKey'], call_from, None))
 
+    # 預約掛號
+    def open_reservation(self, patient_key):
+        tab_name = '預約掛號'
+        self._add_tab(tab_name, (self.database, self.system_settings, patient_key))
+
     # 初診掛號
     def set_new_patient(self, new_patient_key):
         current_tab = None
@@ -399,7 +417,7 @@ class PyMedical(QtWidgets.QMainWindow):
     def _refresh_waiting_data(self, data):
         index = self.ui.tabWidget_window.currentIndex()
         current_tab_text = self.ui.tabWidget_window.tabText(index)
-        if current_tab_text == '醫師看診作業':
+        if current_tab_text in ['醫師看診作業', '批價作業']:
             tab = self.ui.tabWidget_window.currentWidget()
             tab.read_wait()
 

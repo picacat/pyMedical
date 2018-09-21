@@ -21,6 +21,7 @@ from dialog import dialog_inquiry
 from dialog import dialog_diagnosis
 from dialog import dialog_disease
 from dialog import dialog_medicine
+from dialog import dialog_medical_record_past_history
 
 
 # 病歷資料 2018.01.31
@@ -106,6 +107,7 @@ class MedicalRecord(QtWidgets.QMainWindow):
 
     # 設定信號
     def _set_signal(self):
+        self.ui.action_past_history.triggered.connect(self._open_past_history)
         self.ui.action_save.triggered.connect(self.save_medical_record)
         self.ui.action_dictionary.triggered.connect(self.open_dictionary)
         self.ui.action_close.triggered.connect(self.close_medical_record)
@@ -644,3 +646,15 @@ class MedicalRecord(QtWidgets.QMainWindow):
             self.tab_medical_record_fees.calculate_ins_fees()
         except AttributeError:
             pass
+
+    # 顯示拷貝過去病歷視窗
+    def _open_past_history(self):
+        patient_key = self.patient_data['PatientKey']
+        dialog = dialog_medical_record_past_history.DialogMedicalRecordPastHistory(
+            self, self.database, self.system_settings,
+            patient_key,
+        )
+
+        dialog.exec_()
+        dialog.deleteLater()
+

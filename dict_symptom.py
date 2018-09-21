@@ -286,6 +286,7 @@ class DictSymptom(QtWidgets.QMainWindow):
             self._read_dict_symptom(dict_groups_name)
 
         dialog.close_all()
+        dialog.deleteLater()
 
     # 移除主訴
     def _remove_symptom(self):
@@ -309,6 +310,8 @@ class DictSymptom(QtWidgets.QMainWindow):
         dialog = dialog_input_diagnostic.DialogInputDiagnostic(self, self.database, self.system_settings, key)
         dialog.exec_()
         dialog.close_all()
+        dialog.deleteLater()
+
         sql = 'SELECT * FROM clinic WHERE ClinicKey = {0}'.format(key)
         row_data = self.database.select_record(sql)[0]
         self._set_dict_symptom_data(self.ui.tableWidget_dict_symptom.currentRow(), row_data)

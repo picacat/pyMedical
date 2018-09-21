@@ -7,10 +7,7 @@ from PyQt5 import QtWidgets
 from libs import ui_utils
 from libs import string_utils
 from libs import number_utils
-from libs import date_utils
-import ins_prescript_record
-from dialog import dialog_inquiry
-from dialog import dialog_diagnosis
+from libs import case_utils
 
 
 # 病歷資料 2018.01.31
@@ -26,7 +23,6 @@ class MedicalRecordRecentlyHistory(QtWidgets.QMainWindow):
         self.medical_record = None
         self.patient_data = None
         self.ui = None
-        self.MAX_MEDICINE_SET = 100
 
         self._set_ui()
         self._set_signal()
@@ -52,7 +48,7 @@ class MedicalRecordRecentlyHistory(QtWidgets.QMainWindow):
         self.ui.toolButton_previous.clicked.connect(self.prev_past_record)
         self.ui.toolButton_next.clicked.connect(self.next_past_record)
         self.ui.toolButton_last.clicked.connect(self.last_past_record)
-        self.ui.toolButton_copy.clicked.connect(self.copy_past_medical_record)
+        self.ui.toolButton_copy.clicked.connect(self.copy_past_medical_record_button_clicked)
 
     def _read_data(self):
         sql = 'SELECT * FROM cases WHERE CaseKey = {0}'.format(self.case_key)
@@ -98,7 +94,9 @@ class MedicalRecordRecentlyHistory(QtWidgets.QMainWindow):
         self.ui.toolButton_next.setEnabled(True)
         self.ui.toolButton_last.setEnabled(True)
         self._set_past_values(rec)
-        self._set_record_summary(rec)
+        case_key = rec['CaseKey']
+        html = case_utils.get_medical_record_html(self.database, case_key)
+        self.ui.textEdit_past.setHtml(html)
 
     # 最近一筆
     def first_past_record(self):
@@ -149,115 +147,19 @@ class MedicalRecordRecentlyHistory(QtWidgets.QMainWindow):
         self.ui.toolButton_next.setEnabled(False)
         self.ui.toolButton_last.setEnabled(False)
 
-    # 顯示最近病歷內容
-    def _set_record_summary(self, rec):
-        if rec['InsType'] == '健保':
-            card = str(rec['Card'])
-            if number_utils.get_integer(rec['Continuance']) >= 1:
-                card += '-' + str(rec['Continuance'])
-            card = '<b>健保</b>: {0}'.format(card)
-        else:
-            card = '<b>自費</b>'
-
-        summary = '<b>日期</b>: {0} {1}<br>'.format(str(rec['CaseDate']), card)
-        summary += '<b>醫師</b>: {0}<hr>'.format(str(rec['Doctor']), card)
-        if rec['Symptom'] is not None:
-            summary += '<b>主訴</b>: {0}<hr>'.format(string_utils.get_str(rec['Symptom'], 'utf8'))
-        if rec['Tongue'] is not None:
-            summary += '<b>舌診</b>: {0}<hr>'.format(string_utils.get_str(rec['Tongue'], 'utf8'))
-        if rec['Pulse'] is not None:
-            summary += '<b>脈象</b>: {0}<hr>'.format(string_utils.get_str(rec['Pulse'], 'utf8'))
-        if rec['Remark'] is not None:
-            summary += '<b>備註</b>: {0}<hr>'.format(string_utils.get_str(rec['Remark'], 'utf8'))
-        if rec['DiseaseCode1'] is not None and len(str(rec['DiseaseCode1']).strip()) > 0:
-            summary += '<b>主診斷</b>: {0} {1}<br>'.format(str(rec['DiseaseCode1']), str(rec['DiseaseName1']))
-        if rec['DiseaseCode2'] is not None and len(str(rec['DiseaseCode2']).strip()) > 0:
-            summary += '<b>次診斷1</b>: {0} {1}<br>'.format(str(rec['DiseaseCode2']), str(rec['DiseaseName2']))
-        if rec['DiseaseCode3'] is not None and len(str(rec['DiseaseCode3']).strip()) > 0:
-            summary += '<b>次診斷2</b>: {0} {1}<br>'.format(str(rec['DiseaseCode3']), str(rec['DiseaseName3']))
-
-        summary += self.get_prescript_record()
-        self.ui.textEdit_past.setHtml(summary)
-
-    def get_prescript_record(self):
-        case_key = self.ui.textEdit_past.property('case_key')
-        sql = 'SELECT * FROM prescript WHERE CaseKey = {0}'.format(case_key)
-        rows = self.database.select_record(sql)
-        if len(rows) <= 0:
-            return '<br><center>未開藥</center><br>'
-
-        all_prescript = ''
-        for i in range(1, self.MAX_MEDICINE_SET):
-            sql = '''
-                SELECT * FROM prescript WHERE CaseKey = {0} AND
-                MedicineSet = {1}
-                ORDER BY PrescriptNo
-            '''.format(case_key, i)
-            rows = self.database.select_record(sql)
-
-            if len(rows) <= 0:
-                if i == 1:
-                    continue
-                else:
-                    break
-
-            prescript_data = ''
-            for row in rows:
-                if row['MedicineName'] is None:
-                    continue
-
-                prescript_data += '''
-                    <tr>
-                        <td>{0}</td>
-                        <td align="right">{1}{2}</td>
-                    </tr>
-                '''.format(
-                    string_utils.xstr(row['MedicineName']),
-                    string_utils.xstr(row['Dosage']),
-                    string_utils.xstr(row['Unit'])
-                )
-
-            if i == 1:
-                medicine_title = '健保處方'
-            else:
-                medicine_title = '自費處方{0}'.format(i-1)
-
-            prescript_data = '''
-                <table border="1" bgcolor="#F2F2F2">
-                    <tr>
-                        <th width="250" align="left">{0}</th>
-                        <th width="90">劑量</th>
-                    </tr>
-                    {1}
-                </table><br>
-            '''.format(medicine_title, prescript_data)
-            all_prescript += prescript_data
-
-        return all_prescript
-
     # 拷貝病歷
-    def copy_past_medical_record(self):
+    def copy_past_medical_record_button_clicked(self):
         case_key = self.ui.textEdit_past.property('case_key')
         if case_key == '':
             return
 
-        sql = 'SELECT * FROM cases WHERE CaseKey = {0}'.format(case_key)
-        row = self.database.select_record(sql)[0]
-        if self.ui.checkBox_diagnostic.isChecked():
-            self.parent.ui.textEdit_symptom.setText(string_utils.get_str(row['Symptom'], 'utf8'))
-            self.parent.ui.textEdit_tongue.setText(string_utils.get_str(row['Tongue'], 'utf8'))
-            self.parent.ui.textEdit_pulse.setText(string_utils.get_str(row['Pulse'], 'utf8'))
-        if self.ui.checkBox_remark.isChecked():
-            self.parent.ui.textEdit_remark.setText(string_utils.get_str(row['Remark'], 'utf8'))
-        if self.ui.checkBox_disease.isChecked():
-            self.parent.ui.lineEdit_disease_code1.setText(string_utils.get_str(row['DiseaseCode1'], 'utf8'))
-            self.parent.ui.lineEdit_disease_name1.setText(string_utils.get_str(row['DiseaseName1'], 'utf8'))
-            self.parent.ui.lineEdit_disease_code2.setText(string_utils.get_str(row['DiseaseCode2'], 'utf8'))
-            self.parent.ui.lineEdit_disease_name2.setText(string_utils.get_str(row['DiseaseName2'], 'utf8'))
-            self.parent.ui.lineEdit_disease_code3.setText(string_utils.get_str(row['DiseaseCode3'], 'utf8'))
-            self.parent.ui.lineEdit_disease_name3.setText(string_utils.get_str(row['DiseaseName3'], 'utf8'))
-        if self.ui.checkBox_prescript.isChecked():
-            self.copy_past_prescript(case_key)
+        case_utils.copy_past_medical_record(
+            self.database, self.parent, case_key,
+            self.ui.checkBox_diagnostic.isChecked(),
+            self.ui.checkBox_remark.isChecked(),
+            self.ui.checkBox_disease.isChecked(),
+            self.ui.checkBox_prescript.isChecked(),
+        )
 
     # 設定核取方塊
     def set_check_box(self):
@@ -266,6 +168,3 @@ class MedicalRecordRecentlyHistory(QtWidgets.QMainWindow):
         self.ui.checkBox_remark.setChecked(not self.ui.checkBox_remark.isChecked())
         self.ui.checkBox_prescript.setChecked(not self.ui.checkBox_prescript.isChecked())
 
-    def copy_past_prescript(self, case_key):
-        if self.parent.tab_list[0] is not None:
-            self.parent.tab_list[0].copy_past_prescript(case_key)

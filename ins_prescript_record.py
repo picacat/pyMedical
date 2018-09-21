@@ -630,7 +630,6 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
         treatment = row['Treatment']
         self.combo_box_treatment.setCurrentText(treatment)
 
-        rows = self.database.select_record(sql)
         sql = '''
             SELECT * FROM prescript WHERE 
                 CaseKey = {0} AND 

@@ -599,8 +599,11 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
-   <addaction name="action_dictionary"/>
+   <addaction name="action_past_history"/>
    <addaction name="action_patient"/>
+   <addaction name="separator"/>
+   <addaction name="action_dictionary"/>
+   <addaction name="separator"/>
    <addaction name="action_save"/>
    <addaction name="separator"/>
    <addaction name="action_close"/>
@@ -667,6 +670,18 @@
    </property>
    <property name="shortcut">
     <string>F2</string>
+   </property>
+  </action>
+  <action name="action_past_history">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/folder-documents.png</normaloff>../icons/folder-documents.png</iconset>
+   </property>
+   <property name="text">
+    <string>過去病歷</string>
+   </property>
+   <property name="toolTip">
+    <string>過去病歷</string>
    </property>
   </action>
  </widget>

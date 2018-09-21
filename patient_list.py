@@ -58,6 +58,7 @@ class PatientList(QtWidgets.QMainWindow):
         result = dialog.exec_()
         sql = dialog.get_sql()
         dialog.close_all()
+        dialog.deleteLater()
 
         if result == 0:
             return None

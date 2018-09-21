@@ -305,6 +305,8 @@ class DictDisease(QtWidgets.QMainWindow):
         dialog = dialog_edit_disease.DialogEditDisease(self, self.database, self.system_settings, key)
         dialog.exec_()
         dialog.close_all()
+        dialog.deleteLater()
+
         sql = 'SELECT * FROM icd10 WHERE ICD10Key = {0}'.format(key)
         row_data = self.database.select_record(sql)[0]
         self._set_dict_disease_data(self.ui.tableWidget_dict_disease.currentRow(), row_data)

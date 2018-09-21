@@ -4,6 +4,9 @@ from libs import string_utils
 from libs import number_utils
 
 
+MAX_MEDICINE_SET = 100
+
+
 def get_security_xml_dict(root):
     security_xml_dict = {
         '寫卡時間': root[0].text,
@@ -254,3 +257,194 @@ def get_instruction(database, case_key, medicine_set=1):
         instruction = None
 
     return instruction
+
+
+# 取得病歷html格式
+def get_medical_record_html(database, case_key):
+    sql = '''
+        SELECT * FROM cases 
+        WHERE
+            CaseKey = {0}
+    '''.format(case_key)
+    rows = database.select_record(sql)
+    if len(rows) <= 0:
+        return
+
+    row = rows[0]
+    if row['InsType'] == '健保':
+        card = str(row['Card'])
+        if number_utils.get_integer(row['Continuance']) >= 1:
+            card += '-' + str(row['Continuance'])
+        card = '<b>健保</b>: {0}'.format(card)
+    else:
+        card = '<b>自費</b>'
+
+    medical_record = '<b>日期</b>: {0} {1} <b>醫師</b>:{2}<hr>'.format(
+        string_utils.xstr(row['CaseDate'].date()),
+        card,
+        string_utils.xstr(row['Doctor']),
+    )
+
+    if row['Symptom'] is not None:
+        medical_record += '<b>主訴</b>: {0}<hr>'.format(string_utils.get_str(row['Symptom'], 'utf8'))
+    if row['Tongue'] is not None:
+        medical_record += '<b>舌診</b>: {0}<hr>'.format(string_utils.get_str(row['Tongue'], 'utf8'))
+    if row['Pulse'] is not None:
+        medical_record += '<b>脈象</b>: {0}<hr>'.format(string_utils.get_str(row['Pulse'], 'utf8'))
+    if row['Remark'] is not None:
+        medical_record += '<b>備註</b>: {0}<hr>'.format(string_utils.get_str(row['Remark'], 'utf8'))
+    if row['DiseaseCode1'] is not None and len(str(row['DiseaseCode1']).strip()) > 0:
+        medical_record += '<b>主診斷</b>: {0} {1}<br>'.format(str(row['DiseaseCode1']), str(row['DiseaseName1']))
+    if row['DiseaseCode2'] is not None and len(str(row['DiseaseCode2']).strip()) > 0:
+        medical_record += '<b>次診斷1</b>: {0} {1}<br>'.format(str(row['DiseaseCode2']), str(row['DiseaseName2']))
+    if row['DiseaseCode3'] is not None and len(str(row['DiseaseCode3']).strip()) > 0:
+        medical_record += '<b>次診斷2</b>: {0} {1}<br>'.format(str(row['DiseaseCode3']), str(row['DiseaseName3']))
+
+    medical_record = '''
+        <div style="width: 95%;">
+            {0}
+        </div>
+    '''.format(medical_record)
+
+    prescript_record = _get_prescript_record(database, case_key)
+
+    html = '''
+        <html>
+            <head>
+                <meta charset="UTF-8">
+            </head>
+            <body>
+                {0}
+                {1}
+            </body>
+        </html>
+    '''.format(
+        medical_record,
+        prescript_record,
+    )
+
+    return html
+
+
+def _get_prescript_record(database, case_key):
+    sql = 'SELECT * FROM prescript WHERE CaseKey = {0}'.format(case_key)
+    rows = database.select_record(sql)
+    if len(rows) <= 0:
+        return '<br><center>未開藥</center><br>'
+
+    all_prescript = ''
+    for i in range(1, MAX_MEDICINE_SET):
+        sql = '''
+            SELECT * FROM prescript WHERE CaseKey = {0} AND
+            MedicineSet = {1}
+            ORDER BY PrescriptNo, PrescriptKey
+        '''.format(case_key, i)
+        rows = database.select_record(sql)
+
+        if len(rows) <= 0:
+            if i == 1:
+                continue
+            else:
+                break
+
+        prescript_data = ''
+        sequence = 0
+        total_dosage = 0
+        for row in rows:
+            if row['MedicineName'] is None:
+                continue
+
+            sequence += 1
+            total_dosage += row['Dosage']
+            prescript_data += '''
+                <tr>
+                    <td align="center" style="padding-right: 8px;">{0}</td>
+                    <td style="padding-left: 8px;">{1}</td>
+                    <td align="right" style="padding-right: 8px">{2} {3}</td>
+                    <td style="padding-left: 8px;">{4}</td>
+                </tr>
+            '''.format(
+                string_utils.xstr(sequence),
+                string_utils.xstr(row['MedicineName']),
+                string_utils.xstr(row['Dosage']),
+                string_utils.xstr(row['Unit']),
+                string_utils.xstr(row['Instruction']),
+            )
+
+        sql = '''
+                SELECT * FROM dosage 
+                WHERE
+                    CaseKey = {0} AND MedicineSet = {1}
+                
+            '''.format(case_key, i)
+        rows = database.select_record(sql)
+        dosage_row = rows[0] if len(rows) > 0 else None
+        if dosage_row is not None:
+            packages = number_utils.get_integer(dosage_row['Packages'])
+            pres_days = number_utils.get_integer(dosage_row['Days'])
+            instruction = string_utils.xstr(dosage_row['Instruction'])
+
+            prescript_data += '''
+                <tr>
+                    <td style="text-align: left; padding-left: 30px;" colspan="4">
+                        用法: {0}包 {1}日份 {2}服用 總量: {3}
+                    </td>
+                </tr>
+            '''.format(
+                packages, pres_days, instruction, total_dosage
+            )
+
+        if i == 1:
+            medicine_title = '健保處方'
+        else:
+            medicine_title = '自費處方{0}'.format(i-1)
+
+        prescript_data = '''
+            <table align=center cellpadding="2" cellspacing="0" width="98%" style="border-width: 1px; border-style: solid;">
+                <thead>
+                    <tr bgcolor="LightGray">
+                        <th style="text-align: center; padding-left: 8px" width="10%">序</th>
+                        <th style="padding-left: 8px" width="50%" align="left">{0}</th>
+                        <th style="padding-right: 8px" align="right" width="25%">劑量</th>
+                        <th style="padding-left: 8px" align="left" width="15%">指示</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {1}
+                </tbody>
+            </table>
+            <br>
+        '''.format(medicine_title, prescript_data)
+        all_prescript += prescript_data
+
+    return all_prescript
+
+
+def copy_past_medical_record(
+        database, widget, case_key, copy_diagnostic, copy_remark, copy_disease, copy_prescript):
+    sql = 'SELECT * FROM cases WHERE CaseKey = {0}'.format(case_key)
+    rows = database.select_record(sql)
+    if len(rows) <= 0:
+        return
+
+    row = rows[0]
+    ui = widget.ui
+    if copy_diagnostic:
+        ui.textEdit_symptom.setText(string_utils.get_str(row['Symptom'], 'utf8'))
+        ui.textEdit_tongue.setText(string_utils.get_str(row['Tongue'], 'utf8'))
+        ui.textEdit_pulse.setText(string_utils.get_str(row['Pulse'], 'utf8'))
+
+    if copy_remark:
+        ui.textEdit_remark.setText(string_utils.get_str(row['Remark'], 'utf8'))
+
+    if copy_disease:
+        ui.lineEdit_disease_code1.setText(string_utils.get_str(row['DiseaseCode1'], 'utf8'))
+        ui.lineEdit_disease_name1.setText(string_utils.get_str(row['DiseaseName1'], 'utf8'))
+        ui.lineEdit_disease_code2.setText(string_utils.get_str(row['DiseaseCode2'], 'utf8'))
+        ui.lineEdit_disease_name2.setText(string_utils.get_str(row['DiseaseName2'], 'utf8'))
+        ui.lineEdit_disease_code3.setText(string_utils.get_str(row['DiseaseCode3'], 'utf8'))
+        ui.lineEdit_disease_name3.setText(string_utils.get_str(row['DiseaseName3'], 'utf8'))
+
+    if copy_prescript:
+        if widget.tab_list[0] is not None:
+            widget.tab_list[0].copy_past_prescript(case_key)

@@ -108,6 +108,7 @@ class DialogReturnCard(QtWidgets.QDialog):
             self.update_wait_by_abnormal_card()
 
         self.update_return_card()
+        self.update_medical_record()
 
     def _write_ic_card(self, treat_after_check):
         ic_card = cshis_utils.write_ic_card(
@@ -187,4 +188,10 @@ class DialogReturnCard(QtWidgets.QDialog):
             self.system_settings.field('使用者')
         ]
         self.database.update_record('deposit', fields, 'DepositKey', self.deposit_key, data)
+
+    def update_medical_record(self):
+        fields = ['RefundFee']
+        data = [self.ui.lineEdit_return_fee.text(),]
+
+        self.database.update_record('cases', fields, 'CaseKey', self.case_key, data)
 

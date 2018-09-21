@@ -232,6 +232,7 @@ class DictCompound(QtWidgets.QMainWindow):
             self._read_ref_compound(dict_compound_type)
 
         dialog.close_all()
+        dialog.deleteLater()
 
     # 移除主訴
     def _remove_medicine(self):
@@ -255,6 +256,8 @@ class DictCompound(QtWidgets.QMainWindow):
         dialog = dialog_input_drug.DialogInputDrug(self, self.database, self.system_settings, key)
         dialog.exec_()
         dialog.close_all()
+        dialog.deleteLater()
+        
         sql = 'SELECT * FROM medicine WHERE MedicineKey = {0}'.format(key)
         row_data = self.database.select_record(sql)[0]
         self._set_dict_medicine_data(self.ui.tableWidget_dict_medicine.currentRow(), row_data)

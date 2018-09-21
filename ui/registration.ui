@@ -1025,7 +1025,7 @@
    </attribute>
    <addaction name="action_ic_card"/>
    <addaction name="action_new_patient"/>
-   <addaction name="action_reg_reserve"/>
+   <addaction name="action_reservation"/>
    <addaction name="action_cancel"/>
    <addaction name="separator"/>
    <addaction name="action_save"/>
@@ -1084,7 +1084,7 @@
     <string>掛號存檔</string>
    </property>
   </action>
-  <action name="action_reg_reserve">
+  <action name="action_reservation">
    <property name="icon">
     <iconset>
      <normaloff>../icons/document-revert.svg</normaloff>../icons/document-revert.svg</iconset>
