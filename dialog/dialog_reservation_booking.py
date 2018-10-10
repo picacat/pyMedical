@@ -2,10 +2,11 @@
 # 病歷查詢 2014.09.22
 #coding: utf-8
 
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtWidgets import QMessageBox, QPushButton
 
 import re
+import datetime
 
 from libs import system_utils
 from libs import ui_utils
@@ -59,10 +60,15 @@ class DialogReservationBooking(QtWidgets.QDialog):
             self.ui.lineEdit_query
         )
 
+    def keyPressEvent(self, event):
+        if event.key() in [QtCore.Qt.Key_Return, QtCore.Qt.Key_Enter]:
+            return
+
     # 設定信號
     def _set_signal(self):
         self.ui.buttonBox.accepted.connect(self.accepted_button_clicked)
         self.ui.pushButton_query.clicked.connect(self._query_patient)
+        self.ui.lineEdit_query.returnPressed.connect(self._query_patient)
 
     def accepted_button_clicked(self):
         fields = [
@@ -109,11 +115,39 @@ class DialogReservationBooking(QtWidgets.QDialog):
 
         self.ui.lineEdit_query.clear()
 
-
     def _set_patient_data(self, rows):
         row = rows[0]
-        self.ui.lineEdit_patient_key.setText(string_utils.xstr(row['PatientKey']))
+        patient_key = row['PatientKey']
+
+        self.ui.lineEdit_patient_key.setText(string_utils.xstr(patient_key))
         self.ui.lineEdit_name.setText(string_utils.xstr(row['Name']))
         self.ui.lineEdit_birthday.setText(string_utils.xstr(row['Birthday']))
         self.ui.lineEdit_id.setText(string_utils.xstr(row['ID']))
+
+        start_date = datetime.datetime.now().strftime('%Y-%m-%d 00:00:00')
+        end_date = datetime.datetime.now().strftime('%Y-%m-%d 23:59:59')
+        sql = '''
+            SELECT * FROM reserve
+            WHERE
+                ReserveDate BETWEEN "{0}" AND "{1}" AND
+                PatientKey = {2}
+        '''.format(
+            start_date, end_date, patient_key
+        )
+
+        rows = self.database.select_record(sql)
+        if len(rows) > 0:
+            msg_box = QMessageBox()
+            msg_box.setIcon(QMessageBox.Critical)
+            msg_box.setWindowTitle('已有預約')
+            msg_box.setText("此人今日已有預約, 無法再次預約掛號.")
+            msg_box.setInformativeText("無法重複預約掛號.")
+            msg_box.addButton(QPushButton("確定"), QMessageBox.YesRole)
+            msg_box.exec_()
+            self.ui.lineEdit_patient_key.setText(None)
+            self.ui.lineEdit_name.setText(None)
+            self.ui.lineEdit_birthday.setText(None)
+            self.ui.lineEdit_id.setText(None)
+            return
+
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setEnabled(True)

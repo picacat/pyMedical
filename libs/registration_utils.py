@@ -30,7 +30,7 @@ def get_period(system_settings):
 
 
 # 診號模式
-def get_reg_no_by_mode(system_settings, reg_no):
+def get_reg_no_by_mode(database, system_settings, period, room, reg_no):
     if system_settings.field('現場掛號給號模式') == '雙號':
         if reg_no % 2 == 1:
             reg_no += 1
@@ -41,6 +41,26 @@ def get_reg_no_by_mode(system_settings, reg_no):
             reg_no += 1
         else:
             reg_no += 2
+    elif system_settings.field('現場掛號給號模式') == '預約班表':
+        period_condition = ''
+        if period is not None:
+            period_condition = 'AND Period = "{0}"'.format(period)
+
+        reg_no += 1
+        sql = '''
+            SELECT * FROM reservation_table
+            WHERE
+                ReserveNo >= {0} AND
+                Room = {1}
+                {2}
+            ORDER BY ReserveNo
+        '''.format(reg_no, room, period_condition)
+        rows = database.select_record(sql)
+        for row in rows:
+            if reg_no != row['ReserveNo']:
+                break
+
+            reg_no += 1
     else:
         reg_no += 1
 
@@ -48,27 +68,56 @@ def get_reg_no_by_mode(system_settings, reg_no):
 
 
 # 取得診號
-def get_reg_no(database, system_settings, room, period=None):
+def get_reg_no(database, system_settings, room, period=None, reserve_key=None):
+    if reserve_key is not None:
+        sql = '''
+            SELECT * FROM reserve
+            WHERE
+                ReserveKey = {0}
+        '''.format(reserve_key)
+        rows = database.select_record(sql)
+        if len(rows) > 0:
+            return number_utils.get_integer(rows[0]['ReserveNo'])
+
     start_date = datetime.datetime.now().strftime('%Y-%m-%d 00:00:00')
     end_date = datetime.datetime.now().strftime('%Y-%m-%d 23:59:59')
     if period is None:
         period = get_period(system_settings)
 
-    script = 'select RegistNo from cases where CaseDate between "{0}" and "{1}"'.format(
-        start_date, end_date)
+    last_reg_no = get_last_reg_no(
+        database, system_settings, start_date, end_date,
+        period, room
+    )
+
+    reg_no = get_reg_no_by_mode(database, system_settings, period, room, last_reg_no)
+
+    return int(reg_no)
+
+
+# 取得今日最後的診號
+def get_last_reg_no(database, system_settings, start_date, end_date, period, room):
+    sql = '''
+        SELECT RegistNo FROM cases 
+        WHERE 
+            CaseDate BETWEEN "{0}" AND "{1}"
+    '''.format(
+        start_date, end_date
+    )
 
     if system_settings.field('分診') == 'Y':
-        script += ' and Room = {0}'.format(room)
+        sql += ' AND Room = {0}'.format(room)
 
     if system_settings.field('分班') == 'Y':
-        script += ' and Period = "{0}"'.format(period)
+        sql += ' AND Period = "{0}"'.format(period)
 
-    script += ' order by RegistNo desc limit 1'
-    row = database.select_record(script)
-    row_count = len(list(row))
+    if system_settings.field('現場掛號給號模式') == '預約班表':
+        sql += ' AND RegistType = "一般門診"'
 
-    if row_count > 0:
-        last_reg_no = row[0]['RegistNo']
+    sql += ' ORDER BY RegistNo DESC LIMIT 1'
+    rows = database.select_record(sql)
+
+    if len(rows) > 0:
+        last_reg_no = rows[0]['RegistNo']
     else:
         if system_settings.field('分班') == 'Y':
             reg_no = system_settings.field('{0}起始號'.format(period))
@@ -85,11 +134,9 @@ def get_reg_no(database, system_settings, room, period=None):
             msg_box.setInformativeText("請檢查[系統設定]->[診號控制]->[給號方式]的早午晚班起始號設定.")
             msg_box.addButton(QPushButton("確定"), QMessageBox.YesRole)
             msg_box.exec_()
-            return
+            return 0
 
-    reg_no = get_reg_no_by_mode(system_settings, last_reg_no)
-
-    return int(reg_no)
+    return last_reg_no
 
 
 # 檢查重複就診

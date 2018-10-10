@@ -30,10 +30,10 @@ class MedicalRecord(QtWidgets.QMainWindow):
     def __init__(self, parent=None, *args):
         super(MedicalRecord, self).__init__(parent)
         self.parent = parent
-        self.database = args[0][0]
-        self.system_settings = args[0][1]
-        self.case_key = args[0][2]
-        self.call_from = args[0][3]
+        self.database = args[0]
+        self.system_settings = args[1]
+        self.case_key = args[2]
+        self.call_from = args[3]
         self.medical_record = None
         self.patient_data = None
         self.record_saved = False

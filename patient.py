@@ -20,11 +20,11 @@ class Patient(QtWidgets.QMainWindow):
     def __init__(self, parent=None, *args):
         super(Patient, self).__init__(parent)
         self.parent = parent
-        self.database = args[0][0]
-        self.system_settings = args[0][1]
-        self.patient_key = args[0][2]
-        self.call_from = args[0][3]
-        self.ic_card = args[0][4]
+        self.database = args[0]
+        self.system_settings = args[1]
+        self.patient_key = args[2]
+        self.call_from = args[3]
+        self.ic_card = args[4]
         self.patient = None
         self.ui = None
         self.name_warning = False
@@ -175,10 +175,28 @@ class Patient(QtWidgets.QMainWindow):
         self.ui.comboBox_education.setCurrentText(self.patient['Education'])
         self.ui.comboBox_occupation.setCurrentText(self.patient['Occupation'])
         self.ui.comboBox_discount.setCurrentText(self.patient['DiscountType'])
-        self.ui.textEdit_allergy.setText(string_utils.get_str(self.patient['Allergy'], 'utf8'))
-        self.ui.textEdit_history.setText(string_utils.get_str(self.patient['History'], 'utf8'))
-        self.ui.textEdit_remark.setText(string_utils.get_str(self.patient['Remark'], 'utf8'))
-        self.ui.textEdit_description.setText(string_utils.get_str(self.patient['Description'], 'utf8'))
+        self._set_patient_text_fields()
+
+    def _set_patient_text_fields(self):
+        try:
+            self.ui.textEdit_allergy.setText(string_utils.get_str(self.patient['Allergy'], 'utf8'))
+        except TypeError:
+            pass
+
+        try:
+            self.ui.textEdit_history.setText(string_utils.get_str(self.patient['History'], 'utf8'))
+        except TypeError:
+            pass
+
+        try:
+            self.ui.textEdit_remark.setText(string_utils.get_str(self.patient['Remark'], 'utf8'))
+        except TypeError:
+            pass
+
+        try:
+            self.ui.textEdit_description.setText(string_utils.get_str(self.patient['Description'], 'utf8'))
+        except TypeError:
+            pass
 
     def _save_patient(self):
         fields = ['CardNo', 'Name', 'ID', 'Birthday', 'InitDate', 'Telephone', 'Cellphone', 'Email',

@@ -42,12 +42,11 @@ class PrintRegistrationForm2:
         pass
 
     def print(self):
-        self.print_html()
+        self.print_html(True)
         # self.print_painter()
 
     def preview(self):
-        self.print()
-        self.preview_dialog.paintRequested.connect(self.current_print)
+        self.preview_dialog.paintRequested.connect(self.print_html)
         self.preview_dialog.exec_()
 
     def print_painter(self):
@@ -61,14 +60,15 @@ class PrintRegistrationForm2:
         painter.drawText(0, 30, 'print test line2 中文測試')
         painter.end()
 
-    def print_html(self):
+    def print_html(self, printing):
         self.current_print = self.print_html
         self.printer.setPaperSize(QtCore.QSizeF(241, 93), QPrinter.Millimeter)
 
         document = printer_utils.get_document(self.printer, self.font)
         document.setDocumentMargin(printer_utils.get_document_margin())
         document.setHtml(self._html())
-        document.print(self.printer)
+        if printing:
+            document.print(self.printer)
 
     def _html(self):
         sql = 'SELECT * FROM cases WHERE CaseKey = {0}'.format(self.case_key)

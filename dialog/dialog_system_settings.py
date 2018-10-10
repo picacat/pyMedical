@@ -72,6 +72,10 @@ class DialogSettings(QtWidgets.QDialog):
         ui_utils.set_combo_box(self.ui.comboBox_report_printer, printer_list, None)
 
         ui_utils.set_combo_box(self.ui.comboBox_regist_form, printer_utils.PRINT_REGISTRATION_FORM, None)
+        ui_utils.set_combo_box(
+            self.ui.comboBox_ins_prescript_form,
+            printer_utils.PRINT_PRESCRIPTION_INS_FORM, None
+        )
 
         ui_utils.set_combo_box(self.ui.comboBox_regist_print_mode, print_mode, None)
         ui_utils.set_combo_box(self.ui.comboBox_reserve_print_mode, print_mode, None)
@@ -124,8 +128,9 @@ class DialogSettings(QtWidgets.QDialog):
         self.ui.spinBox_start_no3.setValue(number_utils.get_integer(self.system_settings.field('晚班起始號')))
         self._set_radio_button([self.ui.radioButton_consecutive,
                                 self.ui.radioButton_odd,
-                                self.ui.radioButton_even],
-                               ['連續號', '單號', '雙號'],
+                                self.ui.radioButton_even,
+                                self.ui.radioButton_reservation_table],
+                               ['連續號', '單號', '雙號', '預約班表'],
                                '現場掛號給號模式')
 
     # 讀取掛號設定
@@ -257,11 +262,14 @@ class DialogSettings(QtWidgets.QDialog):
         self.system_settings.post('早班起始號', self.ui.spinBox_start_no1.value())
         self.system_settings.post('午班起始號', self.ui.spinBox_start_no2.value())
         self.system_settings.post('晚班起始號', self.ui.spinBox_start_no3.value())
-        self._save_radio_button([self.ui.radioButton_consecutive,
-                                 self.ui.radioButton_odd,
-                                 self.ui.radioButton_even],
-                                ['連續號', '單號', '雙號'],
-                                '現場掛號給號模式')
+        self._save_radio_button([
+            self.ui.radioButton_consecutive,
+            self.ui.radioButton_odd,
+            self.ui.radioButton_even,
+            self.ui.radioButton_reservation_table],
+            ['連續號', '單號', '雙號', '預約班表'],
+            '現場掛號給號模式'
+        )
 
     # 寫入掛號設定
     def _save_registration_settings(self):

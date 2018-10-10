@@ -10,6 +10,7 @@ from libs import string_utils
 from libs import number_utils
 from dialog import dialog_medical_record_list
 from classes import table_widget
+from printer import print_prescription
 
 
 # 主視窗
@@ -54,6 +55,7 @@ class MedicalRecordList(QtWidgets.QMainWindow):
         self.ui.action_delete_record.triggered.connect(self.delete_medical_record)
         self.ui.action_close.triggered.connect(self.close_medical_record_list)
         self.ui.action_open_record.triggered.connect(self.open_medical_record)
+        self.ui.action_print_prescript.triggered.connect(self._print_prescript)
         self.ui.tableWidget_medical_record_list.doubleClicked.connect(self.open_medical_record)
 
     # 設定欄位寬度
@@ -183,3 +185,12 @@ class MedicalRecordList(QtWidgets.QMainWindow):
     def close_medical_record_list(self):
         self.close_all()
         self.close_tab()
+
+    def _print_prescript(self):
+        case_key = self.table_widget_medical_record_list.field_value(0)
+        print_prescript = print_prescription.PrintPrescription(
+            self, self.database, self.system_settings, case_key, '列印')
+        print_prescript.preview()
+
+        del print_prescript
+

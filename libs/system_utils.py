@@ -17,6 +17,14 @@ def get_css_file():
         return 'style.css'
 
 
+def get_font():
+    if sys.platform == 'win32':
+        font = "Microsoft JhengHei"
+    else:
+        font = 'Noto Sans Mono'
+
+    return font
+
 def set_css(widget):
     css_file = os.path.join(BASE_DIR, CSS_PATH, get_css_file())
     widget.setStyleSheet(open(css_file, "r").read())

@@ -26,41 +26,6 @@
       <property name="rightMargin">
        <number>5</number>
       </property>
-      <item row="1" column="0">
-       <widget class="QGroupBox" name="groupBox_reserve">
-        <property name="maximumSize">
-         <size>
-          <width>16777215</width>
-          <height>300</height>
-         </size>
-        </property>
-        <property name="title">
-         <string>預約未報到名單</string>
-        </property>
-        <layout class="QGridLayout" name="gridLayout_2">
-         <item row="1" column="1">
-          <widget class="QPlainTextEdit" name="plainTextEdit_medical_record"/>
-         </item>
-         <item row="0" column="1">
-          <widget class="QLabel" name="label">
-           <property name="text">
-            <string>上次病歷摘要</string>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="0">
-          <widget class="QTableWidget" name="tableWidget_reserve_list"/>
-         </item>
-         <item row="0" column="0">
-          <widget class="QLabel" name="label_2">
-           <property name="text">
-            <string>預約名單</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </widget>
-      </item>
       <item row="0" column="1" rowspan="2">
        <widget class="QGroupBox" name="groupBox_statistics">
         <property name="maximumSize">
@@ -75,6 +40,15 @@
         <layout class="QVBoxLayout" name="verticalLayout">
          <item>
           <widget class="QTableWidget" name="tableWidget_statistics_list">
+           <property name="editTriggers">
+            <set>QAbstractItemView::NoEditTriggers</set>
+           </property>
+           <property name="selectionMode">
+            <enum>QAbstractItemView::SingleSelection</enum>
+           </property>
+           <property name="selectionBehavior">
+            <enum>QAbstractItemView::SelectRows</enum>
+           </property>
            <column>
             <property name="text">
              <string>統計類別</string>
@@ -86,6 +60,9 @@
             </property>
            </column>
           </widget>
+         </item>
+         <item>
+          <layout class="QVBoxLayout" name="verticalLayout_chart"/>
          </item>
         </layout>
        </widget>
@@ -211,12 +188,256 @@
             </column>
            </widget>
           </item>
+          <item>
+           <widget class="QGroupBox" name="groupBox_reserve">
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>300</height>
+             </size>
+            </property>
+            <property name="title">
+             <string>預約未報到名單</string>
+            </property>
+            <layout class="QGridLayout" name="gridLayout_2">
+             <item row="0" column="1">
+              <widget class="QLabel" name="label">
+               <property name="text">
+                <string>上次病歷摘要</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="0">
+              <widget class="QTableWidget" name="tableWidget_reservation_list">
+               <property name="editTriggers">
+                <set>QAbstractItemView::NoEditTriggers</set>
+               </property>
+               <property name="selectionMode">
+                <enum>QAbstractItemView::SingleSelection</enum>
+               </property>
+               <property name="selectionBehavior">
+                <enum>QAbstractItemView::SelectRows</enum>
+               </property>
+               <column>
+                <property name="text">
+                 <string>reserve_key</string>
+                </property>
+               </column>
+               <column>
+                <property name="text">
+                 <string>預約時間</string>
+                </property>
+               </column>
+               <column>
+                <property name="text">
+                 <string>班別</string>
+                </property>
+               </column>
+               <column>
+                <property name="text">
+                 <string>診別</string>
+                </property>
+               </column>
+               <column>
+                <property name="text">
+                 <string>診號</string>
+                </property>
+               </column>
+               <column>
+                <property name="text">
+                 <string>病歷號</string>
+                </property>
+               </column>
+               <column>
+                <property name="text">
+                 <string>姓名</string>
+                </property>
+               </column>
+               <column>
+                <property name="text">
+                 <string>性別</string>
+                </property>
+               </column>
+               <column>
+                <property name="text">
+                 <string>年齡</string>
+                </property>
+               </column>
+               <column>
+                <property name="text">
+                 <string>聯絡電話</string>
+                </property>
+               </column>
+              </widget>
+             </item>
+             <item row="0" column="0">
+              <widget class="QLabel" name="label_2">
+               <property name="text">
+                <string>預約名單</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1">
+              <widget class="QTextEdit" name="textEdit_medical_record"/>
+             </item>
+            </layout>
+           </widget>
+          </item>
          </layout>
         </widget>
         <widget class="QWidget" name="tab">
          <attribute name="title">
           <string>已就診名單</string>
          </attribute>
+         <layout class="QVBoxLayout" name="verticalLayout_3">
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_2">
+            <item>
+             <widget class="QPushButton" name="pushButton">
+              <property name="text">
+               <string>補印處方箋</string>
+              </property>
+              <property name="icon">
+               <iconset>
+                <normaloff>../icons/printer-printing.png</normaloff>../icons/printer-printing.png</iconset>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="pushButton_2">
+              <property name="text">
+               <string>補印費用收據</string>
+              </property>
+              <property name="icon">
+               <iconset>
+                <normaloff>../icons/printer.png</normaloff>../icons/printer.png</iconset>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="horizontalSpacer">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <widget class="QTableWidget" name="tableWidget_wait_completed">
+            <property name="editTriggers">
+             <set>QAbstractItemView::NoEditTriggers</set>
+            </property>
+            <property name="selectionMode">
+             <enum>QAbstractItemView::SingleSelection</enum>
+            </property>
+            <property name="selectionBehavior">
+             <enum>QAbstractItemView::SelectRows</enum>
+            </property>
+            <column>
+             <property name="text">
+              <string>wait_key</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>case_key</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>病歷號碼</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>病患姓名</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>性別</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>年齡</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>診別</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>診號</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>保險</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>掛號類別</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>負擔類別</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>就醫類別</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>初複診</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>卡序</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>療程</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>主診斷</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>給藥日數</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>主治醫師</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>推拿師父</string>
+             </property>
+            </column>
+           </widget>
+          </item>
+         </layout>
         </widget>
        </widget>
       </item>

@@ -32,7 +32,7 @@
          <enum>QTabWidget::Rounded</enum>
         </property>
         <property name="currentIndex">
-         <number>0</number>
+         <number>1</number>
         </property>
         <widget class="QWidget" name="tabWidget_wait">
          <attribute name="title">
@@ -223,6 +223,167 @@
          <attribute name="title">
           <string>已就診名單</string>
          </attribute>
+         <layout class="QVBoxLayout" name="verticalLayout_2">
+          <item>
+           <layout class="QGridLayout" name="gridLayout_7">
+            <item row="0" column="4">
+             <spacer name="horizontalSpacer_2">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item row="0" column="2">
+             <widget class="QToolButton" name="toolButton_modify_patient2">
+              <property name="text">
+               <string>病患修正</string>
+              </property>
+              <property name="icon">
+               <iconset>
+                <normaloff>../icons/document-open.svg</normaloff>../icons/document-open.svg</iconset>
+              </property>
+              <property name="toolButtonStyle">
+               <enum>Qt::ToolButtonTextBesideIcon</enum>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="0">
+             <widget class="QToolButton" name="toolButton_modify_wait_2">
+              <property name="text">
+               <string>IC卡寫卡</string>
+              </property>
+              <property name="icon">
+               <iconset>
+                <normaloff>../icons/document-revert.svg</normaloff>../icons/document-revert.svg</iconset>
+              </property>
+              <property name="toolButtonStyle">
+               <enum>Qt::ToolButtonTextBesideIcon</enum>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="QToolButton" name="toolButton_ic_cancel_2">
+              <property name="text">
+               <string>IC卡退掛</string>
+              </property>
+              <property name="icon">
+               <iconset>
+                <normaloff>../icons/document-export.svg</normaloff>../icons/document-export.svg</iconset>
+              </property>
+              <property name="toolButtonStyle">
+               <enum>Qt::ToolButtonTextBesideIcon</enum>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="3">
+             <widget class="QToolButton" name="toolButton_print_wait_2">
+              <property name="text">
+               <string>補印收據</string>
+              </property>
+              <property name="icon">
+               <iconset>
+                <normaloff>../icons/document-print.svg</normaloff>../icons/document-print.svg</iconset>
+              </property>
+              <property name="toolButtonStyle">
+               <enum>Qt::ToolButtonTextBesideIcon</enum>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <widget class="QTableWidget" name="tableWidget_wait_completed">
+            <property name="editTriggers">
+             <set>QAbstractItemView::NoEditTriggers</set>
+            </property>
+            <property name="selectionMode">
+             <enum>QAbstractItemView::SingleSelection</enum>
+            </property>
+            <property name="selectionBehavior">
+             <enum>QAbstractItemView::SelectRows</enum>
+            </property>
+            <column>
+             <property name="text">
+              <string>WaitKey</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>CaseKey</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>病歷號</string>
+             </property>
+             <property name="textAlignment">
+              <set>AlignLeading|AlignVCenter</set>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>病患姓名</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>性別</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>門診</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>負擔類別</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>就醫類別</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>初複診</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>健保卡序</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>療程</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>診</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>診號</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>IC寫卡</string>
+             </property>
+            </column>
+           </widget>
+          </item>
+         </layout>
         </widget>
        </widget>
       </item>

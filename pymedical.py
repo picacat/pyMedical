@@ -16,6 +16,8 @@ from dialog import dialog_ic_card
 from classes import system_settings, db
 from convert import convert
 import login
+import login_statistics
+import backup
 from classes import udp_socket_server
 
 
@@ -30,6 +32,7 @@ class PyMedical(QtWidgets.QMainWindow):
 
         self.system_settings = system_settings.SystemSettings(self.database)
         self.ui = None
+        self.statistics_dicts = None
         self.socket_server = udp_socket_server.UDPSocketServer()
 
         self._check_db()
@@ -54,6 +57,11 @@ class PyMedical(QtWidgets.QMainWindow):
         quit_app = msg_box.exec_()
 
         if quit_app:
+            if self.system_settings.field('使用者') != '超級使用者':
+                backup_process = backup.Backup(
+                    self, self.database, self.system_settings)
+                backup_process.start_backup()
+
             event.accept()
         else:
             event.ignore()
@@ -183,11 +191,16 @@ class PyMedical(QtWidgets.QMainWindow):
             tab.read_return_card()
         elif tab_name == '欠還款作業':
             tab.read_debt()
+        elif tab_name == '預約掛號':
+            tab.read_reservation()
 
     # 按鍵驅動
     def _open_subroutine(self):
         tab_name = self.sender().text()
-        self._add_tab(tab_name, self.database, self.system_settings)
+        if tab_name == '醫師看診作業':
+            self._add_tab(tab_name, self.database, self.system_settings, self.statistics_dicts)
+        else:
+            self._add_tab(tab_name, self.database, self.system_settings)
 
     # 新增tab
     def _add_tab(self, tab_name, *args):
@@ -218,6 +231,10 @@ class PyMedical(QtWidgets.QMainWindow):
             widget.ui.tableWidget_waiting_list.setFocus()
         elif widget_name == "新病患資料":
             widget.ui.lineEdit_name.setFocus()
+        elif widget_name == "預約掛號":
+            widget.ui.tableWidget_reservation.setFocus()
+            if widget.reserve_key is not None:
+                widget.set_reservation_arrival()
 
     # 關閉 tab
     def close_tab(self, current_index):
@@ -330,13 +347,15 @@ class PyMedical(QtWidgets.QMainWindow):
             return
 
         tab_name = '{0}-{1}-病歷資料'.format(str(row['PatientKey']), str(row['Name']))
-        self._add_tab(tab_name, (self.database, self.system_settings, row['CaseKey'], call_from))
+        self._add_tab(tab_name, self.database, self.system_settings, row['CaseKey'], call_from)
 
     # 開啟病患資料
     def open_patient_record(self, patient_key, call_from=None, ic_card=None):
         if patient_key is None:
             tab_name = '新病患資料'
-            self._add_tab(tab_name, (self.database, self.system_settings, patient_key, call_from, ic_card))
+            self._add_tab(
+                tab_name, self.database, self.system_settings, patient_key, call_from, ic_card
+            )
             return
 
         script = 'SELECT PatientKey, Name FROM patient WHERE PatientKey = {0}'.format(patient_key)
@@ -353,12 +372,34 @@ class PyMedical(QtWidgets.QMainWindow):
             return
 
         tab_name = '{0}-{1}-病患資料'.format(str(row['PatientKey']), str(row['Name']))
-        self._add_tab(tab_name, (self.database, self.system_settings, row['PatientKey'], call_from, None))
+        self._add_tab(tab_name, self.database, self.system_settings, row['PatientKey'], call_from, None)
 
     # 預約掛號
-    def open_reservation(self, patient_key):
+    def open_reservation(self, reserve_key):
         tab_name = '預約掛號'
-        self._add_tab(tab_name, (self.database, self.system_settings, patient_key))
+        if self._tab_exists(tab_name):
+            current_tab = None
+            for i in range(self.ui.tabWidget_window.count()):
+                if self.ui.tabWidget_window.tabText(i) == tab_name:
+                    current_tab = self.ui.tabWidget_window.widget(i)
+                    break
+
+            current_tab.set_reservation_arrival(reserve_key)
+        else:
+            self._add_tab(tab_name, self.database, self.system_settings, reserve_key)
+
+    # 預約掛號
+    def registration_arrival(self, reserve_key):
+        tab_name = '門診掛號'
+        self._add_tab(tab_name, self.database, self.system_settings)
+
+        current_tab = None
+        for i in range(self.ui.tabWidget_window.count()):
+            if self.ui.tabWidget_window.tabText(i) == tab_name:
+                current_tab = self.ui.tabWidget_window.widget(i)
+                break
+
+        current_tab.reservation_arrival(reserve_key)
 
     # 初診掛號
     def set_new_patient(self, new_patient_key):
@@ -460,6 +501,13 @@ def main():
 
     login_dialog.deleteLater()
     user_name = login_dialog.user_name
+
+    statistics = login_statistics.LoginStatistics(
+        py_medical, py_medical.database, py_medical.system_settings)
+    statistics.start_statistics()
+    py_medical.statistics_dicts = statistics.statistics_dicts
+    del statistics
+
     py_medical.system_settings.post('使用者', user_name)
     py_medical.refresh_status_bar()
     py_medical.set_root_permission()

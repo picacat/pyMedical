@@ -25,7 +25,7 @@
      <item>
       <widget class="QTabWidget" name="tabWidget_settings">
        <property name="currentIndex">
-        <number>0</number>
+        <number>1</number>
        </property>
        <widget class="QWidget" name="tab_4">
         <attribute name="icon">
@@ -497,6 +497,13 @@
                <widget class="QRadioButton" name="radioButton_even">
                 <property name="text">
                  <string>雙號 (若現場掛號為雙號，預約掛號則為單號)</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QRadioButton" name="radioButton_reservation_table">
+                <property name="text">
+                 <string>預約班表</string>
                 </property>
                </widget>
               </item>

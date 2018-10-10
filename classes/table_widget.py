@@ -109,3 +109,22 @@ class TableWidget:
             )
             if error_message == '':
                 self.find_error(field_no)
+
+    def set_dict(self, in_dict):
+        self.table_widget.setRowCount(len(in_dict))
+        self.table_widget.setAlternatingRowColors(True)
+
+        for row_no, field in zip(range(len(in_dict)), in_dict):
+            self.table_widget.setItem(
+                row_no, 0,
+                QtWidgets.QTableWidgetItem(string_utils.xstr(field))
+            )
+            self.table_widget.setItem(
+                row_no, 1,
+                QtWidgets.QTableWidgetItem(string_utils.xstr(in_dict[field]))
+            )
+
+            self.table_widget.item(
+                row_no, 1).setTextAlignment(
+                QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
+            )

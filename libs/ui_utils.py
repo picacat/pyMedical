@@ -14,6 +14,7 @@ CONFIG_FILE = "pymedical.conf"
 
 UI_PY_MEDICAL = "pymedical.ui"
 UI_LOGIN = "login.ui"
+UI_LOGIN_STATISTICS = "login_statistics.ui"
 
 UI_MEDICAL_RECORD = "medical_record.ui"
 UI_INS_PRESCRIPT_RECORD = "ins_prescript_record.ui"
