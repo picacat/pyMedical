@@ -71,10 +71,26 @@ class DialogSettings(QtWidgets.QDialog):
         ui_utils.set_combo_box(self.ui.comboBox_massage_printer, printer_list, None)
         ui_utils.set_combo_box(self.ui.comboBox_report_printer, printer_list, None)
 
-        ui_utils.set_combo_box(self.ui.comboBox_regist_form, printer_utils.PRINT_REGISTRATION_FORM, None)
+        ui_utils.set_combo_box(
+            self.ui.comboBox_regist_form,
+            list(printer_utils.PRINT_REGISTRATION_FORM.keys()), None
+        )
+
         ui_utils.set_combo_box(
             self.ui.comboBox_ins_prescript_form,
-            printer_utils.PRINT_PRESCRIPTION_INS_FORM, None
+            list(printer_utils.PRINT_PRESCRIPTION_INS_FORM.keys()), None
+        )
+        ui_utils.set_combo_box(
+            self.ui.comboBox_self_prescript_form,
+            list(printer_utils.PRINT_PRESCRIPTION_SELF_FORM.keys()), None
+        )
+        ui_utils.set_combo_box(
+            self.ui.comboBox_ins_receipt_form,
+            list(printer_utils.PRINT_RECEIPT_INS_FORM.keys()), None
+        )
+        ui_utils.set_combo_box(
+            self.ui.comboBox_self_receipt_form,
+            list(printer_utils.PRINT_RECEIPT_SELF_FORM.keys()), None
         )
 
         ui_utils.set_combo_box(self.ui.comboBox_regist_print_mode, print_mode, None)

@@ -605,6 +605,7 @@
    <addaction name="action_dictionary"/>
    <addaction name="separator"/>
    <addaction name="action_save"/>
+   <addaction name="action_save_and_print"/>
    <addaction name="separator"/>
    <addaction name="action_close"/>
   </widget>
@@ -624,19 +625,19 @@
    </widget>
    <addaction name="menu"/>
   </widget>
-  <action name="action_save">
+  <action name="action_save_and_print">
    <property name="icon">
     <iconset>
-     <normaloff>../icons/filesave.svg</normaloff>../icons/filesave.svg</iconset>
+     <normaloff>../icons/document-print.svg</normaloff>../icons/document-print.svg</iconset>
    </property>
    <property name="text">
     <string>存檔列印</string>
    </property>
    <property name="toolTip">
-    <string>功能按鈕</string>
+    <string>存檔後列印各項單據</string>
    </property>
    <property name="shortcut">
-    <string>F10</string>
+    <string>F11</string>
    </property>
   </action>
   <action name="action_dictionary">
@@ -668,6 +669,9 @@
    <property name="text">
     <string>病患資料</string>
    </property>
+   <property name="toolTip">
+    <string>顯示病患資料</string>
+   </property>
    <property name="shortcut">
     <string>F2</string>
    </property>
@@ -681,7 +685,22 @@
     <string>過去病歷</string>
    </property>
    <property name="toolTip">
-    <string>過去病歷</string>
+    <string>顯示完整的過去病歷</string>
+   </property>
+  </action>
+  <action name="action_save">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/filesave.svg</normaloff>../icons/filesave.svg</iconset>
+   </property>
+   <property name="text">
+    <string>存檔不印</string>
+   </property>
+   <property name="toolTip">
+    <string>存檔後不列印單據</string>
+   </property>
+   <property name="shortcut">
+    <string>F10</string>
    </property>
   </action>
  </widget>

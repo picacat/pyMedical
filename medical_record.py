@@ -12,11 +12,15 @@ from libs import cshis_utils
 from libs import nhi_utils
 from libs import case_utils
 from libs import system_utils
+
+from printer import print_prescription
+
 import ins_prescript_record
 import self_prescript_record
 import medical_record_recently_history
 import medical_record_fees
 import medical_record_registration
+
 from dialog import dialog_inquiry
 from dialog import dialog_diagnosis
 from dialog import dialog_disease
@@ -109,6 +113,7 @@ class MedicalRecord(QtWidgets.QMainWindow):
     def _set_signal(self):
         self.ui.action_past_history.triggered.connect(self._open_past_history)
         self.ui.action_save.triggered.connect(self.save_medical_record)
+        self.ui.action_save_and_print.triggered.connect(self.save_medical_record)
         self.ui.action_dictionary.triggered.connect(self.open_dictionary)
         self.ui.action_close.triggered.connect(self.close_medical_record)
         self.ui.action_patient.triggered.connect(self.modify_patient)
@@ -448,6 +453,8 @@ class MedicalRecord(QtWidgets.QMainWindow):
             doctor_done = True
 
         self.update_medical_record(doctor_done)
+        if self.sender().text() == '存檔列印':
+            self._print()
 
         card = string_utils.xstr(self.medical_record['Card'])
         if ((self.medical_record['InsType'] == '健保') and
@@ -462,6 +469,13 @@ class MedicalRecord(QtWidgets.QMainWindow):
 
         self.close_all()
         self.close_tab()
+
+    def _print(self):
+        print_prescript = print_prescription.PrintPrescription(
+            self, self.database, self.system_settings, self.case_key, '列印')
+        print_prescript.print()
+
+        del print_prescript
 
     # 設定必要欄位
     def _set_necessary_fields(self):

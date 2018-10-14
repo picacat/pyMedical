@@ -211,6 +211,7 @@
    <addaction name="action_delete_record"/>
    <addaction name="separator"/>
    <addaction name="action_print_prescript"/>
+   <addaction name="action_print_receipt"/>
    <addaction name="separator"/>
    <addaction name="action_close"/>
   </widget>
@@ -241,7 +242,7 @@
      <normaloff>../icons/document-print.svg</normaloff>../icons/document-print.svg</iconset>
    </property>
    <property name="text">
-    <string>列印處方</string>
+    <string>列印處方箋</string>
    </property>
   </action>
   <action name="action_requery">
@@ -263,6 +264,15 @@
    </property>
    <property name="text">
     <string>關閉視窗</string>
+   </property>
+  </action>
+  <action name="action_print_receipt">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/printer-printing.png</normaloff>../icons/printer-printing.png</iconset>
+   </property>
+   <property name="text">
+    <string>列印醫療收據</string>
    </property>
   </action>
  </widget>

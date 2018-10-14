@@ -2,6 +2,7 @@ import xml.etree.ElementTree as ET
 from xml.dom.minidom import Document
 from libs import string_utils
 from libs import number_utils
+from libs import nhi_utils
 
 
 MAX_MEDICINE_SET = 100
@@ -327,10 +328,18 @@ def get_medical_record_html(database, case_key):
 
 
 def _get_prescript_record(database, case_key):
+    sql = '''
+        SELECT Treatment FROM cases
+        WHERE
+            CaseKey = {0}
+    '''.format(case_key)
+    rows = database.select_record(sql)
+    treatment = rows[0]['Treatment']
+
     sql = 'SELECT * FROM prescript WHERE CaseKey = {0}'.format(case_key)
     rows = database.select_record(sql)
     if len(rows) <= 0:
-        return '<br><center>未開藥</center><br>'
+        return '<br><center>無處方</center><br>'
 
     all_prescript = ''
     for i in range(1, MAX_MEDICINE_SET):
@@ -340,6 +349,22 @@ def _get_prescript_record(database, case_key):
             ORDER BY PrescriptNo, PrescriptKey
         '''.format(case_key, i)
         rows = database.select_record(sql)
+        if i == 1 and treatment in nhi_utils.INS_TREAT:
+            if treatment in nhi_utils.ACUPUNCTURE_TREAT:
+                medicine_type = '穴道'
+            else:
+                medicine_type = '處置'
+
+            rows.insert(
+                0,
+                {
+                    'MedicineName': treatment,
+                    'MedicineType': medicine_type,
+                    'Dosage': 1,
+                    'Unit': '次',
+                    'Instruction': '',
+                }
+            )
 
         if len(rows) <= 0:
             if i == 1:
@@ -355,6 +380,15 @@ def _get_prescript_record(database, case_key):
                 continue
 
             sequence += 1
+
+            if row['Dosage'] is None or row['Dosage'] == 0.00:
+                dosage = ''
+            else:
+                dosage = string_utils.xstr(row['Dosage'])
+
+            unit = string_utils.xstr(row['Unit'])
+            instruction = string_utils.xstr(row['Instruction'])
+
             total_dosage += row['Dosage']
             prescript_data += '''
                 <tr>
@@ -366,9 +400,9 @@ def _get_prescript_record(database, case_key):
             '''.format(
                 string_utils.xstr(sequence),
                 string_utils.xstr(row['MedicineName']),
-                string_utils.xstr(row['Dosage']),
-                string_utils.xstr(row['Unit']),
-                string_utils.xstr(row['Instruction']),
+                dosage,
+                unit,
+                instruction,
             )
 
         sql = '''

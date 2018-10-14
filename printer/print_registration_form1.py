@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #coding: utf-8
 
-from PyQt5 import QtGui, QtCore, QtPrintSupport
+from PyQt5 import QtGui, QtCore, QtPrintSupport, QtWidgets
 from PyQt5.QtPrintSupport import QPrinter
 from libs import printer_utils
 from libs import string_utils
@@ -45,7 +45,11 @@ class PrintRegistrationForm1:
         self.print_html(True)
 
     def preview(self):
+        geometry = QtWidgets.QApplication.desktop().screenGeometry()
+
         self.preview_dialog.paintRequested.connect(self.print_html)
+        self.preview_dialog.resize(geometry.width(), geometry.height())  # for use in Linux
+        self.preview_dialog.setWindowState(QtCore.Qt.WindowMaximized)
         self.preview_dialog.exec_()
 
     def print_painter(self):
@@ -64,7 +68,7 @@ class PrintRegistrationForm1:
         self.printer.setPaperSize(QtCore.QSizeF(80, 80), QPrinter.Millimeter)
 
         document = printer_utils.get_document(self.printer, self.font)
-        document.setDocumentMargin(10)
+        document.setDocumentMargin(5)
         document.setHtml(self._html())
         if printing:
             document.print(self.printer)
@@ -85,12 +89,13 @@ class PrintRegistrationForm1:
                 保險類別: {4} - {5}<br>
                 健保卡序: {6}<br>
                 掛號費: {7} 門診負擔: {8} 欠卡費: {9}<br>
-                <center style="font-size:28px"><b>{10}診 {11:0>3}號</b></center>
-                <center>本單據僅供看診叫號使用，不作報稅證明用途</center><br>
+                <center style="font-size:24px">{10}診 {11:0>3}號</b></center><br>
+                <center>本單據僅供看診叫號使用，不作報稅證明用途</center>
             </body>
             </html>
         '''.format(
-            self.system_settings.field('院所名稱'), row['CaseDate'], row['PatientKey'], row['Name'],
+            self.system_settings.field('院所名稱'),
+            row['CaseDate'], row['PatientKey'], row['Name'],
             row['InsType'], row['TreatType'], card, row['RegistFee'], row['SDiagShareFee'], row['DepositFee'],
             row['Room'], row['RegistNo']
         )

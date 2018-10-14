@@ -67,7 +67,9 @@ class PrintPrescriptionInsForm1:
             document.print(self.printer)
 
     def _html(self):
-        case_record = printer_utils.get_case_html_1(self.database, self.case_key, colspan=5)
+        case_record = printer_utils.get_case_html_1(self.database, self.case_key)
+        symptom_record = printer_utils.get_symptom(self.database, self.case_key, colspan=5)
+        disease_record = printer_utils.get_disease(self.database, self.case_key)
         prescript_record = printer_utils.get_prescript_html_2(
             self.database, self.case_key, self.medicine_set)
         instruction = printer_utils.get_instruction_html(
@@ -77,14 +79,26 @@ class PrintPrescriptionInsForm1:
         html = '''
             <html>
               <body>
-                {case}
+                <table width="98%" cellspacing=0>
+                  <tbody>
+                    {case}
+                    {symptom}
+                  </tbody>  
+                </table>
+                {disease}
                 <hr>
-                {prescript}
+                <table>
+                  <tbody>
+                    {prescript}
+                  </tbody>
+                </table>        
                 {instruction}
               </body>
             </html>
         '''.format(
             case=case_record,
+            symptom=symptom_record,
+            disease=disease_record,
             prescript=prescript_record,
             instruction=instruction,
         )

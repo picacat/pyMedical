@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #coding: utf-8
 
-from PyQt5 import QtGui, QtCore, QtPrintSupport
+from PyQt5 import QtGui, QtCore, QtPrintSupport, QtWidgets
 from PyQt5.QtPrintSupport import QPrinter
 from libs import printer_utils
 from libs import string_utils
@@ -46,7 +46,11 @@ class PrintRegistrationForm2:
         # self.print_painter()
 
     def preview(self):
+        geometry = QtWidgets.QApplication.desktop().screenGeometry()
+
         self.preview_dialog.paintRequested.connect(self.print_html)
+        self.preview_dialog.resize(geometry.width(), geometry.height())  # for use in Linux
+        self.preview_dialog.setWindowState(QtCore.Qt.WindowMaximized)
         self.preview_dialog.exec_()
 
     def print_painter(self):
@@ -84,7 +88,7 @@ class PrintRegistrationForm2:
             <html>
             <body>
                 <p style="font-size:24px"><b>{0} 門診掛號單</b></p>
-                <table cellspacing=0 cellpadding=8 style="border-width:1px 1px 1px; border-style: solid; border-color: #000000">
+                <table cellspacing=0 cellpadding=8 style="border-width:1px; border-style: solid; border-color: darkgrey">
                     <tr>
                         <td>掛號時間</td><td>{1}</td>
                         <td>病患姓名</td><td>{2:0>6}-{3}</td>
