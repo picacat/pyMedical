@@ -68,8 +68,9 @@ class PrintPrescriptionSelfForm1:
 
     def _html(self):
         case_record = printer_utils.get_case_html_1(self.database, self.case_key)
-        prescript_record = printer_utils.get_prescript_html_2(
-            self.database, self.case_key, self.medicine_set)
+        prescript_record = printer_utils.get_prescript_html(
+            self.database, self.system_settings,
+            self.case_key, self.medicine_set, blocks=3)
         instruction = printer_utils.get_instruction_html(
             self.database, self.case_key, self.medicine_set
         )

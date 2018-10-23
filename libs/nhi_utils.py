@@ -13,6 +13,8 @@ APPLY_TYPE_CODE = {
     '補報': '2',
 }
 
+MAX_COURSE = 6  # 療程次數
+
 MAX_TREAT_DRUG = 120  # 針傷給藥限量
 TREAT_DRUG_CODE = ['B41', 'B43', 'B45', 'B53', 'B62', 'B80', 'B85', 'B90']  # 針傷給藥代碼
 TREAT_CODE = ['B42', 'B44', 'B46', 'B54', 'B61', 'B63', 'B81', 'B86', 'B91']  # 針傷未開藥代碼
@@ -47,7 +49,10 @@ APPLY_TYPE = ['申報', '不申報', '補報']
 VISIT = ['複診', '初診']
 REG_TYPE = ['一般門診', '預約門診', '夜間急診']
 GENERAL_INJURY_TYPE = ['普通疾病']
+
 OCCUPATIONAL_INJURY_TYPE = ['職業傷害', '職業病']
+OCCUPATIONAL_INJURY_CARD = 'IC06'
+
 INJURY_TYPE = GENERAL_INJURY_TYPE + OCCUPATIONAL_INJURY_TYPE
 INSURED_TYPE = ['基層醫療', '榮民', '低收入戶']
 SHARE_TYPE = INSURED_TYPE + [
@@ -65,13 +70,13 @@ DISLOCATE_TREAT = ['脫臼復位', '脫臼整復首次', '脫臼整復',]
 INS_TREAT = ACUPUNCTURE_TREAT + MASSAGE_TREAT + DISLOCATE_TREAT
 
 AUXILIARY_CARE_TREAT = [
-    '腦血管疾病', '顱腦損傷', '脊髓損傷',
+    '小兒氣喘', '小兒腦性麻痺', '腦血管疾病', '顱腦損傷', '脊髓損傷',
 ]
 
 IMPROVE_CARE_TREAT = [
     '癌症照護',
     '助孕照護', '保胎照護',
-    '乳癌照護', '肝癌照護',
+    '乳癌照護', '肝癌照護', '肺癌照護',
     '肺癌照護', '大腸癌照護',  #2018.02.01 新增
     '兒童鼻炎',
     # '小兒氣喘(氣霧處置)', '小兒氣喘',  # 102.01.01 取消
@@ -162,6 +167,10 @@ FREQUENCY = {
     2: 'BID',
     3: 'TID',
     4: 'QID',
+    5: 'PID',
+    6: 'Q4H',
+    7: 'Q4H',
+    8: 'Q3H',
 }
 
 USAGE = {
@@ -306,11 +315,11 @@ def get_case_type(database, system_settings, row):
     pres_days = case_utils.get_pres_days(database, row['CaseKey'])
 
     case_type = '21'  # 預設為21
-    if treat_type in AUXILIARY_CARE_TREAT:  # 輔助照護
+    if treat_type in IMPROVE_CARE_TREAT:  # 加強照護
         case_type = '22'
     elif course >= 1 and treatment in INS_TREAT:  # 一般針傷脫臼處置
         case_type = '29'
-    elif treat_type in IMPROVE_CARE_TREAT:  # 加強照護
+    elif treat_type in AUXILIARY_CARE_TREAT:  # 輔助照護
         case_type = '30'
     elif injury in OCCUPATIONAL_INJURY_TYPE:  # 職業傷害及職業病
         case_type = 'B6'
@@ -392,13 +401,25 @@ def get_special_code(database, case_key):
 
 
 # 取得初診照護
-def get_visit(row):
+def get_visit(database, row):
     if string_utils.xstr(row['Visit']) == '初診':
-        visit = '初診照護'
-    else:
-        visit = None
+        return '初診照護'
 
-    return  visit
+    visit_year = 2  # 2年內無看診
+    first_visit_year_range = row['CaseDate'].replace(year=row['CaseDate'].year - visit_year)
+
+    sql = '''
+        SELECT CaseKey FROM cases
+        WHERE
+            InsType = "健保" AND
+            CaseKey = {0} AND
+            CaseDate > "{1}"
+    '''.format(row['CaseKey'], first_visit_year_range)
+    rows = database.select_record(sql)
+    if len(rows) <= 0:
+        return '初診照護'
+
+    return None
 
 
 # 調劑方式: 0-自行調劑 1-交付調劑 2-未開處方

@@ -104,6 +104,12 @@ class CheckPrescriptDays(QtWidgets.QMainWindow):
         return len(self.rows)
 
     def start_check(self):
+        self.parent.ui.label_progress.setText('檢查進度: 用藥天數檢查')
+        self.read_data()
+
+        self.parent.ui.progressBar.setMaximum(self.row_count()-1)
+        self.parent.ui.progressBar.setValue(0)
+
         self.ui.tableWidget_medical_record.setRowCount(0)
         for row_no, row in zip(range(len(self.rows)), self.rows):
             error_messages = []
@@ -119,6 +125,8 @@ class CheckPrescriptDays(QtWidgets.QMainWindow):
             self.ui.toolButton_find_error.setEnabled(False)
         else:
             self.ui.toolButton_find_error.setEnabled(True)
+
+        self.parent.ui.label_progress.setText('檢查進度: 檢查完成')
 
     def _check_duplicated_days(self, row_no, row):
         error_message = []

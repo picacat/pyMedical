@@ -265,7 +265,8 @@ class InsApplyXML(QtWidgets.QMainWindow):
             return
 
         self.sequence = 0
-        for course in range(1, 7):
+        max_course = 6
+        for course in range(1, max_course+1):
             case_key = number_utils.get_integer(row['CaseKey{0}'.format(course)])
             if case_key <= 0:
                 continue
@@ -291,15 +292,17 @@ class InsApplyXML(QtWidgets.QMainWindow):
                 self._set_prescript(dbody, row, case_row, prescript_rows, case_key, course)
 
     def _set_diagnosis(self, dbody, row):
-        pdata = ET.SubElement(dbody, 'pdata')
-
-        self.sequence += 1
         amount = number_utils.get_integer(row['DiagFee'])
         unit_price = number_utils.get_integer(
             charge_utils.get_diag_fee_from_diag_code(
                 self.database, string_utils.xstr(row['DiagCode']))
         )
 
+        if unit_price <= 0:
+            return
+
+        self.sequence += 1
+        pdata = ET.SubElement(dbody, 'pdata')
         p3 = ET.SubElement(pdata, 'p3')
         p3.text = '0'  # 0=診察費
         p4 = ET.SubElement(pdata, 'p4')
@@ -549,7 +552,50 @@ class InsApplyXML(QtWidgets.QMainWindow):
         self.sequence += 1
 
     def _set_special_care(self, dbody, row, case_row):
-        self.sequence += 1
+        sql = '''
+            SELECT * FROM prescript
+            WHERE
+                CaseKey = {0} AND
+                MedicineSet = 11 AND
+                MedicineType = "照護"
+            ORDER BY PrescriptKey
+        '''.format(case_row['CaseKey'])
+        rows = self.database.select_record(sql)
+
+        for care_row in rows:
+            pdata = ET.SubElement(dbody, 'pdata')
+
+            self.sequence += 1
+            amount = number_utils.get_integer(care_row['Price'])
+            percent = 100
+            unit_price = number_utils.get_integer(amount / percent * 100)
+
+            p2 = ET.SubElement(pdata, 'p2')
+            p2.text = '0'  # 0=自行調劑或物理治療
+            p3 = ET.SubElement(pdata, 'p3')
+            p3.text = '2'  # 2=診療明細
+            p4 = ET.SubElement(pdata, 'p4')
+            p4.text = string_utils.xstr(care_row['InsCode'])
+            p8 = ET.SubElement(pdata, 'p8')
+            p8.text = '{0:05.2f}'.format(percent)
+            p10 = ET.SubElement(pdata, 'p10')
+            p10.text = '1'  # 總量
+            p11 = ET.SubElement(pdata, 'p11')
+            p11.text = string_utils.xstr(unit_price)  # 單價
+            p12 = ET.SubElement(pdata, 'p12')
+            p12.text = string_utils.xstr(amount)  # 點數
+            p13 = ET.SubElement(pdata, 'p13')
+            p13.text = string_utils.xstr(self.sequence)  # 序號
+            p14 = ET.SubElement(pdata, 'p14')
+            p14.text = '{0}0000'.format(date_utils.west_date_to_nhi_date(case_row['CaseDate']))
+            p15 = ET.SubElement(pdata, 'p15')
+            p15.text = '{0}0000'.format(date_utils.west_date_to_nhi_date(case_row['CaseDate']))
+            p16 = ET.SubElement(pdata, 'p16')
+            p16.text = string_utils.xstr(row['DoctorID'])
+            p17 = ET.SubElement(pdata, 'p17')
+            p17.text = '2'  # 同一療程
+            p20 = ET.SubElement(pdata, 'p20')
+            p20.text = string_utils.xstr(row['Class'])
 
     def _get_pharmacy_code(self, pharmacy_code_str):
         pharmacy_count = 0

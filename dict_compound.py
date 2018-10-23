@@ -99,13 +99,17 @@ class DictCompound(QtWidgets.QMainWindow):
         self.table_widget_dict_medicine.set_db_data(sql, self._set_dict_medicine_data)
 
     def _set_dict_medicine_data(self, rec_no, rec):
+        if rec['MedicineKey'] is None:
+            return
+
         sql = '''
             SELECT * FROM medicine WHERE MedicineKey = {0}
         '''.format(rec['MedicineKey'])
-        try:
-            row = self.database.select_record(sql)[0]
-        except IndexError:
+        rows = self.database.select_record(sql)
+        if len(rows) <= 0:
             return
+
+        row = rows[0]
 
         dict_medicine_rec = [
             string_utils.xstr(rec['MedicineKey']),

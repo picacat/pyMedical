@@ -89,7 +89,7 @@ class Cashier(QtWidgets.QMainWindow):
             sort = 'ORDER BY wait.CaseDate'
 
         sql = '''
-            SELECT wait.*, cases.*, patient.Gender, Birthday FROM wait
+            SELECT wait.*, cases.*, patient.Gender, patient.Birthday FROM wait
                 LEFT JOIN patient ON patient.PatientKey = wait.PatientKey
                 LEFT JOIN cases ON cases.CaseKey = wait.CaseKey
             WHERE
@@ -218,7 +218,7 @@ class Cashier(QtWidgets.QMainWindow):
                 sequence += 1
 
                 dosage = ''
-                if row['Dosage'] > 0:
+                if row['Dosage'] is not None and row['Dosage'] > 0:
                     dosage = string_utils.xstr(row['Dosage']) + string_utils.xstr(row['Unit'])
 
                 prescript_data += '''

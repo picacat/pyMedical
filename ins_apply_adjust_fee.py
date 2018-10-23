@@ -298,7 +298,7 @@ class InsApplyAdjustFee(QtWidgets.QMainWindow):
             treat_count = 0
             complicated_massage_count = 0
             for row in rows:
-                for course in range(1, 7):
+                for course in range(1, nhi_utils.MAX_COURSE+1):
                     treat_code = string_utils.xstr(row['TreatCode{0}'.format(course)])
                     treat_fee = number_utils.get_integer(row['TreatFee{0}'.format(course)])
                     if treat_code == '' or treat_fee <= 0:
@@ -325,41 +325,46 @@ class InsApplyAdjustFee(QtWidgets.QMainWindow):
                             self.database, ins_apply_key, course, treat_percent
                         )
 
+    # 計算針灸傷科給藥上限 (每位醫師平均 專任醫師數 * 120)
     def _adjust_treat_drug_fee(self):
-        for ins_calculated_row in self.ins_calculated_table:
-            doctor_name = ins_calculated_row['doctor_name']
-            sql = '''
-                SELECT *
-                FROM insapply
-                WHERE
-                    ApplyDate = "{0}" AND
-                    ApplyType = "{1}" AND
-                    ApplyPeriod = "{2}" AND
-                    ClinicID = "{3}" AND
-                    DoctorName = "{4}" AND
-                    CaseType = "29"
-                    ORDER BY Sequence
-            '''.format(
-                self.apply_date, self.apply_type_code,
-                self.period, self.clinic_id, doctor_name,
-            )
-            rows = self.database.select_record(sql)
+        max_full_time_doctor = 0
+        for ins_calculated_row in self.ins_calculated_table:  # 取得專任醫師數
+            if ins_calculated_row['doctor_type'] == '醫師':
+                max_full_time_doctor += 1
 
-            treat_drug_count = 0
-            for row in rows:
-                for course in range(1, 7):
-                    treat_code = string_utils.xstr(row['TreatCode{0}'.format(course)])
-                    if treat_code not in nhi_utils.TREAT_DRUG_CODE:
-                        continue
+        max_treat_drug = max_full_time_doctor * nhi_utils.MAX_TREAT_DRUG
 
-                    treat_drug_count += 1
+        sql = '''
+            SELECT *
+            FROM insapply
+            WHERE
+                ApplyDate = "{0}" AND
+                ApplyType = "{1}" AND
+                ApplyPeriod = "{2}" AND
+                ClinicID = "{3}" AND
+                CaseType = "29"
+                ORDER BY Sequence
+        '''.format(
+            self.apply_date, self.apply_type_code,
+            self.period, self.clinic_id,
+        )
+        rows = self.database.select_record(sql)
 
-                    ins_apply_key = row['InsApplyKey']
-                    if treat_drug_count > nhi_utils.MAX_TREAT_DRUG:
-                        treat_percent = 50
-                        charge_utils.update_treat_fee(
-                            self.database, ins_apply_key, course, treat_percent
-                        )
+        treat_drug_count = 0
+        for row in rows:
+            for course in range(1, nhi_utils.MAX_COURSE+1):
+                treat_code = string_utils.xstr(row['TreatCode{0}'.format(course)])
+                if treat_code not in nhi_utils.TREAT_DRUG_CODE:  # 無開藥不調整
+                    continue
+
+                treat_drug_count += 1
+
+                ins_apply_key = row['InsApplyKey']
+                if treat_drug_count > max_treat_drug:
+                    treat_percent = 50
+                    charge_utils.update_treat_fee(
+                        self.database, ins_apply_key, course, treat_percent
+                    )
 
     def _adjust_first_visit_fee(self):
         if self.system_settings.field('申報初診照護') == 'N':
@@ -380,7 +385,7 @@ class InsApplyAdjustFee(QtWidgets.QMainWindow):
             self.period, self.clinic_id,
         )
         rows = self.database.select_record(sql)
-        first_visit_limit = int(len(rows) * 10 / 100)
+        first_visit_limit = int(len(rows) * 10 / 100)  # 初診照護為總歸戶人數的10%
 
         sql = '''
                 SELECT *

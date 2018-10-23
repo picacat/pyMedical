@@ -385,11 +385,11 @@ def _get_prescript_record(database, case_key):
                 dosage = ''
             else:
                 dosage = string_utils.xstr(row['Dosage'])
+                total_dosage += row['Dosage']
 
             unit = string_utils.xstr(row['Unit'])
             instruction = string_utils.xstr(row['Instruction'])
 
-            total_dosage += row['Dosage']
             prescript_data += '''
                 <tr>
                     <td align="center" style="padding-right: 8px;">{0}</td>

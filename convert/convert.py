@@ -6,6 +6,7 @@ from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QMessageBox, QPushButton
 from libs import ui_utils
 from libs import system_utils
+from libs import string_utils
 from classes import db
 from convert import cvt_utec
 
@@ -42,7 +43,7 @@ class DialogConvert(QtWidgets.QDialog):
         self._set_combo_box()
 
     def _set_combo_box(self):
-        ui_utils.set_combo_box(self.ui.comboBox_utec_product, ['Med2000', 'Medical'])
+        ui_utils.set_combo_box(self.ui.comboBox_utec_product, ['Medical', 'Med2000'])
 
     # 設定信號
     def _set_signal(self):
@@ -61,6 +62,16 @@ class DialogConvert(QtWidgets.QDialog):
         self.close()
 
     def test_connection(self):
+        if string_utils.xstr(self.ui.lineEdit_database.text()) == '':
+            msg_box = QMessageBox()
+            msg_box.setIcon(QMessageBox.Critical)
+            msg_box.setWindowTitle('連線失敗')
+            msg_box.setText("<font size='4' color='Red'><b>連線至資料庫主機失敗! 資料庫名稱空白.</b></font>")
+            msg_box.setInformativeText("請輸入資料庫名稱.")
+            msg_box.addButton(QPushButton("確定"), QMessageBox.YesRole)
+            msg_box.exec_()
+            return
+
         self.source_db = db.Database(
             host=self.ui.lineEdit_host.text(),
             user=self.ui.lineEdit_user.text(),

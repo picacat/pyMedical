@@ -132,8 +132,13 @@ class InsApplyGenerateFile(QtWidgets.QMainWindow):
 
         progress_dialog.setValue(record_count)
 
+    # 檢查是否需要合併病歷
     def _need_merge_record(self, row):
+        if string_utils.xstr(row['TreatType']) in nhi_utils.AUXILIARY_CARE_TREAT:
+            pass
+
         ins_apply_row = None
+
         course = number_utils.get_integer(row['Continuance'])
         if course <= 1:
             return ins_apply_row
@@ -162,6 +167,7 @@ class InsApplyGenerateFile(QtWidgets.QMainWindow):
 
     def _write_ins_record(self, row):
         case_type = nhi_utils.get_case_type(self.database, self.system_settings, row)
+
         special_code = nhi_utils.get_special_code(self.database, row['CaseKey'])
         pres_days = case_utils.get_pres_days(self.database, row['CaseKey'])
         treat_records = nhi_utils.get_treat_records(self.database, row)
@@ -188,6 +194,15 @@ class InsApplyGenerateFile(QtWidgets.QMainWindow):
             number_utils.get_integer(row['DrugShareFee'])
         )
         ins_apply_fee = ins_total_fee - share_fee
+
+        if self.system_settings.field('申報初診照護') == 'Y':
+            first_visit = nhi_utils.get_visit(self.database, row)
+        else:
+            first_visit = None
+
+        card = string_utils.xstr(row['Card'])[:4]
+        if case_type == 'B6':
+            card = nhi_utils.OCCUPATIONAL_INJURY_CARD
 
         fields = [
             'ClinicID', 'ApplyDate', 'ApplyPeriod', 'ApplyType', 'CaseType', 'Sequence',
@@ -222,7 +237,7 @@ class InsApplyGenerateFile(QtWidgets.QMainWindow):
             row['CaseDate'].date(),
             row['Birthday'],
             string_utils.xstr(row['ID']),
-            string_utils.xstr(row['Card'])[:4],
+            card,
             nhi_utils.INJURY_DICT[string_utils.xstr(row['Injury'])],
             nhi_utils.get_diag_share_code(
                 self.database,
@@ -231,7 +246,7 @@ class InsApplyGenerateFile(QtWidgets.QMainWindow):
                 number_utils.get_integer(row['Continuance']),
                 row,
             ),
-            nhi_utils.get_visit(row),
+            first_visit,
             string_utils.xstr(row['DiseaseCode1']),
             string_utils.xstr(row['DiseaseCode2']),
             string_utils.xstr(row['DiseaseCode3']),

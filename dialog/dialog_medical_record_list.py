@@ -69,7 +69,7 @@ class DialogMedicalRecordList(QtWidgets.QDialog):
         script = '''
             SELECT CaseKey, DATE_FORMAT(CaseDate, '%Y-%m-%d %H:%i') AS CaseDate, 
             cases.PatientKey, cases.Name, Period, cases.InsType, 
-            Share, RegistNo, Card, Continuance, TreatType, 
+            Share, cases.RegistNo, Card, Continuance, TreatType, 
             PresDays1, PresDays2, DiseaseCode1, DiseaseName1,
             Doctor, Massager, Room, RegistFee, SDiagShareFee, SDrugShareFee,
             TotalFee, patient.Gender, patient.Birthday
@@ -81,38 +81,38 @@ class DialogMedicalRecordList(QtWidgets.QDialog):
 
         ins_type = self.ui.comboBox_ins_type.currentText()
         if ins_type != '全部':
-            script = script + " and cases.InsType = '{0}'".format(ins_type)
+            script += " AND cases.InsType = '{0}'".format(ins_type)
 
         apply_type = self.ui.comboBox_apply_type.currentText()
         if apply_type != '全部':
-            script = script + " and ApplyType = '{0}'".format(apply_type)
+            script += " AND ApplyType = '{0}'".format(apply_type)
 
         treat_type = self.ui.comboBox_treat_type.currentText()
         if treat_type != '全部':
-            script = script + " and TreatType = '{0}'".format(treat_type)
+            script += " AND TreatType = '{0}'".format(treat_type)
 
         share_type = self.ui.comboBox_share_type.currentText()
         if share_type != '全部':
-            script = script + " and Share = '{0}'".format(share_type)
+            script += " AND Share = '{0}'".format(share_type)
 
         period = self.ui.comboBox_period.currentText()
         if period != '全部':
-            script = script + " and Period = '{0}'".format(period)
+            script += " AND Period = '{0}'".format(period)
 
         room = self.ui.comboBox_room.currentText()
         if room != '全部':
-            script = script + " and Room = {0}".format(room)
+            script += " AND Room = {0}".format(room)
+
+        doctor = self.ui.comboBox_doctor.currentText()
+        if doctor != '全部':
+            script += " AND Doctor = '{0}'".format(doctor)
 
         patient_key = self.ui.lineEdit_patient_key.text()
 
         if patient_key != '':
-            script = script + " and cases.PatientKey = {0}".format(patient_key)
+            script += " AND cases.PatientKey = {0}".format(patient_key)
 
-        doctor = self.ui.comboBox_doctor.currentText()
-        if doctor != '全部':
-            script = script + " and Doctor = '{0}'".format(doctor)
-
-        script = script + " order by CaseDate, cases.Room, RegistNo"
+        script += " ORDER BY CaseDate, cases.Room, cases.RegistNo"
 
         return script
 

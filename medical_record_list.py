@@ -28,6 +28,11 @@ class MedicalRecordList(QtWidgets.QMainWindow):
             "end_date": None,
             "period": None,
             "ins_type": None,
+            "treat_type": None,
+            "share_type": None,
+            "apply_type": None,
+            "doctor": None,
+            "room": None,
         }
         self.ui = None
 
@@ -74,6 +79,11 @@ class MedicalRecordList(QtWidgets.QMainWindow):
             dialog.ui.dateEdit_end_date.setDate(self.dialog_setting['end_date'])
             dialog.ui.comboBox_period.setCurrentText(self.dialog_setting['period'])
             dialog.ui.comboBox_ins_type.setCurrentText(self.dialog_setting['ins_type'])
+            dialog.ui.comboBox_treat_type.setCurrentText(self.dialog_setting['treat_type'])
+            dialog.ui.comboBox_share_type.setCurrentText(self.dialog_setting['share_type'])
+            dialog.ui.comboBox_apply_type.setCurrentText(self.dialog_setting['apply_type'])
+            dialog.ui.comboBox_doctor.setCurrentText(self.dialog_setting['doctor'])
+            dialog.ui.comboBox_room.setCurrentText(self.dialog_setting['room'])
 
         result = dialog.exec_()
         self.dialog_setting['dialog_executed'] = True
@@ -81,6 +91,11 @@ class MedicalRecordList(QtWidgets.QMainWindow):
         self.dialog_setting['end_date'] = dialog.ui.dateEdit_end_date.date()
         self.dialog_setting['period'] = dialog.comboBox_period.currentText()
         self.dialog_setting['ins_type'] = dialog.comboBox_ins_type.currentText()
+        self.dialog_setting['treat_type'] = dialog.comboBox_treat_type.currentText()
+        self.dialog_setting['share_type'] = dialog.comboBox_share_type.currentText()
+        self.dialog_setting['apply_type'] = dialog.comboBox_apply_type.currentText()
+        self.dialog_setting['doctor'] = dialog.comboBox_doctor.currentText()
+        self.dialog_setting['room'] = dialog.comboBox_room.currentText()
 
         sql = dialog.get_sql()
         dialog.close_all()
@@ -147,10 +162,19 @@ class MedicalRecordList(QtWidgets.QMainWindow):
                     QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
                 )
 
-            if number_utils.get_integer(rec['TotalFee']) > 0 or rec['InsType'] == '自費':
+            if number_utils.get_integer(rec['TotalFee']) > 0:
+                self.ui.tableWidget_medical_record_list.item(
+                    rec_no, column).setForeground(QtGui.QColor('blue')
+                )
+            if string_utils.xstr(rec['InsType']) == '自費':
                 self.ui.tableWidget_medical_record_list.item(
                     rec_no, column).setForeground(
                     QtGui.QColor('blue')
+                )
+            if string_utils.xstr(rec['TreatType']) == '自購':
+                self.ui.tableWidget_medical_record_list.item(
+                    rec_no, column).setForeground(
+                    QtGui.QColor('darkgreen')
                 )
 
     def delete_medical_record(self):

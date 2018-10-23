@@ -7,6 +7,7 @@ from libs import ui_utils
 from libs import string_utils
 from libs import number_utils
 from libs import charge_utils
+from libs import nhi_utils
 
 
 # 病歷資料 2018.01.31
@@ -39,6 +40,11 @@ class MedicalRecordFees(QtWidgets.QMainWindow):
         self.table_widget_ins_fees = table_widget.TableWidget(self.ui.tableWidget_ins_fees, self.database)
         self.table_widget_cash_fees = table_widget.TableWidget(self.ui.tableWidget_cash_fees, self.database)
         self._set_table_width()
+        self.ins_table_headers = [
+            '門診診察費', '內服藥費', '藥事服務費', '針灸治療費', '傷科治療費', '脫臼治療費',
+            '健保合計', '門診負擔', '藥品負擔', '健保申請', '代辦費',
+        ]
+        self.ui.tableWidget_ins_fees.setVerticalHeaderLabels(self.ins_table_headers)
 
     # 設定信號
     def _set_signal(self):
@@ -53,7 +59,13 @@ class MedicalRecordFees(QtWidgets.QMainWindow):
             SELECT * FROM cases WHERE
             CaseKey = {0}
         '''.format(self.case_key)
-        row = self.database.select_record(sql)[0]
+        rows = self.database.select_record(sql)
+        if len(rows) <= 0:
+            return
+
+        row = rows[0]
+
+
         ins_fees = [
             [-1, row['DiagFee']],
             [0, row['InterDrugFee']],
@@ -61,12 +73,11 @@ class MedicalRecordFees(QtWidgets.QMainWindow):
             [2, row['AcupunctureFee']],
             [3, row['MassageFee']],
             [4, row['DislocateFee']],
-            [5, row['ExamFee']],
-            [6, row['InsTotalFee']],
-            [7, row['DiagShareFee']],
-            [8, row['DrugShareFee']],
-            [9, row['InsApplyFee']],
-            [10, row['AgentFee']],
+            [5, row['InsTotalFee']],
+            [6, row['DiagShareFee']],
+            [7, row['DrugShareFee']],
+            [8, row['InsApplyFee']],
+            [9, row['AgentFee']],
         ]
 
         cash_fees = [
@@ -99,6 +110,10 @@ class MedicalRecordFees(QtWidgets.QMainWindow):
                 fees[0], 1,
                 QtWidgets.QTableWidgetItem(string_utils.xstr(fees[1])))
 
+        if string_utils.xstr(row['TreatType']) in nhi_utils.CARE_TREAT:
+            self.ins_table_headers[5] = '加強照護費'
+            self.ui.tableWidget_ins_fees.setVerticalHeaderLabels(self.ins_table_headers)
+
         self.ui.tableWidget_ins_fees.setAlternatingRowColors(True)
         self.ui.tableWidget_cash_fees.setAlternatingRowColors(True)
 
@@ -110,6 +125,7 @@ class MedicalRecordFees(QtWidgets.QMainWindow):
             self.ui.tableWidget_ins_fees.setItem(
                 i, 0, QtWidgets.QTableWidgetItem(''))
 
+        treat_type = string_utils.xstr(self.parent.tab_registration.comboBox_treat_type.currentText())
         share = string_utils.xstr(self.parent.tab_registration.comboBox_share_type.currentText())
         course = number_utils.get_integer(self.parent.tab_registration.comboBox_course.currentText())
         pres_days = number_utils.get_integer(self.parent.tab_list[0].ui.comboBox_pres_days.currentText())
@@ -117,8 +133,8 @@ class MedicalRecordFees(QtWidgets.QMainWindow):
         treatment = self.parent.tab_list[0].combo_box_treatment.currentText()
 
         ins_fee = charge_utils.get_ins_fee(
-            self.database, self.system_settings,
-            share, course, pres_days, pharmacy_type, treatment
+            self.database, self.system_settings, self.case_key,
+            treat_type, share, course, pres_days, pharmacy_type, treatment
         )
 
         ins_fees = [
@@ -128,12 +144,11 @@ class MedicalRecordFees(QtWidgets.QMainWindow):
             [3, ins_fee['acupuncture_fee']],
             [4, ins_fee['massage_fee']],
             [5, ins_fee['dislocate_fee']],
-            [6, ins_fee['care_fee']],
-            [7, ins_fee['ins_total_fee']],
-            [8, ins_fee['diag_share_fee']],
-            [9, ins_fee['drug_share_fee']],
-            [10, ins_fee['ins_apply_fee']],
-            [11, ins_fee['agent_fee']],
+            [6, ins_fee['ins_total_fee']],
+            [7, ins_fee['diag_share_fee']],
+            [8, ins_fee['drug_share_fee']],
+            [9, ins_fee['ins_apply_fee']],
+            [10, ins_fee['agent_fee']],
         ]
 
         for fee in ins_fees:

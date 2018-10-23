@@ -101,6 +101,12 @@ class CheckErrors(QtWidgets.QMainWindow):
         return len(self.rows)
 
     def start_check(self):
+        self.parent.ui.label_progress.setText('檢查進度: 欄位錯誤檢查')
+        self.read_data()
+
+        self.parent.ui.progressBar.setMaximum(self.row_count()-1)
+        self.parent.ui.progressBar.setValue(0)
+
         self.ui.tableWidget_errors.setRowCount(0)
         for row in self.rows:
             error_messages = []
@@ -121,6 +127,8 @@ class CheckErrors(QtWidgets.QMainWindow):
             self.ui.toolButton_calculate_ins_fee.setEnabled(False)
         else:
             self.ui.toolButton_calculate_ins_fee.setEnabled(True)
+
+        self.parent.ui.label_progress.setText('檢查進度: 檢查完成')
 
     def error_count(self):
         return self.ui.tableWidget_errors.rowCount()
@@ -240,6 +248,8 @@ class CheckErrors(QtWidgets.QMainWindow):
     def _check_charge(self, row):
         error_messages = []
 
+        case_key = row['CaseKey']
+        treat_type = string_utils.xstr(row['TreatType'])
         share = string_utils.xstr(row['Share'])
         course = number_utils.get_integer(row['Continuance'])
         pharmacy_type = string_utils.xstr(row['PharmacyType'])
@@ -259,19 +269,12 @@ class CheckErrors(QtWidgets.QMainWindow):
 
         pres_days = case_utils.get_pres_days(self.database, row['CaseKey'])
         ins_fee = charge_utils.get_ins_fee(
-            self.database, self.system_settings,
-            share, course, pres_days, pharmacy_type, treatment
+            self.database, self.system_settings, case_key,
+            treat_type, share, course, pres_days, pharmacy_type, treatment
         )
 
-        if course <= 1:
-            if diag_fee <= 0:
-                error_messages.append('未申報診察費')
-            elif diag_fee != ins_fee['diag_fee']:
-                error_messages.append('診察費金額有誤')
-        else:
-            if diag_fee > 0:
-                error_messages.append('不可申報診察費')
-
+        if diag_fee != ins_fee['diag_fee']:
+            error_messages.append('診察費金額有誤')
         if inter_drug_fee != ins_fee['drug_fee']:
             error_messages.append('藥費有誤')
         if pharmacy_fee != ins_fee['pharmacy_fee']:

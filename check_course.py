@@ -108,6 +108,9 @@ class CheckCourse(QtWidgets.QMainWindow):
         return len(self.rows)
 
     def start_check(self):
+        self.parent.ui.label_progress.setText('檢查進度: 療程檢查')
+        self.read_data()
+
         self.ui.tableWidget_errors.setRowCount(0)
         for row in self.rows:
             self._insert_record(row)
@@ -124,6 +127,9 @@ class CheckCourse(QtWidgets.QMainWindow):
             self.ui.toolButton_find_error.setEnabled(True)
 
     def _check_course(self):
+        self.parent.ui.progressBar.setMaximum(self.ui.tableWidget_errors.rowCount()-1)
+        self.parent.ui.progressBar.setValue(0)
+
         for row_no in range(self.ui.tableWidget_errors.rowCount()):
             errors = 0
             patient_key = self.ui.tableWidget_errors.item(row_no, 3).text()

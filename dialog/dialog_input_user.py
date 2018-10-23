@@ -75,7 +75,7 @@ class DialogInputUser(QtWidgets.QDialog):
         self.ui.lineEdit_telephone.setText(string_utils.xstr(row['Telephone']))
         self.ui.lineEdit_cellphone.setText(string_utils.xstr(row['Cellphone']))
         self.ui.lineEdit_address.setText(string_utils.xstr(row['Address']))
-        self.ui.lineEdit_email.setText(string_utils.xstr(row['EMail']))
+        self.ui.lineEdit_email.setText(string_utils.xstr(row['Email']))
         self.ui.lineEdit_department.setText(string_utils.xstr(row['Department']))
         self.ui.lineEdit_input_date.setText(string_utils.xstr(row['InputDate']))
         self.ui.lineEdit_init_date.setText(string_utils.xstr(row['InitDate']))
@@ -92,7 +92,7 @@ class DialogInputUser(QtWidgets.QDialog):
     def save_user(self):
         fields = [
             'Code', 'Name', 'Gender', 'Birthday', 'ID', 'Position',
-            'FullTime', 'Certificate', 'Password', 'Telephone', 'Cellphone', 'Address', 'EMail',
+            'FullTime', 'Certificate', 'Password', 'Telephone', 'Cellphone', 'Address', 'Email',
             'Department', 'InputDate', 'InitDate', 'QuitDate', 'Remark',
         ]
         data = [

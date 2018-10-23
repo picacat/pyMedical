@@ -4,21 +4,26 @@
 import sys
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtWidgets import QMessageBox, QPushButton
-import os
 import datetime
+import os
+
+from classes import system_settings, db
+from classes import udp_socket_server
+from convert import convert
 
 from libs import ui_utils
 from libs import module_utils
 from libs import system_utils
 from libs import personnel_utils
+
 from dialog import dialog_system_settings
 from dialog import dialog_ic_card
-from classes import system_settings, db
-from convert import convert
+
+import check_database
 import login
 import login_statistics
 import backup
-from classes import udp_socket_server
+
 
 
 # 主畫面
@@ -30,16 +35,17 @@ class PyMedical(QtWidgets.QMainWindow):
         if not self.database.connected():
             sys.exit(0)
 
+        self.check_system_db()
+
         self.system_settings = system_settings.SystemSettings(self.database)
         self.ui = None
         self.statistics_dicts = None
         self.socket_server = udp_socket_server.UDPSocketServer()
 
-        self._check_db()
+        self._reset_wait()
         self._set_ui()
         self._set_signal()
         self._start_udp_socket_server()
-
 
     # 解構
     def __del__(self):
@@ -65,6 +71,13 @@ class PyMedical(QtWidgets.QMainWindow):
             event.accept()
         else:
             event.ignore()
+
+    def check_system_db(self):
+        mysql_path = './mysql'
+        mysql_files = [f for f in os.listdir(mysql_path) if os.path.isfile(os.path.join(mysql_path, f))]
+        for file in mysql_files:
+            table_name = file.split('.sql')[0]
+            self.database.check_table_exists(table_name)
 
     # 設定GUI
     def _set_ui(self):
@@ -149,20 +162,6 @@ class PyMedical(QtWidgets.QMainWindow):
     def _set_css(self):
         system_utils.set_css(self)
         system_utils.set_theme(self.ui, self.system_settings)
-
-    # 檢查資料庫狀態
-    def _check_db(self):
-        mysql_path = './mysql'
-        mysql_files = [f for f in os.listdir(mysql_path) if os.path.isfile(os.path.join(mysql_path, f))]
-        for file in mysql_files:
-            table_name = file.split('.sql')[0]
-            self.database.check_table_exists(table_name)
-
-        self.database.check_field_exists('icd10', 'Groups', 'VARCHAR (100) AFTER SpecialCode')
-        self.database.check_field_exists('cases', 'CompletionTime', 'DATETIME AFTER CaseDate')
-        self.database.check_field_exists('cases', 'PharmacyType', 'VARCHAR(10) AFTER ApplyType')
-
-        self._reset_wait()
 
     # 候診名單歸零
     def _reset_wait(self):
@@ -492,8 +491,12 @@ class PyMedical(QtWidgets.QMainWindow):
 def main():
     app = QtWidgets.QApplication(sys.argv)
     py_medical = PyMedical()
-
     py_medical.system_settings.post('使用者', None)
+
+    check_db = check_database.CheckDatabase(py_medical, py_medical.database, py_medical.system_settings)
+    check_db.check_database()
+    del check_db
+
     login_dialog = login.Login(py_medical, py_medical.database, py_medical.system_settings)
     login_dialog.exec_()
     if not login_dialog.login_ok:

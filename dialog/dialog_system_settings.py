@@ -102,6 +102,8 @@ class DialogSettings(QtWidgets.QDialog):
         ui_utils.set_combo_box(self.ui.comboBox_bag_print_mode, print_mode, None)
         ui_utils.set_combo_box(self.ui.comboBox_massage_print_mode, print_mode, None)
 
+        ui_utils.set_combo_box(self.ui.comboBox_report_print_mode, print_mode, None)
+
     ####################################################################################################################
     # 讀取設定檔
     def _read_settings(self):
@@ -211,7 +213,14 @@ class DialogSettings(QtWidgets.QDialog):
         self.ui.comboBox_self_receipt_printer.setCurrentText(self.system_settings.field('自費醫療收據印表機'))
         self.ui.comboBox_bag_printer.setCurrentText(self.system_settings.field('藥袋印表機'))
         self.ui.comboBox_massage_printer.setCurrentText(self.system_settings.field('民俗調理單印表機'))
+
+        self.ui.comboBox_report_print_mode.setCurrentText(self.system_settings.field('列印報表'))
         self.ui.comboBox_report_printer.setCurrentText(self.system_settings.field('報表印表機'))
+
+        self._set_check_box(self.ui.checkBox_print_total_dosage, '列印藥品總量')
+        self._set_check_box(self.ui.checkBox_print_location, '列印藥品存放位置')
+        self._set_check_box(self.ui.checkBox_print_remark, '列印病歷備註')
+        self._set_check_box(self.ui.checkBox_print_massager, '列印推拿師父')
 
     def _read_reader_settings(self):
         self._set_check_box(self.ui.checkBox_use_reader, '使用讀卡機')
@@ -348,7 +357,14 @@ class DialogSettings(QtWidgets.QDialog):
         self.system_settings.post('自費醫療收據印表機', self.ui.comboBox_self_receipt_printer.currentText())
         self.system_settings.post('藥袋印表機', self.ui.comboBox_bag_printer.currentText())
         self.system_settings.post('民俗調理單印表機', self.ui.comboBox_massage_printer.currentText())
+
+        self.system_settings.post('列印報表', self.ui.comboBox_report_print_mode.currentText())
         self.system_settings.post('報表印表機', self.ui.comboBox_report_printer.currentText())
+
+        self._save_check_box(self.ui.checkBox_print_total_dosage, '列印藥品總量')
+        self._save_check_box(self.ui.checkBox_print_location, '列印藥品存放位置')
+        self._save_check_box(self.ui.checkBox_print_remark, '列印病歷備註')
+        self._save_check_box(self.ui.checkBox_print_massager, '列印推拿師父')
 
     def _save_reader_settings(self):
         self._save_check_box( self.ui.checkBox_use_reader, '使用讀卡機')

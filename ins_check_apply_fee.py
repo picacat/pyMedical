@@ -67,7 +67,15 @@ class InsCheckApplyFee(QtWidgets.QMainWindow):
         self.table_widget_error_message = table_widget.TableWidget(
             self.ui.tableWidget_error_message, self.database
         )
+        self.center()
         self._set_table_width()
+
+    def center(self):
+        frame_geometry = self.frameGeometry()
+        screen = QtWidgets.QApplication.desktop().screenNumber(QtWidgets.QApplication.desktop().cursor().pos())
+        center_point = QtWidgets.QApplication.desktop().screenGeometry(screen).center()
+        frame_geometry.moveCenter(center_point)
+        self.move(frame_geometry.topLeft())
 
     def _set_table_width(self):
         width = [100, 100, 120, 800]
@@ -170,7 +178,16 @@ class InsCheckApplyFee(QtWidgets.QMainWindow):
             'agent_fee': 0,
         }
 
-        for row_no, ddata in zip(range(len(dbody)), dbody):
+        record_count = len(dbody)
+        progress_dialog = QtWidgets.QProgressDialog(
+            '正在執行申報檔金額平衡檢查中, 請稍後...', '取消', 0, record_count, self
+        )
+        progress_dialog.setWindowModality(QtCore.Qt.WindowModal)
+        progress_dialog.setValue(0)
+
+        for row_no, ddata in zip(range(record_count), dbody):
+            progress_dialog.setValue(row_no)
+
             dhead = root.xpath('//outpatient/ddata/dhead')[row_no]
             dhead_data = self._convert_node_to_dict(dhead)
 
@@ -221,7 +238,7 @@ class InsCheckApplyFee(QtWidgets.QMainWindow):
             except KeyError:
                 pass
 
-            result = self._parse_pdata(ddata, ddata_fee)
+            result = self._parse_pdata(ddata)
             error_message = []
             if result['diag_fee'] != diag_fee:
                 error_message.append('診察費不平衡, 清單段: {0}, 醫令段: {1}'.format(
@@ -265,6 +282,7 @@ class InsCheckApplyFee(QtWidgets.QMainWindow):
             pdata_fee['apply_fee'] += result['apply_fee']
             pdata_fee['agent_fee'] += result['agent_fee']
 
+        progress_dialog.setValue(record_count)
 
         data = [
             '清單段',
@@ -304,7 +322,7 @@ class InsCheckApplyFee(QtWidgets.QMainWindow):
                 row_no, i, QtWidgets.QTableWidgetItem(string_utils.xstr(data[i]))
             )
 
-    def _parse_pdata(self, ddata, ddata_fee):
+    def _parse_pdata(self, ddata):
         pdata = ddata.xpath('./pdata')
 
         pdata_fee = {
@@ -322,7 +340,11 @@ class InsCheckApplyFee(QtWidgets.QMainWindow):
             pdata_fee['total_count'] += 1
 
             xdata = self._convert_node_to_dict(row)
-            price = number_utils.get_integer(xdata['p12'])
+            try:
+                price = number_utils.get_integer(xdata['p12'])
+            except:
+                print(pdata)
+
             if string_utils.xstr(xdata['p3']) == '0':
                 pdata_fee['diag_fee'] += price
             elif string_utils.xstr(xdata['p3']) == '1':

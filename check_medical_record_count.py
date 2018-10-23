@@ -106,8 +106,10 @@ class CheckMedicalRecordCount(QtWidgets.QMainWindow):
         self.parent.open_medical_record(case_key)
 
     def start_check(self):
+        self.parent.ui.label_progress.setText('檢查進度: 門診次數檢查')
         self._check_medical_record_treat()
         self._check_medical_record_diag()
+        self.parent.ui.label_progress.setText('檢查進度: 檢查完成')
 
     def error_count(self):
         return (self.ui.tableWidget_patient_treat.rowCount() +

@@ -85,24 +85,20 @@ class CheckInsDrug(QtWidgets.QMainWindow):
     def read_data(self):
         sql = '''
             SELECT 
-                prescript.MedicineName, prescript.Dosage, prescript.InsCode, 
+                prescript.PrescriptKey, prescript.MedicineName, prescript.Dosage, prescript.InsCode, 
                 cases.CaseKey, cases.CaseDate, cases.PatientKey, cases.Name, 
-                cases.Doctor,
-                presextend.Content,
-                drug.Supplier, drug.DrugName, drug.ValidDate
+                cases.Doctor
             FROM prescript 
-                LEFT JOIN cases ON prescript.CaseKey = cases.CaseKey
-                LEFT JOIN drug ON prescript.InsCode = drug.InsCode
-                LEFT JOIN presextend ON presextend.PrescriptKey = prescript.PrescriptKey
+                LEFT JOIN cases ON cases.CaseKey = prescript.CaseKey
             WHERE
                 (cases.CaseDate BETWEEN "{0}" AND "{1}") AND
                 (cases.InsType = "健保") AND
                 (cases.Card != "欠卡") AND
+                (cases.ApplyType = "{2}") AND
                 (prescript.MedicineSet = 1) AND
-                (prescript.InsCode IS NOT NULL) AND
                 (prescript.MedicineType IN ("單方", "複方")) AND
-                (cases.ApplyType = "{2}")
-            ORDER BY cases.PatientKey, cases.CaseKey, prescript.PrescriptKey
+                (prescript.InsCode IS NOT NULL AND TRIM(prescript.InsCode) != "")
+            ORDER BY cases.CaseDate, cases.CaseKey, prescript.PrescriptKey
         '''.format(self.start_date, self.end_date, self.apply_type)
         self.rows = self.database.select_record(sql)
 
@@ -110,12 +106,35 @@ class CheckInsDrug(QtWidgets.QMainWindow):
         return len(self.rows)
 
     def start_check(self):
+        self.parent.ui.label_progress.setText('檢查進度: 健保碼檢查')
+        self.read_data()
+
+        self.parent.ui.progressBar.setMaximum(self.row_count()-1)
+        self.parent.ui.progressBar.setValue(0)
+
         self.ui.tableWidget_prescript.setRowCount(0)
         for row_no, row in zip(range(len(self.rows)), self.rows):
             error_messages = []
-            error_messages += self._check_valid_date(row)
-            error_messages += self._check_drug_name(row)
-            self._insert_error_record(row_no, row, error_messages)
+
+            sql = '''
+                SELECT Supplier, DrugName, ValidDate FROM drug
+                WHERE
+                InsCode = "{0}"
+            '''.format(string_utils.xstr(row['InsCode']))
+            drug_rows = self.database.select_record(sql)
+
+            if len(drug_rows) <= 0:
+                error_messages.append('查無健保藥品資料')
+                self._insert_error_record(row_no, row, drug_rows, error_messages)
+                self.parent.ui.progressBar.setValue(
+                    self.parent.ui.progressBar.value() + 1
+                )
+                continue
+
+            error_messages += self._check_valid_date(row, drug_rows)
+            error_messages += self._check_drug_name(row, drug_rows)
+
+            self._insert_error_record(row_no, row, drug_rows, error_messages)
 
             self.parent.ui.progressBar.setValue(
                 self.parent.ui.progressBar.value() + 1
@@ -127,11 +146,18 @@ class CheckInsDrug(QtWidgets.QMainWindow):
         else:
             self.ui.toolButton_find_error.setEnabled(True)
 
-    def _check_valid_date(self, row):
+        self.parent.ui.label_progress.setText('檢查進度: 檢查完成')
+
+    def _check_valid_date(self, row, drug_rows):
         error_message = []
-        if row['ValidDate'] is None:
+
+        valid_date = drug_rows[0]['ValidDate']
+        if type(valid_date) is str:
+            valid_date = datetime.datetime.strptime(valid_date, "%Y%m%d").date()
+
+        if valid_date is None:
             error_message.append('健保藥碼無效')
-        elif row['CaseDate'].date() > row['ValidDate']:
+        elif row['CaseDate'].date() > valid_date:
             error_message.append('有效期限過期')
 
         if len(error_message) > 0:
@@ -139,9 +165,10 @@ class CheckInsDrug(QtWidgets.QMainWindow):
 
         return error_message
 
-    def _check_drug_name(self, row):
+    def _check_drug_name(self, row, drug_rows):
         error_message = []
-        if string_utils.xstr(row['DrugName']) not in string_utils.xstr(row['MedicineName']):
+
+        if string_utils.xstr(drug_rows[0]['DrugName']) not in string_utils.xstr(row['MedicineName']):
             error_message.append('健保藥名不一致')
 
         return error_message
@@ -149,8 +176,34 @@ class CheckInsDrug(QtWidgets.QMainWindow):
     def error_count(self):
         return self.errors
 
-    def _insert_error_record(self, row_no, row, error_messages):
-        row_no = self.ui.tableWidget_prescript.rowCount()
+    def _insert_error_record(self, row_no, row, drug_rows, error_messages):
+        if len(drug_rows) <= 0:
+            supplier = None
+            drug_name = None
+            valid_date = None
+        else:
+            supplier = drug_rows[0]['Supplier']
+            drug_name = drug_rows[0]['DrugName']
+            valid_date = drug_rows[0]['ValidDate']
+            if type(valid_date) is str:
+                valid_date = '{0}-{1}-{2}'.format(
+                    valid_date[:4],
+                    valid_date[4:6],
+                    valid_date[6:8],
+                )
+
+        sql = '''
+            SELECT Content FROM presextend
+            WHERE
+                ExtendType = "處方簽章" AND 
+                PrescriptKey = {0}
+        '''.format(string_utils.xstr(row['PrescriptKey']))
+        rows = self.database.select_record(sql)
+        if len(rows) <= 0:
+            prescript_sign = None
+        else:
+            prescript_sign = rows[0]['Content']
+
         self.ui.tableWidget_prescript.setRowCount(row_no + 1)
 
         case_key = string_utils.xstr(row['CaseKey'])
@@ -162,9 +215,9 @@ class CheckInsDrug(QtWidgets.QMainWindow):
         case_date = '{0}-{1:0>2}-{2:0>2}'.format(
             row['CaseDate'].year, row['CaseDate'].month, row['CaseDate'].day
         )
-        patient_key = string_utils.xstr(row['PatientKey'])
-        name = string_utils.xstr(row['Name'])
-        doctor = string_utils.xstr(row['Doctor'])
+        patient_key = row['PatientKey']
+        name = row['Name']
+        doctor = row['Doctor']
         if case_key == last_case_key:
             case_date = ''
             patient_key = ''
@@ -172,17 +225,17 @@ class CheckInsDrug(QtWidgets.QMainWindow):
             doctor = ''
 
         medical_record = [
-            case_key,
-            case_date,
-            patient_key,
-            name,
-            doctor,
+            string_utils.xstr(case_key),
+            string_utils.xstr(case_date),
+            string_utils.xstr(patient_key),
+            string_utils.xstr(name),
+            string_utils.xstr(doctor),
             string_utils.xstr(row['MedicineName']),
             string_utils.xstr(row['InsCode']),
-            string_utils.xstr(row['Supplier']),
-            string_utils.xstr(row['DrugName']),
-            string_utils.xstr(row['ValidDate']),
-            string_utils.xstr(row['Content']),
+            string_utils.xstr(supplier),
+            string_utils.xstr(drug_name),
+            string_utils.xstr(valid_date),
+            string_utils.xstr(prescript_sign),
             ', '.join(error_messages),
         ]
         for column_no in range(len(medical_record)):

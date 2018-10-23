@@ -88,7 +88,6 @@ class InsCheck(QtWidgets.QMainWindow):
 
     def _check_ins_data(self):
         self._create_tabs()
-        self._read_ins_data()
         self._start_check()
 
     def _create_tabs(self):
@@ -119,41 +118,23 @@ class InsCheck(QtWidgets.QMainWindow):
             self.apply_year, self.apply_month, self.apply_type,
         )
 
-    def _read_ins_data(self):
-        self.ui.progressBar.setValue(0)
-        progress_maximum = 0
-
-        self.tab_check_errors.read_data()
-        progress_maximum += self.tab_check_errors.row_count()
-
-        self.tab_check_course.read_data()
-        progress_maximum += self.tab_check_errors.row_count()
-
-        self.tab_check_prescript_days.read_data()
-        progress_maximum += self.tab_check_errors.row_count()
-
-        self.tab_check_ins_drug.read_data()
-        progress_maximum += self.tab_check_errors.row_count()
-
-        self.tab_check_ins_treat.read_data()
-        progress_maximum += self.tab_check_ins_treat.row_count()
-
-        if progress_maximum > 0:
-            self.ui.progressBar.setMaximum(progress_maximum)
-
     def _start_check(self):
         self.tab_check_errors.start_check()
-        self.tab_check_course.start_check()
-        self.tab_check_medical_record_count.start_check()
-        self.tab_check_prescript_days.start_check()
-        self.tab_check_ins_drug.start_check()
-        self.tab_check_ins_treat.start_check()
-
         self.ui.tabWidget_ins_data.addTab(self.tab_check_errors, '欄位錯誤檢查')
+
+        self.tab_check_course.start_check()
         self.ui.tabWidget_ins_data.addTab(self.tab_check_course, '療程檢查')
+
+        self.tab_check_medical_record_count.start_check()
         self.ui.tabWidget_ins_data.addTab(self.tab_check_medical_record_count, '門診次數檢查')
+
+        self.tab_check_prescript_days.start_check()
         self.ui.tabWidget_ins_data.addTab(self.tab_check_prescript_days, '用藥天數檢查')
+
+        self.tab_check_ins_drug.start_check()
         self.ui.tabWidget_ins_data.addTab(self.tab_check_ins_drug, '健保藥碼檢查')
+
+        self.tab_check_ins_treat.start_check()
         self.ui.tabWidget_ins_data.addTab(self.tab_check_ins_treat, '健保處置檢查')
 
         self.ui.tabWidget_ins_data.setCurrentIndex(0)

@@ -88,7 +88,7 @@ class Users(QtWidgets.QMainWindow):
             string_utils.xstr(rec['Telephone']),
             string_utils.xstr(rec['Cellphone']),
             string_utils.xstr(rec['Address']),
-            string_utils.xstr(rec['EMail']),
+            string_utils.xstr(rec['Email']),
             string_utils.xstr(rec['Department']),
             string_utils.xstr(rec['InitDate']),
             string_utils.xstr(rec['QuitDate']),

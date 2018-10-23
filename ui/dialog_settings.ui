@@ -25,7 +25,7 @@
      <item>
       <widget class="QTabWidget" name="tabWidget_settings">
        <property name="currentIndex">
-        <number>1</number>
+        <number>4</number>
        </property>
        <widget class="QWidget" name="tab_4">
         <attribute name="icon">
@@ -1455,57 +1455,103 @@
            <property name="flat">
             <bool>true</bool>
            </property>
-           <layout class="QVBoxLayout" name="verticalLayout_30">
+           <layout class="QHBoxLayout" name="horizontalLayout_13">
+            <property name="rightMargin">
+             <number>9</number>
+            </property>
             <item>
-             <layout class="QHBoxLayout" name="horizontalLayout_6">
-              <item>
-               <widget class="QLabel" name="label_58">
+             <layout class="QGridLayout" name="gridLayout_18">
+              <item row="0" column="0">
+               <widget class="QCheckBox" name="checkBox_print_total_dosage">
                 <property name="text">
-                 <string>A4報表輸出至印表機</string>
+                 <string>處方箋列印藥品總量</string>
                 </property>
                </widget>
               </item>
-              <item>
+              <item row="1" column="0">
+               <widget class="QCheckBox" name="checkBox_print_location">
+                <property name="text">
+                 <string>處方箋列印藥品存放位置</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0">
+               <widget class="QCheckBox" name="checkBox_print_remark">
+                <property name="text">
+                 <string>處方箋列印病歷備註</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="0">
+               <widget class="QCheckBox" name="checkBox_print_massager">
+                <property name="text">
+                 <string>掛號收據列印推拿師父姓名</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <layout class="QGridLayout" name="gridLayout_21">
+              <item row="1" column="1">
                <widget class="QComboBox" name="comboBox_report_printer"/>
               </item>
-              <item>
-               <spacer name="horizontalSpacer_12">
+              <item row="1" column="0">
+               <widget class="QLabel" name="label_59">
+                <property name="text">
+                 <string>輸出至印表機</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QComboBox" name="comboBox_report_print_mode"/>
+              </item>
+              <item row="0" column="0">
+               <widget class="QLabel" name="label_58">
+                <property name="text">
+                 <string>報表列印模式</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0">
+               <spacer name="verticalSpacer_8">
                 <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
+                 <enum>Qt::Vertical</enum>
                 </property>
                 <property name="sizeHint" stdset="0">
                  <size>
-                  <width>40</width>
-                  <height>20</height>
+                  <width>20</width>
+                  <height>40</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item row="2" column="1">
+               <spacer name="verticalSpacer_9">
+                <property name="orientation">
+                 <enum>Qt::Vertical</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>20</width>
+                  <height>40</height>
                  </size>
                 </property>
                </spacer>
               </item>
              </layout>
             </item>
-            <item>
-             <widget class="QCheckBox" name="checkBox_9">
-              <property name="text">
-               <string>處方箋列印藥品存放位置</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QCheckBox" name="checkBox_11">
-              <property name="text">
-               <string>處方箋列印病歷備註</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QCheckBox" name="checkBox_10">
-              <property name="text">
-               <string>掛號收據列印推拿師父姓名</string>
-              </property>
-             </widget>
-            </item>
            </layout>
           </widget>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_12"/>
          </item>
          <item>
           <spacer name="verticalSpacer_5">
@@ -1963,9 +2009,6 @@
   <tabstop>comboBox_massage_form</tabstop>
   <tabstop>comboBox_bag_printer</tabstop>
   <tabstop>comboBox_massage_printer</tabstop>
-  <tabstop>checkBox_9</tabstop>
-  <tabstop>checkBox_11</tabstop>
-  <tabstop>checkBox_10</tabstop>
   <tabstop>checkBox_use_reader</tabstop>
   <tabstop>spinBox_reader_port</tabstop>
   <tabstop>radioButton_hc3000</tabstop>

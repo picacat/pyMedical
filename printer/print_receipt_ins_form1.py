@@ -68,13 +68,15 @@ class PrintReceiptInsForm1:
 
     def _html(self):
         case_record = printer_utils.get_case_html_1(self.database, self.case_key)
-        symptom_record = printer_utils.get_symptom(self.database, self.case_key, colspan=5)
+        symptom_record = printer_utils.get_symptom_html(self.database, self.case_key, colspan=5)
         disease_record = printer_utils.get_disease(self.database, self.case_key)
-        prescript_record = printer_utils.get_prescript_html_2(
-            self.database, self.case_key, self.medicine_set)
+        prescript_record = printer_utils.get_prescript_html(
+            self.database, self.system_settings,
+            self.case_key, self.medicine_set, blocks=3)
         instruction = printer_utils.get_instruction_html(
             self.database, self.case_key, self.medicine_set
         )
+        fees_record = printer_utils.get_ins_fees_html(self.database, self.case_key)
 
         html = '''
             <html>
@@ -115,6 +117,14 @@ class PrintReceiptInsForm1:
                   </tbody>
                 </table>
                 {instruction}
+                <hr>
+                <table width="90%" cellspacing="0">
+                  <tbody>
+                    {fees}
+                  </tbody>
+                </table>
+                <hr>
+                * 本收據可為報稅之憑證, 請妥善保存, 遺失恕不補發 (健保申報為健保總額支付點數, 非一點一元)
               </body>
             </html>
         '''.format(
@@ -127,6 +137,7 @@ class PrintReceiptInsForm1:
             disease=disease_record,
             prescript=prescript_record,
             instruction=instruction,
+            fees=fees_record,
         )
 
         return html

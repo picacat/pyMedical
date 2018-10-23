@@ -67,19 +67,41 @@ class PrintReceiptSelfForm1:
 
     def _html(self):
         case_record = printer_utils.get_case_html_1(self.database, self.case_key)
+        fees_record = printer_utils.get_self_fees_html(self.database, self.case_key)
 
         html = '''
             <html>
               <body>
-                <table cellspacing=0>
+                <table width="95%" cellspacing="0">
+                  <thead>
+                    <tr>
+                      <th style="text-align: left; font-size: 14px" colspan="5">{clinic_name}({clinic_id}) 醫療費用收據</th>
+                    </tr>
+                    <tr>
+                      <th align="left" colspan="5">電話:{clinic_telephone} 院址:{clinic_address}</th>
+                    </tr>
+                  </thead>
                   <tbody>
                     {case}
                   </tbody>  
                 </table>
+                <hr>
+                <table width="90%" cellspacing="0">
+                  <tbody>
+                    {fees}
+                  </tbody>
+                </table>
+                <hr>
+                * 本收據可為報稅之憑證, 請妥善保存, 遺失恕不補發
               </body>
             </html>
         '''.format(
+            clinic_name=self.system_settings.field('院所名稱'),
+            clinic_id=self.system_settings.field('院所代號'),
+            clinic_telephone=self.system_settings.field('院所電話'),
+            clinic_address=self.system_settings.field('院所地址'),
             case=case_record,
+            fees=fees_record,
         )
 
         return html

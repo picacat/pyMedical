@@ -117,24 +117,46 @@ class InsApplyCalculate(QtWidgets.QMainWindow):
         doctor_data['doctor_type'] = personnel_utils.get_personnel_position(
             self.database, doctor_data['doctor_name']
         )
+
+        max_progress = 6
+
+        progress_dialog = QtWidgets.QProgressDialog(
+            '正在統計{0}醫師的資料中, 請稍後...'.format(
+                doctor_data['doctor_name']
+            ), '取消', 0, max_progress, self
+        )
+        progress_dialog.setWindowModality(QtCore.Qt.WindowModal)
+        progress_dialog.setValue(0)
+
         doctor_data['diag_days'] = self._get_diag_days(
             doctor_data['doctor_id']
         )
+        progress_dialog.setValue(1)
+
         doctor_data['total_count'] = self._get_total_count(
             doctor_data['doctor_name']
         )
+        progress_dialog.setValue(2)
+
         doctor_data['diag_count'] = self._get_diag_count(
             doctor_data['doctor_id']
         )
+        progress_dialog.setValue(3)
+
         doctor_data['treat_count'] = self._get_treat_count(
             doctor_data['doctor_name']
         )
+        progress_dialog.setValue(4)
+
         doctor_data['treat_drug'] = self._get_treat_drug(
             doctor_data['doctor_name']
         )
+        progress_dialog.setValue(5)
+
         doctor_data['complicated_massage'] = self._get_complicated_massage(
             doctor_data['doctor_name']
         )
+        progress_dialog.setValue(6)
 
         self.ins_calculated_table.append(doctor_data)
 
@@ -465,6 +487,7 @@ class InsApplyCalculate(QtWidgets.QMainWindow):
         self._set_part_time_doctor_diag_balance()
         self._set_part_time_doctor_treat_balance()
 
+    # 支援醫師診察人次分配
     def _set_part_time_doctor_diag_balance(self):
         (section1_balance,
          section2_balance,
@@ -472,58 +495,54 @@ class InsApplyCalculate(QtWidgets.QMainWindow):
          section4_balance) = self._get_full_time_doctor_diag_balance()
 
         for ins_calculated_row in self.ins_calculated_table:
-            if ins_calculated_row['doctor_type'] == '醫師':
+            if ins_calculated_row['doctor_type'] == '醫師':  # 只計算支援醫師
                 continue
 
             diag_count = ins_calculated_row['diag_count']
-            if section1_balance > 0:
-                if diag_count < section1_balance:
-                    ins_calculated_row['diag_section1'] = diag_count
-                    diag_count = 0
-                else:
-                    ins_calculated_row['diag_section1'] = section1_balance
-                    diag_count -= section1_balance
+            if diag_count < section1_balance:
+                ins_calculated_row['diag_section1'] = diag_count
+                diag_count = 0
+            else:
+                ins_calculated_row['diag_section1'] = section1_balance
+                diag_count -= section1_balance
 
-                section1_balance -= ins_calculated_row['diag_section1']
-
-            if diag_count <= 0:
-                continue
-
-            if section2_balance > 0:
-                if diag_count < section2_balance:
-                    ins_calculated_row['diag_section2'] = diag_count
-                    diag_count = 0
-                else:
-                    ins_calculated_row['diag_section2'] = section2_balance
-                    diag_count -= section2_balance
-
-                section2_balance -= ins_calculated_row['diag_section2']
+            section1_balance -= ins_calculated_row['diag_section1']
 
             if diag_count <= 0:
                 continue
 
-            if section3_balance > 0:
-                if diag_count < section3_balance:
-                    ins_calculated_row['diag_section3'] = diag_count
-                    diag_count = 0
-                else:
-                    ins_calculated_row['diag_section3'] = section3_balance
-                    diag_count -= section3_balance
+            if diag_count < section2_balance:
+                ins_calculated_row['diag_section2'] = diag_count
+                diag_count = 0
+            else:
+                ins_calculated_row['diag_section2'] = section2_balance
+                diag_count -= section2_balance
 
-                section3_balance -= ins_calculated_row['diag_section3']
+            section2_balance -= ins_calculated_row['diag_section2']
 
             if diag_count <= 0:
                 continue
 
-            if section4_balance > 0:
-                if diag_count < section4_balance:
-                    ins_calculated_row['diag_section4'] = diag_count
-                    diag_count = 0
-                else:
-                    ins_calculated_row['diag_section4'] = section4_balance
-                    diag_count -= section4_balance
+            if diag_count < section3_balance:
+                ins_calculated_row['diag_section3'] = diag_count
+                diag_count = 0
+            else:
+                ins_calculated_row['diag_section3'] = section3_balance
+                diag_count -= section3_balance
 
-                section4_balance -= ins_calculated_row['diag_section4']
+            section3_balance -= ins_calculated_row['diag_section3']
+
+            if diag_count <= 0:
+                continue
+
+            if diag_count < section4_balance:
+                ins_calculated_row['diag_section4'] = diag_count
+                diag_count = 0
+            else:
+                ins_calculated_row['diag_section4'] = section4_balance
+                diag_count -= section4_balance
+
+            section4_balance -= ins_calculated_row['diag_section4']
 
             if diag_count <= 0:
                 continue
@@ -537,7 +556,7 @@ class InsApplyCalculate(QtWidgets.QMainWindow):
         section4_balance = 0
 
         for ins_calculated_row in self.ins_calculated_table:
-            if ins_calculated_row['doctor_type'] == '支援醫師':
+            if ins_calculated_row['doctor_type'] == '支援醫師':  # 只計算專任醫師的各段限量
                 continue
 
             diag_days = ins_calculated_row['diag_days']
@@ -566,28 +585,26 @@ class InsApplyCalculate(QtWidgets.QMainWindow):
                 continue
 
             treat_count = ins_calculated_row['treat_count']
-            if section1_balance > 0:
-                if treat_count < section1_balance:
-                    ins_calculated_row['treat_section1'] = treat_count
-                    treat_count = 0
-                else:
-                    ins_calculated_row['treat_section1'] = section1_balance
-                    treat_count -= section1_balance
+            if treat_count < section1_balance:
+                ins_calculated_row['treat_section1'] = treat_count
+                treat_count = 0
+            else:
+                ins_calculated_row['treat_section1'] = section1_balance
+                treat_count -= section1_balance
 
-                section1_balance -= ins_calculated_row['treat_section1']
+            section1_balance -= ins_calculated_row['treat_section1']
 
             if treat_count <= 0:
                 continue
 
-            if section2_balance > 0:
-                if treat_count < section2_balance:
-                    ins_calculated_row['treat_section2'] = treat_count
-                    treat_count = 0
-                else:
-                    ins_calculated_row['treat_section2'] = section2_balance
-                    treat_count -= section2_balance
+            if treat_count < section2_balance:
+                ins_calculated_row['treat_section2'] = treat_count
+                treat_count = 0
+            else:
+                ins_calculated_row['treat_section2'] = section2_balance
+                treat_count -= section2_balance
 
-                section2_balance -= ins_calculated_row['treat_section2']
+            section2_balance -= ins_calculated_row['treat_section2']
 
             if treat_count <= 0:
                 continue

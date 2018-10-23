@@ -170,6 +170,8 @@ def get_drug_share_fee(database, share_type, ins_drug_fee):
             remark = '<=800'
         elif ins_drug_fee <= 900:
             remark = '<=900'
+        elif ins_drug_fee <= 1000:
+            remark = '<=1000'
         elif ins_drug_fee > 1000:
             remark = '>1000'
 
@@ -345,14 +347,21 @@ def get_ins_dislocate_fee(database, treatment, ins_drug_fee):
 
 
 # 取得健保加強照護費
-def get_ins_care_fee(database, treatment):
+def get_ins_care_fee(database, case_key):
     ins_care_fee = 0
 
-    if treatment not in nhi_utils.CARE_TREAT:
+    sql = '''
+        SELECT * FROM prescript
+        WHERE
+            CaseKey = {0} AND
+            MedicineSet = 11
+    '''.format(case_key)
+    rows = database.select_record(sql)
+    if len(rows) <= 0:
         return ins_care_fee
 
-    care_code = nhi_utils.CARE_DICT[treatment]
-    ins_care_fee = get_ins_fee_from_ins_code(database, care_code)
+    for row in rows:
+        ins_care_fee += get_ins_fee_from_ins_code(database, string_utils.xstr(row['InsCode']))
 
     return ins_care_fee
 
@@ -379,7 +388,52 @@ def get_ins_agent_fee(database, share_type, treatment, course, ins_drug_fee):
 
     return ins_agent_fee
 
-def get_ins_fee(database, system_settings, share, course, pres_days, pharmacy_type, treatment):
+def get_ins_special_care_fee(database, case_key, share, course, pres_days, treatment):
+    ins_fee = {}
+
+    drug_fee = get_ins_drug_fee(database, pres_days)
+
+    ins_fee['diag_fee'] = 0
+    ins_fee['drug_fee'] = 0
+    ins_fee['pharmacy_fee'] = 0
+    ins_fee['acupuncture_fee'] = 0
+    ins_fee['massage_fee'] = 0
+    ins_fee['dislocate_fee'] = get_ins_care_fee(database, case_key)
+
+    ins_fee['ins_total_fee'] = (
+            ins_fee['diag_fee'] +
+            ins_fee['drug_fee'] +
+            ins_fee['pharmacy_fee'] +
+            ins_fee['acupuncture_fee'] +
+            ins_fee['massage_fee'] +
+            ins_fee['dislocate_fee']
+    )
+
+    ins_fee['diag_share_fee'] = get_diag_share_fee(
+        database, share, treatment, course,
+    )
+    ins_fee['drug_share_fee'] = get_drug_share_fee(
+        database, share, drug_fee,
+    )
+
+    ins_fee['ins_apply_fee'] = (
+            ins_fee['ins_total_fee'] -
+            ins_fee['diag_share_fee'] -
+            ins_fee['drug_share_fee']
+    )
+    ins_fee['agent_fee'] = get_ins_agent_fee(
+        database, share, treatment, course, drug_fee,
+    )
+
+    return ins_fee
+
+def get_ins_fee(database, system_settings, case_key, treat_type, share, course, pres_days, pharmacy_type, treatment):
+    if treat_type in nhi_utils.CARE_TREAT:
+        ins_fee = get_ins_special_care_fee(
+            database, case_key, share, course, pres_days, treatment,
+        )
+        return ins_fee
+
     ins_fee = {}
 
     ins_fee['diag_fee'] = get_ins_diag_fee(
@@ -395,8 +449,6 @@ def get_ins_fee(database, system_settings, share, course, pres_days, pharmacy_ty
         database, treatment, ins_fee['drug_fee'])
     ins_fee['dislocate_fee'] = get_ins_dislocate_fee(
         database, treatment, ins_fee['drug_fee'])
-    ins_fee['care_fee'] = get_ins_care_fee(
-        database, treatment)
 
     ins_fee['ins_total_fee'] = (
             ins_fee['diag_fee'] +
@@ -404,8 +456,7 @@ def get_ins_fee(database, system_settings, share, course, pres_days, pharmacy_ty
             ins_fee['pharmacy_fee'] +
             ins_fee['acupuncture_fee'] +
             ins_fee['massage_fee'] +
-            ins_fee['dislocate_fee'] +
-            ins_fee['care_fee']
+            ins_fee['dislocate_fee']
     )
 
     ins_fee['diag_share_fee'] = get_diag_share_fee(
@@ -443,14 +494,15 @@ def calculate_ins_fee(database, system_settings, case_key):
         return
 
     pres_days = case_utils.get_pres_days(database, case_key)
+    treat_type = string_utils.xstr(row['TreatType'])
     share = string_utils.xstr(row['Share'])
     course = number_utils.get_integer(row['Continuance'])
     pharmacy_type = string_utils.xstr(row['PharmacyType'])
     treatment = string_utils.xstr(row['Treatment'])
 
     ins_fee = get_ins_fee(
-        database, system_settings,
-        share, course, pres_days, pharmacy_type, treatment)
+        database, system_settings, case_key,
+        treat_type, share, course, pres_days, pharmacy_type, treatment)
 
     fields = [
         'DiagFee', 'InterDrugFee', 'PharmacyFee',
@@ -465,7 +517,6 @@ def calculate_ins_fee(database, system_settings, case_key):
         ins_fee['acupuncture_fee'],
         ins_fee['massage_fee'],
         ins_fee['dislocate_fee'],
-        ins_fee['care_fee'],
         ins_fee['ins_total_fee'],
         ins_fee['diag_share_fee'],
         ins_fee['drug_share_fee'],

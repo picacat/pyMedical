@@ -82,7 +82,7 @@ def get_printer(system_settings, printer_name):
 # 處方箋格式1
 def get_case_html_1(database, case_key):
     sql = '''
-        SELECT * FROM cases 
+        SELECT cases.*, patient.Birthday, patient.ID, patient.Gender FROM cases 
             LEFT JOIN patient on patient.PatientKey = cases.PatientKey
         WHERE 
             CaseKey = {0}
@@ -143,7 +143,7 @@ def get_case_html_1(database, case_key):
 
 
 # 處方箋格式(主訴)1
-def get_symptom(database, case_key, colspan=1):
+def get_symptom_html(database, case_key, colspan=1):
     sql = '''
         SELECT * FROM cases 
         WHERE 
@@ -214,7 +214,7 @@ def get_disease(database, case_key):
     return disease
 
 
-def get_prescript_html_2(database, case_key, medicine_set):
+def get_prescript_html(database, system_setting, case_key, medicine_set, blocks):
     pres_days = case_utils.get_pres_days(database, case_key, medicine_set)
     sql = '''
         SELECT Treatment FROM cases
@@ -260,52 +260,159 @@ def get_prescript_html_2(database, case_key, medicine_set):
         pres_days = 1
 
     prescript = ''
-    row_count = int((len(rows)-1) / 3) + 1
+    row_count = int((len(rows)-1) / blocks) + 1
     for row_no in range(1, row_count+1):
-        prescript_block1 = get_medicine_detail(rows, (row_no-1)*3, pres_days)
-        prescript_block2 = get_medicine_detail(rows, (row_no-1)*3+1, pres_days)
-        prescript_block3 = get_medicine_detail(rows, (row_no-1)*3+2, pres_days)
-
         separator = ''
+        prescript_line = ''
+        for i in range(blocks):
+            prescript_block = get_medicine_detail(rows, (row_no-1)*blocks + i, pres_days)
+
+            location=string_utils.xstr(prescript_block[1])
+            if system_setting.field('列印藥品存放位置') != 'Y':
+                location = ''
+
+            total_dosage=string_utils.xstr(prescript_block[4])
+            if system_setting.field('列印藥品總量') != 'Y':
+                total_dosage = ''
+
+            prescript_line += '''
+                <td align="left" width="20%">{medicine_name} {location}</td>
+                <td align="right" width="5%">{dosage}{unit}</td>
+                <td align="right" width="4%">{total_dosage}</td>
+                <td width="1%">{separator}</td> 
+            '''.format(
+                medicine_name=string_utils.xstr(prescript_block[0]),
+                location=location,
+                dosage=string_utils.xstr(prescript_block[2]),
+                unit=string_utils.xstr(prescript_block[3]),
+                total_dosage=total_dosage,
+                separator=string_utils.xstr(separator),
+            )
+
         prescript += '''
             <tr>
-                <td align="left" width="15%">{medicine_name1} {location1}</td>
-                <td align="right" width="8%">{dosage1}{unit1}</td>
-                <td align="right" width="4%">{total_dosage1}</td>
-                <td width="2%">{separator}</td> 
-                <td align="left" width="15%">{medicine_name2} {location2}</td>
-                <td align="right" width="8%">{dosage2}{unit2}</td>
-                <td align="right" width="4%">{total_dosage2}</td>
-                <td width="2%">{separator}</td> 
-                <td align="left" width="15%">{medicine_name3} {location3}</td>
-                <td align="right" width="8%">{dosage3}{unit3}</td>
-                <td align="right" width="4%">{total_dosage3}</td>
+              {prescript_line}
             </tr>
         '''.format(
-            medicine_name1=string_utils.xstr(prescript_block1[0]),
-            location1=string_utils.xstr(prescript_block1[1]),
-            dosage1=string_utils.xstr(prescript_block1[2]),
-            unit1=string_utils.xstr(prescript_block1[3]),
-            total_dosage1=string_utils.xstr(prescript_block1[4]),
-
-            medicine_name2=string_utils.xstr(prescript_block2[0]),
-            location2=string_utils.xstr(prescript_block2[1]),
-            dosage2=string_utils.xstr(prescript_block2[2]),
-            unit2=string_utils.xstr(prescript_block2[3]),
-            total_dosage2=string_utils.xstr(prescript_block2[4]),
-
-            medicine_name3=string_utils.xstr(prescript_block3[0]),
-            location3=string_utils.xstr(prescript_block3[1]),
-            dosage3=string_utils.xstr(prescript_block3[2]),
-            unit3=string_utils.xstr(prescript_block3[3]),
-            total_dosage3=string_utils.xstr(prescript_block3[4]),
-
-            separator=string_utils.xstr(separator),
+            prescript_line=prescript_line
         )
 
     return prescript
 
 
+# 健保費用
+def get_ins_fees_html(database, case_key):
+    sql = '''
+        SELECT * FROM cases 
+            LEFT JOIN patient on patient.PatientKey = cases.PatientKey
+        WHERE 
+            CaseKey = {0}
+    '''.format(case_key)
+
+    rows = database.select_record(sql)
+    if len(rows) <= 0:
+        return ''
+
+    row = rows[0]
+    html = '''
+        <tr>
+          <td>掛號費:{regist_fee}</td>
+          <td>門診負擔:{diag_share_fee}</td>
+          <td>藥品負擔:{drug_share_fee}</td>
+          <td>實收負擔:{total_share_fee}</td>
+          <td>欠卡費:{deposit_fee}</td>
+          <td>實收金額:{total_fee}</td>
+        </tr> 
+        <tr>
+          <td>診察費:{diag_fee}</td>
+          <td>藥費:{drug_fee}</td>
+          <td>調劑費:{pharmacy_fee}</td>
+          <td>處置費:{treat_fee}</td>
+          <td>健保合計:{ins_total_fee}</td>
+          <td>健保申請:{ins_apply_fee}</td>
+        </tr> 
+    '''.format(
+        regist_fee=string_utils.xstr(number_utils.get_integer(row['RegistFee'])),
+        diag_share_fee=string_utils.xstr(number_utils.get_integer(row['SDiagShareFee'])),
+        drug_share_fee=string_utils.xstr(number_utils.get_integer(row['SDrugShareFee'])),
+        total_share_fee=string_utils.xstr(
+            number_utils.get_integer(row['SDiagShareFee']) +
+            number_utils.get_integer(row['SDrugShareFee'])
+        ),
+        deposit_fee=string_utils.xstr(number_utils.get_integer(row['DepositFee'])),
+        total_fee=string_utils.xstr(
+            number_utils.get_integer(row['RegistFee']) +
+            number_utils.get_integer(row['SDiagShareFee']) +
+            number_utils.get_integer(row['SDrugShareFee']) +
+            number_utils.get_integer(row['DepositFee'])
+        ),
+        diag_fee=string_utils.xstr(number_utils.get_integer(row['DiagFee'])),
+        drug_fee=string_utils.xstr(number_utils.get_integer(row['InterDrugFee'])),
+        pharmacy_fee=string_utils.xstr(number_utils.get_integer(row['PharmacyFee'])),
+        treat_fee=string_utils.xstr(
+            number_utils.get_integer(row['AcupunctureFee']) +
+            number_utils.get_integer(row['MassageFee']) +
+            number_utils.get_integer(row['DislocateFee'])
+        ),
+        ins_total_fee=string_utils.xstr(number_utils.get_integer(row['InsTotalFee'])),
+        ins_apply_fee=string_utils.xstr(number_utils.get_integer(row['InsApplyFee'])),
+    )
+
+    return html
+
+
+# 自費費用
+def get_self_fees_html(database, case_key):
+    sql = '''
+        SELECT * FROM cases 
+            LEFT JOIN patient on patient.PatientKey = cases.PatientKey
+        WHERE 
+            CaseKey = {0}
+    '''.format(case_key)
+
+    rows = database.select_record(sql)
+    if len(rows) <= 0:
+        return ''
+
+    row = rows[0]
+    regist_fee = number_utils.get_integer(row['RegistFee'])
+    if row['InsType'] == '健保':
+        regist_fee = 0
+
+    html = '''
+        <tr>
+          <td>掛號費:{regist_fee}</td>
+          <td>診察費:{diag_fee}</td>
+          <td>一般藥費:{drug_fee}</td>
+          <td>水煎藥費:{herb_fee}</td>
+          <td>高貴藥費:{expensive_fee}</td>
+          <td>自費材料費:{material_fee}</td>
+        </tr>
+        <tr>  
+          <td>針灸治療費:{acupuncture_fee}</td>
+          <td>民俗調理費:{massage_fee}</td>
+          <td>合計金額:{self_total_fee}</td>
+          <td>折扣金額:{discount_fee}</td>
+          <td>應收金額:{total_fee}</td>
+          <td>實收金額:{receipt_fee}</td>
+        </tr> 
+    '''.format(
+        regist_fee=string_utils.xstr(regist_fee),
+        diag_fee=string_utils.xstr(number_utils.get_integer(row['SDiagFee'])),
+        drug_fee=string_utils.xstr(number_utils.get_integer(row['SDrugFee'])),
+        herb_fee=string_utils.xstr(number_utils.get_integer(row['SHerbFee'])),
+        expensive_fee=string_utils.xstr(number_utils.get_integer(row['SExpensiveFee'])),
+        material_fee=string_utils.xstr(number_utils.get_integer(row['SMaterialFee'])),
+
+        acupuncture_fee=string_utils.xstr(number_utils.get_integer(row['SAcupunctureFee'])),
+        massage_fee=string_utils.xstr(number_utils.get_integer(row['SMassageFee'])),
+        self_total_fee=string_utils.xstr(number_utils.get_integer(row['SelfTotalFee'])),
+        discount_fee=string_utils.xstr(number_utils.get_integer(row['DiscountFee'])),
+        total_fee=string_utils.xstr(number_utils.get_integer(row['TotalFee'])),
+        receipt_fee=string_utils.xstr(number_utils.get_integer(row['ReceiptFee'])),
+    )
+
+    return html
 def get_medicine_detail(rows, row_no, pres_days):
     try:
         medicine_name = rows[row_no]['MedicineName']
@@ -342,16 +449,23 @@ def get_instruction_html(database, case_key, medicine_set):
 
     row = rows[0]
 
-    html = '''
-        <p>
-          主治醫師: {doctor} 調劑者: {doctor} 用藥指示: 一日{package}包, 共{pres_days}日份 {instruction}服用
-        </p>
-    '''.format(
-        doctor=string_utils.xstr(row['Doctor']),
-        package=string_utils.xstr(packages),
-        pres_days=string_utils.xstr(pres_days),
-        instruction=instruction,
-    )
+    if pres_days > 0:
+        html = '''
+              主治醫師: {doctor} 調劑者: {doctor} 用藥指示: 一日{package}包, 共{pres_days}日份 {instruction}服用
+               (* 本處方用藥在醫學文獻上, 尚無副作用之記載)
+        '''.format(
+            doctor=string_utils.xstr(row['Doctor']),
+            package=string_utils.xstr(packages),
+            pres_days=string_utils.xstr(pres_days),
+            instruction=instruction,
+        )
+    else:
+        html = '''
+              主治醫師: {doctor}
+              (* 本處方在醫學文獻上, 尚無副作用之記載)
+        '''.format(
+            doctor=string_utils.xstr(row['Doctor']),
+        )
 
     return html
 

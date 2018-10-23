@@ -213,11 +213,28 @@ class Database:
 
         return row[0]['AUTO_INCREMENT']
 
-    def check_field_exists(self, table_name, column, data_type):
-        sql = 'SHOW COLUMNS FROM {0} like "{1}"'.format(table_name, column)
-        rows = self.select_record(sql)
-        if len(rows) > 0:
-            return
+    def check_field_exists(self, table_name, alter_type, column, data_type):
+        if type(column) is list:
+            search_column = column[0]
+        else:
+            search_column = column
 
-        sql = 'ALTER TABLE {0} ADD {1} {2}'.format(table_name, column, data_type)
+        sql = 'SHOW COLUMNS FROM {0} like "{1}"'.format(table_name, search_column)
+        rows = self.select_record(sql)
+
+        if alter_type == 'add' and len(rows) > 0:  # 新欄位已加入
+            return
+        elif alter_type == 'change' and len(rows) > 0:
+            if string_utils.xstr(rows[0]['Type']).lower() == data_type.lower():
+                return
+
+        if alter_type == 'add':
+            sql = 'ALTER TABLE {0} ADD {1} {2}'.format(
+                table_name, column, data_type
+            )
+        elif alter_type == 'change':
+            sql = 'ALTER TABLE {0} CHANGE {1} {2} {3}'.format(
+                table_name, column[0], column[1], data_type
+            )
+
         self.exec_sql(sql)

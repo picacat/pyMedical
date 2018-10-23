@@ -1,5 +1,6 @@
 
 from PyQt5.QtWidgets import QMessageBox, QPushButton
+from libs import string_utils
 
 
 # 友杏轉檔 2018.05.09
@@ -23,33 +24,42 @@ class CvtUtec():
             msg_box.exec_()
             return
 
+        if self.product_type == 'Med2000':
+            self._convert_med2000()
+        else:
+            self._convert_medical()
+
+    def _convert_med2000(self):
         if self.parent.ui.checkBox_groups.isChecked():
-            self.cvt_groups()
+            self._cvt_groups()
         if self.parent.ui.checkBox_dosage.isChecked():
-            self.cvt_dosage()
+            self._cvt_med2000_dosage()
         if self.parent.ui.checkBox_medical_record.isChecked():
-            self.cvt_medical_record()
+            self._cvt_med2000_cases()
 
-    # 類別詞庫轉檔
-    def cvt_groups(self):
-        if self.product_type == 'Med2000':
-            self.cvt_med2000_groups()
-            self.cvt_med2000_groups_name()
-            self.cvt_med2000_tongue_groups()
-            self.cvt_med2000_pulse_groups()
-            self.cvt_med2000_remark_groups()
-            self.cvt_med2000_disease_groups()
-            self.cvt_med2000_other_groups()
-        else:
-            pass
+    def _convert_medical(self):
+        if self.parent.ui.checkBox_groups.isChecked():
+            self._cvt_groups()
+        if self.parent.ui.checkBox_dosage.isChecked():
+            self._cvt_medical_dosage()
+        if self.parent.ui.checkBox_patient.isChecked():
+            self._cvt_medical_patient()
+        if self.parent.ui.checkBox_reserve.isChecked():
+            self._cvt_medical_reserve()
+        if self.parent.ui.checkBox_medical_record.isChecked():
+            self._cvt_medical_cases()
+            self._cvt_med2000_cases()
 
-    def cvt_dosage(self):
-        if self.product_type == 'Med2000':
-            self.cvt_med2000_dosage()
-        else:
-            pass
+    def _cvt_groups(self):
+        self._cvt_med2000_groups()
+        self._cvt_med2000_groups_name()
+        self._cvt_med2000_tongue_groups()
+        self._cvt_med2000_pulse_groups()
+        self._cvt_med2000_remark_groups()
+        self._cvt_med2000_disease_groups()
+        self._cvt_med2000_other_groups()
 
-    def cvt_med2000_groups(self):
+    def _cvt_med2000_groups(self):
         fields = [
             'DictGroupsType', 'DictGroupsTopLevel', 'DictGroupsName'
         ]
@@ -109,7 +119,7 @@ class CvtUtec():
         data = ['成方類別', None, '成方']
         self.database.insert_record('dict_groups', fields, data)
 
-    def cvt_med2000_groups_name(self):
+    def _cvt_med2000_groups_name(self):
         fields = [
             'DictGroupsType', 'DictGroupsTopLevel', 'DictGroupsName'
         ]
@@ -150,7 +160,7 @@ class CvtUtec():
             ]
             self.database.insert_record('dict_groups', fields, data)
 
-    def cvt_med2000_tongue_groups(self):
+    def _cvt_med2000_tongue_groups(self):
         fields = [
             'DictGroupsType', 'DictGroupsTopLevel', 'DictGroupsName'
         ]
@@ -183,15 +193,15 @@ class CvtUtec():
             ]
             self.database.insert_record('dict_groups', fields, data)
 
-    def cvt_med2000_pulse_groups(self):
+    def _cvt_med2000_pulse_groups(self):
         sql = 'UPDATE clinic SET groups = "一般" WHERE ClinicType = "脈象"'
         self.source_db.exec_sql(sql)
 
-    def cvt_med2000_remark_groups(self):
+    def _cvt_med2000_remark_groups(self):
         sql = 'UPDATE clinic SET groups = "一般" WHERE ClinicType = "備註"'
         self.source_db.exec_sql(sql)
 
-    def cvt_med2000_disease_groups(self):
+    def _cvt_med2000_disease_groups(self):
         fields = [
             'DictGroupsType', 'DictGroupsTopLevel', 'DictGroupsName'
         ]
@@ -1616,7 +1626,7 @@ class CvtUtec():
         data = ['病名', '20罹病與致死之外因', 'Y84醫療處置引起病人異常反應']
         self.database.insert_record('dict_groups', fields, data)
 
-    def cvt_med2000_other_groups(self):
+    def _cvt_med2000_other_groups(self):
         sql = 'UPDATE clinic SET ClinicType = "辨證" WHERE ClinicType = "內辨"'
         self.source_db.exec_sql(sql)
         sql = 'UPDATE clinic SET ClinicType = "辨證" WHERE ClinicType = "傷辨"'
@@ -1626,7 +1636,7 @@ class CvtUtec():
         sql = 'UPDATE clinic SET ClinicType = "治則" WHERE ClinicType = "傷治"'
         self.source_db.exec_sql(sql)
 
-    def cvt_med2000_dosage(self):
+    def _cvt_med2000_dosage(self):
         sql = 'TRUNCATE dosage'
         self.database.exec_sql(sql)
 
@@ -1654,7 +1664,7 @@ class CvtUtec():
                     ]
                     self.database.insert_record('dosage', fields, data)
 
-    def cvt_medical_record(self):
+    def _cvt_med2000_cases(self):
         self.progress_bar.setMaximum(10)
         self.progress_bar.setValue(0)
 
@@ -1695,5 +1705,158 @@ class CvtUtec():
         self.progress_bar.setValue(self.progress_bar.value() + 1)
 
         sql = 'UPDATE cases SET TreatType = "脫臼整復" WHERE TreatType = "脫臼給藥"'
+        self.database.exec_sql(sql)
+        self.progress_bar.setValue(self.progress_bar.value() + 1)
+
+    def _cvt_medical_patient(self):
+        self.progress_bar.setMaximum(4)
+        self.progress_bar.setValue(0)
+
+        sql = 'UPDATE patient SET Gender = Sex WHERE Sex IS NOT NULL'
+        self.database.exec_sql(sql)
+        self.progress_bar.setValue(self.progress_bar.value() + 1)
+
+        sql = 'UPDATE patient SET Allergy = Alergy WHERE Alergy IS NOT NULL'
+        self.database.exec_sql(sql)
+        self.progress_bar.setValue(self.progress_bar.value() + 1)
+
+        sql = 'UPDATE patient SET Nationality = "本國" WHERE SUBSTRING(ID, 2, 1) IN ("1", "2") AND Nationality IS NULL'
+        self.database.exec_sql(sql)
+        self.progress_bar.setValue(self.progress_bar.value() + 1)
+
+        sql = 'UPDATE patient SET Nationality = "外國" WHERE SUBSTRING(ID, 2, 1) NOT IN ("1", "2") AND Nationality IS NULL'
+        self.database.exec_sql(sql)
+        self.progress_bar.setValue(self.progress_bar.value() + 1)
+
+    def _cvt_medical_cases(self):
+        self.progress_bar.setMaximum(7)
+        self.progress_bar.setValue(0)
+
+        sql = 'UPDATE cases SET SDiagShareFee = ReceiptShare WHERE ReceiptShare IS NOT NULL'
+        self.database.exec_sql(sql)
+        self.progress_bar.setValue(self.progress_bar.value() + 1)
+
+        sql = 'UPDATE cases SET Cashier = Casher WHERE Casher IS NOT NULL'
+        self.database.exec_sql(sql)
+        self.progress_bar.setValue(self.progress_bar.value() + 1)
+
+        sql = 'UPDATE cases SET DiagShareFee = TreatShare WHERE TreatShare IS NOT NULL'
+        self.database.exec_sql(sql)
+        self.progress_bar.setValue(self.progress_bar.value() + 1)
+
+        sql = 'UPDATE cases SET DrugShareFee = DrugShare WHERE DrugShare IS NOT NULL'
+        self.database.exec_sql(sql)
+        self.progress_bar.setValue(self.progress_bar.value() + 1)
+
+        sql = 'UPDATE cases SET RefundFee = Refund WHERE Refund IS NOT NULL'
+        self.database.exec_sql(sql)
+        self.progress_bar.setValue(self.progress_bar.value() + 1)
+
+        sql = 'UPDATE cases SET SMaterialFee = SMaterial WHERE SMaterial IS NOT NULL'
+        self.database.exec_sql(sql)
+        self.progress_bar.setValue(self.progress_bar.value() + 1)
+
+        sql = 'UPDATE cases SET TreatType = RegistType WHERE RegistType IS NOT NULL'
+        self.database.exec_sql(sql)
+        self.progress_bar.setValue(self.progress_bar.value() + 1)
+
+    def _cvt_medical_dosage(self):
+        sql = 'TRUNCATE dosage'
+        self.database.exec_sql(sql)
+
+        self._cvt_medical_dosage_by_cases()
+        self._cvt_medical_dosage_by_caseextend()
+
+    def _cvt_medical_dosage_by_cases(self):
+        sql = '''
+            SELECT 
+                CaseKey,
+                Package1, Package2, Package3,
+                PresDays1, PresDays2, PresDays3,
+                Instruction1, Instruction2, Instruction3
+             FROM cases 
+             ORDER BY CaseKey 
+        '''
+
+        rows = self.source_db.select_record(sql)
+
+        self.progress_bar.setMaximum(len(rows))
+        self.progress_bar.setValue(0)
+        fields = ['CaseKey', 'MedicineSet', 'Packages', 'Days', 'Instruction']
+        for row in rows:
+            self.progress_bar.setValue(self.progress_bar.value() + 1)
+            for i in range(1, 4):
+                if row['Package{0}'.format(i)] is not None or row['PresDays{0}'.format(i)] is not None:
+                    data = [
+                        row['CaseKey'],
+                        i,
+                        row['Package{0}'.format(i)],
+                        row['PresDays{0}'.format(i)],
+                        row['Instruction{0}'.format(i)]
+                    ]
+                    self.database.insert_record('dosage', fields, data)
+
+    def _cvt_medical_dosage_by_caseextend(self):
+        sql = '''
+            SELECT *
+             FROM caseextend
+             WHERE
+                ExtendType IN ("藥日4", "藥日5", "藥日6", "藥包4", "藥包5", "藥包6", "指示4", "指示5", "指示6") AND
+                (Content IS NOT NULL AND LENGTH(Content) > 0) AND
+                Content NOT LIKE "ComboBox%"
+             ORDER BY CaseKey 
+        '''
+
+        rows = self.source_db.select_record(sql)
+        if len(rows) <= 0:
+            return
+
+        self.progress_bar.setMaximum(len(rows))
+        self.progress_bar.setValue(0)
+        for row in rows:
+            self.progress_bar.setValue(self.progress_bar.value() + 1)
+
+            if string_utils.xstr(row['ExtendType'])[:2] == '藥日':
+                field = 'Days'
+            elif string_utils.xstr(row['ExtendType'])[:2] == '藥包':
+                field = 'Packages'
+            elif string_utils.xstr(row['ExtendType'])[:2] == '指示':
+                field = 'Instruction'
+            else:
+                continue
+
+            medicine_set = string_utils.xstr(row['ExtendType'])[2]
+
+            sql = '''
+                SELECT * FROM dosage
+                WHERE
+                    CaseKey = {0} AND
+                    MedicineSet = {1}
+            '''.format(
+                row['CaseKey'], medicine_set,
+            )
+            dosage_rows = self.database.select_record(sql)
+            value = string_utils.xstr(row['Content'])
+            if field in ['Days', 'Packages'] and not value.isdigit():
+                value = 0
+
+            if len(dosage_rows) > 0:
+                self.database.exec_sql(
+                    'UPDATE dosage SET {0} = "{1}" WHERE DosageKey = {2}'.format(
+                        field, value, dosage_rows[0]['DosageKey'],
+                    )
+                )
+            else:
+                fields = ['CaseKey', 'MedicineSet', field]
+                data = [
+                    row['CaseKey'], medicine_set, value,
+                ]
+                self.database.insert_record('dosage', fields, data)
+
+    def _cvt_medical_reserve(self):
+        self.progress_bar.setMaximum(1)
+        self.progress_bar.setValue(0)
+
+        sql = 'UPDATE reserve SET ReserveNo = Sequence WHERE Sequence IS NOT NULL'
         self.database.exec_sql(sql)
         self.progress_bar.setValue(self.progress_bar.value() + 1)
