@@ -124,7 +124,11 @@ class InsApplyGenerateFile(QtWidgets.QMainWindow):
             if progress_dialog.wasCanceled():
                 break
 
-            ins_apply_row = self._need_merge_record(row)
+            if string_utils.xstr(row['TreatType']) == '腦血管疾病':
+                ins_apply_row = self._need_merge_brain_record(row)
+            else:
+                ins_apply_row = self._need_merge_record(row)
+
             if ins_apply_row is None:
                 self._write_ins_record(row)
             else:
@@ -132,11 +136,36 @@ class InsApplyGenerateFile(QtWidgets.QMainWindow):
 
         progress_dialog.setValue(record_count)
 
-    # 檢查是否需要合併病歷
-    def _need_merge_record(self, row):
-        if string_utils.xstr(row['TreatType']) in nhi_utils.AUXILIARY_CARE_TREAT:
-            pass
+    # 檢查是否需要合併病歷 (腦血管疾病案件)
+    def _need_merge_brain_record(self, row):
+        ins_apply_row = None
 
+        patient_key = number_utils.get_integer(row['PatientKey'])
+
+        sql = '''
+            SELECT * FROM insapply
+            WHERE
+                ClinicID = "{0}" AND
+                ApplyDate = "{1}" AND
+                ApplyPeriod = "{2}" AND
+                ApplyType = "{3}" AND
+                PatientKey = {4} AND
+                CaseType = "30" AND
+                SpecialCode1 = "{5}"
+        '''.format(
+            self.clinic_id, self.apply_date, self.period,
+            nhi_utils.APPLY_TYPE_DICT[self.apply_type],
+            patient_key,
+            nhi_utils.SPECIAL_CODE_DICT['腦血管疾病']
+        )
+        ins_apply_rows = self.database.select_record(sql)
+        if len(ins_apply_rows) > 0:
+            ins_apply_row = ins_apply_rows[0]
+
+        return ins_apply_row
+
+    # 檢查是否需要合併病歷 (一般或療程案件)
+    def _need_merge_record(self, row):
         ins_apply_row = None
 
         course = number_utils.get_integer(row['Continuance'])
@@ -166,19 +195,24 @@ class InsApplyGenerateFile(QtWidgets.QMainWindow):
         return ins_apply_row
 
     def _write_ins_record(self, row):
-        case_type = nhi_utils.get_case_type(self.database, self.system_settings, row)
+        case_type = nhi_utils.get_case_type(self.database, row)
 
         special_code = nhi_utils.get_special_code(self.database, row['CaseKey'])
         pres_days = case_utils.get_pres_days(self.database, row['CaseKey'])
         treat_records = nhi_utils.get_treat_records(self.database, row)
 
         drug_fee = number_utils.get_integer(row['InterDrugFee'])
-        treat_fee = (
-            number_utils.get_integer(row['AcupunctureFee']) +
-            number_utils.get_integer(row['MassageFee']) +
-            number_utils.get_integer(row['DislocateFee']) +
-            number_utils.get_integer(row['ExamFee'])
-        )
+
+        if special_code == nhi_utils.SPECIAL_CODE_DICT['腦血管疾病']:
+            treat_fee = treat_records[0]['TreatFee']
+        else:
+            treat_fee = (
+                    number_utils.get_integer(row['AcupunctureFee']) +
+                    number_utils.get_integer(row['MassageFee']) +
+                    number_utils.get_integer(row['DislocateFee']) +
+                    number_utils.get_integer(row['ExamFee'])
+            )
+
         diag_code = nhi_utils.get_diag_code(
             self.database,
             self.system_settings,
@@ -295,10 +329,10 @@ class InsApplyGenerateFile(QtWidgets.QMainWindow):
 
         self.database.insert_record('insapply', fields, data)
 
-    def _rewrite_ins_record(self, ins_apply_row, row):
+    def _rewrite_ins_record(self, ins_apply_row, case_row):
         ins_apply_key = number_utils.get_integer(ins_apply_row['InsApplyKey'])
-        pres_days = case_utils.get_pres_days(self.database, row['CaseKey'])
-        treat_records = nhi_utils.get_treat_records(self.database, row, ins_apply_row)
+        pres_days = case_utils.get_pres_days(self.database, case_row['CaseKey'])
+        treat_records = nhi_utils.get_treat_records(self.database, case_row, ins_apply_row)
 
         fields = [
             'StopDate', 'PresDays',
@@ -312,32 +346,52 @@ class InsApplyGenerateFile(QtWidgets.QMainWindow):
             'CaseKey6', 'TreatCode6', 'TreatFee6', 'Percent6',
         ]
 
+        if string_utils.xstr(ins_apply_row['SpecialCode1']) == nhi_utils.SPECIAL_CODE_DICT['腦血管疾病']:
+            treat_fee = treat_records[0]['TreatFee']
+            ins_total_fee = (  # 重新計算申報總金額, 須扣除病歷內的處置費及原本申報金額的處置費, 再加上新的處置費
+                    number_utils.get_integer(ins_apply_row['InsTotalFee']) +
+                    treat_fee -
+                    number_utils.get_integer(ins_apply_row['TreatFee'])
+            )
+        else:
+            treat_fee = (
+                    number_utils.get_integer(ins_apply_row['TreatFee']) +
+                    number_utils.get_integer(case_row['AcupunctureFee']) +
+                    number_utils.get_integer(case_row['MassageFee']) +
+                    number_utils.get_integer(case_row['DislocateFee']) +
+                    number_utils.get_integer(case_row['ExamFee'])
+            )
+            ins_total_fee = (
+                    number_utils.get_integer(ins_apply_row['InsTotalFee']) +
+                    number_utils.get_integer(case_row['InsTotalFee'])
+            )
+
+        share_fee = (
+                number_utils.get_integer(ins_apply_row['ShareFee']) +
+                number_utils.get_integer(case_row['DiagShareFee']) +
+                number_utils.get_integer(case_row['DrugShareFee'])
+        )
+
+        ins_apply_fee = ins_total_fee - share_fee
+
         data = [
-            row['CaseDate'].date(),
+            case_row['CaseDate'].date(),
             (number_utils.get_integer(ins_apply_row['PresDays']) + pres_days),
             (number_utils.get_integer(ins_apply_row['DrugFee']) +
-             number_utils.get_integer(row['InterDrugFee'])),
-            (number_utils.get_integer(ins_apply_row['TreatFee']) +
-             number_utils.get_integer(row['AcupunctureFee']) +
-             number_utils.get_integer(row['MassageFee']) +
-             number_utils.get_integer(row['DislocateFee']) +
-             number_utils.get_integer(row['ExamFee'])),
+             number_utils.get_integer(case_row['InterDrugFee'])),
+            treat_fee,
             nhi_utils.get_pharmacy_code(
                 self.system_settings,
-                row, pres_days,
+                case_row, pres_days,
                 string_utils.xstr(ins_apply_row['PharmacyCode'])
             ),
             (number_utils.get_integer(ins_apply_row['PharmacyFee']) +
-             number_utils.get_integer(row['PharmacyFee'])),
-            (number_utils.get_integer(ins_apply_row['InsTotalFee']) +
-             number_utils.get_integer(row['InsTotalFee'])),
-            (number_utils.get_integer(ins_apply_row['ShareFee']) +
-             number_utils.get_integer(row['DiagShareFee']) +
-             number_utils.get_integer(row['DrugShareFee'])),
-            (number_utils.get_integer(ins_apply_row['InsApplyFee']) +
-             number_utils.get_integer(row['InsApplyFee'])),
+             number_utils.get_integer(case_row['PharmacyFee'])),
+            ins_total_fee,
+            share_fee,
+            ins_apply_fee,
             (number_utils.get_integer(ins_apply_row['AgentFee']) +
-             number_utils.get_integer(row['AgentFee'])),
+             number_utils.get_integer(case_row['AgentFee'])),
             treat_records[0]['CaseKey'],
             treat_records[0]['TreatCode'],
             treat_records[0]['TreatFee'],

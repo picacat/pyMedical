@@ -9,6 +9,7 @@ from classes import table_widget
 from libs import ui_utils
 from libs import string_utils
 from libs import nhi_utils
+from dialog import dialog_course_list
 
 
 # 候診名單 2018.01.31
@@ -59,11 +60,67 @@ class InsApplyList(QtWidgets.QMainWindow):
 
     # 設定信號
     def _set_signal(self):
-        pass
+        self.ui.tableWidget_ins_apply_list.doubleClicked.connect(self.open_medical_record)
+        self.ui.toolButton_open_medical_record.clicked.connect(self.open_medical_record)
 
     def open_medical_record(self):
-        case_key = 0
-        self.parent.open_medical_record(case_key, '健保申報')
+        ins_apply_key = self.table_widget_ins_apply_list.field_value(0)
+        sql = '''
+            SELECT CaseKey1, CaseKey2, CaseKey3, CaseKey4, CaseKey5, CaseKey6, 
+                CaseType, Sequence, SpecialCode1, Name
+            FROM insapply
+            WHERE
+                InsApplyKey = {0}
+        '''.format(ins_apply_key)
+        rows = self.database.select_record(sql)
+        if len(rows) <= 0:
+            return
+
+        row = rows[0]
+        if string_utils.xstr(row['SpecialCode1']) == nhi_utils.SPECIAL_CODE_DICT['腦血管疾病']:
+            case_key = row['CaseKey1']
+            print(case_key)
+            self.parent.open_medical_record(case_key)
+            return
+
+        case_key_list = [
+            row['CaseKey1'],
+            row['CaseKey2'], row['CaseKey3'], row['CaseKey4'], row['CaseKey5'], row['CaseKey6'],
+        ]
+
+        available_case_key_list = []
+        for case_key in case_key_list:
+            if case_key != 0:
+                available_case_key_list.append(case_key)
+
+        if len(available_case_key_list) >= 2:
+            case_key = self._open_medical_record_dialog(row, available_case_key_list)
+        else:
+            case_key = available_case_key_list[0]
+
+        if case_key != 0:
+            self.parent.open_medical_record(case_key)
+
+    # 開啟病歷選擇視窗
+    def _open_medical_record_dialog(self, row, case_key_list):
+        dialog = dialog_course_list.DialogCourseList(
+            self, self.database, self.system_settings,
+            case_key_list
+        )
+        dialog.ui.label_header.setText(
+            '案件分類:{0}-{1:0>4} {2}的療程病歷明細'.format(
+                string_utils.xstr(row['CaseType']),
+                string_utils.xstr(row['Sequence']),
+                string_utils.xstr(row['Name']),
+            )
+        )
+
+        dialog.exec_()
+        case_key = dialog.selected_case_key
+        dialog.close_all()
+        dialog.deleteLater()
+
+        return case_key
 
     def read_data(self):
 

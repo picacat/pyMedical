@@ -498,8 +498,25 @@ class InsApplyCalculate(QtWidgets.QMainWindow):
             if ins_calculated_row['doctor_type'] == '醫師':  # 只計算支援醫師
                 continue
 
+            # 要先歸零，因為前面已經有預先以專任醫師算過
+            ins_calculated_row['diag_section1'] = 0
+            ins_calculated_row['diag_section2'] = 0
+            ins_calculated_row['diag_section3'] = 0
+            ins_calculated_row['diag_section4'] = 0
+            ins_calculated_row['diag_section5'] = 0
+
+            diag_days = ins_calculated_row['diag_days']
+            diag_section1_limit = diag_days * nhi_utils.DIAG_SECTION1
+            diag_section2_limit = diag_days * (nhi_utils.DIAG_SECTION2 - nhi_utils.DIAG_SECTION1)
+            diag_section3_limit = diag_days * (nhi_utils.DIAG_SECTION3 - nhi_utils.DIAG_SECTION2)
+            diag_section4_limit = diag_days * (nhi_utils.DIAG_SECTION4 - nhi_utils.DIAG_SECTION3)
+
             diag_count = ins_calculated_row['diag_count']
-            if diag_count < section1_balance:
+            # 這部分不確定是否要依據合理門診量計算
+            # if diag_count >= diag_section1_limit:
+            #     ins_calculated_row['diag_section1'] = diag_section1_limit
+            #     diag_count -= diag_section1_limit
+            if diag_count <= section1_balance:
                 ins_calculated_row['diag_section1'] = diag_count
                 diag_count = 0
             else:
@@ -511,7 +528,10 @@ class InsApplyCalculate(QtWidgets.QMainWindow):
             if diag_count <= 0:
                 continue
 
-            if diag_count < section2_balance:
+            # if diag_count >= diag_section2_limit:
+            #     ins_calculated_row['diag_section2'] = diag_section2_limit
+            #     diag_count -= diag_section2_limit
+            if diag_count <= section2_balance:
                 ins_calculated_row['diag_section2'] = diag_count
                 diag_count = 0
             else:
@@ -523,7 +543,10 @@ class InsApplyCalculate(QtWidgets.QMainWindow):
             if diag_count <= 0:
                 continue
 
-            if diag_count < section3_balance:
+            # if diag_count >= diag_section3_limit:
+            #     ins_calculated_row['diag_section3'] = diag_section3_limit
+            #     diag_count -= diag_section3_limit
+            if diag_count <= section3_balance:
                 ins_calculated_row['diag_section3'] = diag_count
                 diag_count = 0
             else:
@@ -535,7 +558,10 @@ class InsApplyCalculate(QtWidgets.QMainWindow):
             if diag_count <= 0:
                 continue
 
-            if diag_count < section4_balance:
+            # if diag_count >= diag_section4_limit:
+            #     ins_calculated_row['diag_section4'] = diag_section4_limit
+            #     diag_count -= diag_section4_limit
+            if diag_count <= section4_balance:
                 ins_calculated_row['diag_section4'] = diag_count
                 diag_count = 0
             else:
@@ -583,6 +609,10 @@ class InsApplyCalculate(QtWidgets.QMainWindow):
         for ins_calculated_row in self.ins_calculated_table:
             if ins_calculated_row['doctor_type'] == '醫師':
                 continue
+
+            ins_calculated_row['treat_section1'] = 0
+            ins_calculated_row['treat_section2'] = 0
+            ins_calculated_row['treat_section3'] = 0
 
             treat_count = ins_calculated_row['treat_count']
             if treat_count < section1_balance:

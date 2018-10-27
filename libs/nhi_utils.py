@@ -5,6 +5,7 @@ from libs import number_utils
 from libs import string_utils
 from libs import case_utils
 from libs import personnel_utils
+from libs import charge_utils
 
 XML_OUT_PATH = './nhi_upload'
 MAX_DIAG_DAYS = 26  # 合理門診量最大日期
@@ -69,19 +70,20 @@ MASSAGE_TREAT = ['傷科治療', '複雜性傷科',]
 DISLOCATE_TREAT = ['脫臼復位', '脫臼整復首次', '脫臼整復',]
 INS_TREAT = ACUPUNCTURE_TREAT + MASSAGE_TREAT + DISLOCATE_TREAT
 
+# 案件分類: 30
 AUXILIARY_CARE_TREAT = [
-    '小兒氣喘', '小兒腦性麻痺', '腦血管疾病', '顱腦損傷', '脊髓損傷',
+    '小兒氣喘', '小兒腦性麻痺',
+    '腦血管疾病',
 ]
 
+# 案件分類: 22
 IMPROVE_CARE_TREAT = [
-    '癌症照護',
     '助孕照護', '保胎照護',
-    '乳癌照護', '肝癌照護', '肺癌照護',
-    '肺癌照護', '大腸癌照護',  #2018.02.01 新增
+    '乳癌照護', '肝癌照護',
     '兒童鼻炎',
-    # '小兒氣喘(氣霧處置)', '小兒氣喘',  # 102.01.01 取消
-    # '小兒腦性麻痺(藥浴處置)', '小兒腦性麻痺',  # 102.01.01 取消
 ]
+
+CARE_TREAT = AUXILIARY_CARE_TREAT + IMPROVE_CARE_TREAT
 
 SPECIAL_CODE_DICT = {
     '腦血管疾病': 'C8',
@@ -90,11 +92,7 @@ SPECIAL_CODE_DICT = {
     '乳癌照護': 'JE',
     '肝癌照護': 'JF',
     '兒童鼻炎': 'JG',
-    '肺癌照護': 'JI',
-    '大腸癌照護': 'JJ',
 }
-
-CARE_TREAT = AUXILIARY_CARE_TREAT + IMPROVE_CARE_TREAT
 
 INS_TREAT_WITH_CARE = INS_TREAT + CARE_TREAT
 TREAT_TYPE = ['內科'] + INS_TREAT_WITH_CARE
@@ -306,7 +304,7 @@ def get_treat_code(database, case_key):
     return treat_code
 
 
-def get_case_type(database, system_settings, row):
+def get_case_type(database, row):
     injury = string_utils.xstr(row['Injury'])
     treat_type = string_utils.xstr(row['TreatType'])
     course = number_utils.get_integer(row['Continuance'])
@@ -314,17 +312,18 @@ def get_case_type(database, system_settings, row):
     treatment = string_utils.xstr(row['Treatment'])
     pres_days = case_utils.get_pres_days(database, row['CaseKey'])
 
-    case_type = '21'  # 預設為21
     if treat_type in IMPROVE_CARE_TREAT:  # 加強照護
         case_type = '22'
-    elif course >= 1 and treatment in INS_TREAT:  # 一般針傷脫臼處置
-        case_type = '29'
     elif treat_type in AUXILIARY_CARE_TREAT:  # 輔助照護
         case_type = '30'
     elif injury in OCCUPATIONAL_INJURY_TYPE:  # 職業傷害及職業病
         case_type = 'B6'
+    elif course >= 1 and treatment in INS_TREAT:  # 一般針傷脫臼處置
+        case_type = '29'
     elif (course == 0 and pres_days > 7) or (special_code != ''):  # 慢性病專案
         case_type = '24'
+    else:
+        case_type = '21'  # 預設為21
 
     return case_type
 
@@ -402,6 +401,9 @@ def get_special_code(database, case_key):
 
 # 取得初診照護
 def get_visit(database, row):
+    if string_utils.xstr(row['TreatType']) in AUXILIARY_CARE_TREAT:  # 腦血管疾病, 小兒氣喘, 小兒腦麻不可申報其他項目
+        return None
+
     if string_utils.xstr(row['Visit']) == '初診':
         return '初診照護'
 
@@ -416,7 +418,7 @@ def get_visit(database, row):
             CaseDate > "{1}"
     '''.format(row['CaseKey'], first_visit_year_range)
     rows = database.select_record(sql)
-    if len(rows) <= 0:
+    if len(rows) <= 0:  # 2年內無看診
         return '初診照護'
 
     return None
@@ -455,10 +457,11 @@ def get_pharmacist_id(database, system_settings, row):
 
 def get_diag_code(database, system_settings, doctor_name, treat_type, diag_fee):
     diag_code = None
+
     if diag_fee <= 0:
         return diag_code
 
-    if treat_type in CARE_TREAT:
+    if treat_type in CARE_TREAT and treat_type != '兒童鼻炎':  # 兒童過敏性鼻炎可申報診察費
         return diag_code
 
     nurse = number_utils.get_integer(system_settings.field('護士人數'))
@@ -566,6 +569,20 @@ def get_treat_records(database, row, ins_apply_row=None):
                 'Percent': 100},
         ]
 
+    if string_utils.xstr(row['TreatType']) == '腦血管疾病':
+        if treat_records[0]['CaseKey'] == 0:
+            treat_records[0]['CaseKey'] = number_utils.get_integer(row['CaseKey'])
+            treat_records[1]['CaseKey'] = 1  # CaseKey2 = 腦血管疾病次數 redefine
+        else:
+            treat_records[1]['CaseKey'] += 1
+
+        treat_records[0]['TreatCode'] = get_brain_treat_code(treat_records[1]['CaseKey'])
+        treat_records[0]['TreatFee'] = charge_utils.get_ins_fee_from_ins_code(
+            database, treat_records[0]['TreatCode']
+        )
+
+        return treat_records
+
     course = number_utils.get_integer(row['Continuance'])
     if course <= 1:
         course = 0
@@ -577,12 +594,34 @@ def get_treat_records(database, row, ins_apply_row=None):
         database,
         treat_records[course]['CaseKey']
     )
-    treat_records[course]['TreatFee'] = (
-            number_utils.get_integer(row['AcupunctureFee']) +
-            number_utils.get_integer(row['MassageFee']) +
-            number_utils.get_integer(row['DislocateFee']))
+
+    if string_utils.xstr(row['TreatType']) in CARE_TREAT:  # 加強照護類不含脫臼費(redefine 照護費)
+        treat_records[course]['TreatFee'] = (
+                number_utils.get_integer(row['AcupunctureFee']) +
+                number_utils.get_integer(row['MassageFee']))
+    else:
+        treat_records[course]['TreatFee'] = (
+                number_utils.get_integer(row['AcupunctureFee']) +
+                number_utils.get_integer(row['MassageFee']) +
+                number_utils.get_integer(row['DislocateFee']))
 
     return treat_records
+
+
+# 取得腦血管疾病醫令
+def get_brain_treat_code(record_count):
+    if record_count <= 3:
+        treat_code = 'C05'
+    elif record_count <= 6:
+        treat_code = 'C06'
+    elif record_count <= 9:
+        treat_code = 'C07'
+    elif record_count <= 12:
+        treat_code = 'C08'
+    else:
+        treat_code = 'C09'
+
+    return treat_code
 
 
 # 取得療程開始日期

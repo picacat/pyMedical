@@ -114,7 +114,7 @@ class InsApplyAdjustFee(QtWidgets.QMainWindow):
                     row['diag_section5']
             )
 
-            ins_apply_rows = self._get_ins_apply_rows(row['doctor_id'])
+            ins_apply_rows = self._get_ins_apply_rows(row['doctor_id'])  # 不含照護及職業傷害, 三歲兒童放在最前面
             for ins_row_no, ins_row in zip(range(1, len(ins_apply_rows)+1), ins_apply_rows):
                 if ins_row_no <= diag_section1:  # 第一段不調整
                     pass
@@ -172,6 +172,7 @@ class InsApplyAdjustFee(QtWidgets.QMainWindow):
             row['InsApplyKey'], diag_code
         )
 
+    # 不含加強照護類及職業傷害
     def _get_ins_apply_rows(self, doctor_id):
         sql = '''
             SELECT InsApplyKey, Sequence, DoctorName, DiagCode, DiagFee, InsTotalFee, InsApplyFee
@@ -184,7 +185,7 @@ class InsApplyAdjustFee(QtWidgets.QMainWindow):
                 DoctorID = "{4}" AND
                 DiagFee > 0 AND
                 CaseType NOT IN {5}
-                ORDER BY CaseType, Sequence
+                ORDER BY CaseType, Field(ShareCode, '902', 'S10', 'S20', '003', '004'), Sequence
         '''.format(
             self.apply_date, self.apply_type_code, self.period, self.clinic_id,
             doctor_id, tuple(nhi_utils.EXCLUDE_DIAG_ADJUST)

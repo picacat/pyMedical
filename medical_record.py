@@ -597,7 +597,7 @@ class MedicalRecord(QtWidgets.QMainWindow):
     def update_ins_fees_data(self):
         fields = [
             'DiagFee', 'InterDrugFee', 'PharmacyFee',
-            'AcupunctureFee', 'MassageFee', 'DislocateFee', 'ExamFee',
+            'AcupunctureFee', 'MassageFee', 'DislocateFee',
             'InsTotalFee', 'DiagShareFee', 'DrugShareFee', 'InsApplyFee', 'AgentFee',
         ]
 

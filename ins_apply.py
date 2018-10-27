@@ -73,8 +73,7 @@ class InsApply(QtWidgets.QMainWindow):
         self.ui.action_reapply.triggered.connect(self.open_dialog)
         self.ui.action_close.triggered.connect(self.close_app)
 
-    def open_medical_record(self):
-        case_key = 0
+    def open_medical_record(self, case_key):
         self.parent.open_medical_record(case_key, '健保申報')
 
     def open_dialog(self):
@@ -126,8 +125,7 @@ class InsApply(QtWidgets.QMainWindow):
             xml_file_name = nhi_utils.get_ins_xml_file_name(self.apply_type_code, self.apply_date)
             if not os.path.isfile(xml_file_name):
                 self._create_xml_file()
-
-            self._check_ins_xml_file()
+                self._check_ins_xml_file()
         else:
             pass
 

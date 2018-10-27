@@ -23,7 +23,11 @@
     <autoscroll-to-editor value="false" />
     <autoscroll-from-editor value="true" />
     <show-object-properties value="true" />
-    <loaded-nodes />
+    <loaded-nodes>
+      <connection connection-id="85dd102d-4da3-4481-ba69-4172ba68c41d">
+        <schema name="nd" object-types="table" />
+      </connection>
+    </loaded-nodes>
   </component>
   <component name="DBNavigator.Project.DatabaseConsoleManager">
     <connection id="85dd102d-4da3-4481-ba69-4172ba68c41d">
@@ -37,6 +41,12 @@
     <filter-list connection-id="85dd102d-4da3-4481-ba69-4172ba68c41d" dataset="yiler.insapply" active-filter-id="26d6602e-dae4-47be-bb69-e0f91993b58b">
       <filter id="26d6602e-dae4-47be-bb69-e0f91993b58b" name="Filter" temporary="false" custom-name="false" type="custom">
         <condition><![CDATA[ApplyDate = '10601' order by CaseType, Sequence]]></condition>
+      </filter>
+    </filter-list>
+    <filter-list connection-id="85dd102d-4da3-4481-ba69-4172ba68c41d" dataset="nd.insapply" active-filter-id="5ddd4f92-ee0b-4a3f-923d-a308367bd0e9">
+      <filter id="5ddd4f92-ee0b-4a3f-923d-a308367bd0e9" name="10705 &amp; 30" temporary="false" custom-name="false" type="basic" join-type="AND">
+        <condition column="ApplyDate" operator="=" value="10705" active="true" />
+        <condition column="CaseType" operator="=" value="30" active="true" />
       </filter>
     </filter-list>
     <filter-list connection-id="85dd102d-4da3-4481-ba69-4172ba68c41d" dataset="yiler.cases" active-filter-id="5efdff87-579d-4d66-ac7d-f9931f236bd2">

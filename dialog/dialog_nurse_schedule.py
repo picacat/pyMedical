@@ -19,11 +19,12 @@ class DialogNurseSchedule(QtWidgets.QDialog):
         self.parent = parent
         self.database = args[0]
         self.system_settings = args[1]
-        self.schedule_date = args[2]
-        self.doctor = args[3]
-        self.nurse1 = args[4]
-        self.nurse2 = args[5]
-        self.nurse3 = args[6]
+        self.schedule_type = args[2]
+        self.schedule_date = args[3]
+        self.person = args[4]
+        self.person1 = args[5]
+        self.person2 = args[6]
+        self.person3 = args[7]
         self.ui = None
 
         self._set_ui()
@@ -45,7 +46,20 @@ class DialogNurseSchedule(QtWidgets.QDialog):
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setText('確定')
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Cancel).setText('取消')
         self.ui.lineEdit_schedule_date.setText(self.schedule_date)
-        self.ui.lineEdit_doctor.setText(self.doctor)
+        self.ui.lineEdit_person.setText(self.person)
+        if self.schedule_type == '醫師':
+            self.ui.label_person.setText('主治醫師')
+            self.ui.label_person1.setText('早班護士')
+            self.ui.label_person2.setText('午班護士')
+            self.ui.label_person3.setText('晚班護士')
+            self._set_combo_box_nurse()
+        else:
+            self.ui.label_person.setText('值班護士')
+            self.ui.label_person1.setText('早班醫師')
+            self.ui.label_person2.setText('午班醫師')
+            self.ui.label_person3.setText('晚班醫師')
+            self._set_combo_box_doctor()
+
         self._set_combo_box()
 
     # 設定信號
@@ -53,18 +67,70 @@ class DialogNurseSchedule(QtWidgets.QDialog):
         self.ui.buttonBox.accepted.connect(self.accepted_button_clicked)
 
     def _set_combo_box(self):
-        script = 'select * from person where Position = "護士"'
+        self.ui.comboBox_person1.setCurrentText(self.person1)
+        self.ui.comboBox_person2.setCurrentText(self.person2)
+        self.ui.comboBox_person3.setCurrentText(self.person3)
+
+        if self.schedule_type == '醫師':
+            self._set_combo_box_person_enabled()
+
+    def _set_combo_box_person_enabled(self):
+        nurse_fields = ['Nurse1', 'Nurse2', 'Nurse3']
+        person_lables = [self.ui.label_person1, self.ui.label_person2, self.ui.label_person3]
+        combo_box_person_list = [
+            self.ui.comboBox_person1,
+            self.ui.comboBox_person2,
+            self.ui.comboBox_person3,
+        ]
+
+        for i in range(len(nurse_fields)):
+            sql = '''
+                SELECT * FROM nurse_schedule 
+                WHERE
+                    ScheduleDate = "{0}" AND
+                    ({1} IS NOT NULL AND LENGTH({1}) > 0) AND
+                    Doctor != "{2}"
+            '''.format(self.schedule_date, nurse_fields[i], self.person)
+            rows = self.database.select_record(sql)
+            if len(rows) > 0:
+                enabled = False
+            else:
+                enabled = True
+
+            combo_box_person_list[i].setEnabled(enabled)
+            person_lables[i].setEnabled(enabled)
+
+
+    def _set_combo_box_nurse(self):
+        script = '''
+            SELECT * FROM person 
+            WHERE 
+                Position = "護士"
+        '''
         rows = self.database.select_record(script)
         nurse_list = []
         for row in rows:
             nurse_list.append(row['Name'])
 
-        ui_utils.set_combo_box(self.ui.comboBox_nurse1, nurse_list, None)
-        ui_utils.set_combo_box(self.ui.comboBox_nurse2, nurse_list, None)
-        ui_utils.set_combo_box(self.ui.comboBox_nurse3, nurse_list, None)
-        self.ui.comboBox_nurse1.setCurrentText(self.nurse1)
-        self.ui.comboBox_nurse2.setCurrentText(self.nurse2)
-        self.ui.comboBox_nurse3.setCurrentText(self.nurse3)
+        ui_utils.set_combo_box(self.ui.comboBox_person1, nurse_list, None)
+        ui_utils.set_combo_box(self.ui.comboBox_person2, nurse_list, None)
+        ui_utils.set_combo_box(self.ui.comboBox_person3, nurse_list, None)
+
+    def _set_combo_box_doctor(self):
+        script = '''
+            SELECT * FROM person 
+            WHERE 
+                Position = "醫師" AND 
+                (ID IS NOT NULL AND LENGTH(ID) > 0)
+        '''
+        rows = self.database.select_record(script)
+        doctor_list = []
+        for row in rows:
+            doctor_list.append(row['Name'])
+
+        ui_utils.set_combo_box(self.ui.comboBox_person1, doctor_list, None)
+        ui_utils.set_combo_box(self.ui.comboBox_person2, doctor_list, None)
+        ui_utils.set_combo_box(self.ui.comboBox_person3, doctor_list, None)
 
     def accepted_button_clicked(self):
         pass

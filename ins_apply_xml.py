@@ -99,17 +99,17 @@ class InsApplyXML(QtWidgets.QMainWindow):
         tree.write(xml_file_name, pretty_print=True, xml_declaration=True, encoding="Big5")
 
     def _add_tdata(self, root):
-        generate_date = '{0:0>3}{1:0>2}{2:>02}'.format(
+        generate_date = '{0:0>3}{1:0>2}{2:0>2}'.format(
             self.ins_total_fee['ins_generate_date'].year()-1911,
             self.ins_total_fee['ins_generate_date'].month(),
             self.ins_total_fee['ins_generate_date'].day(),
             )
-        start_date = '{0:0>3}{1:0>2}{2:>02}'.format(
+        start_date = '{0:0>3}{1:0>2}{2:0>2}'.format(
             self.ins_total_fee['start_date'].year()-1911,
             self.ins_total_fee['start_date'].month(),
             self.ins_total_fee['start_date'].day(),
             )
-        end_date = '{0:0>3}{1:0>2}{2:>02}'.format(
+        end_date = '{0:0>3}{1:0>2}{2:0>2}'.format(
             self.ins_total_fee['end_date'].year()-1911,
             self.ins_total_fee['end_date'].month(),
             self.ins_total_fee['end_date'].day(),
@@ -260,8 +260,8 @@ class InsApplyXML(QtWidgets.QMainWindow):
         self._add_pdata(dbody, row)
 
     def _add_pdata(self, dbody, row):
-        if string_utils.xstr(row['SpecialCode1']) in ['CA', 'JG']:  # ['腦血管疾病', '兒童鼻炎']
-            self._add_special_care_cases(dbody, row)
+        if string_utils.xstr(row['CaseType']) == '30':  # 腦血管疾病, 小兒氣喘, 小兒腦麻
+            self._add_auxiliary_case(dbody, row)
             return
 
         self.sequence = 0
@@ -548,8 +548,41 @@ class InsApplyXML(QtWidgets.QMainWindow):
         p20 = ET.SubElement(pdata, 'p20')
         p20.text = string_utils.xstr(row['Class'])
 
-    def _add_special_care_cases(self, dbody, row):
+    def _add_auxiliary_case(self, dbody, row):
+        pdata = ET.SubElement(dbody, 'pdata')
+
         self.sequence += 1
+        treat_code = string_utils.xstr(row['TreatCode1'])
+        amount = number_utils.get_integer(row['TreatFee1'])
+        percent = number_utils.get_integer(row['Percent1'])
+        unit_price = number_utils.get_integer(amount / percent * 100)
+
+        p2 = ET.SubElement(pdata, 'p2')
+        p2.text = '0'  # 0=自行調劑或物理治療
+        p3 = ET.SubElement(pdata, 'p3')
+        p3.text = '2'  # 2=診療明細
+        p4 = ET.SubElement(pdata, 'p4')
+        p4.text = treat_code
+        p8 = ET.SubElement(pdata, 'p8')
+        p8.text = '{0:05.2f}'.format(percent)
+        p10 = ET.SubElement(pdata, 'p10')
+        p10.text = '1'  # 總量
+        p11 = ET.SubElement(pdata, 'p11')
+        p11.text = string_utils.xstr(unit_price)  # 單價
+        p12 = ET.SubElement(pdata, 'p12')
+        p12.text = string_utils.xstr(amount)  # 點數
+        p13 = ET.SubElement(pdata, 'p13')
+        p13.text = string_utils.xstr(self.sequence)  # 序號
+        p14 = ET.SubElement(pdata, 'p14')
+        p14.text = '{0}0000'.format(date_utils.west_date_to_nhi_date(row['CaseDate']))
+        p15 = ET.SubElement(pdata, 'p15')
+        p15.text = '{0}0000'.format(date_utils.west_date_to_nhi_date(row['CaseDate']))
+        p16 = ET.SubElement(pdata, 'p16')
+        p16.text = string_utils.xstr(row['DoctorID'])
+        p17 = ET.SubElement(pdata, 'p17')
+        p17.text = '2'  # 同一療程
+        p20 = ET.SubElement(pdata, 'p20')
+        p20.text = string_utils.xstr(row['Class'])
 
     def _set_special_care(self, dbody, row, case_row):
         sql = '''

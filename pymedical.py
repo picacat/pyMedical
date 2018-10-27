@@ -322,17 +322,23 @@ class PyMedical(QtWidgets.QMainWindow):
 
     # 開啟病歷資料
     def open_medical_record(self, case_key, call_from=None):
-        script = ('select CaseKey, PatientKey, Name from cases where CaseKey = {0}'.format(case_key))
-        try:
-            row = self.database.select_record(script)[0]
-        except IndexError:
+        script = '''
+            SELECT CaseKey, PatientKey, Name 
+            FROM cases 
+            WHERE CaseKey = {0}
+        '''.format(case_key)
+
+        rows = self.database.select_record(script)
+        if len(rows) <= 0:
             system_utils.show_message_box(
                 QMessageBox.Critical,
                 '查無病歷資料',
-                '<font color="red"><h3>雖然掛號資料存在, 但是病歷資料因不明原因遺失!</h3></font>',
-                '請至掛號作業刪除此筆掛號資料並重新掛號.'
+                '<font color="red"><h3>找不到病歷主鍵{0}的資料, 請重新查詢!</h3></font>'.format(case_key),
+                '請至病歷查詢確認此筆資料是否存在.'
             )
             return
+
+        row = rows[0]
 
         position_list = personnel_utils.get_personnel(self.database, '醫師')
         if (call_from == '醫師看診作業' and

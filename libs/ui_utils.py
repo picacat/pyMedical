@@ -95,6 +95,7 @@ UI_DIALOG_RESERVATION_BOOKING = "dialog_reservation_booking.ui"
 UI_DIALOG_INS_CHECK = "dialog_ins_check.ui"
 UI_DIALOG_INS_APPLY = "dialog_ins_apply.ui"
 UI_DIALOG_NURSE_SCHEDULE = "dialog_nurse_schedule.ui"
+UI_DIALOG_COURSE_LIST = "dialog_course_list.ui"
 
 UI_DICT_DIAGNOSTIC = "dict_diagnostic.ui"
 UI_DICT_SYMPTOM = "dict_symptom.ui"

@@ -31,7 +31,7 @@ class MedicalRecordList(QtWidgets.QMainWindow):
             "treat_type": None,
             "share_type": None,
             "apply_type": None,
-            "doctor": None,
+            "person": None,
             "room": None,
         }
         self.ui = None
@@ -82,7 +82,7 @@ class MedicalRecordList(QtWidgets.QMainWindow):
             dialog.ui.comboBox_treat_type.setCurrentText(self.dialog_setting['treat_type'])
             dialog.ui.comboBox_share_type.setCurrentText(self.dialog_setting['share_type'])
             dialog.ui.comboBox_apply_type.setCurrentText(self.dialog_setting['apply_type'])
-            dialog.ui.comboBox_doctor.setCurrentText(self.dialog_setting['doctor'])
+            dialog.ui.comboBox_doctor.setCurrentText(self.dialog_setting['person'])
             dialog.ui.comboBox_room.setCurrentText(self.dialog_setting['room'])
 
         result = dialog.exec_()
@@ -94,7 +94,7 @@ class MedicalRecordList(QtWidgets.QMainWindow):
         self.dialog_setting['treat_type'] = dialog.comboBox_treat_type.currentText()
         self.dialog_setting['share_type'] = dialog.comboBox_share_type.currentText()
         self.dialog_setting['apply_type'] = dialog.comboBox_apply_type.currentText()
-        self.dialog_setting['doctor'] = dialog.comboBox_doctor.currentText()
+        self.dialog_setting['person'] = dialog.comboBox_doctor.currentText()
         self.dialog_setting['room'] = dialog.comboBox_room.currentText()
 
         sql = dialog.get_sql()

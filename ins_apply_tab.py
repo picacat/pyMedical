@@ -86,3 +86,6 @@ class InsApplyTab(QtWidgets.QMainWindow):
                 ),
                 '案件分類-{0}'.format(case_type)
             )
+
+    def open_medical_record(self, case_key):
+        self.parent.open_medical_record(case_key)

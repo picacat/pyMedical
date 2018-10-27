@@ -76,17 +76,17 @@ class InsApplyTotalFee(QtWidgets.QMainWindow):
         else:
             apply_type_name = '2補報'
 
-        generate_date = '{0:0>3}年{1:0>2}月{2:>02}日'.format(
+        generate_date = '{0:0>3}年{1:0>2}月{2:0>2}日'.format(
             self.ins_generate_date.year()-1911,
             self.ins_generate_date.month(),
             self.ins_generate_date.day(),
         )
-        start_date = '{0:0>3}年{1:0>2}月{2:>02}日'.format(
+        start_date = '{0:0>3}年{1:0>2}月{2:0>2}日'.format(
             self.ins_total_fee['start_date'].year()-1911,
             self.ins_total_fee['start_date'].month(),
             self.ins_total_fee['start_date'].day(),
             )
-        end_date = '{0:0>3}年{1:0>2}月{2:>02}日'.format(
+        end_date = '{0:0>3}年{1:0>2}月{2:0>2}日'.format(
             self.ins_total_fee['end_date'].year()-1911,
             self.ins_total_fee['end_date'].month(),
             self.ins_total_fee['end_date'].day(),

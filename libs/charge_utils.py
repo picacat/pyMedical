@@ -388,17 +388,46 @@ def get_ins_agent_fee(database, share_type, treatment, course, ins_drug_fee):
 
     return ins_agent_fee
 
-def get_ins_special_care_fee(database, case_key, share, course, pres_days, treatment):
+
+# 取得各項照護申報費用
+def get_ins_special_care_fee(database, system_settings, case_key, treat_type,
+                             share, course, pres_days, pharmacy_type, treatment):
     ins_fee = {}
 
-    drug_fee = get_ins_drug_fee(database, pres_days)
+    diag_fee = 0
+    drug_fee = 0
+    pharmacy_fee = 0
+    acupuncture_fee = 0
+    massage_fee = 0
+    care_fee = get_ins_care_fee(database, case_key)  # 小兒氣喘, 小兒腦麻為包套, 照護費已包含藥費, 調劑費與針傷處置費
 
-    ins_fee['diag_fee'] = 0
-    ins_fee['drug_fee'] = 0
-    ins_fee['pharmacy_fee'] = 0
-    ins_fee['acupuncture_fee'] = 0
-    ins_fee['massage_fee'] = 0
-    ins_fee['dislocate_fee'] = get_ins_care_fee(database, case_key)
+    if treat_type in ['腦血管疾病', '兒童鼻炎']:  # 腦血管疾病, 兒童鼻炎可申報藥費及調劑費
+        drug_fee = get_ins_drug_fee(database, pres_days)
+        pharmacy_fee = get_ins_pharmacy_fee(
+            database, system_settings, drug_fee,
+            pharmacy_type
+        )
+
+    if treat_type == '腦血管疾病':  # 腦血管疾病可申報藥費及調劑費
+        care_fee = get_ins_fee_from_ins_code(database, 'C05')  # 預設為C05 <= 3次
+
+    if treat_type in ['兒童鼻炎']:  # 兒童鼻炎可申報診察費, 針灸費, 傷科費
+        diag_fee = get_ins_diag_fee(
+            database, system_settings, course
+        )
+        acupuncture_fee = get_ins_acupuncture_fee(
+            database, treatment, drug_fee,
+        )
+        massage_fee = get_ins_massage_fee(
+            database, treatment, drug_fee,
+        )
+
+    ins_fee['diag_fee'] = diag_fee
+    ins_fee['drug_fee'] = drug_fee
+    ins_fee['pharmacy_fee'] = pharmacy_fee
+    ins_fee['acupuncture_fee'] = acupuncture_fee
+    ins_fee['massage_fee'] = massage_fee
+    ins_fee['dislocate_fee'] = care_fee
 
     ins_fee['ins_total_fee'] = (
             ins_fee['diag_fee'] +
@@ -427,10 +456,12 @@ def get_ins_special_care_fee(database, case_key, share, course, pres_days, treat
 
     return ins_fee
 
-def get_ins_fee(database, system_settings, case_key, treat_type, share, course, pres_days, pharmacy_type, treatment):
+def get_ins_fee(database, system_settings, case_key, treat_type,
+                share, course, pres_days, pharmacy_type, treatment):
     if treat_type in nhi_utils.CARE_TREAT:
         ins_fee = get_ins_special_care_fee(
-            database, case_key, share, course, pres_days, treatment,
+            database, system_settings, case_key, treat_type,
+            share, course, pres_days, pharmacy_type, treatment,
         )
         return ins_fee
 
