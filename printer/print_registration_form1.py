@@ -6,6 +6,7 @@ from PyQt5.QtPrintSupport import QPrinter
 from libs import printer_utils
 from libs import string_utils
 from libs import number_utils
+from libs import system_utils
 
 
 # 掛號收據格式1 80mm * 80mm 熱感紙
@@ -36,7 +37,8 @@ class PrintRegistrationForm1:
 
     # 設定GUI
     def _set_ui(self):
-        self.font = QtGui.QFont("Noto Sans Mono", 10, QtGui.QFont.PreferQuality)
+        font = system_utils.get_font()
+        self.font = QtGui.QFont(font, 10, QtGui.QFont.PreferQuality)
 
     def _set_signal(self):
         pass

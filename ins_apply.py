@@ -23,7 +23,7 @@ import ins_apply_xml
 import ins_apply_tab
 
 
-# 候診名單 2018.01.31
+# 健保申報 2018.10.01
 class InsApply(QtWidgets.QMainWindow):
     # 初始化
     def __init__(self, parent=None, *args):

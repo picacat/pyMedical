@@ -9,6 +9,7 @@ from classes import table_widget
 from libs import ui_utils
 from libs import string_utils
 from libs import nhi_utils
+from libs import printer_utils
 from dialog import dialog_course_list
 
 
@@ -62,6 +63,8 @@ class InsApplyList(QtWidgets.QMainWindow):
     def _set_signal(self):
         self.ui.tableWidget_ins_apply_list.doubleClicked.connect(self.open_medical_record)
         self.ui.toolButton_open_medical_record.clicked.connect(self.open_medical_record)
+        self.ui.toolButton_bookmark.clicked.connect(self._set_bookmark)
+        self.ui.toolButton_print_order.clicked.connect(self._print_order)
 
     def open_medical_record(self):
         ins_apply_key = self.table_widget_ins_apply_list.field_value(0)
@@ -138,52 +141,107 @@ class InsApplyList(QtWidgets.QMainWindow):
 
         self.table_widget_ins_apply_list.set_db_data(sql, self._set_table_data)
 
-    def _set_table_data(self, rec_no, rec):
+    def _set_table_data(self, row_no, row):
         ins_apply_row = [
-            string_utils.xstr(rec['InsApplyKey']),
-            string_utils.xstr(rec['ClinicID']),
-            string_utils.xstr(rec['ApplyDate']),
-            string_utils.xstr(rec['ApplyPeriod']),
-            string_utils.xstr(rec['ApplyType']),
-            string_utils.xstr(rec['CaseType']),
-            string_utils.xstr(rec['Sequence']),
-            string_utils.xstr(rec['SpecialCode1']),
-            string_utils.xstr(rec['SpecialCode2']),
-            string_utils.xstr(rec['SpecialCode3']),
-            string_utils.xstr(rec['SpecialCode4']),
-            string_utils.xstr(rec['Class']),
-            string_utils.xstr(rec['CaseDate']),
-            string_utils.xstr(rec['StopDate']),
-            string_utils.xstr(rec['PatientKey']),
-            string_utils.xstr(rec['Name']),
-            string_utils.xstr(rec['Birthday']),
-            string_utils.xstr(rec['ID']),
-            string_utils.xstr(rec['Card']),
-            string_utils.xstr(rec['Injury']),
-            string_utils.xstr(rec['ShareCode']),
-            string_utils.xstr(rec['Visit']),
-            string_utils.xstr(rec['DiseaseCode1']),
-            string_utils.xstr(rec['DiseaseCode2']),
-            string_utils.xstr(rec['DiseaseCode3']),
-            string_utils.xstr(rec['PresDays']),
-            string_utils.xstr(rec['PresType']),
-            string_utils.xstr(rec['DoctorName']),
-            string_utils.xstr(rec['DoctorID']),
-            string_utils.xstr(rec['PharmacistID']),
-            string_utils.xstr(rec['DrugFee']),
-            string_utils.xstr(rec['TreatFee']),
-            string_utils.xstr(rec['DiagCode']),
-            string_utils.xstr(rec['DiagFee']),
-            string_utils.xstr(rec['PharmacyCode']),
-            string_utils.xstr(rec['PharmacyFee']),
-            string_utils.xstr(rec['InsTotalFee']),
-            string_utils.xstr(rec['ShareFee']),
-            string_utils.xstr(rec['InsApplyFee']),
-            string_utils.xstr(rec['AgentFee']),
-            string_utils.xstr(rec['Message']),
+            string_utils.xstr(row['InsApplyKey']),
+            string_utils.xstr(row['Note']),
+            string_utils.xstr(row['ClinicID']),
+            string_utils.xstr(row['ApplyDate']),
+            string_utils.xstr(row['ApplyPeriod']),
+            string_utils.xstr(row['ApplyType']),
+            string_utils.xstr(row['CaseType']),
+            string_utils.xstr(row['Sequence']),
+            string_utils.xstr(row['SpecialCode1']),
+            string_utils.xstr(row['SpecialCode2']),
+            string_utils.xstr(row['SpecialCode3']),
+            string_utils.xstr(row['SpecialCode4']),
+            string_utils.xstr(row['Class']),
+            string_utils.xstr(row['CaseDate']),
+            string_utils.xstr(row['StopDate']),
+            string_utils.xstr(row['PatientKey']),
+            string_utils.xstr(row['Name']),
+            string_utils.xstr(row['Birthday']),
+            string_utils.xstr(row['ID']),
+            string_utils.xstr(row['Card']),
+            string_utils.xstr(row['Injury']),
+            string_utils.xstr(row['ShareCode']),
+            string_utils.xstr(row['Visit']),
+            string_utils.xstr(row['DiseaseCode1']),
+            string_utils.xstr(row['DiseaseCode2']),
+            string_utils.xstr(row['DiseaseCode3']),
+            string_utils.xstr(row['PresDays']),
+            string_utils.xstr(row['PresType']),
+            string_utils.xstr(row['DoctorName']),
+            string_utils.xstr(row['DoctorID']),
+            string_utils.xstr(row['PharmacistID']),
+            string_utils.xstr(row['DrugFee']),
+            string_utils.xstr(row['TreatFee']),
+            string_utils.xstr(row['DiagCode']),
+            string_utils.xstr(row['DiagFee']),
+            string_utils.xstr(row['PharmacyCode']),
+            string_utils.xstr(row['PharmacyFee']),
+            string_utils.xstr(row['InsTotalFee']),
+            string_utils.xstr(row['ShareFee']),
+            string_utils.xstr(row['InsApplyFee']),
+            string_utils.xstr(row['AgentFee']),
+            string_utils.xstr(row['Message']),
         ]
 
         for column in range(0, len(ins_apply_row)):
             self.ui.tableWidget_ins_apply_list.setItem(
-                rec_no, column, QtWidgets.QTableWidgetItem(ins_apply_row[column]))
+                row_no, column, QtWidgets.QTableWidgetItem(ins_apply_row[column]))
+            if column in [1]:
+                self.ui.tableWidget_ins_apply_list.item(
+                    row_no, column).setTextAlignment(
+                    QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
+                )
+            if row['Note'] is not None:
+                self.ui.tableWidget_ins_apply_list.item(
+                    row_no, column).setForeground(
+                    QtGui.QColor('blue')
+                )
 
+    # 註記
+    def _set_bookmark(self):
+        if self.table_widget_ins_apply_list.field_value(1) == '*':
+            bookmark = None
+            color = 'black'
+        else:
+            bookmark = '*'
+            color = 'blue'
+
+        row_no = self.ui.tableWidget_ins_apply_list.currentRow()
+        self.ui.tableWidget_ins_apply_list.setItem(
+            row_no, 1,
+            QtWidgets.QTableWidgetItem(bookmark)
+        )
+        self.ui.tableWidget_ins_apply_list.item(
+            row_no, 1).setTextAlignment(
+            QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
+        )
+
+        for col_no in range(self.ui.tableWidget_ins_apply_list.columnCount()):
+            self.ui.tableWidget_ins_apply_list.item(
+                row_no, col_no).setForeground(
+                QtGui.QColor(color)
+            )
+
+        ins_apply_key = self.table_widget_ins_apply_list.field_value(0)
+        if bookmark is None:
+            bookmark_str = 'NULL'
+        else:
+            bookmark_str = '"{0}"'.format(bookmark)
+
+        sql = '''
+            UPDATE insapply SET Note = {0} WHERE InsApplyKey = {1}
+        '''.format(bookmark_str, ins_apply_key)
+        self.database.exec_sql(sql)
+
+    # 列印醫令明細
+    def _print_order(self):
+        ins_apply_key = self.table_widget_ins_apply_list.field_value(0)
+
+        printer_utils.print_ins_apply_order(
+            self, self.database, self.system_settings,
+            self.apply_type, ins_apply_key
+        )

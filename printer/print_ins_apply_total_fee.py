@@ -1,53 +1,30 @@
 #!/usr/bin/env python3
 #coding: utf-8
 
-import sys
-
-from PyQt5 import QtWidgets
-
-from libs import ui_utils
-from libs import nhi_utils
-from libs import number_utils
+from PyQt5 import QtGui, QtCore, QtPrintSupport, QtWidgets
+from PyQt5.QtPrintSupport import QPrinter
 from libs import printer_utils
+from libs import system_utils
+from libs import number_utils
 
 
-# 候診名單 2018.01.31
-class InsApplyTotalFee(QtWidgets.QMainWindow):
+# 掛號收據格式1 80mm * 80mm 熱感紙
+# 2018.07.09
+class PrintInsApplyTotalFee:
     # 初始化
     def __init__(self, parent=None, *args):
-        super(InsApplyTotalFee, self).__init__(parent)
         self.parent = parent
         self.database = args[0]
         self.system_settings = args[1]
-        self.apply_year = args[2]
-        self.apply_month = args[3]
-        self.start_date = args[4]
-        self.end_date = args[5]
-        self.period = args[6]
-        self.apply_type = args[7]
-        self.clinic_id = args[8]
-        self.ins_generate_date = args[9]
-        self.ins_calculated_table = args[10]
+        self.ins_total_fee = args[2]
         self.ui = None
 
-        self.apply_date = nhi_utils.get_apply_date(self.apply_year, self.apply_month)
-        self.apply_type_code = nhi_utils.APPLY_TYPE_CODE[self.apply_type]
+        self.printer = printer_utils.get_printer(self.system_settings, '報表印表機')
+        self.preview_dialog = QtPrintSupport.QPrintPreviewDialog(self.printer)
+        self.current_print = None
 
-        self.ins_total_fee = {
-            'apply_year': self.apply_year,
-            'apply_month': self.apply_month,
-            'apply_period': self.period,
-            'apply_type': self.apply_type_code,
-            'apply_date': self.apply_date,
-            'start_date': self.start_date,
-            'end_date': self.end_date,
-            'clinic_id': self.clinic_id,
-            'period': self.period,
-            'ins_generate_date': self.ins_generate_date,
-        }
         self._set_ui()
         self._set_signal()
-        self._display_total_fee()
 
     # 解構
     def __del__(self):
@@ -57,44 +34,48 @@ class InsApplyTotalFee(QtWidgets.QMainWindow):
     def close_all(self):
         pass
 
-    def close_tab(self):
-        current_tab = self.parent.ui.tabWidget_window.currentIndex()
-        self.parent.close_tab(current_tab)
-
-    def close_app(self):
-        self.close_all()
-        self.close_tab()
-
     # 設定GUI
     def _set_ui(self):
-        self.ui = ui_utils.load_ui_file(ui_utils.UI_INS_APPLY_TOTAL_FEE, self)
+        font = system_utils.get_font()
+        self.font = QtGui.QFont(font, 10, QtGui.QFont.PreferQuality)
 
-    # 設定信號
     def _set_signal(self):
-        self.ui.toolButton_print.clicked.connect(self._print_total_fee)
+        pass
 
-    def _calculate_total_fee(self):
-        (general_count, general_amount, special_count, special_amount,
-         share_count, share_amount) = self._calculate_fees()
-        total_count = general_count + special_count
-        total_amount = general_amount + special_amount
+    def print(self):
+        self.print_html(True)
 
-        self.ins_total_fee['general_count'] = general_count
-        self.ins_total_fee['general_amount'] = general_amount
-        self.ins_total_fee['special_count'] = special_count
-        self.ins_total_fee['special_amount'] = special_amount
-        self.ins_total_fee['total_count'] = total_count
-        self.ins_total_fee['total_amount'] = total_amount
-        self.ins_total_fee['share_count'] = share_count
-        self.ins_total_fee['share_amount'] = share_amount
+    def preview(self):
+        geometry = QtWidgets.QApplication.desktop().screenGeometry()
 
-    def _display_total_fee(self):
-        self._calculate_total_fee()
+        self.preview_dialog.paintRequested.connect(self.print_html)
+        self.preview_dialog.resize(geometry.width(), geometry.height())  # for use in Linux
+        self.preview_dialog.setWindowState(QtCore.Qt.WindowMaximized)
+        self.preview_dialog.exec_()
 
-        html = self._get_html(self.ins_total_fee, '18px')
-        self.ui.textEdit_total_fee.setHtml(html)
+    def print_painter(self):
+        self.current_print = self.print_painter
+        self.printer.setPaperSize(QtCore.QSizeF(80, 80), QPrinter.Millimeter)
 
-    def _get_html(self, ins_total_fee, font_size):
+        painter = QtGui.QPainter()
+        painter.setFont(self.font)
+        painter.begin(self.printer)
+        painter.drawText(0, 10, 'print test line1 中文測試')
+        painter.drawText(0, 30, 'print test line2 中文測試')
+        painter.end()
+
+    def print_html(self, printing):
+        self.current_print = self.print_html
+        self.printer.setOrientation(QPrinter.Landscape)
+        self.printer.setPaperSize(QPrinter.A4)
+
+        document = printer_utils.get_document(self.printer, self.font)
+        document.setDocumentMargin(5)
+        document.setHtml(self._get_html(self.ins_total_fee))
+        if printing:
+            document.print(self.printer)
+
+    def _get_html(self, ins_total_fee):
         apply_date = '{0:0>3}年{1:0>2}月 {2}'.format(
             ins_total_fee['apply_year']-1911,
             ins_total_fee['apply_month'],
@@ -125,10 +106,20 @@ class InsApplyTotalFee(QtWidgets.QMainWindow):
         <html>
         <body>
             <div>
-                <h3 style="text-align: center;">特約醫事服務機構門診醫療服務點數申報總表</h3>
-            </div>
-            <div>
-                <table align=center cellpadding="2" cellspacing="0" width="80%" style="border-width: 1px; border-style: solid;">
+                <table align=center cellpadding="1" cellspacing="0" width="95%">
+                    <tbody>
+                        <tr>
+                            <td width="90%" style="text-align: center;">
+                                <h3>特約醫事服務機構門診醫療服務點數申報總表</h3>
+                            </td>
+                            <td width="10%" style="text-align: right;">
+                                <h3>中醫</h3>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <br>             
+                <table align=center cellpadding="1" cellspacing="0" width="95%" style="border-width: 1px; border-style: solid;">
                     <tbody>
                         <tr>
                             <td style="text-align: center;" colspan="2">t1資料格式</td>
@@ -153,7 +144,7 @@ class InsApplyTotalFee(QtWidgets.QMainWindow):
                     </tbody>
                 </table>
                 <br>
-                <table align=center cellpadding="1" cellspacing="0" width="80%" style="border-width: 1px; border-style: solid;">
+                <table align=center cellpadding="1" cellspacing="0" width="95%" style="border-width: 1px; border-style: solid;">
                 <tbody>
                     <tr>
                         <td width="15%" style="text-align: center;" colspan="2">類別</td>    
@@ -299,6 +290,21 @@ class InsApplyTotalFee(QtWidgets.QMainWindow):
                         <td style="text-align: center;">t42</td>    
                         <td style="text-align: center;">{17}</td>    
                     </tr>
+                    <tr>
+                        <td style="text-align: center;"><br><br><br>注<br>意<br>事<br>項<br></td>
+                        <td colspan="5" rowspan="10">
+                            一、使用本表免另行辦函，請填送一式兩份。<br>
+                            二、書面申報醫療費用者，應檢附本表及醫療服務點數清單暨醫令清單。<br>
+                            三、媒體申報醫療費用者，僅需填本表及送媒體(磁片或磁帶)。<br>
+                            四、連線申報醫療費用者，僅需填寫本表。<br>
+                            五、
+                            <ul>
+                                <li>一般案件係指特約診所之日劑藥費申報案件（即案件分類：01、11、21）。</li>
+                                <li>西醫專案案件範圍請參閱媒體申報格式之填表說明。</li>
+                            </ul>
+                            六、本表各欄位請按照媒體申報格式之填表說明填寫。
+                        </td>
+                    </tr>
                 </tbody>
                 </table>
             </div> 
@@ -326,51 +332,4 @@ class InsApplyTotalFee(QtWidgets.QMainWindow):
         )
 
         return html
-
-
-    def _calculate_fees(self):
-        sql = '''
-            SELECT CaseType, InsApplyFee, ShareFee
-            FROM insapply
-            WHERE
-                ApplyDate = "{0}" AND
-                ApplyType = "{1}" AND
-                ApplyPeriod = "{2}" AND
-                ClinicID = "{3}"
-                ORDER BY CaseType, Sequence
-        '''.format(
-            self.apply_date, self.apply_type_code, self.period, self.clinic_id,
-        )
-        rows = self.database.select_record(sql)
-
-        general_count = 0
-        general_amount = 0
-        special_count = 0
-        special_amount = 0
-        share_count = 0
-        share_amount = 0
-        for row in rows:
-            if row['CaseType'] == '21':
-                general_count += 1
-                general_amount += number_utils.get_integer(row['InsApplyFee'])
-            else:
-                special_count += 1
-                special_amount += number_utils.get_integer(row['InsApplyFee'])
-
-            share_fee = number_utils.get_integer(row['ShareFee'])
-            if share_fee > 0:
-                share_count += 1
-            share_amount += share_fee
-
-        return general_count, general_amount, special_count, special_amount, share_count, share_amount
-
-    # 列印申請總表
-    def _print_total_fee(self):
-        self._calculate_total_fee()
-        html = self._get_html(self.ins_total_fee, '14px')
-
-        printer_utils.print_ins_apply_total_fee(
-            self, self.database, self.system_settings,
-            self.ins_total_fee,
-        )
 

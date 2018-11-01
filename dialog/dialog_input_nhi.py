@@ -61,7 +61,7 @@ class DialogInputNHI(QtWidgets.QDialog):
         self.ui.lineEdit_item_name.setText(row_data['ItemName'])
         self.ui.lineEdit_ins_code.setText(row_data['InsCode'])
         self.ui.spinBox_amount.setValue(row_data['Amount'])
-        self.ui.lineEdit_remark.setText(row_data['Remark'])
+        self.ui.textEdit_remark.setText(row_data['Remark'])
 
     def accepted_button_clicked(self):
         if self.charge_settings_key is None:
@@ -73,7 +73,7 @@ class DialogInputNHI(QtWidgets.QDialog):
             self.ui.lineEdit_item_name.text(),
             self.ui.lineEdit_ins_code.text(),
             self.ui.spinBox_amount.value(),
-            self.ui.lineEdit_remark.text()
+            self.ui.textEdit_remark.toPlainText()
         ]
         
         self.database.update_record('charge_settings', fields, 'ChargeSettingsKey',

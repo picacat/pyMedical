@@ -8,6 +8,7 @@ from libs import personnel_utils
 from libs import charge_utils
 
 XML_OUT_PATH = './nhi_upload'
+EMR_OUT_PATH = './emr'
 MAX_DIAG_DAYS = 26  # 合理門診量最大日期
 APPLY_TYPE_CODE = {
     '申報': '1',
@@ -33,6 +34,12 @@ COMPLICATED_TREAT_CODE = [
     'B82', 'B83', 'B84', 'B87', 'B88', 'B89',
     'B92', 'B93', 'B94',
 ]
+
+PHARMACY_TYPE_DICT = {
+    '0': '自行調劑',
+    '1': '交付調劑',
+    '2': '未開處方',
+}
 
 EXCLUDE_DIAG_ADJUST = ['22', '25', '30', 'B6']
 
@@ -158,6 +165,22 @@ TREAT_DICT = {
     **DISLOCATE_DRUG_DICT,
     **DISLOCATE_DICT,
     **CARE_DICT,
+}
+
+TREAT_NAME_DICT = {
+    'B41': '針灸治療',
+    'B42': '針灸治療',
+    'B43': '電針治療',
+    'B44': '電針治療',
+    'B45': '複雜性針灸',
+    'B46': '複雜性針灸',
+    'B53': '傷科治療',
+    'B54': '傷科治療',
+    'B55': '複雜傷科',
+    'B56': '複雜傷科',
+    'B61': '脫臼整復首次',
+    'B62': '脫臼整復',
+    'B63': '脫臼整復',
 }
 
 FREQUENCY = {
@@ -699,3 +722,29 @@ def get_apply_date(apply_year, apply_month):
     apply_date = '{0:0>3}{1:0>2}'.format(apply_year-1911, apply_month)
 
     return apply_date
+
+def extract_pharmacy_code(pharmacy_code_str):
+    pharmacy_count = 0
+    pharmacy_code = ''
+    for i in range(len(pharmacy_code_str)):
+        if pharmacy_code_str[i] in ['1', '2']:
+            pharmacy_code = 'A3{0}'.format(pharmacy_code_str[i])
+            pharmacy_count += 1
+
+        if pharmacy_count >= 2:
+            pharmacy_code = ''
+            break
+
+    return pharmacy_code
+
+
+def get_usage(instruction):
+    if '飯前' in instruction:
+        usage = 'AC'
+    elif '飯後' in instruction:
+        usage = 'PC'
+    else:
+        usage = 'PC'
+
+    return usage
+

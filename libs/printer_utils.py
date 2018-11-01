@@ -18,6 +18,8 @@ from printer.print_prescription_ins_form1 import *
 from printer.print_prescription_self_form1 import *
 from printer.print_receipt_ins_form1 import *
 from printer.print_receipt_self_form1 import *
+from printer.print_ins_apply_total_fee import *
+from printer.print_ins_apply_order import *
 
 PRINT_MODE = ['不印', '列印', '詢問', '預覽']
 PRINT_REGISTRATION_FORM = {
@@ -728,3 +730,57 @@ def print_self_receipt(parent, database, system_settings, case_key, print_type, 
         print_receipt_form.preview()
 
     del print_receipt_form
+
+
+# 列印申請總表
+def print_ins_apply_total_fee(parent, database, system_settings, html):
+    print_type = 'print'
+
+    if system_settings.field('列印報表') == '詢問':
+        dialog = QtPrintSupport.QPrintDialog()
+        if dialog.exec() == QtWidgets.QDialog.Rejected:
+            return
+    elif system_settings.field('列印報表') == '預覽':
+        print_type = 'preview'
+
+    print_total_fee = PrintInsApplyTotalFee(
+        parent, database, system_settings,
+        html
+    )
+
+    if print_type == 'print':
+        print_total_fee.print()
+    else:
+        print_total_fee.preview()
+
+    del print_total_fee
+
+
+# 列印醫令明細
+def print_ins_apply_order(parent, database, system_settings, apply_type, ins_apply_key, print_type=None):
+    if print_type is None:  # 如果未指定列印方式，以系統設定為主
+        if system_settings.field('列印報表') == '不印':
+            return
+        elif system_settings.field('列印報表') == '詢問':
+            dialog = QtPrintSupport.QPrintDialog()
+            if dialog.exec() == QtWidgets.QDialog.Rejected:
+                return
+        elif system_settings.field('列印報表') == '預覽':
+            print_type = 'preview'
+        elif system_settings.field('列印報表') == '列印':
+            print_type = 'print'
+
+    print_ins_order = PrintInsApplyOrder(
+        parent, database, system_settings,
+        apply_type, ins_apply_key
+    )
+
+    if print_type == 'print':
+        print_ins_order.print()
+    elif print_type == 'preview':
+        print_ins_order.preview()
+    elif print_type == 'pdf':
+        print_ins_order.save_to_pdf()
+
+    del print_ins_order
+

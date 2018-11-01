@@ -94,5 +94,6 @@ class CheckDatabase(QtWidgets.QDialog):
         self.database.check_field_exists('patient', 'change', ['EMail', 'Email'], 'varchar(100)')
         self.database.check_field_exists('person', 'change', ['EMail', 'Email'], 'varchar(100)')
         self.database.check_field_exists('prescript', 'change', ['price', 'Price'], 'decimal(10,2)')
+        self.database.check_field_exists('prescript', 'change', ['amount', 'Amount'], 'decimal(10,2)')
 
 

@@ -482,3 +482,60 @@ def copy_past_medical_record(
     if copy_prescript:
         if widget.tab_list[0] is not None:
             widget.tab_list[0].copy_past_prescript(case_key)
+
+
+#  取得中(英)文病名
+def get_disease_name(database, disease_code, field_name=None):
+    disease_name = ''
+    if field_name is None:
+        field_name = 'ChineseName'
+
+
+    sql = '''
+        SELECT {0} FROM icd10
+        WHERE
+            ICDCode = "{1}"
+    '''.format(field_name, disease_code)
+
+    rows = database.select_record(sql)
+    if len(rows) <= 0:
+        return disease_name
+
+    row = rows[0]
+    disease_name = string_utils.xstr(row[field_name])
+
+    return disease_name
+
+
+def get_medicine_name(database, ins_code):
+    sql = '''
+        SELECT MedicineName FROM medicine
+        WHERE
+            InsCode = "{0}"
+    '''.format(ins_code)
+
+    rows = database.select_record(sql)
+    if len(rows) <= 0:
+        return ''
+
+    row = rows[0]
+    medicine_name = string_utils.xstr(row['MedicineName'])
+
+    return medicine_name
+
+def get_drug_name(database, ins_code):
+
+    sql = '''
+        SELECT DrugName FROM drug
+        WHERE
+            InsCode = "{0}"
+    '''.format(ins_code)
+
+    rows = database.select_record(sql)
+    if len(rows) <= 0:
+        return ''
+
+    row = rows[0]
+    drug_name = string_utils.xstr(row['DrugName'])
+
+    return drug_name

@@ -16,6 +16,7 @@ from libs import system_utils
 from printer import print_prescription
 
 import ins_prescript_record
+import ins_care_record
 import self_prescript_record
 import medical_record_recently_history
 import medical_record_fees
@@ -357,8 +358,10 @@ class MedicalRecord(QtWidgets.QMainWindow):
 
         # 讀取自費資料
         sql = '''
-            SELECT MedicineSet FROM prescript WHERE
-            CaseKey = {0} AND MedicineSet >= 2
+            SELECT MedicineSet 
+            FROM prescript 
+            WHERE
+                CaseKey = {0} AND MedicineSet >= 2 AND MedicineSet != 11
             GROUP BY MedicineSet ORDER BY MedicineSet
         '''.format(self.case_key)
         rows = self.database.select_record(sql)
@@ -386,10 +389,22 @@ class MedicalRecord(QtWidgets.QMainWindow):
 
     # 新增自費處方
     def add_prescript_tab(self, medicine_set=None):
-        if medicine_set == 1:  # 健保處方頁
+        if medicine_set in (1, 11):  # 健保處方頁  1=健保 11=加強照護
             self.tab_list[0] = ins_prescript_record.InsPrescriptRecord(
                 self, self.database, self.system_settings, self.case_key, 1)
-            self.ui.tabWidget_prescript.addTab(self.tab_list[medicine_set-1], '健保')
+            self.ui.tabWidget_prescript.addTab(self.tab_list[0], '健保')
+            self.ui.tabWidget_prescript.tabBar().setTabButton(
+                self.ui.tabWidget_prescript.indexOf(self.tab_list[0]), QtWidgets.QTabBar.RightSide, None
+            )
+
+            if self.medical_record['TreatType'] in nhi_utils.IMPROVE_CARE_TREAT:
+                self.tab_list[1] = ins_care_record.InsCareRecord(
+                    self, self.database, self.system_settings, self.case_key, 11)
+                self.ui.tabWidget_prescript.addTab(self.tab_list[1], '加強照護')
+                self.ui.tabWidget_prescript.tabBar().setTabButton(
+                    self.ui.tabWidget_prescript.indexOf(self.tab_list[1]), QtWidgets.QTabBar.RightSide, None
+                )
+
             return
 
         set_current_tab = False
@@ -640,6 +655,9 @@ class MedicalRecord(QtWidgets.QMainWindow):
                 except RuntimeError:  # 關閉處方頁, 刪除整個處方
                     self.remove_prescript(medicine_set)
             else:
+                if medicine_set == 11 and self.tab_list[1] is not None:  # 加強照護, 不要清除
+                    continue
+
                 self.remove_prescript(medicine_set)
 
     def remove_prescript(self, medicine_set):

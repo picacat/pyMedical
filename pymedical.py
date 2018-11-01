@@ -224,6 +224,7 @@ class PyMedical(QtWidgets.QMainWindow):
             '健保IC卡資料上傳',
             '申報預檢',
             '健保申報',
+            '健保抽審',
         ]:
             widget.open_dialog()
         elif widget_name == "醫師看診作業":

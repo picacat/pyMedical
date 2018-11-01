@@ -216,6 +216,7 @@ def get_traditional_health_care_fee(database, ins_type, massager):
     return traditional_health_care_fee
 
 
+# 取得醫療費用金額
 def get_ins_fee_from_ins_code(database, ins_code):
     ins_fee = 0
 
@@ -230,6 +231,23 @@ def get_ins_fee_from_ins_code(database, ins_code):
     ins_fee = number_utils.get_integer(row[0]['Amount'])
 
     return ins_fee
+
+
+# 取得醫療費用名稱
+def get_item_name_from_ins_code(database, ins_code):
+    ins_fee = 0
+
+    sql = '''
+        SELECT * FROM charge_settings WHERE
+        InsCode = "{0}"
+    '''.format(ins_code)
+    row = database.select_record(sql)
+    if len(row) <= 0:
+        return ins_fee
+
+    item_name = string_utils.xstr(row[0]['ItemName'])
+
+    return item_name
 
 
 # 取得健保門診診察費

@@ -234,7 +234,7 @@ class InsApplyXML(QtWidgets.QMainWindow):
             d36 = ET.SubElement(dbody, 'd36')
             d36.text = string_utils.xstr(row['DiagFee'])
 
-        pharmacy_code = self._get_pharmacy_code(string_utils.xstr(row['PharmacyCode']))
+        pharmacy_code = nhi_utils.extract_pharmacy_code(string_utils.xstr(row['PharmacyCode']))
         if string_utils.xstr(pharmacy_code) != '':
             d37 = ET.SubElement(dbody, 'd37')
             d37.text = string_utils.xstr(pharmacy_code)
@@ -271,9 +271,11 @@ class InsApplyXML(QtWidgets.QMainWindow):
             if case_key <= 0:
                 continue
 
-            case_row = self._get_case_row(case_key)
-            if len(case_row) <= 0:
+            rows = self._get_case_rows(case_key)
+            if len(rows) <= 0:
                 continue
+
+            case_row = rows[0]
 
             if course == 1:  # 設定診察費
                 self._set_diagnosis(dbody, row)
@@ -524,7 +526,7 @@ class InsApplyXML(QtWidgets.QMainWindow):
         p5 = ET.SubElement(pdata, 'p5')
         p5.text = '{0:07.2f}'.format(prescript_row['Dosage'] / packages)     # 用量
         p7 = ET.SubElement(pdata, 'p7')
-        p7.text = '{0}{1}'.format(nhi_utils.FREQUENCY[packages], self._get_usage(instruction))
+        p7.text = '{0}{1}'.format(nhi_utils.FREQUENCY[packages], nhi_utils.get_usage(instruction))
         p8 = ET.SubElement(pdata, 'p8')
         p8.text = '{0:06.2f}'.format(100)  # 成數
         p9 = ET.SubElement(pdata, 'p9')
@@ -630,30 +632,6 @@ class InsApplyXML(QtWidgets.QMainWindow):
             p20 = ET.SubElement(pdata, 'p20')
             p20.text = string_utils.xstr(row['Class'])
 
-    def _get_pharmacy_code(self, pharmacy_code_str):
-        pharmacy_count = 0
-        pharmacy_code = ''
-        for i in range(len(pharmacy_code_str)):
-            if pharmacy_code_str[i] in ['1', '2']:
-                pharmacy_code = 'A3{0}'.format(pharmacy_code_str[i])
-                pharmacy_count += 1
-
-            if pharmacy_count >= 2:
-                pharmacy_code = ''
-                break
-
-        return pharmacy_code
-
-    def _get_usage(self, instruction):
-        if '飯前' in instruction:
-            usage = 'AC'
-        elif '飯後' in instruction:
-            usage = 'PC'
-        else:
-            usage = 'PC'
-
-        return usage
-
     def _get_name(self, in_name):
         name = ''
         for ch in in_name:
@@ -681,7 +659,7 @@ class InsApplyXML(QtWidgets.QMainWindow):
 
         return rows
 
-    def _get_case_row(self, case_key):
+    def _get_case_rows(self, case_key):
         sql = '''
             SELECT *
             FROM cases
@@ -691,7 +669,7 @@ class InsApplyXML(QtWidgets.QMainWindow):
 
         rows = self.database.select_record(sql)
 
-        return rows[0]
+        return rows
 
     def _get_prescript_rows(self, case_key):
         sql = '''

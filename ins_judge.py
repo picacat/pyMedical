@@ -6,13 +6,15 @@ import sys
 from PyQt5 import QtWidgets, QtGui, QtCore
 import datetime
 from libs import ui_utils
-from libs import date_utils
+from libs import number_utils
 from libs import string_utils
 from libs import nhi_utils
 from classes import table_widget
+import ins_apply_tab
+from dialog import dialog_ins_judge
 
 
-# 候診名單 2018.01.31
+# 健保抽審 2018.01.31
 class InsJudge(QtWidgets.QMainWindow):
     # 初始化
     def __init__(self, parent=None, *args):
@@ -20,11 +22,15 @@ class InsJudge(QtWidgets.QMainWindow):
         self.parent = parent
         self.database = args[0]
         self.system_settings = args[1]
+
+        self.apply_year = None
+        self.apply_month = None
+        self.clinic_id = None
+        self.period = '全月'
         self.ui = None
 
         self._set_ui()
         self._set_signal()
-        # self.read_wait()   # activate by pymedical.py->tab_changed
 
     # 解構
     def __del__(self):
@@ -48,10 +54,48 @@ class InsJudge(QtWidgets.QMainWindow):
 
     # 設定信號
     def _set_signal(self):
-        self.ui.action_medical_record.triggered.connect(self.open_medical_record)
+        self.ui.action_requery.triggered.connect(self.open_dialog)
         self.ui.action_close.triggered.connect(self.close_app)
 
-    def open_medical_record(self):
-        # case_key = self.table_widget_waiting_list.field_value(1)
-        case_key = 0
-        self.parent.open_medical_record(case_key, '申報檢查')
+    def open_medical_record(self, case_key):
+        self.parent.open_medical_record(case_key, '健保抽審')
+
+    def open_dialog(self):
+        dialog = dialog_ins_judge.DialogInsJudge(self.ui, self.database, self.system_settings)
+        if self.apply_year is not None:
+            dialog.ui.comboBox_year.setCurrentText(string_utils.xstr(self.apply_year))
+            dialog.ui.comboBox_month.setCurrentText(string_utils.xstr(self.apply_month))
+            dialog.ui.lineEdit_clinic_id.setText(self.clinic_id)
+            dialog.ui.comboBox_period.setCurrentText(self.period)
+            if self.apply_type == '申報':
+                dialog.ui.radioButton_apply.setChecked(True)
+            else:
+                dialog.ui.radioButton_reapply.setChecked(True)
+
+        if dialog.exec_():
+            self.apply_year = number_utils.get_integer(dialog.ui.comboBox_year.currentText())
+            self.apply_month = number_utils.get_integer(dialog.ui.comboBox_month.currentText())
+            self.clinic_id = dialog.ui.lineEdit_clinic_id.text()
+            self.period = dialog.ui.comboBox_period.currentText()
+
+            if dialog.ui.radioButton_apply.isChecked():
+                self.apply_type = '申報'  # 申報
+            else:
+                self.apply_type = '補報'  # 補報
+
+            self.apply_date = '{0:0>3}{1:0>2}'.format(self.apply_year-1911, self.apply_month)
+            self._add_ins_apply_tab()
+
+        dialog.close_all()
+        dialog.deleteLater()
+
+    def _add_ins_apply_tab(self):
+        self.ui.tabWidget_ins_data.clear()
+
+        self.tab_ins_apply_tab = ins_apply_tab.InsApplyTab(
+            self, self.database, self.system_settings,
+            self.apply_year, self.apply_month,
+            self.period, self.apply_type, self.clinic_id
+        )
+
+        self.ui.tabWidget_ins_data.addTab(self.tab_ins_apply_tab, '申報資料')
