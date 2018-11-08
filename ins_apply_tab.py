@@ -75,6 +75,7 @@ class InsApplyTab(QtWidgets.QMainWindow):
                 ClinicID = "{3}"
             GROUP BY CaseType
         '''.format(self.apply_date, self.apply_type_code, self.period, self.clinic_id)
+
         rows = self.database.select_record(sql)
         for row in rows:
             case_type = string_utils.xstr(row['CaseType'])

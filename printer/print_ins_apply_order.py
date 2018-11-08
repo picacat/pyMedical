@@ -4,6 +4,7 @@
 from PyQt5 import QtGui, QtCore, QtPrintSupport, QtWidgets
 from PyQt5.QtPrintSupport import QPrinter
 import datetime
+import os
 
 from libs import printer_utils
 from libs import system_utils
@@ -73,9 +74,13 @@ class PrintInsApplyOrder:
             return None
 
         row = rows[0]
-        pdf_file_name = '{0}/EMR-{1}-{2}-{3}.pdf'.format(
-            nhi_utils.XML_OUT_PATH,
-            string_utils.xstr(row['ApplyDate']),
+        # 14: 中醫 A:病歷本文 案件類別 流水號6碼
+        export_dir = '{0}/emr{1}'.format(nhi_utils.XML_OUT_PATH, row['ApplyDate'])
+        if not os.path.exists(export_dir):
+            os.mkdir(export_dir)
+
+        pdf_file_name = '{0}/ins_order_{1}{2:0>6}.pdf'.format(
+            export_dir,
             string_utils.xstr(row['CaseType']),
             string_utils.xstr(row['Sequence']),
         )
@@ -510,7 +515,7 @@ class PrintInsApplyOrder:
     def _set_diagnosis(self, row):
         amount = number_utils.get_integer(row['DiagFee'])
         unit_price = number_utils.get_integer(
-            charge_utils.get_diag_fee_from_diag_code(
+            charge_utils.get_ins_fee_from_ins_code(
                 self.database, string_utils.xstr(row['DiagCode']))
         )
 
@@ -546,7 +551,7 @@ class PrintInsApplyOrder:
         ins_code = 'A90'
 
         amount = number_utils.get_integer(
-            charge_utils.get_diag_fee_from_diag_code(self.database, ins_code)
+            charge_utils.get_ins_fee_from_ins_code(self.database, ins_code)
         )
         unit_price = amount
 
@@ -680,7 +685,7 @@ class PrintInsApplyOrder:
     def _set_A21(self, row, case_row, order_type, pres_days):
         ins_code = 'A21'
         unit_price = number_utils.get_integer(
-            charge_utils.get_diag_fee_from_diag_code(self.database, ins_code)
+            charge_utils.get_ins_fee_from_ins_code(self.database, ins_code)
         )
         amount = unit_price * pres_days
         if order_type == '4':  # 不另計價
@@ -728,7 +733,7 @@ class PrintInsApplyOrder:
 
         self.sequence += 1
         unit_price = number_utils.get_integer(
-            charge_utils.get_diag_fee_from_diag_code(self.database, pharmacy_code)
+            charge_utils.get_diag_ins_from_ins_code(self.database, pharmacy_code)
         )
         amount = unit_price
 

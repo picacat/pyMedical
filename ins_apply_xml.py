@@ -5,6 +5,7 @@ import sys
 
 from PyQt5 import QtWidgets, QtGui, QtCore
 import datetime
+import subprocess
 
 from libs import date_utils
 from libs import string_utils
@@ -71,6 +72,7 @@ class InsApplyXML(QtWidgets.QMainWindow):
         )
 
         self._write_xml_file(xml_file_name)
+        self._zip_xml_file(xml_file_name)
 
     def _write_xml_file(self, xml_file_name):
         rows = self._get_ins_rows()
@@ -296,7 +298,7 @@ class InsApplyXML(QtWidgets.QMainWindow):
     def _set_diagnosis(self, dbody, row):
         amount = number_utils.get_integer(row['DiagFee'])
         unit_price = number_utils.get_integer(
-            charge_utils.get_diag_fee_from_diag_code(
+            charge_utils.get_ins_fee_from_ins_code(
                 self.database, string_utils.xstr(row['DiagCode']))
         )
 
@@ -334,7 +336,7 @@ class InsApplyXML(QtWidgets.QMainWindow):
         self.sequence += 1
         ins_code = 'A90'
         amount = number_utils.get_integer(
-            charge_utils.get_diag_fee_from_diag_code(self.database, ins_code)
+            charge_utils.get_ins_fee_from_ins_code(self.database, ins_code)
         )
         unit_price = amount
 
@@ -423,7 +425,7 @@ class InsApplyXML(QtWidgets.QMainWindow):
         self.sequence += 1
         ins_code = 'A21'
         unit_price = number_utils.get_integer(
-            charge_utils.get_diag_fee_from_diag_code(self.database, ins_code)
+            charge_utils.get_ins_fee_from_ins_code(self.database, ins_code)
         )
         amount = unit_price * pres_days
 
@@ -476,7 +478,7 @@ class InsApplyXML(QtWidgets.QMainWindow):
 
         self.sequence += 1
         unit_price = number_utils.get_integer(
-            charge_utils.get_diag_fee_from_diag_code(self.database, pharmacy_code)
+            charge_utils.get_ins_fee_from_ins_code(self.database, pharmacy_code)
         )
         amount = unit_price
 
@@ -686,4 +688,14 @@ class InsApplyXML(QtWidgets.QMainWindow):
         rows = self.database.select_record(sql)
 
         return rows
+
+    def _zip_xml_file(self, xml_file):
+        zip_file = '{0}/{1}.zip'.format(
+            nhi_utils.XML_OUT_PATH,
+            self.ins_total_fee['apply_date'],
+        )
+
+        cmd = ['7z', 'a', '-tzip', zip_file, xml_file, '-o{0}'.format(nhi_utils.XML_OUT_PATH)]
+        sp = subprocess.Popen(cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
+        sp.communicate()
 

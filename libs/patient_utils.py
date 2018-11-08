@@ -1,6 +1,8 @@
 from dialog import dialog_patient
 import datetime
 
+from libs import string_utils
+
 
 # 尋找病患資料
 def search_patient(ui, database, settings, keyword):
@@ -75,3 +77,49 @@ def get_visit(database, patient_key):
         visit = '初診'
 
     return visit
+
+
+def get_init_date(database, patient_key):
+    sql = '''
+            SELECT * FROM patient
+            WHERE
+                PatientKey = {0}
+        '''.format(patient_key)
+    rows = database.select_record(sql)
+    if len(rows) <= 0:
+        return None
+
+    row = rows[0]
+
+    init_date = string_utils.xstr(row['InitDate'])
+    if init_date != '':
+        init_date = string_utils.xstr(row['InitDate'].date())
+    else:
+        sql = '''
+                SELECT CaseDate FROM cases
+                WHERE
+                    InsType = "健保" AND
+                    PatientKey = {0}
+                ORDER BY CaseDate LIMIT 1
+            '''.format(patient_key)
+
+        rows = database.select_record(sql)
+        if len(rows) > 0:
+            init_date = rows[0]['CaseDate'].date()
+
+    return init_date
+
+
+def get_patient_row(database, patient_key):
+    sql = '''
+        SELECT * FROM patient
+        WHERE
+            PatientKey = {0}
+    '''.format(patient_key)
+
+    rows = database.select_record(sql)
+
+    if len(rows) <= 0:
+        return None
+
+    return rows[0]

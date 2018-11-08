@@ -3,15 +3,15 @@
 
 import sys
 
-from PyQt5 import QtWidgets, QtGui, QtCore
-import datetime
+from PyQt5 import QtWidgets
+from PyQt5.QtWidgets import QMessageBox, QPushButton
+
 from libs import ui_utils
 from libs import number_utils
 from libs import string_utils
-from libs import nhi_utils
-from classes import table_widget
 import ins_apply_tab
 from dialog import dialog_ins_judge
+import ins_upload_emr
 
 
 # 健保抽審 2018.01.31
@@ -55,6 +55,7 @@ class InsJudge(QtWidgets.QMainWindow):
     # 設定信號
     def _set_signal(self):
         self.ui.action_requery.triggered.connect(self.open_dialog)
+        self.ui.action_upload_emr.triggered.connect(self._upload_emr)
         self.ui.action_close.triggered.connect(self.close_app)
 
     def open_medical_record(self, case_key):
@@ -67,6 +68,7 @@ class InsJudge(QtWidgets.QMainWindow):
             dialog.ui.comboBox_month.setCurrentText(string_utils.xstr(self.apply_month))
             dialog.ui.lineEdit_clinic_id.setText(self.clinic_id)
             dialog.ui.comboBox_period.setCurrentText(self.period)
+            dialog.ui.dateEdit_apply.setDate(self.apply_upload_date)
             if self.apply_type == '申報':
                 dialog.ui.radioButton_apply.setChecked(True)
             else:
@@ -84,6 +86,7 @@ class InsJudge(QtWidgets.QMainWindow):
                 self.apply_type = '補報'  # 補報
 
             self.apply_date = '{0:0>3}{1:0>2}'.format(self.apply_year-1911, self.apply_month)
+            self.apply_upload_date = dialog.ui.dateEdit_apply.date()
             self._add_ins_apply_tab()
 
         dialog.close_all()
@@ -99,3 +102,28 @@ class InsJudge(QtWidgets.QMainWindow):
         )
 
         self.ui.tabWidget_ins_data.addTab(self.tab_ins_apply_tab, '申報資料')
+
+
+    # 電子化抽審
+    def _upload_emr(self):
+        msg_box = QMessageBox()
+        msg_box.setIcon(QMessageBox.Warning)
+        msg_box.setWindowTitle('電子化抽審')
+        msg_box.setText("<font size='4' color='red'><b>確定上傳電子抽審檔案?</b></font>")
+        msg_box.setInformativeText("注意！資料上傳前, 請檢查病歷是否完整!")
+        msg_box.addButton(QPushButton("取消"), QMessageBox.NoRole)
+        msg_box.addButton(QPushButton("確定"), QMessageBox.YesRole)
+        upload_emr = msg_box.exec_()
+        if not upload_emr:
+            return
+
+        ins_emr = ins_upload_emr.InsUploadEMR(
+            self, self.database, self.system_settings,
+            self.apply_date, self.apply_type,
+            self.period, self.clinic_id,
+            self.apply_upload_date,
+        )
+
+        ins_emr.generate_emr_files()
+
+        del ins_emr

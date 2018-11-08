@@ -92,6 +92,7 @@ UI_DIALOG_IC_RECORD_UPLOAD = "dialog_ic_record_upload.ui"
 UI_DIALOG_INCOME = "dialog_income.ui"
 UI_DIALOG_DEBT = "dialog_debt.ui"
 UI_DIALOG_RESERVATION_BOOKING = "dialog_reservation_booking.ui"
+UI_DIALOG_ELECTRIC_ACUPUNCTURE = "dialog_electric_acupuncture.ui"
 
 UI_DIALOG_INS_CHECK = "dialog_ins_check.ui"
 UI_DIALOG_INS_APPLY = "dialog_ins_apply.ui"

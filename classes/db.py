@@ -6,6 +6,7 @@ import mysql.connector as mysql
 import os
 from libs import ui_utils
 from libs import string_utils
+from libs import charge_utils
 
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname("__file__")))
@@ -202,6 +203,12 @@ class Database:
             return
 
         self.create_table(table_name)
+        if table_name == 'charge_settings':
+            charge_utils.set_nhi_basic_data(self)
+            charge_utils.set_diag_share_basic_data(self)
+            charge_utils.set_drug_share_basic_data(self)
+            charge_utils.set_discount_basic_data(self)
+            charge_utils.set_regist_fee_basic_data(self)
 
     def get_last_auto_increment_key(self, table_name):
         sql = '''
@@ -216,6 +223,7 @@ class Database:
     def check_field_exists(self, table_name, alter_type, column, data_type):
         if type(column) is list:
             search_column = column[0]
+            new_column = column[1]
         else:
             search_column = column
 
@@ -225,7 +233,8 @@ class Database:
         if alter_type == 'add' and len(rows) > 0:  # 新欄位已加入
             return
         elif alter_type == 'change' and len(rows) > 0:
-            if string_utils.xstr(rows[0]['Type']).lower() == data_type.lower():
+            if (string_utils.xstr(rows[0]['Field']) == new_column and
+                    string_utils.xstr(rows[0]['Type']).lower() == data_type.lower()):
                 return
 
         if alter_type == 'add':

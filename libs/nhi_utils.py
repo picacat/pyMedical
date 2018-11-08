@@ -72,8 +72,8 @@ AGENT_SHARE = [
     '新生兒', '愛滋病', '替代役男', '天然災害',
 ]
 
-ACUPUNCTURE_TREAT = ['針灸治療', '電針治療', '複雜性針灸',]
-MASSAGE_TREAT = ['傷科治療', '複雜性傷科',]
+ACUPUNCTURE_TREAT = ['針灸治療', '電針治療', '複雜針灸',]
+MASSAGE_TREAT = ['傷科治療', '複雜傷科',]
 DISLOCATE_TREAT = ['脫臼復位', '脫臼整復首次', '脫臼整復',]
 INS_TREAT = ACUPUNCTURE_TREAT + MASSAGE_TREAT + DISLOCATE_TREAT
 
@@ -124,20 +124,20 @@ INJURY_DICT = {
 ACUPUNCTURE_DRUG_DICT = {
     '針灸治療': 'B41',
     '電針治療': 'B43',
-    '複雜性針灸': 'B45',
+    '複雜針灸': 'B45',
 }
 ACUPUNCTURE_DICT = {
     '針灸治療': 'B42',
     '電針治療': 'B44',
-    '複雜性針灸': 'B46',
+    '複雜針灸': 'B46',
 }
 MASSAGE_DRUG_DICT = {
     '傷科治療': 'B53',
-    '複雜性傷科': 'B55',
+    '複雜傷科': 'B55',
 }
 MASSAGE_DICT = {
     '傷科治療': 'B54',
-    '複雜性傷科': 'B56',
+    '複雜傷科': 'B56',
 }
 DISLOCATE_DRUG_DICT = {
     '脫臼復位': 'B57',
@@ -172,8 +172,8 @@ TREAT_NAME_DICT = {
     'B42': '針灸治療',
     'B43': '電針治療',
     'B44': '電針治療',
-    'B45': '複雜性針灸',
-    'B46': '複雜性針灸',
+    'B45': '複雜針灸',
+    'B46': '複雜針灸',
     'B53': '傷科治療',
     'B54': '傷科治療',
     'B55': '複雜傷科',

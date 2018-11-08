@@ -51,15 +51,16 @@ class CvtUtec():
             self._cvt_med2000_cases()
 
     def _cvt_groups(self):
-        self._cvt_med2000_groups()
-        self._cvt_med2000_groups_name()
-        self._cvt_med2000_tongue_groups()
-        self._cvt_med2000_pulse_groups()
-        self._cvt_med2000_remark_groups()
-        self._cvt_med2000_disease_groups()
-        self._cvt_med2000_other_groups()
+        self.parent.ui.label_progress.setText('詞庫類別轉檔')
+        self._cvt_pymedical_groups()
+        self._cvt_groups_name()
+        self._cvt_tongue_groups()
+        self._cvt_pulse_groups()
+        self._cvt_remark_groups()
+        self._cvt_pymedical_disease_groups()
+        self._cvt_pymedical_other_groups()
 
-    def _cvt_med2000_groups(self):
+    def _cvt_pymedical_groups(self):
         fields = [
             'DictGroupsType', 'DictGroupsTopLevel', 'DictGroupsName'
         ]
@@ -119,12 +120,17 @@ class CvtUtec():
         data = ['成方類別', None, '成方']
         self.database.insert_record('dict_groups', fields, data)
 
-    def _cvt_med2000_groups_name(self):
+    def _cvt_groups_name(self):
         fields = [
             'DictGroupsType', 'DictGroupsTopLevel', 'DictGroupsName'
         ]
 
-        sql = 'SELECT * FROM clinicgroups ORDER BY GroupsType, GroupsName'
+        if self.product_type == 'Med2000':
+            group_file = 'clinicgroups'
+        else:
+            group_file = 'groups'
+
+        sql = 'SELECT * FROM {0} ORDER BY GroupsType, GroupsName'.format(group_file)
         rows = self.source_db.select_record(sql)
         self.progress_bar.setMaximum(len(rows))
         self.progress_bar.setValue(0)
@@ -160,7 +166,7 @@ class CvtUtec():
             ]
             self.database.insert_record('dict_groups', fields, data)
 
-    def _cvt_med2000_tongue_groups(self):
+    def _cvt_tongue_groups(self):
         fields = [
             'DictGroupsType', 'DictGroupsTopLevel', 'DictGroupsName'
         ]
@@ -193,15 +199,15 @@ class CvtUtec():
             ]
             self.database.insert_record('dict_groups', fields, data)
 
-    def _cvt_med2000_pulse_groups(self):
+    def _cvt_pulse_groups(self):
         sql = 'UPDATE clinic SET groups = "一般" WHERE ClinicType = "脈象"'
         self.source_db.exec_sql(sql)
 
-    def _cvt_med2000_remark_groups(self):
+    def _cvt_remark_groups(self):
         sql = 'UPDATE clinic SET groups = "一般" WHERE ClinicType = "備註"'
         self.source_db.exec_sql(sql)
 
-    def _cvt_med2000_disease_groups(self):
+    def _cvt_pymedical_disease_groups(self):
         fields = [
             'DictGroupsType', 'DictGroupsTopLevel', 'DictGroupsName'
         ]
@@ -1626,7 +1632,7 @@ class CvtUtec():
         data = ['病名', '20罹病與致死之外因', 'Y84醫療處置引起病人異常反應']
         self.database.insert_record('dict_groups', fields, data)
 
-    def _cvt_med2000_other_groups(self):
+    def _cvt_pymedical_other_groups(self):
         sql = 'UPDATE clinic SET ClinicType = "辨證" WHERE ClinicType = "內辨"'
         self.source_db.exec_sql(sql)
         sql = 'UPDATE clinic SET ClinicType = "辨證" WHERE ClinicType = "傷辨"'
@@ -1665,6 +1671,7 @@ class CvtUtec():
                     self.database.insert_record('dosage', fields, data)
 
     def _cvt_med2000_cases(self):
+        self.parent.ui.label_progress.setText('Med2000病歷檔轉檔')
         self.progress_bar.setMaximum(10)
         self.progress_bar.setValue(0)
 
@@ -1692,7 +1699,7 @@ class CvtUtec():
         self.database.exec_sql(sql)
         self.progress_bar.setValue(self.progress_bar.value() + 1)
 
-        sql = 'UPDATE cases SET TreatType = "複雜性針灸" WHERE TreatType = "複針給藥"'
+        sql = 'UPDATE cases SET TreatType = "複雜針灸" WHERE TreatType IN ("複針給藥", "複針")'
         self.database.exec_sql(sql)
         self.progress_bar.setValue(self.progress_bar.value() + 1)
 
@@ -1700,7 +1707,7 @@ class CvtUtec():
         self.database.exec_sql(sql)
         self.progress_bar.setValue(self.progress_bar.value() + 1)
 
-        sql = 'UPDATE cases SET TreatType = "複雜性傷科" WHERE TreatType = "複傷給藥"'
+        sql = 'UPDATE cases SET TreatType = "複雜傷科" WHERE TreatType IN ("複傷給藥", "複傷")'
         self.database.exec_sql(sql)
         self.progress_bar.setValue(self.progress_bar.value() + 1)
 
@@ -1709,6 +1716,7 @@ class CvtUtec():
         self.progress_bar.setValue(self.progress_bar.value() + 1)
 
     def _cvt_medical_patient(self):
+        self.parent.ui.label_progress.setText('病患基本資料檔轉檔')
         self.progress_bar.setMaximum(4)
         self.progress_bar.setValue(0)
 
@@ -1729,6 +1737,7 @@ class CvtUtec():
         self.progress_bar.setValue(self.progress_bar.value() + 1)
 
     def _cvt_medical_cases(self):
+        self.parent.ui.label_progress.setText('Medical病歷檔轉檔')
         self.progress_bar.setMaximum(7)
         self.progress_bar.setValue(0)
 
@@ -1761,6 +1770,7 @@ class CvtUtec():
         self.progress_bar.setValue(self.progress_bar.value() + 1)
 
     def _cvt_medical_dosage(self):
+        self.parent.ui.label_progress.setText('處方用藥轉檔')
         sql = 'TRUNCATE dosage'
         self.database.exec_sql(sql)
 
@@ -1854,6 +1864,7 @@ class CvtUtec():
                 self.database.insert_record('dosage', fields, data)
 
     def _cvt_medical_reserve(self):
+        self.parent.ui.label_progress.setText('預約掛號檔轉檔')
         self.progress_bar.setMaximum(1)
         self.progress_bar.setValue(0)
 

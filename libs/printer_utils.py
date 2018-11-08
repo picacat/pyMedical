@@ -20,6 +20,8 @@ from printer.print_receipt_ins_form1 import *
 from printer.print_receipt_self_form1 import *
 from printer.print_ins_apply_total_fee import *
 from printer.print_ins_apply_order import *
+from printer.print_medical_records import *
+from printer.print_medical_chart import *
 
 PRINT_MODE = ['不印', '列印', '詢問', '預覽']
 PRINT_REGISTRATION_FORM = {
@@ -82,7 +84,7 @@ def get_printer(system_settings, printer_name):
 
 
 # 處方箋格式1
-def get_case_html_1(database, case_key):
+def get_case_html_1(database, case_key, background_color=None):
     sql = '''
         SELECT cases.*, patient.Birthday, patient.ID, patient.Gender FROM cases 
             LEFT JOIN patient on patient.PatientKey = cases.PatientKey
@@ -113,9 +115,14 @@ def get_case_html_1(database, case_key):
     if id is not None:
         id = id[:6] + '****'
 
+    if background_color is not None:
+        color = ' style="background-color: {0}"'.format(background_color)
+    else:
+        color = ''
+
     html = '''
         <tr>
-          <td>門診日:{case_date}</td>
+          <td{color}>門診日:{case_date}</td>
           <td>病歷號:{patient_key}</td>
           <td>姓名:{name} ({gender})</td>
           <td>身分證:{id}</td>
@@ -139,6 +146,7 @@ def get_case_html_1(database, case_key):
         share_type=string_utils.xstr(row['Share']),
         card=card,
         regist_no=string_utils.xstr(row['RegistNo']),
+        color=color,
     )
 
     return html
@@ -216,7 +224,7 @@ def get_disease(database, case_key):
     return disease
 
 
-def get_prescript_html(database, system_setting, case_key, medicine_set, blocks):
+def get_prescript_html(database, system_setting, case_key, medicine_set, blocks, print_total_dosage=True):
     pres_days = case_utils.get_pres_days(database, case_key, medicine_set)
     sql = '''
         SELECT Treatment FROM cases
@@ -274,7 +282,7 @@ def get_prescript_html(database, system_setting, case_key, medicine_set, blocks)
                 location = ''
 
             total_dosage=string_utils.xstr(prescript_block[4])
-            if system_setting.field('列印藥品總量') != 'Y':
+            if system_setting.field('列印藥品總量') != 'Y' or not print_total_dosage:
                 total_dosage = ''
 
             prescript_line += '''
@@ -454,7 +462,6 @@ def get_instruction_html(database, case_key, medicine_set):
     if pres_days > 0:
         html = '''
               主治醫師: {doctor} 調劑者: {doctor} 用藥指示: 一日{package}包, 共{pres_days}日份 {instruction}服用
-               (* 本處方用藥在醫學文獻上, 尚無副作用之記載)
         '''.format(
             doctor=string_utils.xstr(row['Doctor']),
             package=string_utils.xstr(packages),
@@ -464,7 +471,6 @@ def get_instruction_html(database, case_key, medicine_set):
     else:
         html = '''
               主治醫師: {doctor}
-              (* 本處方在醫學文獻上, 尚無副作用之記載)
         '''.format(
             doctor=string_utils.xstr(row['Doctor']),
         )
@@ -784,3 +790,61 @@ def print_ins_apply_order(parent, database, system_settings, apply_type, ins_app
 
     del print_ins_order
 
+
+# 列印雙月病歷
+def print_medical_records(parent, database, system_settings,
+                          patient_key, start_date, end_date, print_type=None):
+    if print_type is None:  # 如果未指定列印方式，以系統設定為主
+        if system_settings.field('列印報表') == '不印':
+            return
+        elif system_settings.field('列印報表') == '詢問':
+            dialog = QtPrintSupport.QPrintDialog()
+            if dialog.exec() == QtWidgets.QDialog.Rejected:
+                return
+        elif system_settings.field('列印報表') == '預覽':
+            print_type = 'preview'
+        elif system_settings.field('列印報表') == '列印':
+            print_type = 'print'
+
+    print_cases = PrintMedicalRecords(
+        parent, database, system_settings,
+        patient_key, start_date, end_date,
+    )
+
+    if print_type == 'print':
+        print_cases.print()
+    elif print_type == 'preview':
+        print_cases.preview()
+    elif print_type == 'pdf':
+        print_cases.save_to_pdf()
+
+    del print_cases
+
+
+# 列印雙月病歷首頁
+def print_medical_chart(parent, database, system_settings, patient_key, apply_date, print_type=None):
+    if print_type is None:  # 如果未指定列印方式，以系統設定為主
+        if system_settings.field('列印報表') == '不印':
+            return
+        elif system_settings.field('列印報表') == '詢問':
+            dialog = QtPrintSupport.QPrintDialog()
+            if dialog.exec() == QtWidgets.QDialog.Rejected:
+                return
+        elif system_settings.field('列印報表') == '預覽':
+            print_type = 'preview'
+        elif system_settings.field('列印報表') == '列印':
+            print_type = 'print'
+
+    print_chart = PrintMedicalChart(
+        parent, database, system_settings,
+        patient_key, apply_date,
+    )
+
+    if print_type == 'print':
+        print_chart.print()
+    elif print_type == 'preview':
+        print_chart.preview()
+    elif print_type == 'pdf':
+        print_chart.save_to_pdf()
+
+    del print_chart

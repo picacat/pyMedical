@@ -42,10 +42,13 @@ class DialogInsJudge(QtWidgets.QDialog):
         self.ui.lineEdit_clinic_name.setText(self.system_settings.field('院所名稱'))
         self.ui.lineEdit_clinic_id.setText(self.system_settings.field('院所代號'))
         self._set_combo_box()
+        self._set_apply_date()
 
     # 設定信號
     def _set_signal(self):
         self.ui.buttonBox.accepted.connect(self.accepted_button_clicked)
+        self.ui.comboBox_year.currentTextChanged.connect(self._set_apply_date)
+        self.ui.comboBox_month.currentTextChanged.connect(self._set_apply_date)
 
     def _set_combo_box(self):
         year_list = []
@@ -57,6 +60,17 @@ class DialogInsJudge(QtWidgets.QDialog):
         ui_utils.set_combo_box(self.ui.comboBox_year, year_list)
         self.ui.comboBox_year.setCurrentText(str(current_year))
         self.ui.comboBox_month.setCurrentText(str(current_month))
+
+    def _set_apply_date(self):
+        apply_date = datetime.datetime.strptime(
+            '{0}-{1}-01'.format(
+                self.ui.comboBox_year.currentText(),
+                self.ui.comboBox_month.currentText(),
+            ),
+            '%Y-%m-%d'
+        )
+
+        self.ui.dateEdit_apply.setDate(apply_date)
 
     def accepted_button_clicked(self):
         pass

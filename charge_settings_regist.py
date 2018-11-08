@@ -7,6 +7,7 @@ from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtWidgets import QMessageBox, QPushButton
 from libs import ui_utils
 from libs import string_utils
+from libs import charge_utils
 from classes import table_widget
 from dialog import dialog_input_regist, dialog_input_discount
 
@@ -134,7 +135,8 @@ class ChargeSettingsRegist(QtWidgets.QMainWindow):
         self.table_widget_regist_fee.set_db_data(sql, self._set_regist_fee_data)
         row_count = self.table_widget_regist_fee.row_count()
         if row_count <= 0:
-            self._set_regist_fee_basic_data()
+            charge_utils.set_regist_fee_basic_data(self.database)
+            self._read_regist_fee()
 
     def _set_regist_fee_data(self, rec_no, rec):
         regist_fee_rec = [
@@ -160,43 +162,14 @@ class ChargeSettingsRegist(QtWidgets.QMainWindow):
                     QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
                 )
 
-    def _set_regist_fee_basic_data(self):
-        fields = ['ChargeType', 'ItemName', 'InsType', 'ShareType', 'TreatType', 'Course',
-                  'Amount', 'Remark']
-        data = [
-            ('掛號費', '基本掛號費', '健保', '不分類', '不分類', '首次', 100, None),
-            ('掛號費', '基本掛號費', '自費', '不分類', '不分類', '首次', 50, None),
-            ('掛號費', '民俗調理費', '健保', '不分類', '不分類', '首次', 50, None),
-            ('掛號費', '民俗調理費', '自費', '不分類', '不分類', '首次', 100, None),
-            ('掛號費', '欠卡費', '健保', '不分類', '不分類', '首次', 500, None),
-            ('掛號費', '內科掛號費', '健保', '基層醫療', '內科', '首次', 100, None),
-            ('掛號費', '傷科首次掛號費', '健保', '基層醫療', '傷科治療', '首次', 100, None),
-            ('掛號費', '傷科療程掛號費', '健保', '基層醫療', '傷科治療', '療程', 100, None),
-            ('掛號費', '針灸首次掛號費', '健保', '基層醫療', '針灸治療', '首次', 100, None),
-            ('掛號費', '針灸療程掛號費', '健保', '基層醫療', '針灸治療', '療程', 150, None),
-            ('掛號費', '榮民內科掛號費', '健保', '榮民', '內科', '首次', 0, None),
-            ('掛號費', '榮民傷科首次掛號費', '健保', '榮民', '傷科治療', '首次', 0, None),
-            ('掛號費', '榮民傷科療程掛號費', '健保', '榮民', '傷科治療', '療程', 0, None),
-            ('掛號費', '榮民針灸首次掛號費', '健保', '榮民', '針灸治療', '首次', 0, None),
-            ('掛號費', '榮民針灸療程掛號費', '健保', '榮民', '針灸治療', '療程', 0, None),
-            ('掛號費', '低收入戶內科掛號費', '健保', '低收入戶', '內科', '首次', 0, None),
-            ('掛號費', '低收入戶傷科首次掛號費', '健保', '低收入戶', '傷科治療', '首次', 0, None),
-            ('掛號費', '低收入戶傷科療程掛號費', '健保', '低收入戶', '傷科治療', '療程', 0, None),
-            ('掛號費', '低收入戶針灸首次掛號費', '健保', '低收入戶', '針灸治療', '首次', 0, None),
-            ('掛號費', '低收入戶針灸療程掛號費', '健保', '低收入戶', '針灸治療', '療程', 0, None),
-        ]
-        for rec in data:
-            self.database.insert_record('charge_settings', fields, rec)
-
-        self._read_regist_fee()
-
     # 掛號費優待 *********************************************************************************************************
     def _read_discount(self):
         sql = 'SELECT * FROM charge_settings WHERE ChargeType = "掛號費優待" ORDER BY ChargeSettingsKey'
         self.table_widget_discount.set_db_data(sql, self._set_discount_data)
         row_count = self.table_widget_discount.row_count()
         if row_count <= 0:
-            self._set_discount_basic_data()
+            charge_utils.set_discount_basic_data(self.database)
+            self._read_discount()
 
     def _set_discount_data(self, rec_no, rec):
         discount_rec = [
@@ -216,21 +189,6 @@ class ChargeSettingsRegist(QtWidgets.QMainWindow):
                 self.ui.tableWidget_discount.item(rec_no, column).setTextAlignment(
                     QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
                 )
-
-    def _set_discount_basic_data(self):
-        fields = ['ChargeType', 'ItemName', 'InsType', 'ShareType', 'TreatType',
-                  'Amount', 'Remark']
-        data = [
-            ('掛號費優待', '年長病患', None, None, None, 0, None),
-            ('掛號費優待', '殘障病患', None, None, None, 0, None),
-            ('掛號費優待', '本院員工', None, None, None, 0, None),
-            ('掛號費優待', '其他優待', None, None, None, 0, None),
-        ]
-
-        for rec in data:
-            self.database.insert_record('charge_settings', fields, rec)
-
-        self._read_discount()
 
     def _discount_add(self):
         dialog = dialog_input_discount.DialogInputDiscount(self, self.database, self.system_settings)

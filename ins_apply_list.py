@@ -4,12 +4,15 @@
 import sys
 
 from PyQt5 import QtWidgets, QtGui, QtCore
+from PyQt5.QtWidgets import QInputDialog
 
 from classes import table_widget
 from libs import ui_utils
 from libs import string_utils
 from libs import nhi_utils
 from libs import printer_utils
+from libs import date_utils
+
 from dialog import dialog_course_list
 
 
@@ -62,9 +65,12 @@ class InsApplyList(QtWidgets.QMainWindow):
     # 設定信號
     def _set_signal(self):
         self.ui.tableWidget_ins_apply_list.doubleClicked.connect(self.open_medical_record)
-        self.ui.toolButton_open_medical_record.clicked.connect(self.open_medical_record)
+        self.ui.toolButton_jump.clicked.connect(self._jump_sequence)
         self.ui.toolButton_bookmark.clicked.connect(self._set_bookmark)
+        self.ui.toolButton_open_medical_record.clicked.connect(self.open_medical_record)
         self.ui.toolButton_print_order.clicked.connect(self._print_order)
+        self.ui.toolButton_print_medical_records.clicked.connect(self._print_medical_records)
+        self.ui.toolButton_print_medical_chart.clicked.connect(self._print_medical_chart)
 
     def open_medical_record(self):
         ins_apply_key = self.table_widget_ins_apply_list.field_value(0)
@@ -82,7 +88,6 @@ class InsApplyList(QtWidgets.QMainWindow):
         row = rows[0]
         if string_utils.xstr(row['SpecialCode1']) == nhi_utils.SPECIAL_CODE_DICT['腦血管疾病']:
             case_key = row['CaseKey1']
-            print(case_key)
             self.parent.open_medical_record(case_key)
             return
 
@@ -245,3 +250,46 @@ class InsApplyList(QtWidgets.QMainWindow):
             self, self.database, self.system_settings,
             self.apply_type, ins_apply_key
         )
+
+    # 列印病歷
+    def _print_medical_records(self):
+        patient_key = self.table_widget_ins_apply_list.field_value(15)
+
+        start_date, end_date = date_utils.get_two_month_date(
+            self.database, patient_key,
+            self.apply_year, self.apply_month,
+        )
+
+        printer_utils.print_medical_records(
+            self, self.database, self.system_settings,
+            patient_key, start_date, end_date,
+        )
+
+    # 列印病歷首頁
+    def _print_medical_chart(self):
+        patient_key = self.table_widget_ins_apply_list.field_value(15)
+
+        printer_utils.print_medical_chart(
+            self, self.database, self.system_settings,
+            patient_key, self.apply_date,
+        )
+
+    # 查詢流水號
+    def _jump_sequence(self):
+        input_dialog = QInputDialog()
+        input_dialog.setOkButtonText('確定')
+        input_dialog.setCancelButtonText('取消')
+
+        start_no = 1
+        end_no = self.ui.tableWidget_ins_apply_list.rowCount()
+
+        sequence, ok = input_dialog.getInt(
+            self, '流水號查詢', '請輸入流水號', start_no, 0, end_no, 1)
+        if not ok:
+            return
+
+        self.ui.tableWidget_ins_apply_list.setCurrentCell(sequence-1, 1)
+        self.ui.tableWidget_ins_apply_list.setFocus(True)
+
+
+

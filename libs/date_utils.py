@@ -136,3 +136,47 @@ def get_end_date_by_year_month(year, month):
     )
 
     return end_date
+
+
+def get_two_month_date(database, patient_key, apply_year, apply_month):
+    month = int(apply_month)
+    if month > 1:
+        year = apply_year
+        month -= 1
+    else:
+        year = apply_year - 1
+        month = 12
+
+    start_date = get_start_date_by_year_month(year, month)  # 上月
+    start_date2 = get_end_date_by_year_month(year, month)  # 上月最後一日
+
+    sql = '''
+            SELECT CaseKey FROM cases
+            WHERE
+                InsType = "健保" AND
+                CaseDate BETWEEN "{0}" AND "{1}" AND
+                PatientKey = {2}
+        '''.format(
+        start_date,
+        start_date2,
+        patient_key,
+    )
+
+    rows = database.select_record(sql)  # 檢查兩個月前是否有病歷
+    if len(rows) <= 0:  # 如果沒病歷, 找出最後一次的病歷
+        sql = '''
+                SELECT CaseDate FROM cases
+                WHERE
+                    InsType = "健保" AND
+                    CaseDate < "{0}" AND
+                    PatientKey = {1}
+                ORDER BY CaseDate DESC LIMIT 1
+            '''.format(start_date, patient_key)
+        rows = database.select_record(sql)
+        if len(rows) > 0:
+            start_date = get_start_date_by_year_month(
+                rows[0]['CaseDate'].year, rows[0]['CaseDate'].month)  # 雙月檢查
+
+    end_date = get_end_date_by_year_month(apply_year, apply_month)
+
+    return start_date, end_date

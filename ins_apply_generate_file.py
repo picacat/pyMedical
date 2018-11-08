@@ -4,12 +4,7 @@
 import sys
 
 from PyQt5 import QtWidgets, QtGui, QtCore
-from PyQt5.QtWidgets import QMessageBox, QPushButton
-import datetime
 
-from classes import table_widget
-from libs import ui_utils
-from libs import date_utils
 from libs import string_utils
 from libs import nhi_utils
 from libs import number_utils
@@ -220,7 +215,7 @@ class InsApplyGenerateFile(QtWidgets.QMainWindow):
             string_utils.xstr(row['TreatType']),
             number_utils.get_integer(row['DiagFee']),
         )
-        diag_fee = charge_utils.get_diag_fee_from_diag_code(self.database, diag_code)
+        diag_fee = charge_utils.get_ins_fee_from_ins_code(self.database, diag_code)
         pharmacy_fee = number_utils.get_integer(row['PharmacyFee'])
         ins_total_fee = drug_fee + treat_fee + diag_fee + pharmacy_fee
         share_fee = (
