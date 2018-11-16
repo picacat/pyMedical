@@ -204,6 +204,10 @@ class MedicalRecord(QtWidgets.QMainWindow):
                 '資料不明原因遺失.'
             )
             read_success = False
+
+        if self.medical_record['PatientKey'] == 0:
+            return read_success
+
         try:
             sql = 'SELECT * FROM patient WHERE PatientKey = {0}'.format(self.medical_record['PatientKey'])
             self.patient_data = self.database.select_record(sql)[0]
@@ -223,7 +227,18 @@ class MedicalRecord(QtWidgets.QMainWindow):
         self._set_medical_record()
 
     def _set_patient_data(self):
-        name = self.patient_data['Name']
+        if self.patient_data is None:
+            name = string_utils.xstr(self.medical_record['Name'])
+            self.ui.label_case_date.setText(string_utils.xstr(self.medical_record['CaseDate']))
+            self.ui.label_ins_type.setText(string_utils.xstr(self.medical_record['InsType']))
+            self.ui.label_patient_name.setText(string_utils.xstr(name))
+            self.ui.label_regist_no.setText('')
+            self.ui.label_share_type.setText('')
+            self.ui.label_card.setText('')
+            return
+
+        name = string_utils.xstr(self.patient_data['Name'])
+
         age_year, age_month = date_utils.get_age(
             self.patient_data['Birthday'], self.medical_record['CaseDate'])
         if age_year is None:
@@ -271,16 +286,19 @@ class MedicalRecord(QtWidgets.QMainWindow):
 
     def record_modified(self):
         modified = False
-        if self.ui.textEdit_symptom.document().isModified() or \
-                self.ui.textEdit_tongue.document().isModified() or \
-                self.ui.textEdit_pulse.document().isModified() or \
-                self.ui.textEdit_remark.document().isModified() or \
-                self.ui.lineEdit_disease_code1.isModified() or \
-                self.ui.lineEdit_disease_code2.isModified() or \
-                self.ui.lineEdit_disease_code3.isModified() or \
-                self.ui.lineEdit_distinguish.isModified() or \
-                self.ui.lineEdit_cure.isModified():
-            modified = True
+        try:
+            if self.ui.textEdit_symptom.document().isModified() or \
+                    self.ui.textEdit_tongue.document().isModified() or \
+                    self.ui.textEdit_pulse.document().isModified() or \
+                    self.ui.textEdit_remark.document().isModified() or \
+                    self.ui.lineEdit_disease_code1.isModified() or \
+                    self.ui.lineEdit_disease_code2.isModified() or \
+                    self.ui.lineEdit_disease_code3.isModified() or \
+                    self.ui.lineEdit_distinguish.isModified() or \
+                    self.ui.lineEdit_cure.isModified():
+                modified = True
+        except AttributeError:
+            pass
 
         return modified
 
@@ -304,8 +322,15 @@ class MedicalRecord(QtWidgets.QMainWindow):
             dialog_type = '病名2'
         elif self.ui.lineEdit_disease_code3.hasFocus():
             dialog_type = '病名3'
-        elif self.tab_list[0].ui.tableWidget_prescript.hasFocus():
-            dialog_type = '健保處方'
+        else:
+            for i in range(len(self.tab_list)):
+                if self.tab_list[i] is not None and self.tab_list[i].ui.tableWidget_prescript.hasFocus():
+                    if i == 0:
+                        dialog_type = '健保處方'
+                    else:
+                        dialog_type = '自費處方'
+
+                    medicine_set = i + 1
 
         if dialog_type is None:
             return
@@ -340,11 +365,10 @@ class MedicalRecord(QtWidgets.QMainWindow):
 
             dialog = dialog_disease.DialogDisease(
                 self, self.database, self.system_settings, text_edit[dialog_type], line_edit)
-        elif dialog_type in ['健保處方']:
-            medicine_set = '1'
+        elif dialog_type in ['健保處方', '自費處方']:
             dialog = dialog_medicine.DialogMedicine(
                 self, self.database, self.system_settings,
-                self.tab_list[0].tableWidget_prescript, medicine_set)
+                self.tab_list[medicine_set-1].tableWidget_prescript, medicine_set)
 
         if dialog is None:
             return
@@ -448,6 +472,9 @@ class MedicalRecord(QtWidgets.QMainWindow):
         return False
 
     def _read_recently_history(self):
+        if self.patient_data is None:
+            return
+
         self.tab_medical_record_recently_history = \
             medical_record_recently_history.MedicalRecordRecentlyHistory(
                 self, self.database, self.system_settings, self.case_key, self.call_from)
@@ -497,11 +524,9 @@ class MedicalRecord(QtWidgets.QMainWindow):
         if (self.medical_record['InsType'] != '健保'):
             return
 
-        if (self.call_from != '醫師看診作業'):
-            return
-
-        self._set_doctor()
         self._set_treatment_and_course()
+        if (self.call_from == '醫師看診作業'):
+            self._set_doctor()
 
     # 設定主治醫師姓名
     def _set_doctor(self):

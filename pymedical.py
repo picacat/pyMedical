@@ -25,7 +25,6 @@ import login_statistics
 import backup
 
 
-
 # 主畫面
 class PyMedical(QtWidgets.QMainWindow):
     # 初始化
@@ -138,6 +137,7 @@ class PyMedical(QtWidgets.QMainWindow):
         self.ui.action_registration.triggered.connect(self._open_subroutine)
         self.ui.action_cashier.triggered.connect(self._open_subroutine)
         self.ui.action_return_card.triggered.connect(self._open_subroutine)
+        self.ui.action_purchase.triggered.connect(self._open_subroutine)
         self.ui.action_checkout.triggered.connect(self._open_subroutine)
         self.ui.action_patient_list.triggered.connect(self._open_subroutine)
         self.ui.action_ins_record_upload.triggered.connect(self._open_subroutine)
@@ -253,6 +253,8 @@ class PyMedical(QtWidgets.QMainWindow):
             self._set_tab(current_tab.call_from)
         elif tab_name.find('病患資料') != -1:
             self._set_tab(current_tab.call_from)
+        elif tab_name.find('購買商品') != -1:
+            self._set_tab(current_tab.call_from)
 
     # 關閉分頁
     def _tab_is_closable(self, tab_name, current_tab):
@@ -313,9 +315,13 @@ class PyMedical(QtWidgets.QMainWindow):
                 self.ui.tabWidget_window.setCurrentIndex(i)
                 if tab_name == '病歷查詢':
                     current_tab.ui.tableWidget_medical_record_list.setFocus(True)
+                    current_tab.refresh_medical_record()
                 elif tab_name == '病患查詢':
                     current_tab.ui.tableWidget_patient_list.setFocus(True)
                     current_tab.refresh_patient_record()
+                elif tab_name == '櫃台購藥':
+                    current_tab.ui.tableWidget_purchase_list.setFocus(True)
+                    current_tab.read_purchase_today()
                 elif tab_name == '門診掛號':
                     current_tab.read_wait()
 
@@ -393,6 +399,18 @@ class PyMedical(QtWidgets.QMainWindow):
             current_tab.set_reservation_arrival(reserve_key)
         else:
             self._add_tab(tab_name, self.database, self.system_settings, reserve_key)
+
+    # 預約掛號
+    def open_purchase_tab(self, case_key=None):
+        tab_name = '購買商品'
+        if self._tab_exists(tab_name):
+            current_tab = None
+            for i in range(self.ui.tabWidget_window.count()):
+                if self.ui.tabWidget_window.tabText(i) == tab_name:
+                    current_tab = self.ui.tabWidget_window.widget(i)
+                    break
+        else:
+            self._add_tab(tab_name, self.database, self.system_settings, '櫃台購藥', case_key)
 
     # 預約掛號
     def registration_arrival(self, reserve_key):

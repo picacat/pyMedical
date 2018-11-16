@@ -128,6 +128,7 @@ class PatientList(QtWidgets.QMainWindow):
         patient_key = self.table_widget_patient_list.field_value(0)
         self.parent.open_patient_record(patient_key, '病患查詢')
 
+    # 重新顯示資料 call from pymedical (call from here is not working)
     def refresh_patient_record(self):
         patient_key = self.table_widget_patient_list.field_value(0)
         sql = 'SELECT * FROM patient where PatientKey = {0}'.format(patient_key)

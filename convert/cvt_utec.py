@@ -1691,27 +1691,27 @@ class CvtUtec():
         self.database.exec_sql(sql)
         self.progress_bar.setValue(self.progress_bar.value() + 1)
 
-        sql = 'UPDATE cases SET TreatType = "針灸治療" WHERE TreatType = "針灸給藥"'
+        sql = 'UPDATE cases SET TreatType = "針灸治療" WHERE TreatType IN ("針灸", "針藥", "針灸給藥")'
         self.database.exec_sql(sql)
         self.progress_bar.setValue(self.progress_bar.value() + 1)
 
-        sql = 'UPDATE cases SET TreatType = "電針治療" WHERE TreatType = "電針給藥"'
+        sql = 'UPDATE cases SET TreatType = "電針治療" WHERE TreatType IN ("電針", "電藥", "電針給藥")'
         self.database.exec_sql(sql)
         self.progress_bar.setValue(self.progress_bar.value() + 1)
 
-        sql = 'UPDATE cases SET TreatType = "複雜針灸" WHERE TreatType IN ("複針給藥", "複針")'
+        sql = 'UPDATE cases SET TreatType = "複雜針灸" WHERE TreatType IN ("複針", "複針給藥")'
         self.database.exec_sql(sql)
         self.progress_bar.setValue(self.progress_bar.value() + 1)
 
-        sql = 'UPDATE cases SET TreatType = "傷科治療" WHERE TreatType = "傷科給藥"'
+        sql = 'UPDATE cases SET TreatType = "傷科治療" WHERE TreatType IN ("傷科", "傷藥", "傷科給藥")'
         self.database.exec_sql(sql)
         self.progress_bar.setValue(self.progress_bar.value() + 1)
 
-        sql = 'UPDATE cases SET TreatType = "複雜傷科" WHERE TreatType IN ("複傷給藥", "複傷")'
+        sql = 'UPDATE cases SET TreatType = "複雜傷科" WHERE TreatType IN ("複傷", "複傷給藥")'
         self.database.exec_sql(sql)
         self.progress_bar.setValue(self.progress_bar.value() + 1)
 
-        sql = 'UPDATE cases SET TreatType = "脫臼整復" WHERE TreatType = "脫臼給藥"'
+        sql = 'UPDATE cases SET TreatType = "脫臼整復" WHERE TreatType IN ("脫臼", "脫藥", "脫臼給藥")'
         self.database.exec_sql(sql)
         self.progress_bar.setValue(self.progress_bar.value() + 1)
 

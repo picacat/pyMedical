@@ -53,6 +53,8 @@ class Login(QtWidgets.QDialog):
     def _set_combo_box(self):
         sql = '''
             SELECT * FROM person 
+            WHERE
+                Password IS NOT NULL AND LENGTH(Password) > 0
             ORDER BY FIELD(
                 Position, "院長", "主任", "醫師", "支援醫師", "藥師", "護士", "職員", "理療師", NULL), 
                 Code, PersonKey

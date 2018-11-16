@@ -591,6 +591,7 @@
     <addaction name="action_registration"/>
     <addaction name="action_cashier"/>
     <addaction name="action_return_card"/>
+    <addaction name="action_purchase"/>
     <addaction name="action_checkout"/>
     <addaction name="separator"/>
     <addaction name="action_patient_list"/>
@@ -853,6 +854,15 @@
    </property>
    <property name="text">
     <string>護士跟診表</string>
+   </property>
+  </action>
+  <action name="action_purchase">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/user-available.png</normaloff>../icons/user-available.png</iconset>
+   </property>
+   <property name="text">
+    <string>櫃台購藥</string>
    </property>
   </action>
  </widget>

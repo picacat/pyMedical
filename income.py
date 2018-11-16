@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# 病歷查詢 2014.09.22
+# 掛號櫃台結帳 2018.11.15
 #coding: utf-8
 
 from PyQt5 import QtWidgets, QtCore, QtGui

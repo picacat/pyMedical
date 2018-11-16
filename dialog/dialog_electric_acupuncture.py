@@ -38,7 +38,6 @@ class DialogElectricAcupuncture(QtWidgets.QDialog):
         system_utils.set_css(self)
         self.setFixedSize(self.size())  # non resizable dialog
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setText('確定')
-        self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Cancel).setText('取消')
 
     # 設定信號
     def _set_signal(self):

@@ -3,6 +3,8 @@ from registration import *
 from reservation import *
 from return_card import *
 from income import *
+from purchase_list import *
+from purchase import *
 from debt import *
 from patient_list import *
 from ic_record_upload import *
@@ -32,6 +34,8 @@ module_dict = {
     '批價作業': Cashier,
     '健保卡欠還卡': ReturnCard,
     '欠還款作業': Debt,
+    '櫃台購藥': PurchaseList,
+    '購買商品': Purchase,
     '掛號櫃台結帳': Income,
     '病患查詢': PatientList,
     '健保IC卡資料上傳': ICRecordUpload,

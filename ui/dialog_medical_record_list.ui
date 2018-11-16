@@ -31,6 +31,9 @@
      <property name="title">
       <string>日期範圍</string>
      </property>
+     <property name="flat">
+      <bool>true</bool>
+     </property>
      <layout class="QGridLayout" name="gridLayout">
       <item row="0" column="3">
        <widget class="QDateEdit" name="dateEdit_end_date">
@@ -39,6 +42,9 @@
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
+        </property>
+        <property name="currentSection">
+         <enum>QDateTimeEdit::YearSection</enum>
         </property>
         <property name="displayFormat">
          <string>yyyy/MM/dd</string>
@@ -75,6 +81,15 @@
         </property>
         <property name="autoFillBackground">
          <bool>false</bool>
+        </property>
+        <property name="buttonSymbols">
+         <enum>QAbstractSpinBox::UpDownArrows</enum>
+        </property>
+        <property name="showGroupSeparator" stdset="0">
+         <bool>false</bool>
+        </property>
+        <property name="currentSection">
+         <enum>QDateTimeEdit::YearSection</enum>
         </property>
         <property name="displayFormat">
          <string>yyyy/MM/dd</string>
@@ -113,6 +128,9 @@
     <widget class="QGroupBox" name="groupBox_2">
      <property name="title">
       <string>門診資料</string>
+     </property>
+     <property name="flat">
+      <bool>true</bool>
      </property>
      <layout class="QGridLayout" name="gridLayout_2">
       <item row="0" column="2">
@@ -209,6 +227,9 @@
     <widget class="QGroupBox" name="groupBox_3">
      <property name="title">
       <string>病患資料</string>
+     </property>
+     <property name="flat">
+      <bool>true</bool>
      </property>
      <layout class="QGridLayout" name="gridLayout_3">
       <item row="2" column="4">

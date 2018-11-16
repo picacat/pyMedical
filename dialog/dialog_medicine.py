@@ -200,7 +200,7 @@ class DialogMedicine(QtWidgets.QDialog):
         self.ui.lineEdit_input_code.setCursorPosition(len(input_code))
 
     def medicine_double_clicked(self):
-        self.parent.tab_list[0].append_null_medicine()
+        self.parent.tab_list[self.medicine_set-1].append_null_medicine()
         self.add_medicine()
         self.ui.lineEdit_input_code.setText(None)
         self.ui.lineEdit_input_code.setFocus(True)
@@ -212,8 +212,8 @@ class DialogMedicine(QtWidgets.QDialog):
             [3, self.table_widget_medicine.field_value(3)],
             [4, None],
             [5, str(self.table_widget_prescript.currentRow()+1)],
-            [6, str(self.parent.tab_list[0].case_key)],
-            [7, str(self.parent.tab_list[0].case_date)],
+            [6, str(self.parent.tab_list[self.medicine_set-1].case_key)],
+            [7, str(self.parent.tab_list[self.medicine_set-1].case_date)],
             [8, self.medicine_set],
             [9, self.table_widget_medicine.field_value(5)],
             [10, self.table_widget_medicine.field_value(0)],
@@ -221,5 +221,6 @@ class DialogMedicine(QtWidgets.QDialog):
             [12, self.system_settings.field('劑量模式')],
         ]
 
-        self.parent.tab_list[0].set_prescript(prescript_rec)
-        self.parent.tab_list[0].set_default_pres_days()
+        self.parent.tab_list[self.medicine_set-1].set_prescript(prescript_rec)
+        if self.medicine_set == 1:  # 健保才預設藥日
+            self.parent.tab_list[self.medicine_set-1].set_default_pres_days()

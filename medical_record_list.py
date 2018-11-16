@@ -106,15 +106,15 @@ class MedicalRecordList(QtWidgets.QMainWindow):
 
         self.table_widget_medical_record_list.set_db_data(sql, self._set_table_data)
 
-    def _set_table_data(self, rec_no, rec):
-        if rec['InsType'] == '健保':
+    def _set_table_data(self, row_no, row):
+        if row['InsType'] == '健保':
             medicine_set = 1
         else:
             medicine_set = 2
         sql = '''
             SELECT * FROM dosage WHERE
             CaseKey = {0} AND MedicineSet = {1}
-        '''.format(rec['CaseKey'], medicine_set)
+        '''.format(row['CaseKey'], medicine_set)
         rows = self.database.select_record(sql)
         if len(rows) > 0:
             pres_days = rows[0]['Days']
@@ -122,58 +122,58 @@ class MedicalRecordList(QtWidgets.QMainWindow):
             pres_days = None
 
         medical_record = [
-            string_utils.xstr(rec['CaseKey']),
-            string_utils.xstr(rec['CaseDate']),
-            string_utils.xstr(rec['Period']),
-            string_utils.xstr(rec['Room']),
-            string_utils.xstr(rec['RegistNo']),
-            string_utils.xstr(rec['PatientKey']),
-            string_utils.xstr(rec['Name']),
-            string_utils.xstr(rec['Gender']),
-            string_utils.xstr(rec['Birthday']),
-            string_utils.xstr(rec['InsType']),
-            string_utils.xstr(rec['Share']),
-            string_utils.xstr(rec['TreatType']),
-            string_utils.xstr(rec['Card']),
-            string_utils.int_to_str(rec['Continuance']).strip('0'),
+            string_utils.xstr(row['CaseKey']),
+            string_utils.xstr(row['CaseDate']),
+            string_utils.xstr(row['Period']),
+            string_utils.xstr(row['Room']),
+            string_utils.xstr(row['RegistNo']),
+            string_utils.xstr(row['PatientKey']),
+            string_utils.xstr(row['Name']),
+            string_utils.xstr(row['Gender']),
+            string_utils.xstr(row['Birthday']),
+            string_utils.xstr(row['InsType']),
+            string_utils.xstr(row['Share']),
+            string_utils.xstr(row['TreatType']),
+            string_utils.xstr(row['Card']),
+            string_utils.int_to_str(row['Continuance']).strip('0'),
             string_utils.int_to_str(pres_days),
-            string_utils.xstr(rec['Doctor']),
-            string_utils.xstr(rec['DiseaseName1']),
-            string_utils.xstr(rec['Massager']),
-            string_utils.int_to_str(rec['RegistFee']),
-            string_utils.int_to_str(rec['SDiagShareFee']),
-            string_utils.int_to_str(rec['SDrugShareFee']),
-            string_utils.int_to_str(rec['TotalFee']),
+            string_utils.xstr(row['Doctor']),
+            string_utils.xstr(row['DiseaseName1']),
+            string_utils.xstr(row['Massager']),
+            string_utils.int_to_str(row['RegistFee']),
+            string_utils.int_to_str(row['SDiagShareFee']),
+            string_utils.int_to_str(row['SDrugShareFee']),
+            string_utils.int_to_str(row['TotalFee']),
         ]
 
         for column in range(len(medical_record)):
             self.ui.tableWidget_medical_record_list.setItem(
-                rec_no, column,
+                row_no, column,
                 QtWidgets.QTableWidgetItem(medical_record[column])
             )
             if column in [3, 4, 5, 13, 14, 18, 19, 20, 21]:
                 self.ui.tableWidget_medical_record_list.item(
-                    rec_no, column).setTextAlignment(
+                    row_no, column).setTextAlignment(
                     QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
                 )
             elif column in [7]:
                 self.ui.tableWidget_medical_record_list.item(
-                    rec_no, column).setTextAlignment(
+                    row_no, column).setTextAlignment(
                     QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
                 )
 
-            if number_utils.get_integer(rec['TotalFee']) > 0:
+            if number_utils.get_integer(row['TotalFee']) > 0:
                 self.ui.tableWidget_medical_record_list.item(
-                    rec_no, column).setForeground(QtGui.QColor('blue')
-                )
-            if string_utils.xstr(rec['InsType']) == '自費':
+                    row_no, column).setForeground(QtGui.QColor('blue')
+                                                  )
+            if string_utils.xstr(row['InsType']) == '自費':
                 self.ui.tableWidget_medical_record_list.item(
-                    rec_no, column).setForeground(
+                    row_no, column).setForeground(
                     QtGui.QColor('blue')
                 )
-            if string_utils.xstr(rec['TreatType']) == '自購':
+            if string_utils.xstr(row['TreatType']) == '自購':
                 self.ui.tableWidget_medical_record_list.item(
-                    rec_no, column).setForeground(
+                    row_no, column).setForeground(
                     QtGui.QColor('darkgreen')
                 )
 
@@ -203,6 +203,26 @@ class MedicalRecordList(QtWidgets.QMainWindow):
     def open_medical_record(self):
         case_key = self.table_widget_medical_record_list.field_value(0)
         self.parent.open_medical_record(case_key, '病歷查詢')
+
+    # 重新顯示資料 call from pymedical (call from here is not working)
+    def refresh_medical_record(self):
+        case_key = self.table_widget_medical_record_list.field_value(0)
+        sql = '''
+            SELECT 
+                CaseKey, DATE_FORMAT(CaseDate, '%Y-%m-%d %H:%i') AS CaseDate, 
+                cases.PatientKey, cases.Name, Period, cases.InsType, 
+                Share, cases.RegistNo, Card, Continuance, TreatType, 
+                PresDays1, PresDays2, DiseaseCode1, DiseaseName1,
+                Doctor, Massager, Room, RegistFee, SDiagShareFee, SDrugShareFee,
+                TotalFee, patient.Gender, patient.Birthday
+            FROM cases
+                LEFT JOIN patient ON patient.PatientKey = cases.PatientKey
+            WHERE 
+                CaseKey = {0}
+        '''.format(case_key)
+        row = self.database.select_record(sql)[0]
+        current_row = self.ui.tableWidget_medical_record_list.currentRow()
+        self._set_table_data(current_row, row)
 
     def close_tab(self):
         current_tab = self.parent.ui.tabWidget_window.currentIndex()

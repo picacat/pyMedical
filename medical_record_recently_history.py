@@ -54,7 +54,10 @@ class MedicalRecordRecentlyHistory(QtWidgets.QMainWindow):
         sql = 'SELECT * FROM cases WHERE CaseKey = {0}'.format(self.case_key)
         self.medical_record = self.database.select_record(sql)[0]
         sql = 'SELECT * FROM patient WHERE PatientKey = {0}'.format(self.medical_record['PatientKey'])
-        self.patient_data = self.database.select_record(sql)[0]
+        try:
+            self.patient_data = self.database.select_record(sql)[0]
+        except IndexError:
+            pass
 
     # 顯示最近病歷
     def _display_past_record(self):

@@ -8,6 +8,7 @@ from libs import string_utils
 from libs import nhi_utils
 from classes import table_widget
 from dialog import dialog_input_medicine
+from dialog import dialog_electric_acupuncture
 
 
 # 輸入健保處方 2018.04.14
@@ -23,10 +24,12 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
         self.case_date = self.parent.medical_record['CaseDate']
         self.ui = None
 
+        self.signal_off = True
         self._set_ui()
         self._set_signal()
         self._read_cases()
         self._read_prescript()
+        self.signal_off = False
 
     # 解構
     def __del__(self):
@@ -649,10 +652,51 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
         if self.combo_box_treatment.currentText() == '':
             self.ui.tableWidget_treat.setRowCount(0)
             self._set_treat_ui()
+        elif self.combo_box_treatment.currentText() == '電針治療':
+            self._open_electric_acupuncture_dialog()
         else:
             self.append_null_treat()
 
+
         self.parent.calculate_ins_fees()
+
+    # 開啟電針儀選擇視窗
+    def _open_electric_acupuncture_dialog(self):
+        if self.signal_off:
+            return
+
+        dialog = dialog_electric_acupuncture.DialogElectricAcupuncture(
+            self, self.database, self.system_settings)
+
+        dialog.exec_()
+
+        wave = ''
+        if dialog.ui.radioButton_1.isChecked():
+            wave = '疏密波'
+        elif dialog.ui.radioButton_1.isChecked():
+            wave = '斷續波'
+        elif dialog.ui.radioButton_1.isChecked():
+            wave = '連續波'
+
+        wave = '波形:{0}'.format(wave)
+        freq = '頻率:{0}Hz'.format(dialog.ui.spinBox_freq.value())
+        time = '時間:{0}分鐘'.format(dialog.ui.spinBox_time.value())
+
+        electric_acupuncture_list = [
+            wave, freq, time
+        ]
+
+        for item in electric_acupuncture_list:
+            row = {}
+            row['MedicineName'] = item
+            row['MedicineType'] = '穴道'
+            row['MedicineKey'] = None
+            row['InsCode'] = None
+            self.append_null_treat()
+            self.append_treat(row)
+
+        dialog.deleteLater()
+        self.append_null_treat()
 
     # 藥日變更重新批價
     def pres_days_changed(self):
