@@ -98,7 +98,7 @@ class MedicalRecordRecentlyHistory(QtWidgets.QMainWindow):
         self.ui.toolButton_last.setEnabled(True)
         self._set_past_values(rec)
         case_key = rec['CaseKey']
-        html = case_utils.get_medical_record_html(self.database, case_key)
+        html = case_utils.get_medical_record_html(self.database, self.system_settings, case_key)
         self.ui.textEdit_past.setHtml(html)
 
     # 最近一筆

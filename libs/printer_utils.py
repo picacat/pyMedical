@@ -763,7 +763,8 @@ def print_ins_apply_total_fee(parent, database, system_settings, html):
 
 
 # 列印醫令明細
-def print_ins_apply_order(parent, database, system_settings, apply_type, ins_apply_key, print_type=None):
+def print_ins_apply_order(parent, database, system_settings,
+                          apply_year, apply_month, apply_type, ins_apply_key, print_type=None):
     if print_type is None:  # 如果未指定列印方式，以系統設定為主
         if system_settings.field('列印報表') == '不印':
             return
@@ -778,6 +779,7 @@ def print_ins_apply_order(parent, database, system_settings, apply_type, ins_app
 
     print_ins_order = PrintInsApplyOrder(
         parent, database, system_settings,
+        apply_year, apply_month,
         apply_type, ins_apply_key
     )
 

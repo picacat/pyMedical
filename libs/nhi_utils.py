@@ -93,7 +93,6 @@ IMPROVE_CARE_TREAT = [
 CARE_TREAT = AUXILIARY_CARE_TREAT + IMPROVE_CARE_TREAT
 
 SPECIAL_CODE_DICT = {
-    '腦血管疾病': 'C8',
     '助孕照護': 'J9',
     '保胎照護': 'J9',
     '乳癌照護': 'JE',
@@ -396,7 +395,10 @@ def get_special_code(database, case_key):
     treatment = string_utils.xstr(row['Treatment'])
     special_code = string_utils.xstr(row['SpecialCode'])
     # 先檢查特定照護
-    if treat_type in CARE_TREAT:
+    if treat_type in AUXILIARY_CARE_TREAT:  # 腦血管疾病
+        return [None, None, None, None]
+
+    if treat_type in IMPROVE_CARE_TREAT:
         special_code_list.append(SPECIAL_CODE_DICT[treat_type])
         special_code_list = special_code_list + [None] * (4 - len(special_code_list))
         return  special_code_list
@@ -471,7 +473,7 @@ def get_pharmacist_id(database, system_settings, row):
 
     pharmacist_name = string_utils.xstr(row['Pharmacist'])
     if pharmacist_name == '':
-        return None
+        pharmacist_name = string_utils.xstr(row['Doctor'])
 
     pharmacist_id = personnel_utils.get_personnel_id(database, pharmacist_name)
 
@@ -502,6 +504,9 @@ def get_diag_code(database, system_settings, doctor_name, treat_type, diag_fee):
 
 # 藥服代號: A31-A32;  6次: 120010: 0-無調劑 1-A31藥師 2-A32醫師
 def get_pharmacy_code(system_settings, row, pres_days, pharmacy_code='000000'):
+    if string_utils.xstr(row['TreatType']) in IMPROVE_CARE_TREAT:  # 加強照護不可申報調劑費
+        return pharmacy_code
+
     pharmacy_code = [x for x in pharmacy_code]
     course = number_utils.get_integer(row['Continuance'])
 
@@ -709,12 +714,16 @@ def nurse_schedule_on_duty(database, case_key, doctor_name):
 
     return on_duty
 
-def get_ins_xml_file_name(apply_type, apply_date):
-    xml_file_name = '{0}/APPLY-{1}-{2}.xml'.format(
+def get_ins_xml_file_name(apply_type, apply_date, prefix=None):
+    xml_file_name = '{0}/{1}-{2}'.format(
         XML_OUT_PATH,
-        apply_type,
         apply_date,
+        apply_type,
     )
+    if prefix is not None:
+        xml_file_name += '-{0}'.format(prefix)
+
+    xml_file_name += '.xml'
 
     return xml_file_name
 

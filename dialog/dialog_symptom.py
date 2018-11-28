@@ -52,6 +52,7 @@ class DialogSymptom(QtWidgets.QDialog):
     def _set_signal(self):
         self.ui.tableWidget_groups.itemSelectionChanged.connect(self.groups_name_changed)
         self.ui.tableWidget_symptom.clicked.connect(self.add_symptom)
+        self.ui.tableWidget_groups.keyPressEvent = self._table_widget_key_press
         self.ui.tableWidget_symptom.keyPressEvent = self._table_widget_key_press
 
     # 設定欄位寬度

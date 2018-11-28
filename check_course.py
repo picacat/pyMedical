@@ -134,12 +134,12 @@ class CheckCourse(QtWidgets.QMainWindow):
             errors = 0
             patient_key = self.ui.tableWidget_errors.item(row_no, 3).text()
             card = self.ui.tableWidget_errors.item(row_no, 6).text()
-            course = int(self.ui.tableWidget_errors.item(row_no, 7).text())
+            course = number_utils.get_integer(self.ui.tableWidget_errors.item(row_no, 7).text())
 
             try:
                 next_patient_key = self.ui.tableWidget_errors.item(row_no+1, 3).text()
                 next_card = self.ui.tableWidget_errors.item(row_no+1, 6).text()
-                next_course = int(self.ui.tableWidget_errors.item(row_no+1, 7).text())
+                next_course = number_utils.get_integer(self.ui.tableWidget_errors.item(row_no+1, 7).text())
             except AttributeError:
                 next_patient_key = 0
                 next_card = None

@@ -4,7 +4,12 @@
 import sys
 
 from PyQt5 import QtWidgets
+from PyQt5.QtWidgets import QFileDialog
+from lxml import etree as ET
+
 from libs import ui_utils
+from libs import string_utils
+from libs import system_utils
 import dict_symptom
 import dict_tongue
 import dict_pulse
@@ -14,7 +19,7 @@ import dict_distinguish
 import dict_cure
 
 
-# 樣板 2018.01.31
+# 診察詞庫 2018.11.22
 class DictDiagnostic(QtWidgets.QMainWindow):
     # 初始化
     def __init__(self, parent=None, *args):
@@ -57,6 +62,8 @@ class DictDiagnostic(QtWidgets.QMainWindow):
     # 設定信號
     def _set_signal(self):
         self.ui.action_close.triggered.connect(self.close_template)
+        self.ui.action_export_disease_groups.triggered.connect(self._export_disease_groups)
+        self.ui.action_import_disease_groups.triggered.connect(self._import_disease_groups)
 
     def close_tab(self):
         current_tab = self.parent.ui.tabWidget_window.currentIndex()
@@ -65,3 +72,79 @@ class DictDiagnostic(QtWidgets.QMainWindow):
     def close_template(self):
         self.close_all()
         self.close_tab()
+
+    def _export_disease_groups(self):
+        options = QFileDialog.Options()
+
+        options |= QFileDialog.DontUseNativeDialog
+        file_name, _ = QFileDialog.getSaveFileName(
+            self, "匯出病名類別詞庫",
+            'disease_groups.xml',
+            "所有檔案 (*);;xml檔 (*.xml)", options = options
+        )
+        if not file_name:
+            return
+
+        sql = '''
+            SELECT ICDCode, Groups FROM icd10
+            WHERE
+                Groups IS NOT NULL AND LENGTH(Groups) > 0
+            ORDER BY ICDCode
+        '''
+        rows = self.database.select_record(sql)
+
+        root = ET.Element('groups')
+        for row in rows:
+            disease_groups = ET.SubElement(root, 'disease_groups')
+            icd = ET.SubElement(disease_groups, 'icd')
+            icd.text = string_utils.xstr(row['ICDCode'])
+            groups = ET.SubElement(disease_groups, 'groups')
+            groups.text = string_utils.xstr(row['Groups'])
+
+        tree = ET.ElementTree(root)
+        tree.write(file_name, pretty_print=True, xml_declaration=True, encoding="utf-8")
+
+    def _import_disease_groups(self):
+        options = QFileDialog.Options()
+
+        options |= QFileDialog.DontUseNativeDialog
+        file_name, _ = QFileDialog.getOpenFileName(
+            self, "匯入病名類別詞庫",
+            'disease_groups.xml',
+            "所有檔案 (*);;xml檔 (*.xml)", options = options
+        )
+        if not file_name:
+            return
+
+        tree = ET.parse(file_name)
+
+        root = tree.getroot()
+        groups = root.xpath('//groups/disease_groups')
+        for row in groups:
+            data = self._convert_node_to_dict(row)
+            sql = '''
+                UPDATE icd10
+                SET
+                    Groups = "{0}"
+                WHERE
+                    ICDCode = "{1}"
+            '''.format(
+                data['groups'],
+                data['icd'],
+            )
+            self.database.exec_sql(sql)
+
+        system_utils.show_message_box(
+            QtWidgets.QMessageBox.Information,
+            '匯入完成',
+            '病名類別詞庫檔匯入完成',
+            '資料無錯誤.'
+        )
+
+    def _convert_node_to_dict(self, node):
+        node_dict = {}
+        for node_data in node:
+            node_dict[node_data.tag] = node_data.text
+
+        return node_dict
+

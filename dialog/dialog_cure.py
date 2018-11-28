@@ -51,6 +51,7 @@ class DialogCure(QtWidgets.QDialog):
     def _set_signal(self):
         self.ui.tableWidget_groups.itemSelectionChanged.connect(self.groups_name_changed)
         self.ui.tableWidget_cure.clicked.connect(self.add_cure)
+        self.ui.tableWidget_groups.keyPressEvent = self._table_widget_key_press
         self.ui.tableWidget_cure.keyPressEvent = self._table_widget_key_press
 
     def _table_widget_key_press(self, event):

@@ -4,6 +4,7 @@
 
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtWidgets import QMessageBox, QPushButton
+from lxml import etree as ET
 from xml.dom.minidom import Document
 
 from libs import ui_utils
@@ -105,83 +106,88 @@ class ICRecordUpload(QtWidgets.QMainWindow):
 
         self.table_widget_medical_record.set_db_data(sql, self._set_table_data)
 
-    def _set_table_data(self, rec_no, rec):
+    def _set_table_data(self, row_no, row):
         sql = '''
             SELECT * FROM dosage WHERE
             CaseKey = {0} AND MedicineSet = 1
-        '''.format(rec['CaseKey'])
+        '''.format(row['CaseKey'])
         rows = self.database.select_record(sql)
         if len(rows) > 0:
             pres_days = rows[0]['Days']
         else:
             pres_days = None
 
-        error_message = self._check_error(rec)
+        security_row = case_utils.get_treat_data_xml_dict(string_utils.xstr(row['Security']))
+        error_message = self._check_error(row, security_row)
         if error_message != '':
             remark = ''
         else:
             remark = '*'
 
         medical_record = [
-            string_utils.xstr(rec['CaseKey']),
+            string_utils.xstr(row['CaseKey']),
             remark,
-            cshis_utils.UPLOAD_TYPE_DICT[string_utils.get_str(rec['UploadType'], 'utf-8')],
-            cshis_utils.TREAT_AFTER_CHECK_DICT[string_utils.get_str(rec['TreatAfterCheck'], 'utf-8')],
-            string_utils.xstr(rec['CaseDate']),
-            string_utils.xstr(rec['Period']),
-            string_utils.xstr(rec['PatientKey']),
-            string_utils.xstr(rec['Name']),
-            string_utils.xstr(rec['Gender']),
-            string_utils.xstr(rec['Birthday']),
-            string_utils.xstr(rec['CaseInsType']),
-            string_utils.xstr(rec['Share']),
-            string_utils.xstr(rec['TreatType']),
-            string_utils.xstr(rec['Card']),
-            string_utils.int_to_str(rec['Continuance']).strip('0'),
+            cshis_utils.UPLOAD_TYPE_DICT[
+                string_utils.xstr(security_row['upload_type'])
+            ],
+            cshis_utils.TREAT_AFTER_CHECK_DICT[
+                string_utils.xstr(security_row['treat_after_check'])
+            ],
+            string_utils.xstr(row['CaseDate']),
+            string_utils.xstr(row['Period']),
+            string_utils.xstr(row['PatientKey']),
+            string_utils.xstr(row['Name']),
+            string_utils.xstr(row['Gender']),
+            string_utils.xstr(row['Birthday']),
+            string_utils.xstr(row['CaseInsType']),
+            string_utils.xstr(row['Share']),
+            string_utils.xstr(row['TreatType']),
+            string_utils.xstr(row['Card']),
+            string_utils.int_to_str(row['Continuance']).strip('0'),
             string_utils.int_to_str(pres_days),
-            string_utils.xstr(rec['Doctor']),
-            string_utils.xstr(rec['DiseaseName1']),
+            string_utils.xstr(row['Doctor']),
+            string_utils.xstr(row['DiseaseName1']),
             error_message,
         ]
 
         for column in range(len(medical_record)):
             self.ui.tableWidget_ic_record.setItem(
-                rec_no, column,
+                row_no, column,
                 QtWidgets.QTableWidgetItem(medical_record[column])
             )
             if column in [4, 5, 6, 14, 15, 19, 20, 21, 22]:
                 self.ui.tableWidget_ic_record.item(
-                    rec_no, column).setTextAlignment(
+                    row_no, column).setTextAlignment(
                     QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
                 )
             elif column in [1, 8]:
                 self.ui.tableWidget_ic_record.item(
-                    rec_no, column).setTextAlignment(
+                    row_no, column).setTextAlignment(
                     QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
                 )
 
-            if number_utils.get_integer(rec['TotalFee']) > 0 or rec['InsType'] == '自費':
+            if error_message != '':
                 self.ui.tableWidget_ic_record.item(
-                    rec_no, column).setForeground(
-                    QtGui.QColor('blue')
+                    row_no, column).setForeground(
+                    QtGui.QColor('red')
                 )
 
-    def _check_error(self, medical_record):
-        if string_utils.xstr(medical_record['DoctorDone']) == 'False':
+    def _check_error(self, row, security_row):
+        if string_utils.xstr(row['DoctorDone']) == 'False':
             return '[尚未就診, 請登錄完成後再上傳]'
 
-        sql = 'SELECT * FROM patient WHERE PatientKey = {0}'.format(medical_record['PatientKey'])
+        sql = 'SELECT * FROM patient WHERE PatientKey = {0}'.format(row['PatientKey'])
         patient_record = self.database.select_record(sql)[0]
 
         error_message = ''
-        if string_utils.get_str(medical_record['UploadType'], 'utf-8') == '1':
-            if string_utils.get_str(medical_record['RegisteredDate'], 'utf-8') == '':
+        if security_row['upload_type'] == '1':
+            if security_row['registered_date'] == '':
                 error_message += '[無IC卡掛號時間]'
-            if string_utils.get_str(medical_record['SecuritySignature'], 'utf-8') == '':
+            if security_row['security_signature'] == '':
                 error_message += '[無安全簽章]'
-            if string_utils.get_str(medical_record['SAMID'], 'utf-8') == '':
+            if security_row['sam_id'] == '':
                 error_message += '[無安全模組代碼]'
-            if string_utils.get_str(medical_record['ClinicID'], 'utf-8') == '':
+            if security_row['clinic_id']== '':
                 error_message += '[無院所代碼]'
             if string_utils.xstr(patient_record['CardNo']) == '':
                 error_message += '[病患資料無卡片號碼]'
@@ -190,24 +196,24 @@ class ICRecordUpload(QtWidgets.QMainWindow):
             error_message += '[病患資料無身份證號碼]'
         if string_utils.xstr(patient_record['Birthday']) == '':
             error_message += '[病患資料無生日]'
-        if string_utils.get_str(medical_record['UploadType'], 'utf-8') == '':
+        if security_row['upload_type'] == '':
             error_message += '[無上傳格式]'
-        if string_utils.get_str(medical_record['TreatAfterCheck'], 'utf-8') == '':
-            error_message += '[無補卡註劑]'
-        if string_utils.xstr(medical_record['Card']) == '':
+        if security_row['treat_after_check']== '':
+            error_message += '[無補卡註記]'
+        if string_utils.xstr(row['Card']) == '':
             error_message += '[無卡序]'
 
         doctor_id = personnel_utils.get_personnel_id(
-            self.database, string_utils.xstr(medical_record['Doctor']))
+            self.database, string_utils.xstr(row['Doctor']))
         position_list = personnel_utils.get_personnel(self.database, '醫師')
 
         if doctor_id == '':
             error_message += '[無醫師身份證號]'
-        elif string_utils.xstr(medical_record['Doctor']) not in position_list:
+        elif string_utils.xstr(row['Doctor']) not in position_list:
             error_message += '[醫師欄位非醫師]'
-        if string_utils.xstr(medical_record['DiseaseCode1']) == '':
+        if string_utils.xstr(row['DiseaseCode1']) == '':
             error_message += '[無主診斷碼]'
-        if string_utils.xstr(medical_record['InsTotalFee']) == '':
+        if string_utils.xstr(row['InsTotalFee']) == '':
             error_message += '[無申報費用]'
 
         return error_message

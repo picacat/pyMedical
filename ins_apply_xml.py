@@ -6,6 +6,7 @@ import sys
 from PyQt5 import QtWidgets, QtGui, QtCore
 import datetime
 import subprocess
+from lxml import etree as ET
 
 from libs import date_utils
 from libs import string_utils
@@ -13,7 +14,7 @@ from libs import nhi_utils
 from libs import number_utils
 from libs import charge_utils
 from libs import case_utils
-from lxml import etree as ET
+from libs import personnel_utils
 
 
 # 候診名單 2018.01.31
@@ -69,12 +70,17 @@ class InsApplyXML(QtWidgets.QMainWindow):
         xml_file_name = nhi_utils.get_ins_xml_file_name(
             self.ins_total_fee['apply_type'],
             self.ins_total_fee['apply_date'],
+            'unix',
+        )
+        xml_out_file_name = nhi_utils.get_ins_xml_file_name(
+            self.ins_total_fee['apply_type'],
+            self.ins_total_fee['apply_date'],
         )
 
-        self._write_xml_file(xml_file_name)
-        self._zip_xml_file(xml_file_name)
+        self._write_xml_file(xml_file_name, xml_out_file_name)
+        self._zip_xml_file(xml_out_file_name)
 
-    def _write_xml_file(self, xml_file_name):
+    def _write_xml_file(self, xml_file_name, xml_out_file_name):
         rows = self._get_ins_rows()
         record_count = len(rows)
         if record_count <= 0:
@@ -99,6 +105,24 @@ class InsApplyXML(QtWidgets.QMainWindow):
 
         tree = ET.ElementTree(root)
         tree.write(xml_file_name, pretty_print=True, xml_declaration=True, encoding="Big5")
+
+        with open(xml_file_name, encoding='Big5') as in_file, open(xml_out_file_name, 'w', encoding='Big5') as out_file:
+            txt = in_file.read()
+            txt = txt.replace('\'', '"')
+            txt = txt.replace('BIG5', 'Big5')
+            out_file.write(txt)
+
+        # convert LF => CR/LF
+        # if sys.platform == 'win32':
+        #     with open(xml_file_name) as in_file, open(xml_out_file_name, 'w') as out_file:
+        #         txt = in_file.read()
+        #         txt = txt.replace('\n', '\n') # in windows system, \n will auto lead with \r
+        #         out_file.write(txt)
+        # else:
+        #     with open(xml_out_file_name, 'w') as out_file:
+        #         cmd = ['sed', 's/$/\r/', xml_file_name]
+        #         sp = subprocess.Popen(cmd, stderr=subprocess.STDOUT, stdout=out_file)
+        #         sp.communicate()
 
     def _add_tdata(self, root):
         generate_date = '{0:0>3}{1:0>2}{2:0>2}'.format(
@@ -170,6 +194,8 @@ class InsApplyXML(QtWidgets.QMainWindow):
 
     def _add_dbody(self, ddata, row):
         dbody = ET.SubElement(ddata, 'dbody')
+        d3 = ET.SubElement(dbody, 'd3')
+        d3.text = string_utils.xstr(row['ID'])
 
         for i in range(1, 5):
             special_code = string_utils.xstr(row['SpecialCode{0}'.format(i)])
@@ -182,14 +208,12 @@ class InsApplyXML(QtWidgets.QMainWindow):
         d9 = ET.SubElement(dbody, 'd9')
         d9.text = date_utils.west_date_to_nhi_date(row['CaseDate'])
 
-        if string_utils.xstr(row['CaseType']) == '29':
-            d10 = ET.SubElement(dbody, 'd10')
-            d10.text = date_utils.west_date_to_nhi_date(row['StopDate'])
+        # if string_utils.xstr(row['CaseType']) == '29':
+        d10 = ET.SubElement(dbody, 'd10')
+        d10.text = date_utils.west_date_to_nhi_date(row['StopDate'])
 
         d11 = ET.SubElement(dbody, 'd11')
         d11.text = date_utils.west_date_to_nhi_date(row['Birthday'])
-        d3 = ET.SubElement(dbody, 'd3')
-        d3.text = string_utils.xstr(row['ID'])
         d14 = ET.SubElement(dbody, 'd14')
         d14.text = string_utils.xstr(row['Injury'])
         d15 = ET.SubElement(dbody, 'd15')
@@ -218,7 +242,7 @@ class InsApplyXML(QtWidgets.QMainWindow):
 
         if string_utils.xstr(row['PharmacistID']) != '':
             d31 = ET.SubElement(dbody, 'd31')
-            d31.text = string_utils.xstr(row['PharmacistID'])
+            d31.text = string_utils.xstr(row['PharmacistID'])  # 如果沒藥師，就是醫師調劑
 
         if number_utils.get_integer(row['DrugFee']) > 0:
             d32 = ET.SubElement(dbody, 'd32')
@@ -289,7 +313,12 @@ class InsApplyXML(QtWidgets.QMainWindow):
 
             treat_code = string_utils.xstr(row['TreatCode{0}'.format(course)])
             if treat_code != '':
-                self._set_treatment(dbody, row, case_row, course, treat_code)
+                if string_utils.xstr(row['CaseType']) == '22':  # 特定照護: 孕產照護，肝乳癌照護
+                    order_type = '4'
+                else:
+                    order_type = '2'
+
+                self._set_treatment(dbody, row, case_row, course, treat_code, order_type)
 
             prescript_rows = self._get_prescript_rows(case_key)
             if len(prescript_rows) > 0:
@@ -363,7 +392,7 @@ class InsApplyXML(QtWidgets.QMainWindow):
         p20 = ET.SubElement(pdata, 'p20')
         p20.text = string_utils.xstr(row['Class'])
 
-    def _set_treatment(self, dbody, row, case_row, course, treat_code):
+    def _set_treatment(self, dbody, row, case_row, course, treat_code, order_type):
         pdata = ET.SubElement(dbody, 'pdata')
 
         self.sequence += 1
@@ -374,7 +403,7 @@ class InsApplyXML(QtWidgets.QMainWindow):
         p2 = ET.SubElement(pdata, 'p2')
         p2.text = '0'  # 0=自行調劑或物理治療
         p3 = ET.SubElement(pdata, 'p3')
-        p3.text = '2'  # 2=診療明細
+        p3.text = order_type  # 2=診療明細
         p4 = ET.SubElement(pdata, 'p4')
         p4.text = treat_code
         p8 = ET.SubElement(pdata, 'p8')
@@ -411,8 +440,12 @@ class InsApplyXML(QtWidgets.QMainWindow):
             order_type = '4'  # 4=不另計價
 
         self._set_A21(dbody, row, case_row, order_type, pres_days)
+
         if number_utils.get_integer(row['PharmacyFee']) > 0:
-            self._set_pharmacy(dbody, row, case_row, pres_days, course)
+            if string_utils.xstr(row['CaseType']) in ['30']:  # 腦血管疾病加強照護
+                self._set_auxiliary_pharmacy(dbody, row, case_row, pres_days, course)
+            else:
+                self._set_pharmacy(dbody, row, case_row, pres_days, course)
 
         for prescript_row in prescript_rows:
             self._set_medicine(
@@ -459,6 +492,55 @@ class InsApplyXML(QtWidgets.QMainWindow):
         p15.text = '{0}0000'.format( date_utils.west_date_to_nhi_date(
                     case_row['CaseDate'].date() + datetime.timedelta(days=pres_days-1))
         )
+        p16 = ET.SubElement(pdata, 'p16')
+        p16.text = string_utils.xstr(row['DoctorID'])
+        p20 = ET.SubElement(pdata, 'p20')
+        p20.text = string_utils.xstr(row['Class'])
+
+    def _set_auxiliary_pharmacy(self, dbody, row, case_row, pres_days, course):
+        if pres_days <= 0:
+            return
+
+        if string_utils.xstr(case_row['PharmacyType']) == '不申報':
+            return
+
+        pharmacist = string_utils.xstr(case_row['Pharmacist'])
+        if pharmacist != '':
+            item_name = '藥師調劑'
+        else:
+            item_name = '醫師調劑'
+
+        pharmacy_code = charge_utils.get_ins_code_from_charge_settings(
+            self.database, '調劑費', item_name)
+
+        pdata = ET.SubElement(dbody, 'pdata')
+
+        self.sequence += 1
+        unit_price = number_utils.get_integer(
+            charge_utils.get_ins_fee_from_ins_code(self.database, pharmacy_code)
+        )
+        amount = unit_price
+
+        p2 = ET.SubElement(pdata, 'p2')
+        p2.text = '0'  # 0=自行調劑
+        p3 = ET.SubElement(pdata, 'p3')
+        p3.text = '9'  # 9=調劑費
+        p4 = ET.SubElement(pdata, 'p4')
+        p4.text = pharmacy_code
+        p8 = ET.SubElement(pdata, 'p8')
+        p8.text = '{0:05.2f}'.format(100)  # 成數
+        p10 = ET.SubElement(pdata, 'p10')
+        p10.text = '1'  # 總量
+        p11 = ET.SubElement(pdata, 'p11')
+        p11.text = string_utils.xstr(unit_price)  # 單價
+        p12 = ET.SubElement(pdata, 'p12')
+        p12.text = string_utils.xstr(amount)  # 點數
+        p13 = ET.SubElement(pdata, 'p13')
+        p13.text = string_utils.xstr(self.sequence)  # 序號
+        p14 = ET.SubElement(pdata, 'p14')
+        p14.text = '{0}0000'.format(date_utils.west_date_to_nhi_date(case_row['CaseDate']))
+        p15 = ET.SubElement(pdata, 'p15')
+        p15.text = '{0}0000'.format(date_utils.west_date_to_nhi_date(case_row['CaseDate']))
         p16 = ET.SubElement(pdata, 'p16')
         p16.text = string_utils.xstr(row['DoctorID'])
         p20 = ET.SubElement(pdata, 'p20')
@@ -553,6 +635,32 @@ class InsApplyXML(QtWidgets.QMainWindow):
         p20.text = string_utils.xstr(row['Class'])
 
     def _add_auxiliary_case(self, dbody, row):
+        sql = '''
+            SELECT * FROM cases
+            WHERE
+                (InsType = "健保") AND
+                (Card != "欠卡") AND
+                (TreatType = "腦血管疾病") AND
+                (PatientKey = {0}) AND
+                (CaseDate BETWEEN "{1}" AND "{2}") AND
+                (ApplyType = "{3}")
+            ORDER BY CaseDate
+        '''.format(row['PatientKey'], self.start_date, self.end_date, self.apply_type)
+        rows = self.database.select_record(sql)
+
+        self.sequence = 0
+        self._set_auxiliary_case(dbody, row, rows[0], '2')  # order_type = 2 診療明細
+        for case_row in rows:
+            case_key = case_row['CaseKey']
+
+            self._set_auxiliary_case(dbody, row, case_row, '4')  # 不另計價
+            prescript_rows = self._get_prescript_rows(case_key)
+            if len(prescript_rows) > 0:
+                self._set_prescript(
+                    dbody, row, case_row, prescript_rows,
+                    case_key, number_utils.get_integer(case_row['Continuance']))
+
+    def _set_auxiliary_case(self, dbody, row, case_row, order_type):
         pdata = ET.SubElement(dbody, 'pdata')
 
         self.sequence += 1
@@ -560,11 +668,15 @@ class InsApplyXML(QtWidgets.QMainWindow):
         amount = number_utils.get_integer(row['TreatFee1'])
         percent = number_utils.get_integer(row['Percent1'])
         unit_price = number_utils.get_integer(amount / percent * 100)
+        doctor_id = personnel_utils.get_personnel_id(
+            self.database, string_utils.xstr(case_row['Doctor']))
 
         p2 = ET.SubElement(pdata, 'p2')
         p2.text = '0'  # 0=自行調劑或物理治療
+
         p3 = ET.SubElement(pdata, 'p3')
-        p3.text = '2'  # 2=診療明細
+        p3.text = order_type
+
         p4 = ET.SubElement(pdata, 'p4')
         p4.text = treat_code
         p8 = ET.SubElement(pdata, 'p8')
@@ -578,11 +690,11 @@ class InsApplyXML(QtWidgets.QMainWindow):
         p13 = ET.SubElement(pdata, 'p13')
         p13.text = string_utils.xstr(self.sequence)  # 序號
         p14 = ET.SubElement(pdata, 'p14')
-        p14.text = '{0}0000'.format(date_utils.west_date_to_nhi_date(row['CaseDate']))
+        p14.text = '{0}0000'.format(date_utils.west_date_to_nhi_date(case_row['CaseDate']))
         p15 = ET.SubElement(pdata, 'p15')
-        p15.text = '{0}0000'.format(date_utils.west_date_to_nhi_date(row['CaseDate']))
+        p15.text = '{0}0000'.format(date_utils.west_date_to_nhi_date(case_row['CaseDate']))
         p16 = ET.SubElement(pdata, 'p16')
-        p16.text = string_utils.xstr(row['DoctorID'])
+        p16.text = doctor_id
         p17 = ET.SubElement(pdata, 'p17')
         p17.text = '2'  # 同一療程
         p20 = ET.SubElement(pdata, 'p20')

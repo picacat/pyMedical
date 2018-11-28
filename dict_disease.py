@@ -67,7 +67,7 @@ class DictDisease(QtWidgets.QMainWindow):
     # 設定欄位寬度
     def _set_table_width(self):
         dict_groups_width = [100, 400]
-        dict_disease_width = [100, 120, 80, 70, 570]
+        dict_disease_width = [100, 120, 80, 70, 540]
         self.table_widget_dict_groups.set_table_heading_width(dict_groups_width)
         self.table_widget_dict_groups_name.set_table_heading_width(dict_groups_width)
         self.table_widget_dict_disease.set_table_heading_width(dict_disease_width)

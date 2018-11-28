@@ -145,13 +145,11 @@ class InsApplyGenerateFile(QtWidgets.QMainWindow):
                 ApplyPeriod = "{2}" AND
                 ApplyType = "{3}" AND
                 PatientKey = {4} AND
-                CaseType = "30" AND
-                SpecialCode1 = "{5}"
+                CaseType = "30"
         '''.format(
             self.clinic_id, self.apply_date, self.period,
             nhi_utils.APPLY_TYPE_DICT[self.apply_type],
             patient_key,
-            nhi_utils.SPECIAL_CODE_DICT['腦血管疾病']
         )
         ins_apply_rows = self.database.select_record(sql)
         if len(ins_apply_rows) > 0:
@@ -198,7 +196,7 @@ class InsApplyGenerateFile(QtWidgets.QMainWindow):
 
         drug_fee = number_utils.get_integer(row['InterDrugFee'])
 
-        if special_code == nhi_utils.SPECIAL_CODE_DICT['腦血管疾病']:
+        if string_utils.xstr(row['TreatType']) in ['腦血管疾病']:
             treat_fee = treat_records[0]['TreatFee']
         else:
             treat_fee = (
@@ -327,24 +325,19 @@ class InsApplyGenerateFile(QtWidgets.QMainWindow):
     def _rewrite_ins_record(self, ins_apply_row, case_row):
         ins_apply_key = number_utils.get_integer(ins_apply_row['InsApplyKey'])
         pres_days = case_utils.get_pres_days(self.database, case_row['CaseKey'])
+
+        pres_type = string_utils.xstr(ins_apply_row['PresType'])
+        if pres_type == '2' and pres_days > 0:  # 首次未開處方, 但療程有開處方
+            pres_type = nhi_utils.get_pres_type(pres_days)
+
         treat_records = nhi_utils.get_treat_records(self.database, case_row, ins_apply_row)
 
-        fields = [
-            'StopDate', 'PresDays',
-            'DrugFee', 'TreatFee', 'PharmacyCode', 'PharmacyFee',
-            'InsTotalFee', 'ShareFee', 'InsApplyFee', 'AgentFee',
-            'CaseKey1', 'TreatCode1', 'TreatFee1', 'Percent1',
-            'CaseKey2', 'TreatCode2', 'TreatFee2', 'Percent2',
-            'CaseKey3', 'TreatCode3', 'TreatFee3', 'Percent3',
-            'CaseKey4', 'TreatCode4', 'TreatFee4', 'Percent4',
-            'CaseKey5', 'TreatCode5', 'TreatFee5', 'Percent5',
-            'CaseKey6', 'TreatCode6', 'TreatFee6', 'Percent6',
-        ]
-
-        if string_utils.xstr(ins_apply_row['SpecialCode1']) == nhi_utils.SPECIAL_CODE_DICT['腦血管疾病']:
+        if string_utils.xstr(case_row['TreatType']) in ['腦血管疾病']:
             treat_fee = treat_records[0]['TreatFee']
             ins_total_fee = (  # 重新計算申報總金額, 須扣除病歷內的處置費及原本申報金額的處置費, 再加上新的處置費
                     number_utils.get_integer(ins_apply_row['InsTotalFee']) +
+                    number_utils.get_integer(case_row['InterDrugFee']) +
+                    number_utils.get_integer(case_row['PharmacyFee']) +
                     treat_fee -
                     number_utils.get_integer(ins_apply_row['TreatFee'])
             )
@@ -367,21 +360,47 @@ class InsApplyGenerateFile(QtWidgets.QMainWindow):
                 number_utils.get_integer(case_row['DrugShareFee'])
         )
 
+        drug_fee = (number_utils.get_integer(ins_apply_row['DrugFee']) +
+                    number_utils.get_integer(case_row['InterDrugFee']))
+        pharmacy_fee = (number_utils.get_integer(ins_apply_row['PharmacyFee']) +
+                        number_utils.get_integer(case_row['PharmacyFee']))
+        pharmacist_id = string_utils.xstr(ins_apply_row['PharmacistID'])
+        if pharmacy_fee > 0 and pharmacist_id == '':
+            pharmacist_id = nhi_utils.get_pharmacist_id(self.database, self.system_settings, case_row)
+
         ins_apply_fee = ins_total_fee - share_fee
+
+        share_code = string_utils.xstr(ins_apply_row['ShareCode'])
+        if share_code == '009' and share_fee > 0:  # 療程中開藥
+            share_code = 'S20'
+
+        fields = [
+            'StopDate', 'PresDays', 'PresType',
+            'DrugFee', 'TreatFee', 'PharmacyCode', 'PharmacyFee', 'PharmacistID',
+            'ShareCode',
+            'InsTotalFee', 'ShareFee', 'InsApplyFee', 'AgentFee',
+            'CaseKey1', 'TreatCode1', 'TreatFee1', 'Percent1',
+            'CaseKey2', 'TreatCode2', 'TreatFee2', 'Percent2',
+            'CaseKey3', 'TreatCode3', 'TreatFee3', 'Percent3',
+            'CaseKey4', 'TreatCode4', 'TreatFee4', 'Percent4',
+            'CaseKey5', 'TreatCode5', 'TreatFee5', 'Percent5',
+            'CaseKey6', 'TreatCode6', 'TreatFee6', 'Percent6',
+        ]
 
         data = [
             case_row['CaseDate'].date(),
             (number_utils.get_integer(ins_apply_row['PresDays']) + pres_days),
-            (number_utils.get_integer(ins_apply_row['DrugFee']) +
-             number_utils.get_integer(case_row['InterDrugFee'])),
+            pres_type,
+            drug_fee,
             treat_fee,
             nhi_utils.get_pharmacy_code(
                 self.system_settings,
                 case_row, pres_days,
                 string_utils.xstr(ins_apply_row['PharmacyCode'])
             ),
-            (number_utils.get_integer(ins_apply_row['PharmacyFee']) +
-             number_utils.get_integer(case_row['PharmacyFee'])),
+            pharmacy_fee,
+            pharmacist_id,
+            share_code,
             ins_total_fee,
             share_fee,
             ins_apply_fee,

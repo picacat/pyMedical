@@ -69,6 +69,17 @@
             </widget>
            </item>
            <item>
+            <widget class="QToolButton" name="toolButton_dictionary">
+             <property name="text">
+              <string>...</string>
+             </property>
+             <property name="icon">
+              <iconset>
+               <normaloff>../icons/help-contents.svg</normaloff>../icons/help-contents.svg</iconset>
+             </property>
+            </widget>
+           </item>
+           <item>
             <spacer name="horizontalSpacer_3">
              <property name="orientation">
               <enum>Qt::Horizontal</enum>
@@ -113,26 +124,6 @@
            </column>
            <column>
             <property name="text">
-             <string>處方名稱</string>
-            </property>
-           </column>
-           <column>
-            <property name="text">
-             <string>劑量</string>
-            </property>
-           </column>
-           <column>
-            <property name="text">
-             <string>單位</string>
-            </property>
-           </column>
-           <column>
-            <property name="text">
-             <string>指示</string>
-            </property>
-           </column>
-           <column>
-            <property name="text">
              <string>prescript_no</string>
             </property>
            </column>
@@ -169,6 +160,26 @@
            <column>
             <property name="text">
              <string>dosage_mode</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>處方名稱</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>劑量</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>單位</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>指示</string>
             </property>
            </column>
           </widget>
@@ -329,11 +340,6 @@
            </column>
            <column>
             <property name="text">
-             <string>處置名稱</string>
-            </property>
-           </column>
-           <column>
-            <property name="text">
              <string>case_key</string>
             </property>
            </column>
@@ -362,6 +368,11 @@
              <string>ins_code</string>
             </property>
            </column>
+           <column>
+            <property name="text">
+             <string>處置名稱</string>
+            </property>
+           </column>
           </widget>
          </item>
          <item>
@@ -380,9 +391,16 @@
             </spacer>
            </item>
            <item>
-            <widget class="QPushButton" name="pushButton_clear_prescript">
+            <widget class="QToolButton" name="toolButton_clear_medical_record">
              <property name="text">
-              <string>清除處方</string>
+              <string>清除病歷</string>
+             </property>
+             <property name="icon">
+              <iconset>
+               <normaloff>../icons/gtk-clear.svg</normaloff>../icons/gtk-clear.svg</iconset>
+             </property>
+             <property name="toolButtonStyle">
+              <enum>Qt::ToolButtonTextBesideIcon</enum>
              </property>
             </widget>
            </item>

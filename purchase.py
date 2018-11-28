@@ -64,7 +64,7 @@ class Purchase(QtWidgets.QMainWindow):
         self.ui.toolButton_patient_list.clicked.connect(self._patient_picker)
         self.ui.tableWidget_medicine_type.itemSelectionChanged.connect(self._groups_changed)
         self.ui.tableWidget_medicine.clicked.connect(self._set_prescript)
-        self.ui.tableWidget_prescript.itemChanged.connect(self._item_changed)
+        self.ui.tableWidget_prescript.itemChanged.connect(self._prescript_item_changed)
         self.ui.lineEdit_input_code.textChanged.connect(self._input_code_changed)
         self.ui.lineEdit_patient_key.textChanged.connect(self._patient_key_changed)
         self.ui.lineEdit_discount.textChanged.connect(self._discount_changed)
@@ -303,7 +303,7 @@ class Purchase(QtWidgets.QMainWindow):
 
         self._calculate_total()
 
-    def _item_changed(self, item):
+    def _prescript_item_changed(self, item):
         if item is None:
             return
 

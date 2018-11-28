@@ -4,7 +4,6 @@
 import sys
 
 from PyQt5 import QtWidgets, QtGui, QtCore
-from PyQt5.QtWidgets import QMessageBox, QPushButton
 import os.path
 from lxml import etree as ET
 
@@ -91,7 +90,7 @@ class InsCheckApplyFee(QtWidgets.QMainWindow):
 
         self._parse_ins_calculated_data()
 
-        xml_file_name = nhi_utils.get_ins_xml_file_name(self.apply_type_code, self.apply_date)
+        xml_file_name = nhi_utils.get_ins_xml_file_name(self.apply_type_code, self.apply_date, 'unix')
         if not os.path.isfile(xml_file_name):
             return
 
@@ -238,8 +237,15 @@ class InsCheckApplyFee(QtWidgets.QMainWindow):
             except KeyError:
                 pass
 
-            result = self._parse_pdata(ddata)
             error_message = []
+            if (diag_fee + drug_fee + pharmacy_fee + treat_fee) != total_fee:
+                error_message.append('申報合計不平衡: 自身加總有誤')
+            if (total_fee - share_fee) != apply_fee:
+                error_message.append('申報金額不平衡: 自身加總有誤')
+            if apply_fee <= 0:
+                error_message.append('無申報申報金額')
+
+            result = self._parse_pdata(ddata)
             if result['diag_fee'] != diag_fee:
                 error_message.append('診察費不平衡, 清單段: {0}, 醫令段: {1}'.format(
                     diag_fee, result['diag_fee']

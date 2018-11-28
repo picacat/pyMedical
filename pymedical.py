@@ -2,7 +2,7 @@
 #coding: utf-8
 
 import sys
-from PyQt5 import QtWidgets, QtGui, QtCore
+from PyQt5 import QtWidgets, QtGui
 from PyQt5.QtWidgets import QMessageBox, QPushButton
 import datetime
 import os

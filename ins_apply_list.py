@@ -86,7 +86,7 @@ class InsApplyList(QtWidgets.QMainWindow):
             return
 
         row = rows[0]
-        if string_utils.xstr(row['SpecialCode1']) == nhi_utils.SPECIAL_CODE_DICT['腦血管疾病']:
+        if string_utils.xstr(row['CaseType']) == '30':
             case_key = row['CaseKey1']
             self.parent.open_medical_record(case_key)
             return
@@ -248,6 +248,7 @@ class InsApplyList(QtWidgets.QMainWindow):
 
         printer_utils.print_ins_apply_order(
             self, self.database, self.system_settings,
+            self.apply_year, self.apply_month,
             self.apply_type, ins_apply_key
         )
 

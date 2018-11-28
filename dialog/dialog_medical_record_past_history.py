@@ -140,6 +140,6 @@ class DialogMedicalRecordPastHistory(QtWidgets.QDialog):
 
     def _past_history_changed(self):
         case_key = self.table_widget_past_history.field_value(0)
-        html = case_utils.get_medical_record_html(self.database, case_key)
+        html = case_utils.get_medical_record_html(self.database, self.system_settings, case_key)
         self.ui.textEdit_medical_record.setHtml(html)
 

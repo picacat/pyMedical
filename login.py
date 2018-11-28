@@ -2,7 +2,7 @@
 #coding: utf-8
 
 
-from PyQt5 import QtWidgets, QtGui
+from PyQt5 import QtWidgets
 
 from libs import ui_utils
 from libs import system_utils

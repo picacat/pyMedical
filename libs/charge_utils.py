@@ -304,14 +304,30 @@ def get_ins_pharmacy_fee(database, system_settings, ins_drug_fee, pharmacy_type=
         return ins_pharmacy_fee
 
     pharmacist = system_settings.field('藥師人數')
-    if int(pharmacist) > 0:
-        pharmacy_code = 'A31'
-    else:
-        pharmacy_code = 'A32'
 
+    if int(pharmacist) > 0:
+        item_name = '藥師調劑'
+    else:
+        item_name = '醫師調劑'
+
+    pharmacy_code = get_ins_code_from_charge_settings(database, '調劑費', item_name)
     ins_pharmacy_fee = get_ins_fee_from_ins_code(database, pharmacy_code)
 
     return ins_pharmacy_fee
+
+def get_ins_code_from_charge_settings(database, charge_type, item_name):
+    ins_code = ''
+    sql = '''
+        SELECT * FROM charge_settings 
+        WHERE
+            ChargeType = "{0}" AND
+            ItemName = "{1}"
+    '''.format(charge_type, item_name)
+    rows = database.select_record(sql)
+    if len(rows) <= 0:
+        return ins_code
+
+    return string_utils.xstr(rows[0]['InsCode'])
 
 
 # 取得健保針灸費
@@ -427,7 +443,7 @@ def get_ins_special_care_fee(database, system_settings, case_key, treat_type,
             pharmacy_type
         )
 
-    if treat_type == '腦血管疾病':  # 腦血管疾病可申報藥費及調劑費
+    if treat_type in ['腦血管疾病']:  # 腦血管疾病可申報藥費及調劑費
         care_fee = get_ins_fee_from_ins_code(database, 'C05')  # 預設為C05 <= 3次
 
     if treat_type in ['兒童鼻炎']:  # 兒童鼻炎可申報診察費, 針灸費, 傷科費
@@ -460,9 +476,15 @@ def get_ins_special_care_fee(database, system_settings, case_key, treat_type,
     ins_fee['diag_share_fee'] = get_diag_share_fee(
         database, share, treatment, course,
     )
-    ins_fee['drug_share_fee'] = get_drug_share_fee(
-        database, share, drug_fee,
-    )
+    if treat_type in ['乳癌照護', '肝癌照護', '助孕照護', '保胎照護']:  # 照護要申報藥品負擔
+        virtual_drug_fee = get_ins_drug_fee(database, pres_days)
+        ins_fee['drug_share_fee'] = get_drug_share_fee(
+            database, share, virtual_drug_fee,
+        )
+    else:
+        ins_fee['drug_share_fee'] = get_drug_share_fee(
+            database, share, drug_fee,
+        )
 
     ins_fee['ins_apply_fee'] = (
             ins_fee['ins_total_fee'] -
@@ -532,7 +554,7 @@ def get_ins_fee(database, system_settings, case_key, treat_type,
 def calculate_ins_fee(database, system_settings, case_key):
     sql = '''
         SELECT 
-            CaseKey, Share, Continuance, PharmacyType, Treatment 
+            CaseKey, Share, Continuance, TreatType, PharmacyType, Treatment 
         FROM cases 
         WHERE 
             CaseKey = {0}
@@ -556,7 +578,7 @@ def calculate_ins_fee(database, system_settings, case_key):
 
     fields = [
         'DiagFee', 'InterDrugFee', 'PharmacyFee',
-        'AcupunctureFee', 'MassageFee', 'DislocateFee', 'ExamFee',
+        'AcupunctureFee', 'MassageFee', 'DislocateFee',
         'InsTotalFee', 'DiagShareFee', 'DrugShareFee', 'InsApplyFee', 'AgentFee',
     ]
 
@@ -615,10 +637,6 @@ def update_treat_fee(database, ins_apply_key, course, treat_percent):
     total_treat_fee = row['TreatFee'] - treat_fee + adjusted_treat_fee
     ins_total_fee = row['InsTotalFee'] - treat_fee + adjusted_treat_fee
     ins_apply_fee = row['InsApplyFee'] - treat_fee + adjusted_treat_fee
-
-
-    if row['Sequence'] == 8:
-        print('TotalTreatFee:', total_treat_fee, '  TreatFee:', treat_fee, '   Adjusted TreatFee:', adjusted_treat_fee)
 
     fields = [
         'TreatFee',
@@ -698,6 +716,20 @@ def set_nhi_basic_data(database):
          '中醫四診診察費口服藥(至少七天)、衛教、營養飲食指導，單次門診須全部執行方能申請本項點數。'),
         ('照護費', '兒童過敏性鼻炎管理照護費', 'P58005', 200,
          '本項包含中醫護理衛教、營養飲食指導及經穴按摩指導，各項目皆須執行並於病歷詳細記載，方可申報費用。'),
+        ('照護費', '乳癌、肝癌門診加強照護費(給藥日數7天以下)', 'P56001', 700,
+         '包含中醫輔助醫療診察費、口服藥'),
+        ('照護費', '乳癌、肝癌門診加強照護費(給藥日數8-14天)', 'P56002', 1050,
+         '包含中醫輔助醫療診察費、口服藥'),
+        ('照護費', '乳癌、肝癌門診加強照護費(給藥日數15-21天)', 'P56003', 1400,
+         '包含中醫輔助醫療診察費、口服藥'),
+        ('照護費', '乳癌、肝癌門診加強照護費(給藥日數22-28天)', 'P56004', 1750,
+         '包含中醫輔助醫療診察費、口服藥'),
+        ('照護費', '癌症針灸或傷科治療處置費', 'P56005', 400,
+         '本項處置費每月申報上限為 12 次，超出部分支付點數以零計。'),
+        ('照護費', '疾病管理照護費', 'P56006', 550,
+         '1.包含中醫護理衛教及營養飲食指導。2.限三個月申報一次，申報此項目者，須參考衛教表單(如附件三)提供照護指導，並應併入病患之病歷紀錄備查。'),
+        ('照護費', '生理評估費', 'P56007', 1100,
+         '1.癌症治療功能性評估：一般性量表 2.生活品質評估。前測(收案三日內)及後測(收案三個月內)量表皆完成，方可申請給付。限三個月申報一次，並於病歷詳細載明評估結果。'),
     ]
 
     for row in rows:

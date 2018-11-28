@@ -25,7 +25,7 @@ class TableWidget:
 
         self.is_set_heading = True
 
-    def set_column_hidden(self, hidden_columns=[]):
+    def set_column_hidden(self, hidden_columns=None):
         for i in hidden_columns:
             self.table_widget.setColumnHidden(i, True)
 
@@ -62,6 +62,16 @@ class TableWidget:
             field_value = None
 
         return field_value
+
+    def cell_widget(self, field_index):
+        row = self.table_widget.currentRow()
+
+        try:
+            widget = self.table_widget.cellWidget(row, field_index).text()
+        except AttributeError:
+            widget = None
+
+        return widget
 
     def set_cell_text_format(self, row_index, column_index, text_format, variable_type=None):
         item = self.table_widget.item(row_index, column_index)

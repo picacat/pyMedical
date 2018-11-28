@@ -265,7 +265,7 @@ class WaitingList(QtWidgets.QMainWindow):
             return
 
         case_key = rows[0]['CaseKey']
-        html = case_utils.get_medical_record_html(self.database, case_key)
+        html = case_utils.get_medical_record_html(self.database, self.system_settings, case_key)
         self.ui.textEdit_medical_record.setHtml(html)
 
     def _waiting_list_tab_changed(self, i):

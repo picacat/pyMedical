@@ -132,6 +132,12 @@ class MedicalRecord(QtWidgets.QMainWindow):
         self.ui.lineEdit_disease_code3.editingFinished.connect(self.disease_code_editing_finished)
         self.add_tab_button.clicked.connect(self.add_prescript_tab)
 
+        self.ui.toolButton_disease1.clicked.connect(self._tool_button_dictionary_clicked)
+        self.ui.toolButton_disease2.clicked.connect(self._tool_button_dictionary_clicked)
+        self.ui.toolButton_disease3.clicked.connect(self._tool_button_dictionary_clicked)
+        self.ui.toolButton_distincts.clicked.connect(self._tool_button_dictionary_clicked)
+        self.ui.toolButton_cure.clicked.connect(self._tool_button_dictionary_clicked)
+
     def close_prescript_tab(self, current_index):
         current_tab = self.ui.tabWidget_prescript.widget(current_index)
         tab_name = self.ui.tabWidget_prescript.tabText(current_index)
@@ -302,35 +308,55 @@ class MedicalRecord(QtWidgets.QMainWindow):
 
         return modified
 
-    def open_dictionary(self):
-        dialog_type = None
-        if self.ui.textEdit_symptom.hasFocus():
-            dialog_type = '主訴'
-        elif self.ui.textEdit_tongue.hasFocus():
-            dialog_type = '舌診'
-        elif self.ui.textEdit_pulse.hasFocus():
-            dialog_type = '脈象'
-        elif self.ui.textEdit_remark.hasFocus():
-            dialog_type = '備註'
-        elif self.ui.lineEdit_distinguish.hasFocus():
-            dialog_type = '辨證'
-        elif self.ui.lineEdit_cure.hasFocus():
-            dialog_type = '治則'
-        elif self.ui.lineEdit_disease_code1.hasFocus():
-            dialog_type = '病名1'
-        elif self.ui.lineEdit_disease_code2.hasFocus():
-            dialog_type = '病名2'
-        elif self.ui.lineEdit_disease_code3.hasFocus():
-            dialog_type = '病名3'
-        else:
-            for i in range(len(self.tab_list)):
-                if self.tab_list[i] is not None and self.tab_list[i].ui.tableWidget_prescript.hasFocus():
-                    if i == 0:
-                        dialog_type = '健保處方'
-                    else:
-                        dialog_type = '自費處方'
+    def _tool_button_dictionary_clicked(self):
+        dictionary_type = None
+        sender_name = self.sender().objectName()
 
-                    medicine_set = i + 1
+        if sender_name == 'toolButton_disease1':
+            dictionary_type = '病名1'
+        elif sender_name == 'toolButton_disease2':
+            dictionary_type = '病名2'
+        elif sender_name == 'toolButton_disease3':
+            dictionary_type = '病名3'
+        elif sender_name == 'toolButton_distincts':
+            dictionary_type = '辨證'
+        elif sender_name == 'toolButton_cure':
+            dictionary_type = '治則'
+
+        if dictionary_type is None:
+            return
+
+        self.open_dictionary(None, dictionary_type)
+
+    def open_dictionary(self, medicine_set, dialog_type=None):
+        if not dialog_type:
+            if self.ui.textEdit_symptom.hasFocus():
+                dialog_type = '主訴'
+            elif self.ui.textEdit_tongue.hasFocus():
+                dialog_type = '舌診'
+            elif self.ui.textEdit_pulse.hasFocus():
+                dialog_type = '脈象'
+            elif self.ui.textEdit_remark.hasFocus():
+                dialog_type = '備註'
+            elif self.ui.lineEdit_distinguish.hasFocus():
+                dialog_type = '辨證'
+            elif self.ui.lineEdit_cure.hasFocus():
+                dialog_type = '治則'
+            elif self.ui.lineEdit_disease_code1.hasFocus():
+                dialog_type = '病名1'
+            elif self.ui.lineEdit_disease_code2.hasFocus():
+                dialog_type = '病名2'
+            elif self.ui.lineEdit_disease_code3.hasFocus():
+                dialog_type = '病名3'
+            else:
+                for i in range(len(self.tab_list)):
+                    if self.tab_list[i] is not None and self.tab_list[i].ui.tableWidget_prescript.hasFocus():
+                        if i == 0:
+                            dialog_type = '健保處方'
+                        else:
+                            dialog_type = '自費處方'
+
+                        medicine_set = i + 1
 
         if dialog_type is None:
             return
@@ -363,9 +389,12 @@ class MedicalRecord(QtWidgets.QMainWindow):
             elif dialog_type == '病名3':
                 line_edit = self.ui.lineEdit_disease_name3
 
+            line_special_code = self.tab_registration.ui.lineEdit_special_code
+
             dialog = dialog_disease.DialogDisease(
-                self, self.database, self.system_settings, text_edit[dialog_type], line_edit)
-        elif dialog_type in ['健保處方', '自費處方']:
+                self, self.database, self.system_settings,
+                text_edit[dialog_type], line_edit, line_special_code)
+        elif dialog_type in ['健保處方', '自費處方'] and medicine_set is not None:
             dialog = dialog_medicine.DialogMedicine(
                 self, self.database, self.system_settings,
                 self.tab_list[medicine_set-1].tableWidget_prescript, medicine_set)
@@ -534,6 +563,10 @@ class MedicalRecord(QtWidgets.QMainWindow):
 
     # 設定就醫類別及療程
     def _set_treatment_and_course(self):
+        if self.tab_registration.ui.comboBox_treat_type.currentText() in nhi_utils.CARE_TREAT:
+            self.tab_registration.ui.comboBox_course.setCurrentText('')
+            return
+
         treatment = string_utils.xstr(self.tab_list[0].combo_box_treatment.currentText())
         course = number_utils.get_integer(self.tab_registration.ui.comboBox_course.currentText())
         if treatment in nhi_utils.INS_TREAT:

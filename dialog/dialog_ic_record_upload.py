@@ -65,12 +65,6 @@ class DialogICRecordUpload(QtWidgets.QDialog):
             SELECT 
                 *, DATE_FORMAT(CaseDate, "%Y-%m-%d %H:%i") AS CaseDate, 
                 cases.InsType as CaseInsType,
-                ExtractValue(Security, "//registered_date") AS RegisteredDate,
-                ExtractValue(Security, "//sam_id") AS SAMID,
-                ExtractValue(Security, "//clinic_id") AS ClinicID,
-                ExtractValue(Security, "//upload_type") AS UploadType,
-                ExtractValue(Security, "//treat_after_check") AS TreatAfterCheck,
-                ExtractValue(Security, "//security_signature") AS SecuritySignature,
                 patient.Gender, patient.Birthday
             FROM cases
                 LEFT JOIN patient ON patient.PatientKey = cases.PatientKey
@@ -80,6 +74,15 @@ class DialogICRecordUpload(QtWidgets.QDialog):
                 (cases.InsType = "健保") AND
                 (Card NOT IN ("欠卡") AND Card IS NOT NULL)
         '''.format(start_date, end_date)
+
+        '''
+                ExtractValue(Security, "//registered_date") AS RegisteredDate,
+                ExtractValue(Security, "//sam_id") AS SAMID,
+                ExtractValue(Security, "//clinic_id") AS ClinicID,
+                ExtractValue(Security, "//upload_type") AS UploadType,
+                ExtractValue(Security, "//treat_after_check") AS TreatAfterCheck,
+                ExtractValue(Security, "//security_signature") AS SecuritySignature,
+        '''
 
         period = self.ui.comboBox_period.currentText()
         if period != '全部':
@@ -94,7 +97,7 @@ class DialogICRecordUpload(QtWidgets.QDialog):
         else:
             script += 'AND (ExtractValue(Security, "//upload_time") != "")'
 
-        script += ' ORDER BY CaseDate, cases.Room, RegistNo'
+        script += ' ORDER BY CaseDate, cases.Room, cases.RegistNo'
 
         return script
 

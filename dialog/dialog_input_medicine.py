@@ -76,7 +76,7 @@ class DialogInputMedicine(QtWidgets.QDialog):
 
     # 設定欄位寬度
     def _set_table_width(self):
-        medicine_width = [100, 60, 240, 60, 80, 120]
+        medicine_width = [100, 60, 240, 60, 80, 110]
         self.table_widget_medicine.set_table_heading_width(medicine_width)
 
     def accepted_button_clicked(self):
@@ -116,48 +116,54 @@ class DialogInputMedicine(QtWidgets.QDialog):
         '''.format(self.input_code, medicine_type)
         self.table_widget_medicine.set_db_data(sql, self._set_medicine_data)
 
-    def _set_medicine_data(self, rec_no, rec):
+    def _set_medicine_data(self, row_no, row):
         if self.medicine_type == '健保藥品':
-            remark = string_utils.xstr(rec['InsCode'])
+            remark = string_utils.xstr(row['InsCode'])
         else:
             remark = None
-        medicine_rec = [
-            string_utils.xstr(rec['MedicineKey']),
-            string_utils.xstr(rec['MedicineType']),
-            string_utils.xstr(rec['MedicineName']),
-            string_utils.xstr(rec['Unit']),
-            string_utils.xstr(rec['SalePrice']),
+
+        medicine_row = [
+            string_utils.xstr(row['MedicineKey']),
+            string_utils.xstr(row['MedicineType']),
+            string_utils.xstr(row['MedicineName']),
+            string_utils.xstr(row['Unit']),
+            string_utils.get_formatted_str('單價', row['SalePrice']),
             remark
         ]
 
-        for column in range(len(medicine_rec)):
+        for column in range(len(medicine_row)):
             self.ui.tableWidget_medicine.setItem(
-                rec_no, column,
-                QtWidgets.QTableWidgetItem(medicine_rec[column])
+                row_no, column,
+                QtWidgets.QTableWidgetItem(medicine_row[column])
             )
+            align = QtCore.Qt.AlignLeft
             if column in [3]:
-                self.ui.tableWidget_medicine.item(
-                    rec_no, column).setTextAlignment(
-                    QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
-                )
+                align = QtCore.Qt.AlignCenter
+            elif column in [4]:
+                align = QtCore.Qt.AlignRight
+
+            self.ui.tableWidget_medicine.item(row_no, column).setTextAlignment(align | QtCore.Qt.AlignVCenter)
 
     def add_medicine(self):
-        prescript_rec = [
+        prescript_row = [
             [0, '-1'],
-            [1, self.table_widget_medicine.field_value(2)],
-            [3, self.table_widget_medicine.field_value(3)],
-            [4, None],
-            [5, str(self.table_widget_prescript.currentRow()+1)],
-            [6, str(self.parent.case_key)],
-            [7, str(self.parent.case_date)],
-            [8, str(self.medicine_set)],
-            [9, self.table_widget_medicine.field_value(1)],
-            [10, self.table_widget_medicine.field_value(0)],
-            [11, self.table_widget_medicine.field_value(5)],
-            [12, self.system_settings.field('劑量模式')],
+            [1, str(self.table_widget_prescript.currentRow()+1)],
+            [2, str(self.parent.case_key)],
+            [3, str(self.parent.case_date)],
+            [4, str(self.medicine_set)],
+            [5, self.table_widget_medicine.field_value(1)],
+            [6, self.table_widget_medicine.field_value(0)],
+            [7, self.table_widget_medicine.field_value(5)],
+            [8, self.system_settings.field('劑量模式')],
+            [9, self.table_widget_medicine.field_value(2)],
+            [10, None],
+            [11, self.table_widget_medicine.field_value(3)],
+            [12, None],
+            [13, self.table_widget_medicine.field_value(4)],
+            [14, None],
         ]
 
-        self.parent.set_prescript(prescript_rec)
+        self.parent.set_prescript(prescript_row)
         if self.medicine_set == 1:
             self.parent.set_default_pres_days()
 
@@ -166,13 +172,13 @@ class DialogInputMedicine(QtWidgets.QDialog):
     def add_treat(self):
         treat_rec = [
             [0, '-1'],
-            [1, self.table_widget_medicine.field_value(2)],
-            [2, str(self.parent.case_key)],
-            [3, str(self.parent.case_date)],
-            [4, str(self.medicine_set)],
-            [5, self.table_widget_medicine.field_value(1)],
-            [6, self.table_widget_medicine.field_value(0)],
-            [7, self.table_widget_medicine.field_value(5)],
+            [1, str(self.parent.case_key)],
+            [2, str(self.parent.case_date)],
+            [3, str(self.medicine_set)],
+            [4, self.table_widget_medicine.field_value(1)],
+            [5, self.table_widget_medicine.field_value(0)],
+            [6, self.table_widget_medicine.field_value(5)],
+            [7, self.table_widget_medicine.field_value(2)],
         ]
 
         self.parent.set_treat(treat_rec)

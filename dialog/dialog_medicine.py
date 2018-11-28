@@ -106,11 +106,11 @@ class DialogMedicine(QtWidgets.QDialog):
     # 設定欄位寬度
     def _set_table_width(self):
         dict_groups_width = [100, 80]
-        medicine_width = [100, 200, 90, 50, 80, 100]
+        medicine_width = [100, 100, 200, 90, 50, 80]
         self.table_widget_dict_groups.set_table_heading_width(dict_groups_width)
         self.table_widget_medicine.set_table_heading_width(medicine_width)
         self.table_widget_dict_groups.set_column_hidden([0])
-        self.table_widget_medicine.set_column_hidden([0, 5])
+        self.table_widget_medicine.set_column_hidden([0, 1])
 
     def accepted_button_clicked(self):
         self.close()
@@ -157,31 +157,31 @@ class DialogMedicine(QtWidgets.QDialog):
         '''.format(dict_groups_type, input_code_str)
         self.table_widget_medicine.set_db_data(sql, self._set_medicine_data)
 
-    def _set_medicine_data(self, rec_no, rec):
-        medicine_rec = [
-            string_utils.xstr(rec['MedicineKey']),
-            string_utils.xstr(rec['MedicineName']),
-            string_utils.xstr(rec['InsCode']),
-            string_utils.xstr(rec['Unit']),
-            string_utils.xstr(rec['SalePrice']),
-            string_utils.xstr(rec['MedicineType']),
+    def _set_medicine_data(self, row_no, row):
+        price = string_utils.get_formatted_str('單價', row['SalePrice'])
+
+        medicine_row = [
+            string_utils.xstr(row['MedicineKey']),
+            string_utils.xstr(row['MedicineType']),
+            string_utils.xstr(row['MedicineName']),
+            string_utils.xstr(row['InsCode']),
+            string_utils.xstr(row['Unit']),
+            price,
         ]
 
-        for column in range(len(medicine_rec)):
+        for column in range(len(medicine_row)):
             self.ui.tableWidget_medicine.setItem(
-                rec_no, column,
-                QtWidgets.QTableWidgetItem(medicine_rec[column])
+                row_no, column,
+                QtWidgets.QTableWidgetItem(medicine_row[column])
             )
+
+            align = QtCore.Qt.AlignLeft
             if column in [4]:
-                self.ui.tableWidget_medicine.item(
-                    rec_no, column).setTextAlignment(
-                    QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
-                )
-            elif column in [3]:
-                self.ui.tableWidget_medicine.item(
-                    rec_no, column).setTextAlignment(
-                    QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
-                )
+                align = QtCore.Qt.AlignCenter
+            elif column in [5]:
+                align = QtCore.Qt.AlignRight
+
+            self.ui.tableWidget_medicine.item(row_no, column).setTextAlignment(align | QtCore.Qt.AlignVCenter)
 
     def phonetic_button_clicked(self):
         input_code = str(self.ui.lineEdit_input_code.text()).strip()
@@ -206,21 +206,24 @@ class DialogMedicine(QtWidgets.QDialog):
         self.ui.lineEdit_input_code.setFocus(True)
 
     def add_medicine(self):
-        prescript_rec = [
+        prescript_row = [
             [0, '-1'],
-            [1, self.table_widget_medicine.field_value(1)],
-            [3, self.table_widget_medicine.field_value(3)],
-            [4, None],
-            [5, str(self.table_widget_prescript.currentRow()+1)],
-            [6, str(self.parent.tab_list[self.medicine_set-1].case_key)],
-            [7, str(self.parent.tab_list[self.medicine_set-1].case_date)],
-            [8, self.medicine_set],
-            [9, self.table_widget_medicine.field_value(5)],
-            [10, self.table_widget_medicine.field_value(0)],
-            [11, self.table_widget_medicine.field_value(2)],
-            [12, self.system_settings.field('劑量模式')],
+            [1, str(self.table_widget_prescript.currentRow()+1)],
+            [2, str(self.parent.tab_list[self.medicine_set-1].case_key)],
+            [3, str(self.parent.tab_list[self.medicine_set-1].case_date)],
+            [4, self.medicine_set],
+            [5, self.table_widget_medicine.field_value(1)],
+            [6, self.table_widget_medicine.field_value(0)],
+            [7, self.table_widget_medicine.field_value(3)],
+            [8, self.system_settings.field('劑量模式')],
+            [9, self.table_widget_medicine.field_value(2)],
+            [10, None],
+            [11, self.table_widget_medicine.field_value(4)],
+            [12, None],
+            [13, self.table_widget_medicine.field_value(5)],
+            [14, None],
         ]
 
-        self.parent.tab_list[self.medicine_set-1].set_prescript(prescript_rec)
+        self.parent.tab_list[self.medicine_set-1].set_prescript(prescript_row)
         if self.medicine_set == 1:  # 健保才預設藥日
             self.parent.tab_list[self.medicine_set-1].set_default_pres_days()

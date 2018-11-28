@@ -1,3 +1,4 @@
+from PyQt5 import QtWidgets
 import xml.etree.ElementTree as ET
 from xml.dom.minidom import Document
 from libs import string_utils
@@ -25,19 +26,16 @@ def get_security_xml_dict(root):
     return security_xml_dict
 
 
-def get_treat_data_xml_dict(root=None):
-    security_xml_dict = {
-        'registered_date': string_utils.xstr(root[0].text),
-        'seq_number': string_utils.xstr(root[1].text),
-        'clinic_id': string_utils.xstr(root[2].text),
-        'security_signature': string_utils.xstr(root[3].text),
-        'sam_id': string_utils.xstr(root[4].text),
-        'register_duplicated': string_utils.xstr(root[5].text),
-        'upload_time': string_utils.xstr(root[6].text),
-        'upload_type': string_utils.xstr(root[7].text),
-        'treat_after_check': string_utils.xstr(root[8].text),
-        'prescript_sign_time': string_utils.xstr(root[9].text),
-    }
+def get_treat_data_xml_dict(xml_string):
+    from lxml import etree as ET
+    security_xml_dict = create_treat_data_xml_dict()
+
+    try:
+        root = ET.fromstring(xml_string)[0]
+        for child in root:
+            security_xml_dict[child.tag] = child.text
+    except ET.XMLSyntaxError:
+        pass
 
     return security_xml_dict
 
@@ -261,7 +259,7 @@ def get_instruction(database, case_key, medicine_set=1):
 
 
 # 取得病歷html格式
-def get_medical_record_html(database, case_key):
+def get_medical_record_html(database, system_settings, case_key):
     sql = '''
         SELECT * FROM cases 
         WHERE
@@ -307,7 +305,7 @@ def get_medical_record_html(database, case_key):
         </div>
     '''.format(medical_record)
 
-    prescript_record = _get_prescript_record(database, case_key)
+    prescript_record = _get_prescript_record(database, system_settings, case_key)
 
     html = '''
         <html>
@@ -327,7 +325,7 @@ def get_medical_record_html(database, case_key):
     return html
 
 
-def _get_prescript_record(database, case_key):
+def _get_prescript_record(database, system_settings, case_key):
     sql = '''
         SELECT Treatment FROM cases
         WHERE
@@ -384,7 +382,13 @@ def _get_prescript_record(database, case_key):
             if row['Dosage'] is None or row['Dosage'] == 0.00:
                 dosage = ''
             else:
-                dosage = string_utils.xstr(row['Dosage'])
+                if system_settings.field('劑量模式') in ['日劑量', '總量']:
+                    dosage = '{0:.1f}'.format(row['Dosage'])
+                elif system_settings.field('劑量模式') in ['次劑量']:
+                    dosage = '{0:.2f}'.format(row['Dosage'])
+                else:
+                    dosage = string_utils.xstr(row['Dosage'])
+
                 total_dosage += row['Dosage']
 
             unit = string_utils.xstr(row['Unit'])
@@ -539,3 +543,25 @@ def get_drug_name(database, ins_code):
     drug_name = string_utils.xstr(row['DrugName'])
 
     return drug_name
+
+
+def get_disease_name_html(in_disease_name):
+    injury_list = [
+        '損傷', '挫傷', '扭傷', '擦傷', '叮咬', '鈍傷', '水泡', '燒傷', '脫臼', '脫位',
+        '拉傷', '壓砸傷', '壓傷', '砸傷', '攣縮', '咬傷', '凍傷', '腐蝕傷', '燙傷', '撕裂傷', '裂傷',
+        '破裂', '壓迫', '異常物', '疼痛', '關節炎', '關節痛',
+    ]
+
+    for word in injury_list:
+        new_word = '<font color="red">{0}</font>'.format(word)
+        in_disease_name = in_disease_name.replace(word, new_word)
+
+    word = '右側'
+    new_word = '<font color="blue">{0}</font>'.format(word)
+    in_disease_name = in_disease_name.replace(word, new_word)
+
+    word = '左側'
+    new_word = '<font color="green">{0}</font>'.format(word)
+    in_disease_name = in_disease_name.replace(word, new_word)
+
+    return QtWidgets.QLabel(in_disease_name)

@@ -86,6 +86,9 @@ class Patient(QtWidgets.QMainWindow):
             return
 
         name = self.ui.lineEdit_name.text()
+        if name == '':
+            return
+
         sql = 'SELECT * FROM patient WHERE Name = "{0}"'.format(name)
         rows = self.database.select_record(sql)
         if len(rows) > 0:

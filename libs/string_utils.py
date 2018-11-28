@@ -76,3 +76,14 @@ def phonetic_to_str(in_str):
     return ansi_str
 
 
+def get_formatted_str(field_type, raw_value):
+    value  = xstr(raw_value)
+    if value != '':
+        if field_type in ['日劑量', '總量']:
+            value = '{0:.1f}'.format(raw_value)
+        elif field_type == '次劑量':
+            value = '{0:.2f}'.format(raw_value)
+        elif field_type == '單價':
+            value = '{0:.1f}'.format(raw_value)
+
+    return value
