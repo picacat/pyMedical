@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# 病歷查詢 2014.09.22
+# 病歷登錄之病名詞庫 2014.09.22
 #coding: utf-8
 
 from PyQt5 import QtWidgets, QtGui
@@ -10,7 +10,7 @@ from libs import string_utils
 from libs import case_utils
 
 
-# 主視窗
+# 病名詞庫 (from 病歷登錄)
 class DialogDisease(QtWidgets.QDialog):
     # 初始化
     def __init__(self, parent=None, *args):
@@ -42,7 +42,6 @@ class DialogDisease(QtWidgets.QDialog):
         system_utils.set_css(self)
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Save).setText('選取')
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Close).setText('關閉')
-        self.ui.tableWidget_disease.doubleClicked.connect(self.accepted_button_clicked)
         self.table_widget_groups_name = table_widget.TableWidget(self.ui.tableWidget_groups_name, self.database)
         self.table_widget_groups_name.set_column_hidden([0])
         self.table_widget_disease = table_widget.TableWidget(self.ui.tableWidget_disease, self.database)
@@ -56,13 +55,17 @@ class DialogDisease(QtWidgets.QDialog):
         self.ui.buttonBox.rejected.connect(self.rejected_button_clicked)
         self.ui.tableWidget_groups.itemSelectionChanged.connect(self.groups_changed)
         self.ui.tableWidget_groups_name.itemSelectionChanged.connect(self.groups_name_changed)
+        self.ui.tableWidget_disease.doubleClicked.connect(self.accepted_button_clicked)
 
     # 存檔
     def accepted_button_clicked(self):
         self.line_edit_icd_code.setText(self.table_widget_disease.field_value(1))
-        self.line_edit_special_code.setText(self.table_widget_disease.field_value(2))
         self.line_edit_disease_name.setText(self.table_widget_disease.field_value(3))
         self.line_edit_icd_code.setModified(True)
+
+        if self.line_edit_icd_code == self.parent.ui.lineEdit_disease_code1:  # 主診斷才設定慢性病代碼
+            self.line_edit_special_code.setText(self.table_widget_disease.field_value(2))
+
         self.close()
 
     # 關閉

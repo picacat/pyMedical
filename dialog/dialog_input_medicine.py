@@ -9,6 +9,7 @@ from libs import ui_utils
 from libs import system_utils
 from libs import string_utils
 from libs import nhi_utils
+from libs import prescript_utils
 
 
 # 主視窗
@@ -145,12 +146,17 @@ class DialogInputMedicine(QtWidgets.QDialog):
             self.ui.tableWidget_medicine.item(row_no, column).setTextAlignment(align | QtCore.Qt.AlignVCenter)
 
     def add_medicine(self):
+        in_medicine_key = self.table_widget_medicine.field_value(0)
+        if prescript_utils.check_prescript_exist(
+                self.parent.ui.tableWidget_prescript, 6, in_medicine_key):
+            return
+
         prescript_row = [
             [0, '-1'],
-            [1, str(self.table_widget_prescript.currentRow()+1)],
-            [2, str(self.parent.case_key)],
-            [3, str(self.parent.case_date)],
-            [4, str(self.medicine_set)],
+            [1, string_utils.xstr(self.table_widget_prescript.currentRow()+1)],
+            [2, string_utils.xstr(self.parent.case_key)],
+            [3, string_utils.xstr(self.parent.case_date)],
+            [4, string_utils.xstr(self.medicine_set)],
             [5, self.table_widget_medicine.field_value(1)],
             [6, self.table_widget_medicine.field_value(0)],
             [7, self.table_widget_medicine.field_value(5)],
@@ -170,11 +176,16 @@ class DialogInputMedicine(QtWidgets.QDialog):
         self.parent.append_null_medicine()
 
     def add_treat(self):
+        in_medicine_key = self.table_widget_medicine.field_value(0)
+        if prescript_utils.check_prescript_exist(
+                self.parent.ui.tableWidget_treat, 5, in_medicine_key):
+            return
+
         treat_rec = [
             [0, '-1'],
-            [1, str(self.parent.case_key)],
-            [2, str(self.parent.case_date)],
-            [3, str(self.medicine_set)],
+            [1, string_utils.xstr(self.parent.case_key)],
+            [2, string_utils.xstr(self.parent.case_date)],
+            [3, string_utils.xstr(self.medicine_set)],
             [4, self.table_widget_medicine.field_value(1)],
             [5, self.table_widget_medicine.field_value(0)],
             [6, self.table_widget_medicine.field_value(5)],

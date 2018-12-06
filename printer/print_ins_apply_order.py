@@ -518,12 +518,10 @@ class PrintInsApplyOrder:
         percent = number_utils.get_integer(row['Percent1'])
         if order_type == '2':
             amount = number_utils.get_integer(row['TreatFee1'])
-            unit_price = number_utils.get_integer(amount / percent * 100)
-            percent_str = '{0:05.2f}'.format(amount / unit_price * 100)
         else:
             amount = 0
-            unit_price = 0
-            percent_str = '100.00'
+
+        unit_price = number_utils.get_integer(amount / percent * 100)
 
         case_key = case_row['CaseKey']
         pres_days = case_utils.get_pres_days(self.database, case_key)
@@ -546,7 +544,7 @@ class PrintInsApplyOrder:
         order_row['stop_date'] = '{0}0000'.format(date_utils.west_date_to_nhi_date(stop_date))
         order_row['doctor_id'] = string_utils.xstr(row['DoctorID'])
         order_row['dosage'] = '1'
-        order_row['percent'] = percent_str
+        order_row['percent'] = '{0:05.2f}'.format(percent)
         order_row['usage'] = ''
         order_row['total_dosage'] = '1'
         order_row['unit_price'] = string_utils.xstr(unit_price)
@@ -675,13 +673,17 @@ class PrintInsApplyOrder:
         percent = number_utils.get_integer(row['Percent{0}'.format(course)])
         unit_price = number_utils.get_integer(amount / percent * 100)
 
+        order_type = '2'
+        if amount <= 0:
+            order_type = '4'
+
         self.sequence += 1
         order_row = {}
         order_row['sequence'] = string_utils.xstr(self.sequence)
         order_row['clinic_class'] = string_utils.xstr(row['Class'])
         order_row['course_type'] = '2' # 2=同一療程
         order_row['pres_type'] = '0'
-        order_row['order_type'] = '2'  # 2=診療明細
+        order_row['order_type'] = order_type
         order_row['pres_days'] = ''
         order_row['ins_code'] = treat_code
         order_row['order_name'] = nhi_utils.TREAT_NAME_DICT[treat_code]
@@ -691,7 +693,7 @@ class PrintInsApplyOrder:
             self.database, string_utils.xstr(case_row['Doctor'])
         )
         order_row['dosage'] = '1'
-        order_row['percent'] = '{0:05.2f}'.format(amount / unit_price * 100)
+        order_row['percent'] = '{0:05.2f}'.format(percent)
         order_row['usage'] = ''
         order_row['total_dosage'] = '1'
         order_row['unit_price'] = string_utils.xstr(unit_price)

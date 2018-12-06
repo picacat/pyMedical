@@ -13,7 +13,7 @@ from dialog import dialog_input_disease
 from dialog import dialog_edit_disease
 
 
-# 收費設定 2018.04.14
+# 病名設定 2018.04.14
 class DictDisease(QtWidgets.QMainWindow):
     # 初始化
     def __init__(self, parent=None, *args):

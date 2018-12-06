@@ -6,6 +6,8 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 from libs import ui_utils
 from libs import string_utils
 from libs import nhi_utils
+from libs import number_utils
+from libs import prescript_utils
 from classes import table_widget
 from dialog import dialog_input_medicine
 from dialog import dialog_electric_acupuncture
@@ -199,6 +201,11 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
             dialog.deleteLater()
 
     def append_prescript(self, row, dosage=None):
+        in_medicine_key = string_utils.xstr(row['MedicineKey'])
+        if prescript_utils.check_prescript_exist(
+                self.ui.tableWidget_prescript, 6, in_medicine_key):
+            return
+
         prescript_row = [
             [0, '-1'],
             [1, string_utils.xstr(self.ui.tableWidget_prescript.currentRow() + 1)],
@@ -237,15 +244,20 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
                 )
 
     def append_treat(self, row):
+        in_medicine_key = string_utils.xstr(row['MedicineKey'])
+        if prescript_utils.check_prescript_exist(
+                self.ui.tableWidget_treat, 5, in_medicine_key):
+            return
+
         treat_rec = [
             [0, '-1'],
             [1, string_utils.xstr(self.case_key)],
             [2, string_utils.xstr(self.case_date)],
             [3, string_utils.xstr(self.medicine_set)],
-            [4, row['MedicineType']],
-            [5, row['MedicineKey']],
-            [6, row['InsCode']],
-            [7, row['MedicineName']],
+            [4, string_utils.xstr(row['MedicineType'])],
+            [5, string_utils.xstr(row['MedicineKey'])],
+            [6, string_utils.xstr(row['InsCode'])],
+            [7, string_utils.xstr(row['MedicineName'])],
         ]
 
         self.set_treat(treat_rec)
@@ -686,8 +698,47 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
         else:
             self.append_null_treat()
 
-
+        self._set_ins_care_treat(self.combo_box_treatment.currentText())
         self.parent.calculate_ins_fees()
+
+    def _set_ins_care_treat(self, treatment):
+        treat_type = self.parent.tab_registration.ui.comboBox_treat_type.currentText()
+        if treat_type not in nhi_utils.IMPROVE_CARE_TREAT:
+            return
+
+        medicine_set = 11
+        ins_care = self.parent.tab_list[medicine_set]
+        if ins_care is not None:
+            if treat_type == '助孕照護':
+                ins_care.set_aid_pregnant_treat(treatment)
+            elif treat_type == '保胎照護':
+                ins_care.set_keep_baby_treat(treatment)
+            elif treat_type in ['乳癌照護', '肝癌照護']:
+                ins_care.set_cancer_treat(treatment)
+
+    # 藥日變更重新批價
+    def pres_days_changed(self):
+        self._set_ins_care_pres_days()
+        self.parent.calculate_ins_fees()
+
+        treat_type = self.parent.tab_registration.ui.comboBox_treat_type.currentText()
+        if treat_type in ['乳癌照護', '肝癌照護'] and self.ui.comboBox_pres_days.currentText() == '':
+            self.ui.comboBox_pres_days.setCurrentText('7')  # 至少七天藥
+
+        self.ui.comboBox_pres_days.setFocus(True)
+
+    def _set_ins_care_pres_days(self):
+        treat_type = self.parent.tab_registration.ui.comboBox_treat_type.currentText()
+        if treat_type not in ['乳癌照護', '肝癌照護']:
+            return
+
+        pres_days = number_utils.get_integer(self.ui.comboBox_pres_days.currentText())
+
+        medicine_set = 11
+        ins_care = self.parent.tab_list[medicine_set]
+        if ins_care is not None:
+            if treat_type in ['乳癌照護', '肝癌照護']:
+                ins_care.set_cancer_prescript(pres_days)
 
     # 開啟電針儀選擇視窗
     def _open_electric_acupuncture_dialog(self):
@@ -715,6 +766,7 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
             wave, freq, time
         ]
 
+        self.ui.tableWidget_treat.setRowCount(1)
         for item in electric_acupuncture_list:
             row = {}
             row['MedicineType'] = '穴道'
@@ -726,10 +778,6 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
 
         dialog.deleteLater()
         self.append_null_treat()
-
-    # 藥日變更重新批價
-    def pres_days_changed(self):
-        self.parent.calculate_ins_fees()
 
     def _open_dictionary(self):
         self.parent.open_dictionary(self.medicine_set, '健保處方')

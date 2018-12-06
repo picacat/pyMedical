@@ -56,7 +56,7 @@ class Database:
                     password=config['db']['password'],
                     charset=config['db']['charset'],
                     buffered=True,
-                    use_pure=True
+                    use_pure=False,
                 )
                 cursor = self.cnx.cursor(dictionary=True)
                 cursor.execute('CREATE DATABASE IF NOT EXISTS {0}'.format(config['db']['database']))
@@ -70,7 +70,7 @@ class Database:
                     database=kwargs['database'],
                     charset=kwargs['charset'],
                     buffered=True,
-                    use_pure=True
+                    use_pure=False,
                 )
         except mysql.errors.ProgrammingError:
             if kwargs == {}:

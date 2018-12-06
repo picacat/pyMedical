@@ -76,7 +76,7 @@ class MedicalRecordRegistration(QtWidgets.QMainWindow):
         self.ui.comboBox_xcard.currentTextChanged.connect(self._set_data_changed)
         self.ui.comboBox_card.currentTextChanged.connect(self._set_data_changed)
         self.ui.comboBox_course.currentTextChanged.connect(self._set_data_changed)
-        self.ui.lineEdit_special_code.textChanged.connect(self._set_data_changed)
+        self.ui.lineEdit_special_code.textChanged.connect(self.set_special_code)
 
     def _set_table_width(self):
         width = [160, 120, 470]
@@ -308,3 +308,13 @@ class MedicalRecordRegistration(QtWidgets.QMainWindow):
         ]
 
         self.database.update_record('cases', fields, 'CaseKey', self.case_key, data)
+
+    def set_special_code(self):
+        self.data_changed = True
+
+        if self.ui.lineEdit_special_code.text() != '':
+            self.parent.ui.lineEdit_disease_code1.setStyleSheet('color:red')
+            self.parent.ui.lineEdit_disease_name1.setStyleSheet('color:red')
+        else:
+            self.parent.ui.lineEdit_disease_code1.setStyleSheet('color:black')
+            self.parent.ui.lineEdit_disease_name1.setStyleSheet('color:black')

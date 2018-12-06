@@ -53,108 +53,108 @@ class MedicalRecordRecentlyHistory(QtWidgets.QMainWindow):
     def _read_data(self):
         sql = 'SELECT * FROM cases WHERE CaseKey = {0}'.format(self.case_key)
         self.medical_record = self.database.select_record(sql)[0]
-        sql = 'SELECT * FROM patient WHERE PatientKey = {0}'.format(self.medical_record['PatientKey'])
+
+        patient_key = self.medical_record['PatientKey']
+        sql = 'SELECT * FROM patient WHERE PatientKey = {0}'.format(patient_key)
         try:
             self.patient_data = self.database.select_record(sql)[0]
         except IndexError:
             pass
 
+        self._read_past_history(patient_key)
+
+    # 讀取過去病歷名單
+    def _read_past_history(self, patient_key):
+        sql = '''
+            SELECT CaseKey FROM cases
+            WHERE
+                PatientKey = {0} AND
+                CaseKey != {1}
+            ORDER BY CaseKey DESC
+        '''.format(patient_key, self.case_key)
+        rows = self.database.select_record(sql)
+        history_list = []
+        for row in rows:
+            history_list.append(row['CaseKey'])
+
+        self.past_history = {
+            'index': 0,
+            'row_count': len(history_list),
+            'data': history_list
+        }
+
     # 顯示最近病歷
     def _display_past_record(self):
         self.first_past_record()
 
-    # 設定最近病歷參數
-    def _set_past_values(self, rec):
-        self.ui.textEdit_past.setProperty('case_key', rec['CaseKey'])
-        self.ui.textEdit_past.setProperty('patient_key', rec['PatientKey'])
-        self.ui.textEdit_past.setProperty('case_date', rec['CaseDate'])
+    # 設定最近病歷參數 (目前沒用到, 留作範例)
+    def _set_past_values(self, row):
+        self.ui.textEdit_past.setProperty('medical_record', row['CaseKey'])
+        self.ui.textEdit_past.setProperty('patient_key', row['PatientKey'])
+        self.ui.textEdit_past.setProperty('case_date', row['CaseDate'])
 
-    # 讀取最近病歷
-    def _set_past_record(self, sql, direction):
-        past_record = self.database.select_record(sql)
+    def _get_past_history_case_key(self):
+        index = self.past_history['index']
+        case_key = self.past_history['data'][index]
 
-        if len(past_record) <= 0:
-            self.ui.textEdit_past.setHtml('<br><br><br><br><br><br><br><center>無過去病歷</center>')
-            self.ui.toolButton_copy.setEnabled(False)
-            self.ui.toolButton_first.setEnabled(False)
-            self.ui.toolButton_previous.setEnabled(False)
-            self.ui.toolButton_next.setEnabled(False)
-            self.ui.toolButton_last.setEnabled(False)
-            if direction in ['prev']:
-                self.ui.toolButton_next.setEnabled(True)
-                self.ui.toolButton_last.setEnabled(True)
-                self.ui.toolButton_copy.setEnabled(True)
-            elif direction in ['next']:
-                self.ui.toolButton_first.setEnabled(True)
-                self.ui.toolButton_previous.setEnabled(True)
-                self.ui.toolButton_copy.setEnabled(True)
-
-            return
-
-        rec = past_record[0]
-        self.ui.toolButton_first.setEnabled(True)
-        self.ui.toolButton_previous.setEnabled(True)
-        self.ui.toolButton_next.setEnabled(True)
-        self.ui.toolButton_last.setEnabled(True)
-        self._set_past_values(rec)
-        case_key = rec['CaseKey']
-        html = case_utils.get_medical_record_html(self.database, self.system_settings, case_key)
-        self.ui.textEdit_past.setHtml(html)
+        return case_key
 
     # 最近一筆
     def first_past_record(self):
-        sql = \
-            'SELECT * FROM cases WHERE ' \
-            'PatientKey = {0} AND CaseKey != {1} ORDER BY CaseDate DESC LIMIT 1'\
-            .format(
-                self.medical_record['PatientKey'],
-                self.case_key,
-                str(self.medical_record['CaseDate'])
-            )
-        self._set_past_record(sql, 'first')
+        self.past_history['index'] = 0
+        case_key = self._get_past_history_case_key()
+
+        self._set_past_record(case_key)
         self.ui.toolButton_first.setEnabled(False)
         self.ui.toolButton_previous.setEnabled(False)
+        self.ui.toolButton_next.setEnabled(True)
+        self.ui.toolButton_last.setEnabled(True)
 
     # 上一筆
     def prev_past_record(self):
-        sql = \
-            'SELECT * FROM cases WHERE ' \
-            'PatientKey = {0} AND CaseKey != {1} AND CaseDate > "{2}" ORDER BY CaseDate LIMIT 1'\
-            .format(self.ui.textEdit_past.property('patient_key'),
-                    self.case_key,
-                    self.ui.textEdit_past.property('case_date')
-                    )
-        self._set_past_record(sql, 'prev')
+        self.past_history['index'] -= 1
+        if self.past_history['index'] <= 0:  # 到頂
+            self.past_history['index'] = 0
+            self.ui.toolButton_first.setEnabled(False)
+            self.ui.toolButton_previous.setEnabled(False)
+
+        self.ui.toolButton_next.setEnabled(True)
+        self.ui.toolButton_last.setEnabled(True)
+        case_key = self._get_past_history_case_key()
+        self._set_past_record(case_key)
 
     # 下一筆
     def next_past_record(self):
-        sql = \
-            'SELECT * FROM cases WHERE ' \
-            'PatientKey = {0} AND CaseKey != {1} AND CaseDate < "{2}" ORDER BY CaseDate DESC LIMIT 1' \
-            .format(self.ui.textEdit_past.property('patient_key'),
-                    self.case_key,
-                    self.ui.textEdit_past.property('case_date')
-                    )
-        self._set_past_record(sql, 'next')
+        self.past_history['index'] += 1
+        if self.past_history['index'] >= self.past_history['row_count'] - 1:  # 到底
+            self.past_history['index'] = self.past_history['row_count'] - 1
+            self.ui.toolButton_next.setEnabled(False)
+            self.ui.toolButton_last.setEnabled(False)
+
+        self.ui.toolButton_first.setEnabled(True)
+        self.ui.toolButton_previous.setEnabled(True)
+        case_key = self._get_past_history_case_key()
+        self._set_past_record(case_key)
 
     # 最後一筆
     def last_past_record(self):
-        sql = \
-            'SELECT * FROM cases WHERE ' \
-            'PatientKey = {0} AND CaseKey != {1} AND CaseDate < "{2}" ORDER BY CaseDate LIMIT 1' \
-            .format(self.medical_record['PatientKey'],
-                    self.case_key,
-                    str(self.medical_record['CaseDate'])
-                    )
-        self._set_past_record(sql, 'next')
+        self.past_history['index'] = self.past_history['row_count'] - 1
+        case_key = self._get_past_history_case_key()
+
+        self._set_past_record(case_key)
+        self.ui.toolButton_first.setEnabled(True)
+        self.ui.toolButton_previous.setEnabled(True)
         self.ui.toolButton_next.setEnabled(False)
         self.ui.toolButton_last.setEnabled(False)
 
+    # 讀取最近病歷
+    def _set_past_record(self, case_key):
+        html = case_utils.get_medical_record_html(self.database, self.system_settings, case_key)
+        self.ui.textEdit_past.setHtml(html)
+
     # 拷貝病歷
     def copy_past_medical_record_button_clicked(self):
-        case_key = self.ui.textEdit_past.property('case_key')
-        if case_key == '':
-            return
+        case_key = self._get_past_history_case_key()
 
         case_utils.copy_past_medical_record(
             self.database, self.parent, case_key,

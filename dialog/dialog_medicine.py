@@ -8,6 +8,7 @@ from classes import table_widget
 from libs import ui_utils
 from libs import system_utils
 from libs import string_utils
+from libs import prescript_utils
 
 
 # 主視窗
@@ -206,12 +207,18 @@ class DialogMedicine(QtWidgets.QDialog):
         self.ui.lineEdit_input_code.setFocus(True)
 
     def add_medicine(self):
+        in_medicine_key = self.table_widget_medicine.field_value(0)
+        in_table_widget = self.parent.tab_list[self.medicine_set-1].ui.tableWidget_prescript
+        if prescript_utils.check_prescript_exist(
+                in_table_widget, 6, in_medicine_key):
+            return
+
         prescript_row = [
             [0, '-1'],
-            [1, str(self.table_widget_prescript.currentRow()+1)],
-            [2, str(self.parent.tab_list[self.medicine_set-1].case_key)],
-            [3, str(self.parent.tab_list[self.medicine_set-1].case_date)],
-            [4, self.medicine_set],
+            [1, string_utils.xstr(self.table_widget_prescript.currentRow()+1)],
+            [2, string_utils.xstr(self.parent.tab_list[self.medicine_set-1].case_key)],
+            [3, string_utils.xstr(self.parent.tab_list[self.medicine_set-1].case_date)],
+            [4, string_utils.xstr(self.medicine_set)],
             [5, self.table_widget_medicine.field_value(1)],
             [6, self.table_widget_medicine.field_value(0)],
             [7, self.table_widget_medicine.field_value(3)],

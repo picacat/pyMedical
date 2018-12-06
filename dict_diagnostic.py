@@ -3,7 +3,7 @@
 
 import sys
 
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtWidgets import QFileDialog
 from lxml import etree as ET
 
@@ -120,7 +120,16 @@ class DictDiagnostic(QtWidgets.QMainWindow):
 
         root = tree.getroot()
         groups = root.xpath('//groups/disease_groups')
-        for row in groups:
+
+        row_count = len(groups)
+        progress_dialog = QtWidgets.QProgressDialog(
+            '正在匯入病名類別中, 請稍後...', '取消', 0, row_count, self
+        )
+
+        progress_dialog.setWindowModality(QtCore.Qt.WindowModal)
+        progress_dialog.setValue(0)
+        for row_no, row in zip(range(row_count), groups):
+            progress_dialog.setValue(row_no)
             data = self._convert_node_to_dict(row)
             sql = '''
                 UPDATE icd10
@@ -134,12 +143,7 @@ class DictDiagnostic(QtWidgets.QMainWindow):
             )
             self.database.exec_sql(sql)
 
-        system_utils.show_message_box(
-            QtWidgets.QMessageBox.Information,
-            '匯入完成',
-            '病名類別詞庫檔匯入完成',
-            '資料無錯誤.'
-        )
+        progress_dialog.setValue(row_count)
 
     def _convert_node_to_dict(self, node):
         node_dict = {}

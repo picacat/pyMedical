@@ -382,7 +382,7 @@ def get_ins_dislocate_fee(database, treatment, ins_drug_fee):
 
 
 # 取得健保加強照護費
-def get_ins_care_fee(database, case_key):
+def get_ins_care_fee_from_case_key(database, case_key):
     ins_care_fee = 0
 
     sql = '''
@@ -397,6 +397,17 @@ def get_ins_care_fee(database, case_key):
 
     for row in rows:
         ins_care_fee += get_ins_fee_from_ins_code(database, string_utils.xstr(row['InsCode']))
+
+    return ins_care_fee
+
+
+# 取得健保加強照護費
+def get_ins_care_fee_from_table_widget(table_widget):
+    ins_care_fee = 0
+    for row_no in range(table_widget.rowCount()):
+        amount = table_widget.item(row_no, 12)
+        if amount is not None:
+            ins_care_fee += number_utils.get_integer(amount.text())
 
     return ins_care_fee
 
@@ -426,7 +437,8 @@ def get_ins_agent_fee(database, share_type, treatment, course, ins_drug_fee):
 
 # 取得各項照護申報費用
 def get_ins_special_care_fee(database, system_settings, case_key, treat_type,
-                             share, course, pres_days, pharmacy_type, treatment):
+                             share, course, pres_days, pharmacy_type, treatment,
+                             table_widget_ins_care=None):
     ins_fee = {}
 
     diag_fee = 0
@@ -434,7 +446,10 @@ def get_ins_special_care_fee(database, system_settings, case_key, treat_type,
     pharmacy_fee = 0
     acupuncture_fee = 0
     massage_fee = 0
-    care_fee = get_ins_care_fee(database, case_key)  # 小兒氣喘, 小兒腦麻為包套, 照護費已包含藥費, 調劑費與針傷處置費
+    if table_widget_ins_care is None:
+        care_fee = get_ins_care_fee_from_case_key(database, case_key)  # 小兒氣喘, 小兒腦麻為包套, 照護費已包含藥費, 調劑費與針傷處置費
+    else:
+        care_fee = get_ins_care_fee_from_table_widget(table_widget_ins_care)  # 小兒氣喘, 小兒腦麻為包套, 照護費已包含藥費, 調劑費與針傷處置費
 
     if treat_type in ['腦血管疾病', '兒童鼻炎']:  # 腦血管疾病, 兒童鼻炎可申報藥費及調劑費
         drug_fee = get_ins_drug_fee(database, pres_days)
@@ -498,11 +513,12 @@ def get_ins_special_care_fee(database, system_settings, case_key, treat_type,
     return ins_fee
 
 def get_ins_fee(database, system_settings, case_key, treat_type,
-                share, course, pres_days, pharmacy_type, treatment):
+                share, course, pres_days, pharmacy_type, treatment, table_widget_ins_care=None):
     if treat_type in nhi_utils.CARE_TREAT:
         ins_fee = get_ins_special_care_fee(
             database, system_settings, case_key, treat_type,
             share, course, pres_days, pharmacy_type, treatment,
+            table_widget_ins_care
         )
         return ins_fee
 
@@ -728,7 +744,7 @@ def set_nhi_basic_data(database):
          '本項處置費每月申報上限為 12 次，超出部分支付點數以零計。'),
         ('照護費', '疾病管理照護費', 'P56006', 550,
          '1.包含中醫護理衛教及營養飲食指導。2.限三個月申報一次，申報此項目者，須參考衛教表單(如附件三)提供照護指導，並應併入病患之病歷紀錄備查。'),
-        ('照護費', '生理評估費', 'P56007', 1100,
+        ('照護費', '生理評估費', 'P56007', 1000,
          '1.癌症治療功能性評估：一般性量表 2.生活品質評估。前測(收案三日內)及後測(收案三個月內)量表皆完成，方可申請給付。限三個月申報一次，並於病歷詳細載明評估結果。'),
     ]
 

@@ -12,7 +12,7 @@ from classes import table_widget
 from dialog import dialog_input_diagnostic
 
 
-# 收費設定 2018.04.14
+# 辨證詞庫 2018.04.14
 class DictDistinguish(QtWidgets.QMainWindow):
     # 初始化
     def __init__(self, parent=None, *args):

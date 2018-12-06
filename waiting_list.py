@@ -250,6 +250,9 @@ class WaitingList(QtWidgets.QMainWindow):
     def _show_last_medical_record(self):
         self.ui.textEdit_medical_record.setHtml(None)
         patient_key = self.table_widget_reservation_list.field_value(5)
+        if patient_key == '':
+            return
+
         sql = '''
             SELECT * FROM cases 
             WHERE

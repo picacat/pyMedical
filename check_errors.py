@@ -228,6 +228,7 @@ class CheckErrors(QtWidgets.QMainWindow):
             error_messages.append('非醫師')
 
         if (string_utils.xstr(row['Treatment']) in nhi_utils.INS_TREAT and
+                string_utils.xstr(row['TreatType']) in nhi_utils.INS_TREAT and
                 number_utils.get_integer(row['Continuance']) < 1):
             error_messages.append('無療程序號')
 
@@ -237,8 +238,15 @@ class CheckErrors(QtWidgets.QMainWindow):
 
         if string_utils.xstr(row['DiseaseCode1']) == '':
             error_messages.append('無主診斷碼')
-        elif string_utils.xstr(row['DiseaseCode1'])[0] in [str(i) for i in range(10)]:
-            error_messages.append('非ICD10碼')
+        else:
+            for i in range(1, 4):
+                disease_code = string_utils.xstr(row['DiseaseCode{0}'.format(i)])
+                if disease_code != '' and disease_code[0] in [str(i) for i in range(10)]:
+                    if i == 1:
+                        disease_name = '主診斷碼'
+                    else:
+                        disease_name = '次診斷{0}'.format(i-1)
+                    error_messages.append('{0}非ICD10碼'.format(disease_name))
 
         if string_utils.get_str(row['Symptom'], 'utf-8') == '':
             error_messages.append('無主訴')

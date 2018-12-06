@@ -132,9 +132,16 @@ class MedicalRecordFees(QtWidgets.QMainWindow):
         pharmacy_type = string_utils.xstr(self.parent.tab_registration.comboBox_pharmacy_type.currentText())
         treatment = self.parent.tab_list[0].combo_box_treatment.currentText()
 
+        tab_ins_care = self.parent.tab_list[11]
+        if tab_ins_care is not None:
+            table_widget_ins_care = tab_ins_care.ui.tableWidget_prescript
+        else:
+            table_widget_ins_care = None
+
         ins_fee = charge_utils.get_ins_fee(
             self.database, self.system_settings, self.case_key,
-            treat_type, share, course, pres_days, pharmacy_type, treatment
+            treat_type, share, course, pres_days, pharmacy_type, treatment,
+            table_widget_ins_care,
         )
 
         ins_fees = [

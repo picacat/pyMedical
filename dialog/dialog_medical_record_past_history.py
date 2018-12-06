@@ -23,7 +23,8 @@ class DialogMedicalRecordPastHistory(QtWidgets.QDialog):
         self.parent = parent
         self.database = args[0]
         self.system_settings = args[1]
-        self.patient_key = args[2]
+        self.case_key = args[2]
+        self.patient_key = args[3]
         self.ui = None
 
         self._set_ui()
@@ -80,9 +81,10 @@ class DialogMedicalRecordPastHistory(QtWidgets.QDialog):
             SELECT cases.*, patient.Gender, patient.Birthday FROM cases
                 LEFT JOIN patient ON patient.PatientKey = cases.PatientKey
             WHERE
-                cases.PatientKey = {0}
+                CaseKey != {0} AND
+                cases.PatientKey = {1}
             ORDER BY CaseDate DESC
-        '''.format(self.patient_key)
+        '''.format(self.case_key, self.patient_key)
 
         rows = self.database.select_record(sql)
         if len(rows) > 0:
