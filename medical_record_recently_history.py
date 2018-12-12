@@ -24,6 +24,11 @@ class MedicalRecordRecentlyHistory(QtWidgets.QMainWindow):
         self.patient_data = None
         self.ui = None
 
+        self.past_history = {
+            'index': 0,
+            'row_count': 0,
+            'data': None,
+        }
         self._set_ui()
         self._set_signal()
         self._read_data()
@@ -73,6 +78,9 @@ class MedicalRecordRecentlyHistory(QtWidgets.QMainWindow):
             ORDER BY CaseKey DESC
         '''.format(patient_key, self.case_key)
         rows = self.database.select_record(sql)
+        if len(rows) <= 0:
+            return
+
         history_list = []
         for row in rows:
             history_list.append(row['CaseKey'])
@@ -94,13 +102,25 @@ class MedicalRecordRecentlyHistory(QtWidgets.QMainWindow):
         self.ui.textEdit_past.setProperty('case_date', row['CaseDate'])
 
     def _get_past_history_case_key(self):
-        index = self.past_history['index']
-        case_key = self.past_history['data'][index]
+        if self.past_history['data'] is None:
+            case_key = None
+        else:
+            index = self.past_history['index']
+            case_key = self.past_history['data'][index]
 
         return case_key
 
     # 最近一筆
     def first_past_record(self):
+        if self.past_history['data'] is None:
+            self.ui.toolButton_first.setEnabled(False)
+            self.ui.toolButton_previous.setEnabled(False)
+            self.ui.toolButton_next.setEnabled(False)
+            self.ui.toolButton_last.setEnabled(False)
+            html = '<br><br><br><br><br><center>無過去病歷</center><br>'
+            self.ui.textEdit_past.setHtml(html)
+            return
+
         self.past_history['index'] = 0
         case_key = self._get_past_history_case_key()
 

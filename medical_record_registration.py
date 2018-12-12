@@ -12,6 +12,7 @@ from libs import personnel_utils
 from libs import case_utils
 from libs import system_utils
 from libs import cshis_utils
+from libs import number_utils
 
 
 # 病歷資料 2018.01.31
@@ -54,6 +55,8 @@ class MedicalRecordRegistration(QtWidgets.QMainWindow):
         self.ui.lineEdit_case_date.textChanged.connect(self._set_data_changed)
         self.ui.comboBox_period.currentTextChanged.connect(self._set_data_changed)
         self.ui.lineEdit_completion_time.textChanged.connect(self._set_data_changed)
+        self.ui.lineEdit_charge_time.textChanged.connect(self._set_data_changed)
+        self.ui.comboBox_charge_period.currentTextChanged.connect(self._set_data_changed)
         self.ui.comboBox_visit.currentTextChanged.connect(self._set_data_changed)
         self.ui.lineEdit_patient_key.textChanged.connect(self._set_data_changed)
         self.ui.lineEdit_name.textChanged.connect(self._set_data_changed)
@@ -88,6 +91,7 @@ class MedicalRecordRegistration(QtWidgets.QMainWindow):
 
     def _set_combo_box(self):
         ui_utils.set_combo_box(self.ui.comboBox_period, nhi_utils.PERIOD, None)
+        ui_utils.set_combo_box(self.ui.comboBox_charge_period, nhi_utils.PERIOD, None)
         ui_utils.set_combo_box(self.ui.comboBox_visit, nhi_utils.VISIT, None)
         ui_utils.set_combo_box(self.ui.comboBox_ins_type, nhi_utils.INS_TYPE, None)
         ui_utils.set_combo_box(self.ui.comboBox_reg_type, nhi_utils.REG_TYPE, None)
@@ -121,6 +125,16 @@ class MedicalRecordRegistration(QtWidgets.QMainWindow):
         ui_utils.set_combo_box(self.ui.comboBox_card, nhi_utils.ABNORMAL_CARD_WITH_HINT, None, '欠卡')
         ui_utils.set_combo_box(self.ui.comboBox_course, nhi_utils.COURSE, None)
 
+    def set_special_code(self):
+        self.data_changed = True
+
+        if self.ui.lineEdit_special_code.text() != '':
+            self.parent.ui.lineEdit_disease_code1.setStyleSheet('color:red')
+            self.parent.ui.lineEdit_disease_name1.setStyleSheet('color:red')
+        else:
+            self.parent.ui.lineEdit_disease_code1.setStyleSheet('color:black')
+            self.parent.ui.lineEdit_disease_name1.setStyleSheet('color:black')
+
     def _read_case_registration(self):
         sql = '''
             SELECT * FROM cases WHERE 
@@ -136,7 +150,9 @@ class MedicalRecordRegistration(QtWidgets.QMainWindow):
     def _set_registration_data(self, row):
         self.ui.lineEdit_case_date.setText(string_utils.xstr(row['CaseDate']))
         self.ui.comboBox_period.setCurrentText(string_utils.xstr(row['Period']))
-        self.ui.lineEdit_completion_time.setText(string_utils.xstr(row['CompletionTime']))
+        self.ui.lineEdit_completion_time.setText(string_utils.xstr(row['DoctorDate']))
+        self.ui.lineEdit_charge_time.setText(string_utils.xstr(row['ChargeDate']))
+        self.ui.comboBox_charge_period.setCurrentText(string_utils.xstr(row['ChargePeriod']))
         self.ui.comboBox_visit.setCurrentText(string_utils.xstr(row['Visit']))
         self.ui.lineEdit_patient_key.setText(string_utils.xstr(row['PatientKey']))
         self.ui.lineEdit_name.setText(string_utils.xstr(row['Name']))
@@ -206,7 +222,15 @@ class MedicalRecordRegistration(QtWidgets.QMainWindow):
 
         self.ui.comboBox_course.setCurrentText(string_utils.xstr(row['Continuance']))
         self.ui.lineEdit_special_code.setText(string_utils.xstr(row['SpecialCode']))
-        self.ui.lineEdit_ins_apply_fee.setText(string_utils.xstr(row['InsApplyFee']))
+
+        self.ui.lineEdit_ins_total_fee.setText(string_utils.xstr(number_utils.get_integer(row['InsTotalFee'])))
+        self.ui.lineEdit_share_fee.setText(
+            string_utils.xstr(
+                number_utils.get_integer(row['DiagShareFee']) +
+                number_utils.get_integer(row['DrugShareFee'])
+            )
+        )
+        self.ui.lineEdit_ins_apply_fee.setText(string_utils.xstr(number_utils.get_integer(row['InsApplyFee'])))
 
     def _set_treat_sign(self):
         sql = '''
@@ -270,7 +294,8 @@ class MedicalRecordRegistration(QtWidgets.QMainWindow):
             return
 
         fields = [
-            'CaseDate', 'Period', 'CompletionTime', 'Visit', 'PatientKey', 'Name',
+            'CaseDate', 'Period', 'DoctorDate', 'ChargeDate', 'ChargePeriod',
+            'Visit', 'PatientKey', 'Name',
             'InsType', 'RegistType', 'Room', 'RegistNo',
             'Register', 'Cashier', 'Doctor', 'Pharmacist', 'Massager',
             'ApplyType', 'PharmacyType', 'Share', 'TreatType', 'Injury',
@@ -282,6 +307,8 @@ class MedicalRecordRegistration(QtWidgets.QMainWindow):
             self.ui.lineEdit_case_date.text(),
             self.ui.comboBox_period.currentText(),
             self.ui.lineEdit_completion_time.text(),
+            self.ui.lineEdit_charge_time.text(),
+            self.ui.comboBox_charge_period.currentText(),
             self.ui.comboBox_visit.currentText(),
             self.ui.lineEdit_patient_key.text(),
             self.ui.lineEdit_name.text(),
@@ -309,12 +336,3 @@ class MedicalRecordRegistration(QtWidgets.QMainWindow):
 
         self.database.update_record('cases', fields, 'CaseKey', self.case_key, data)
 
-    def set_special_code(self):
-        self.data_changed = True
-
-        if self.ui.lineEdit_special_code.text() != '':
-            self.parent.ui.lineEdit_disease_code1.setStyleSheet('color:red')
-            self.parent.ui.lineEdit_disease_name1.setStyleSheet('color:red')
-        else:
-            self.parent.ui.lineEdit_disease_code1.setStyleSheet('color:black')
-            self.parent.ui.lineEdit_disease_name1.setStyleSheet('color:black')

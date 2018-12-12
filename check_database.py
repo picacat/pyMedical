@@ -49,171 +49,125 @@ class CheckDatabase(QtWidgets.QDialog):
 
     def _alter_table(self):
         max_progress = 38
-        progress = 0
-        progress_dialog = QtWidgets.QProgressDialog(
+        self.progress = 0
+        self.progress_dialog = QtWidgets.QProgressDialog(
             '正在檢查資料庫中, 請稍後...', '取消', 0, max_progress, self
         )
+        self.progress_dialog.setWindowModality(QtCore.Qt.WindowModal)
 
-        progress_dialog.setWindowModality(QtCore.Qt.WindowModal)
-        progress += 1
-        progress_dialog.setValue(progress)
+        self._check_patient()
+        self._check_cases()
+        self._check_prescript()
+        self._check_medicine()
+        self._check_person()
+        self._check_icd10()
+        self._check_reserve()
+        self._check_wait()
+        self._check_debt()
+        self._check_ins_apply()
+        self._check_clinic()
 
-        self.database.check_field_exists('icd10', 'add', 'Groups', 'varchar(100) AFTER SpecialCode')
-        progress += 1
-        progress_dialog.setValue(progress)
+        self.progress_dialog.deleteLater()
 
-        self.database.check_field_exists('patient', 'add', 'Gender', 'varchar(4) AFTER Nationality')
-        progress += 1
-        progress_dialog.setValue(progress)
+    def _exec_process(self, process_list):
+        for _ in process_list:  # process execute here
+            self.progress += 1
+            self.progress_dialog.setValue(self.progress)
 
-        self.database.check_field_exists('patient', 'add', 'FamilyPatientKey', 'varchar(10) AFTER PrivateInsurance')
-        progress += 1
-        progress_dialog.setValue(progress)
+    def _check_patient(self):
+        process_list = [
+            self.database.check_field_exists('patient', 'add', 'Gender', 'varchar(4) AFTER Nationality'),
+            self.database.check_field_exists('patient', 'add', 'FamilyPatientKey', 'varchar(10) AFTER PrivateInsurance'),
+            self.database.check_field_exists('patient', 'add', 'Description', 'text AFTER History'),
+            self.database.check_field_exists('patient', 'add', 'Allergy', 'text AFTER Alergy'),
+            self.database.check_field_exists('patient', 'change', ['EMail', 'Email'], 'varchar(100)'),
+        ]
+        self._exec_process(process_list)
 
-        self.database.check_field_exists('patient', 'add', 'Description', 'text AFTER History')
-        progress += 1
-        progress_dialog.setValue(progress)
+    def _check_cases(self):
+        process_list = [
+            self.database.check_field_exists('cases', 'add', 'DoctorDate', 'datetime AFTER CaseDate'),
+            self.database.check_field_exists('cases', 'add', 'PharmacyType', 'varchar(10) AFTER ApplyType'),
+            self.database.check_field_exists('cases', 'add', 'TreatType', 'varchar(10) AFTER RegistType'),
+            self.database.check_field_exists('cases', 'add', 'DebtFee', 'int AFTER Debt'),
+            self.database.check_field_exists('cases', 'add', 'SDiagShareFee', 'int AFTER ReceiptShare'),
+            self.database.check_field_exists('cases', 'add', 'DiagShareFee', 'int AFTER TreatShare'),
+            self.database.check_field_exists('cases', 'add', 'DrugShareFee', 'int AFTER DrugShare'),
+            self.database.check_field_exists('cases', 'add', 'Cashier', 'varchar(10) AFTER Casher'),
+            self.database.check_field_exists('cases', 'add', 'RefundFee', 'int AFTER Refund'),
+            self.database.check_field_exists('cases', 'add', 'SMaterialFee', 'int AFTER SMaterial'),
+            self.database.check_field_exists('cases', 'add', 'TreatType', 'varchar(10) AFTER RegistType'),
+            self.database.check_field_exists('cases', 'add', 'ChargePeriod', 'varchar(4) AFTER Period'),
+            self.database.check_field_exists('cases', 'add', 'ChargeDate', 'datetime AFTER DoctorDate'),
+        ]
+        self._exec_process(process_list)
 
-        self.database.check_field_exists('patient', 'add', 'Allergy', 'text AFTER Alergy')
-        progress += 1
-        progress_dialog.setValue(progress)
+    def _check_prescript(self):
+        process_list = [
+            self.database.check_field_exists('prescript', 'add', 'PrescriptNo', 'int AFTER PrescriptKey'),
+            self.database.check_field_exists('prescript', 'add', 'DosageMode', 'varchar(10) AFTER MedicineName'),
+            self.database.check_field_exists('prescript', 'change', ['price', 'Price'], 'decimal(10,2)'),
+            self.database.check_field_exists('prescript', 'change', ['amount', 'Amount'], 'decimal(10,2)'),
+        ]
+        self._exec_process(process_list)
 
-        self.database.check_field_exists('cases', 'add', 'CompletionTime', 'datetime AFTER CaseDate')
-        progress += 1
-        progress_dialog.setValue(progress)
+    def _check_medicine(self):
+        process_list = [
+            self.database.check_field_exists('medicine', 'add', 'Dosage', 'decimal(10,2) AFTER Unit'),
+            self.database.check_field_exists('medicine', 'add', 'Charged', 'varchar(4) AFTER InPrice'),
+            self.database.check_field_exists('medicine', 'change', ['location', 'Location'], 'varchar(20)'),
+        ]
+        self._exec_process(process_list)
 
-        self.database.check_field_exists('cases', 'add', 'PharmacyType', 'varchar(10) AFTER ApplyType')
-        progress += 1
-        progress_dialog.setValue(progress)
+    def _check_person(self):
+        process_list = [
+            self.database.check_field_exists('person', 'add', 'Birthday', 'date AFTER Name'),
+            self.database.check_field_exists('person', 'add', 'Gender', 'varchar(2) AFTER ID'),
+            self.database.check_field_exists('person', 'add', 'Email', 'varchar(100) AFTER Address'),
+            self.database.check_field_exists('person', 'add', 'FullTime', 'varchar(10) AFTER Position'),
+            self.database.check_field_exists('person', 'add', 'Department', 'varchar(20) AFTER Email'),
+            self.database.check_field_exists('person', 'add', 'InputDate', 'date AFTER Department'),
+            self.database.check_field_exists('person', 'change', ['EMail', 'Email'], 'varchar(100)'),
+        ]
+        self._exec_process(process_list)
 
-        self.database.check_field_exists('cases', 'add', 'TreatType', 'varchar(10) AFTER RegistType')
-        progress += 1
-        progress_dialog.setValue(progress)
+    def _check_icd10(self):
+        process_list = [
+            self.database.check_field_exists('icd10', 'add', 'Groups', 'varchar(100) AFTER SpecialCode'),
+        ]
+        self._exec_process(process_list)
 
-        self.database.check_field_exists('cases', 'add', 'DebtFee', 'int AFTER Debt')
-        progress += 1
-        progress_dialog.setValue(progress)
+    def _check_reserve(self):
+        process_list = [
+            self.database.check_field_exists('reserve', 'add', 'ReserveNo', 'int AFTER Sequence'),
+            self.database.check_field_exists('reserve', 'add', 'Arrival', 'enum("False", "True") not null AFTER Doctor'),
+        ]
+        self._exec_process(process_list)
 
-        self.database.check_field_exists('cases', 'add', 'SDiagShareFee', 'int AFTER ReceiptShare')
-        progress += 1
-        progress_dialog.setValue(progress)
+    def _check_wait(self):
+        process_list = [
+            self.database.check_field_exists('wait', 'add', 'TreatType', 'varchar(10) AFTER RegistType'),
+        ]
+        self._exec_process(process_list)
 
-        self.database.check_field_exists('cases', 'add', 'DiagShareFee', 'int AFTER TreatShare')
-        progress += 1
-        progress_dialog.setValue(progress)
+    def _check_debt(self):
+        process_list = [
+            self.database.check_field_exists('debt', 'add', 'Cashier1', 'varchar(10) AFTER Casher1'),
+            self.database.check_field_exists('debt', 'add', 'Cashier2', 'varchar(10) AFTER Casher2'),
+            self.database.check_field_exists('debt', 'add', 'Cashier3', 'varchar(10) AFTER Casher3'),
+        ]
+        self._exec_process(process_list)
 
-        self.database.check_field_exists('cases', 'add', 'DrugShareFee', 'int AFTER DrugShare')
-        progress += 1
-        progress_dialog.setValue(progress)
+    def _check_ins_apply(self):
+        process_list = [
+            self.database.check_field_exists('insapply', 'add', 'Visit', 'varchar(10) AFTER ShareCode'),
+        ]
+        self._exec_process(process_list)
 
-        self.database.check_field_exists('cases', 'add', 'Cashier', 'varchar(10) AFTER Casher')
-        progress += 1
-        progress_dialog.setValue(progress)
-
-        self.database.check_field_exists('cases', 'add', 'RefundFee', 'int AFTER Refund')
-        progress += 1
-        progress_dialog.setValue(progress)
-
-        self.database.check_field_exists('cases', 'add', 'SMaterialFee', 'int AFTER SMaterial')
-        progress += 1
-        progress_dialog.setValue(progress)
-
-        self.database.check_field_exists('cases', 'add', 'TreatType', 'varchar(10) AFTER RegistType')
-        progress += 1
-        progress_dialog.setValue(progress)
-
-        self.database.check_field_exists('prescript', 'add', 'PrescriptNo', 'int AFTER PrescriptKey')
-        progress += 1
-        progress_dialog.setValue(progress)
-
-        self.database.check_field_exists('prescript', 'add', 'DosageMode', 'varchar(10) AFTER MedicineName')
-        progress += 1
-        progress_dialog.setValue(progress)
-
-        self.database.check_field_exists('medicine', 'add', 'Dosage', 'decimal(10,2) AFTER Unit')
-        progress += 1
-        progress_dialog.setValue(progress)
-
-        self.database.check_field_exists('medicine', 'add', 'Charged', 'varchar(4) AFTER InPrice')
-        progress += 1
-        progress_dialog.setValue(progress)
-
-        self.database.check_field_exists('reserve', 'add', 'ReserveNo', 'int AFTER Sequence')
-        progress += 1
-        progress_dialog.setValue(progress)
-
-        self.database.check_field_exists('reserve', 'add', 'Arrival', 'enum("False", "True") not null AFTER Doctor')
-        progress += 1
-        progress_dialog.setValue(progress)
-
-        self.database.check_field_exists('wait', 'add', 'TreatType', 'varchar(10) AFTER RegistType')
-        progress += 1
-        progress_dialog.setValue(progress)
-
-        self.database.check_field_exists('person', 'add', 'Birthday', 'date AFTER Name')
-        progress += 1
-        progress_dialog.setValue(progress)
-
-        self.database.check_field_exists('person', 'add', 'Gender', 'varchar(2) AFTER ID')
-        progress += 1
-        progress_dialog.setValue(progress)
-
-        self.database.check_field_exists('person', 'add', 'Email', 'varchar(100) AFTER Address')
-        progress += 1
-        progress_dialog.setValue(progress)
-
-        self.database.check_field_exists('person', 'add', 'FullTime', 'varchar(10) AFTER Position')
-        progress += 1
-        progress_dialog.setValue(progress)
-
-        self.database.check_field_exists('person', 'add', 'Department', 'varchar(20) AFTER Email')
-        progress += 1
-        progress_dialog.setValue(progress)
-
-        self.database.check_field_exists('person', 'add', 'InputDate', 'date AFTER Department')
-        progress += 1
-        progress_dialog.setValue(progress)
-
-        self.database.check_field_exists('debt', 'add', 'Cashier1', 'varchar(10) AFTER Casher1')
-        progress += 1
-        progress_dialog.setValue(progress)
-
-        self.database.check_field_exists('debt', 'add', 'Cashier2', 'varchar(10) AFTER Casher2')
-        progress += 1
-        progress_dialog.setValue(progress)
-
-        self.database.check_field_exists('debt', 'add', 'Cashier3', 'varchar(10) AFTER Casher3')
-        progress += 1
-        progress_dialog.setValue(progress)
-
-        self.database.check_field_exists('insapply', 'add', 'Visit', 'varchar(10) AFTER ShareCode')
-        progress += 1
-        progress_dialog.setValue(progress)
-
-        self.database.check_field_exists('patient', 'change', ['EMail', 'Email'], 'varchar(100)')
-        progress += 1
-        progress_dialog.setValue(progress)
-
-        self.database.check_field_exists('person', 'change', ['EMail', 'Email'], 'varchar(100)')
-        progress += 1
-        progress_dialog.setValue(progress)
-
-        self.database.check_field_exists('prescript', 'change', ['price', 'Price'], 'decimal(10,2)')
-        progress += 1
-        progress_dialog.setValue(progress)
-
-        self.database.check_field_exists('prescript', 'change', ['amount', 'Amount'], 'decimal(10,2)')
-        progress += 1
-        progress_dialog.setValue(progress)
-
-        self.database.check_field_exists('clinic', 'change', ['groups', 'Groups'], 'varchar(40)')
-        progress += 1
-        progress_dialog.setValue(progress)
-
-        self.database.check_field_exists('medicine', 'change', ['location', 'Location'], 'varchar(20)')
-        progress += 1
-        progress_dialog.setValue(progress)
-
-        progress_dialog.setValue(max_progress)
+    def _check_clinic(self):
+        process_list = [
+            self.database.check_field_exists('clinic', 'change', ['groups', 'Groups'], 'varchar(40)'),
+        ]
+        self._exec_process(process_list)
 
 

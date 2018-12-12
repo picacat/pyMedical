@@ -60,6 +60,16 @@
         </column>
         <column>
          <property name="text">
+          <string>完診</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>批價</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
           <string>診別</string>
          </property>
         </column>

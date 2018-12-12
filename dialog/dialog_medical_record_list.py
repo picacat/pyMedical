@@ -68,11 +68,12 @@ class DialogMedicalRecordList(QtWidgets.QDialog):
 
         script = '''
             SELECT 
-                CaseKey, DATE_FORMAT(CaseDate, '%Y-%m-%d %H:%i') AS CaseDate, 
-                cases.PatientKey, cases.Name, Period, cases.InsType, 
+                CaseKey, DATE_FORMAT(CaseDate, '%Y-%m-%d %H:%i') AS CaseDate, DoctorDate, ChargeDate, 
+                cases.PatientKey, cases.Name, Period, ChargePeriod, cases.InsType, 
                 Share, cases.RegistNo, Card, Continuance, TreatType, 
                 PresDays1, PresDays2, DiseaseCode1, DiseaseName1,
                 Doctor, Massager, Room, RegistFee, SDiagShareFee, SDrugShareFee,
+                DoctorDone, ChargeDone,
                 TotalFee, patient.Gender, patient.Birthday
             FROM cases
                 LEFT JOIN patient ON patient.PatientKey = cases.PatientKey

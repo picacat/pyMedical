@@ -5,8 +5,8 @@
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtWidgets import QMessageBox, QPushButton
 from lxml import etree as ET
-from xml.dom.minidom import Document
 
+from classes import table_widget
 from libs import ui_utils
 from libs import string_utils
 from libs import number_utils
@@ -16,9 +16,9 @@ from libs import personnel_utils
 from libs import cshis_utils
 from libs import nhi_utils
 from libs import system_utils
+from libs import xml_utils
 
 from dialog import dialog_ic_record_upload
-from classes import table_widget
 
 
 # 主視窗
@@ -278,10 +278,7 @@ class ICRecordUpload(QtWidgets.QMainWindow):
             )
 
     def create_xml_file(self, xml_file_name):
-        doc = Document()
-        doc.encoding='Big5'
-        recs = doc.createElement('RECS')
-        doc.appendChild(recs)
+        root = ET.Element('RECS')
 
         for row in range(self.ui.tableWidget_ic_record.rowCount()):
             self.ui.tableWidget_ic_record.setCurrentCell(row, 0)
@@ -293,129 +290,109 @@ class ICRecordUpload(QtWidgets.QMainWindow):
             upload_type = self.get_upload_type(case_key)
             medical_record = self.database.select_record(
                 'SELECT * FROM cases WHERE CaseKey = {0}'.format(case_key))[0]
-            self.add_rec(doc, recs, medical_record, upload_type)
+            self.add_rec(root, medical_record, upload_type)
 
-        xml_file = open(xml_file_name, 'w', encoding='Big5')
-        doc.writexml(xml_file, '', ' '*2, '\n', 'Big5')
-        xml_file.close()
-
-        return xml_file_name
+        tree = ET.ElementTree(root)
+        tree.write(xml_file_name, pretty_print=True, xml_declaration=True, encoding="Big5")
+        xml_utils.set_xml_file_to_big5(xml_file_name)
 
     def get_upload_type(self, case_key):
         upload_type = case_utils.extract_xml(self.database, case_key, 'upload_type')
         if upload_type == '':
             upload_type = '1'
         if self.upload_type == '2':  # 補正上傳
-            upload_type = str(int(upload_type) + 2)  # 轉換成補正上傳 1->3, 2->4
+            upload_type = string_utils.xstr(int(upload_type) + 2)  # 轉換成補正上傳 1->3, 2->4
 
-        return upload_type
+        return string_utils.xstr(upload_type)
 
     # 每一筆資料上傳內容
-    def add_rec(self, doc, recs, medical_record, upload_type):
-        rec = doc.createElement('REC')
-        recs.appendChild(rec)
+    def add_rec(self, root, medical_record, upload_type):
+        rec = ET.SubElement(root, 'REC')
 
-        self.add_msh(doc, rec, upload_type)  # 表頭
-        self.add_mb(doc, rec, medical_record, upload_type)   # 資料本體
+        self.add_msh(rec, upload_type)  # 表頭
+        self.add_mb(rec, medical_record, upload_type)   # 資料本體
 
     # 表頭內容
-    def add_msh(self, doc, rec, upload_type):
-        msh = doc.createElement('MSH')
-        rec.appendChild(msh)
+    def add_msh(self, rec, upload_type):
+        msh = ET.SubElement(rec, 'MSH')
 
-        a00 = doc.createElement('A00')
-        a00.appendChild(doc.createTextNode('1'))
-        msh.appendChild(a00)
-
-        a01 = doc.createElement('A01')
-        a01.appendChild(doc.createTextNode(upload_type))
-        msh.appendChild(a01)
-
-        a02 = doc.createElement('A02')
-        a02.appendChild(doc.createTextNode('1.0'))
-        msh.appendChild(a02)
+        a00 = ET.SubElement(msh, 'A00')
+        a00.text = '1'
+        a01 = ET.SubElement(msh, 'A01')
+        a01.text = string_utils.xstr(upload_type)
+        a02 = ET.SubElement(msh, 'A02')
+        a02.text = '1.0'
 
     # 每一筆資料本體
-    def add_mb(self, doc, rec, medical_record, upload_type):
-        mb = doc.createElement('MB')
-        rec.appendChild(mb)
+    def add_mb(self, rec, medical_record, upload_type):
+        mb = ET.SubElement(rec, 'MB')
 
-        self.add_mb1(doc, mb, medical_record, upload_type)
-        self.add_mb2(doc, mb, medical_record, upload_type)
+        self.add_mb1(mb, medical_record, upload_type)
+        self.add_mb2(mb, medical_record, upload_type)
 
     # 健保資料段
-    def add_mb1(self, doc, mb, medical_record, upload_type):
+    def add_mb1(self, mb, medical_record, upload_type):
+        mb1 = ET.SubElement(mb, 'MB1')
+
         case_key = string_utils.xstr(medical_record['CaseKey'])
         sql = 'SELECT * FROM patient WHERE PatientKey = {0}'.format(
             string_utils.xstr(medical_record['PatientKey'])
         )
         patient_record = self.database.select_record(sql)[0]
-        mb1 = doc.createElement('MB1')
-        mb.appendChild(mb1)
 
-        if upload_type == '1':
-            a11 = doc.createElement('A11')
-            a11.appendChild(doc.createTextNode(string_utils.xstr(patient_record['CardNo'])))
-            mb1.appendChild(a11)
-
-            clinic_id = case_utils.extract_xml(
-                self.database, case_key, 'clinic_id'
+        if upload_type in ['1', '3']:
+            clinic_id = case_utils.extract_xml(self.database, case_key, 'clinic_id')
+            card = case_utils.extract_xml(self.database, case_key, 'seq_number')
+            registered_date = date_utils.west_datetime_to_nhi_datetime(
+                case_utils.extract_xml(self.database, case_key, 'registered_date')
             )
-            a14 = doc.createElement('A14')
-            a14.appendChild(doc.createTextNode(clinic_id))
-            mb1.appendChild(a14)
-
-            sam_id = case_utils.extract_xml(
-                self.database, case_key, 'sam_id'
-            )
-            a16 = doc.createElement('A16')
-            a16.appendChild(doc.createTextNode(sam_id))
-            mb1.appendChild(a16)
-
-            registered_date = case_utils.extract_xml(
-                self.database, case_key, 'registered_date'
-            )
-            a17 = doc.createElement('A17')
-            a17.appendChild(doc.createTextNode(date_utils.west_datetime_to_nhi_datetime(
-                registered_date)))
-            mb1.appendChild(a17)
-
-            security_signature = case_utils.extract_xml(
-                self.database, case_key, 'security_signature'
-            )
-            a22 = doc.createElement('A22')
-            a22.appendChild(doc.createTextNode(security_signature))
-            mb1.appendChild(a22)
         else:
-            a14 = doc.createElement('A14')
-            a14.appendChild(doc.createTextNode(self.system_settings.field('院所代號')))
-            mb1.appendChild(a14)
+            clinic_id = self.system_settings.field('院所代號')
+            card = string_utils.xstr(medical_record['Card'])
+            registered_date = date_utils.west_datetime_to_nhi_datetime(
+                medical_record['CaseDate']
+            )
 
-            a17 = doc.createElement('A17')
-            a17.appendChild(doc.createTextNode(date_utils.west_datetime_to_nhi_datetime(
-                medical_record['CaseDate'])))
-            mb1.appendChild(a17)
-
-
-        a12 = doc.createElement('A12')
-        a12.appendChild(doc.createTextNode(string_utils.xstr(patient_record['ID'])))
-        mb1.appendChild(a12)
-
-        a13 = doc.createElement('A13')
-        a13.appendChild(doc.createTextNode(date_utils.west_date_to_nhi_date(patient_record['Birthday'])))
-        mb1.appendChild(a13)
-
-
-        a15 = doc.createElement('A15')
-        a15.appendChild(doc.createTextNode(personnel_utils.get_personnel_id(
-            self.database, string_utils.xstr(medical_record['Doctor'])
-        )))
-        mb1.appendChild(a15)
-
-        card = case_utils.extract_xml(self.database, case_key, 'seq_number')
         xcard = string_utils.xstr(medical_record['XCard'])
         if xcard != '':
             card = xcard
+
+        treat_after_check = case_utils.extract_xml(self.database, case_key, 'treat_after_check')
+        treat_item = cshis_utils.get_treat_item(medical_record['Continuance'])
+        disease_code1 = string_utils.xstr(medical_record['DiseaseCode1'])
+        disease_code2 = string_utils.xstr(medical_record['DiseaseCode2'])
+        disease_code3 = string_utils.xstr(medical_record['DiseaseCode3'])
+        ins_total_fee = number_utils.get_integer(medical_record['InsTotalFee'])
+        share_fee = (
+                number_utils.get_integer(medical_record['DiagShareFee']) +
+                number_utils.get_integer(medical_record['DrugShareFee'])
+        )
+
+
+        if upload_type in ['1', '3']:
+            a11 = ET.SubElement(mb1, 'A11')
+            a11.text = string_utils.xstr(patient_record['CardNo'])
+
+        a12 = ET.SubElement(mb1, 'A12')
+        a12.text = string_utils.xstr(string_utils.xstr(patient_record['ID']))
+        a13 = ET.SubElement(mb1, 'A13')
+        a13.text = string_utils.xstr(date_utils.west_date_to_nhi_date(patient_record['Birthday']))
+        a14 = ET.SubElement(mb1, 'A14')
+        a14.text = string_utils.xstr(clinic_id)
+        a15 = ET.SubElement(mb1, 'A15')
+        a15.text = string_utils.xstr(personnel_utils.get_personnel_id(
+            self.database, string_utils.xstr(medical_record['Doctor']))
+        )
+
+        if upload_type in ['1', '3']:
+            sam_id = case_utils.extract_xml(self.database, case_key, 'sam_id')
+            a16 = ET.SubElement(mb1, 'A16')
+            a16.text = string_utils.xstr(sam_id)
+
+        a17 = ET.SubElement(mb1, 'A17')
+        a17.text = string_utils.xstr(registered_date)
+        a18 = ET.SubElement(mb1, 'A18')
+        a18.text = string_utils.xstr(card)
 
         '''
         1. 當A01為(1、3正常卡序)且A23就醫類別為(01-08內科或首次)時，A18必須為數字欄位且不可空白，若大於1500退件。
@@ -425,108 +402,78 @@ class ICRecordUpload(QtWidgets.QMainWindow):
         5. 當A23為AC且A01 = (1、3)，A18必須足4碼且為IC開頭ICxx
         6. 當A01為(1、3) 但A23不等於(01~08, AC)， 則A18可以等於"IC08"
         '''
-        a18 = doc.createElement('A18')
-        a18.appendChild(doc.createTextNode(card))
-        mb1.appendChild(a18)
 
-        treat_after_check = case_utils.extract_xml(
-            self.database,
-            case_key,
-            'treat_after_check'
-        )
-        a19 = doc.createElement('A19')
-        a19.appendChild(doc.createTextNode(treat_after_check))
-        mb1.appendChild(a19)
+        a19 = ET.SubElement(mb1, 'A19')
+        a19.text = string_utils.xstr(treat_after_check)
 
-        treat_item = cshis_utils.get_treat_item(medical_record['Continuance'])
-        a23 = doc.createElement('A23')
-        a23.appendChild(doc.createTextNode(treat_item))
-        mb1.appendChild(a23)
+        if upload_type in ['1', '3']:
+            security_signature = case_utils.extract_xml(self.database, case_key, 'security_signature')
+            a22 = ET.SubElement(mb1, 'A22')
+            a22.text = string_utils.xstr(security_signature)
 
-        disease_code1 = string_utils.xstr(medical_record['DiseaseCode1'])
-        a25 = doc.createElement('A25')
-        a25.appendChild(doc.createTextNode(disease_code1))
-        mb1.appendChild(a25)
+        a23 = ET.SubElement(mb1, 'A23')
+        a23.text = string_utils.xstr(treat_item)
+        a25 = ET.SubElement(mb1, 'A25')
+        a25.text = string_utils.xstr(disease_code1)
 
-        disease_code2 = string_utils.xstr(medical_record['DiseaseCode2'])
         if disease_code2 != '':
-            a26 = doc.createElement('A26')
-            a26.appendChild(doc.createTextNode(disease_code2))
-            mb1.appendChild(a26)
+            a26 = ET.SubElement(mb1, 'A26')
+            a26.text = string_utils.xstr(disease_code2)
 
-        disease_code3 = string_utils.xstr(medical_record['DiseaseCode3'])
         if disease_code3 != '':
-            a27 = doc.createElement('A27')
-            a27.appendChild(doc.createTextNode(disease_code3))
-            mb1.appendChild(a27)
+            a27 = ET.SubElement(mb1, 'A27')
+            a27.text = string_utils.xstr(disease_code3)
 
-        ins_total_fee = number_utils.get_integer(medical_record['InsTotalFee'])
-        a31 = doc.createElement('A31')
-        a31.appendChild(doc.createTextNode(str(ins_total_fee)))
-        mb1.appendChild(a31)
-
-        share_fee = (
-                number_utils.get_integer(medical_record['DiagShareFee']) +
-                number_utils.get_integer(medical_record['DrugShareFee'])
+        a31 = ET.SubElement(mb1, 'A31')
+        a31.text = string_utils.xstr(ins_total_fee)
+        a32 = ET.SubElement(mb1, 'A32')
+        a32.text = string_utils.xstr(share_fee)
+        a54 = ET.SubElement(mb1, 'A54')
+        a54.text = string_utils.xstr(date_utils.west_datetime_to_nhi_datetime(
+            medical_record['CaseDate'])
         )
-        a32 = doc.createElement('A32')
-        a32.appendChild(doc.createTextNode(str(share_fee)))
-        mb1.appendChild(a32)
-
-        a54 = doc.createElement('A54')
-        a54.appendChild(doc.createTextNode(date_utils.west_datetime_to_nhi_datetime(
-            medical_record['CaseDate'])))
-        mb1.appendChild(a54)
 
     # 醫療專區
-    def add_mb2(self, doc, mb, medical_record, upload_type):
-        self.add_treat(doc, mb, medical_record, upload_type)
-        self.add_medicine(doc, mb, medical_record, upload_type)
+    def add_mb2(self, mb, medical_record, upload_type):
+        self.add_treat(mb, medical_record, upload_type)
+        self.add_medicine(mb, medical_record, upload_type)
 
-    def add_treat(self, doc, mb, medical_record, upload_type):
+    def add_treat(self, mb, medical_record, upload_type):
         treatment = string_utils.xstr(medical_record['Treatment'])
         if treatment == '':
             return
 
         case_key = medical_record['CaseKey']
-
-        mb2 = doc.createElement('MB2')
-        mb.appendChild(mb2)
-        registered_date = case_utils.extract_xml(
-            self.database, case_key, 'registered_date'
-        )
-        a71 = doc.createElement('A71')
-        a71.appendChild(doc.createTextNode(date_utils.west_datetime_to_nhi_datetime(
-            registered_date)))
-        mb2.appendChild(a71)
-
         prescript_type = '3'  # 3-診療
-        a72 = doc.createElement('A72')
-        a72.appendChild(doc.createTextNode(prescript_type))
-        mb2.appendChild(a72)
-
-        a73 = doc.createElement('A73')
-        a73.appendChild(doc.createTextNode(
-            nhi_utils.TREAT_DICT[treatment]
-        ))
-        mb2.appendChild(a73)
-
         days = 0
-        a76 = doc.createElement('A76')
-        a76.appendChild(doc.createTextNode('{0:0>2}'.format(days)))
-        mb2.appendChild(a76)
-
         dosage = 1
-        a77 = doc.createElement('A77')
-        a77.appendChild(doc.createTextNode('{0:07.1f}'.format(dosage)))
-        mb2.appendChild(a77)
-
         pharmacy_type = '03'  # 物理治療
-        a78 = doc.createElement('A78')
-        a78.appendChild(doc.createTextNode(pharmacy_type))
-        mb2.appendChild(a78)
 
-        if upload_type == '1':
+        mb2 = ET.SubElement(mb, 'MB2')
+
+        if upload_type in ['1', '3']:
+            registered_date = date_utils.west_datetime_to_nhi_datetime(
+                case_utils.extract_xml(self.database, case_key, 'registered_date')
+            )
+        else:
+            registered_date = date_utils.west_datetime_to_nhi_datetime(
+                medical_record['CaseDate']
+            )
+
+        a71 = ET.SubElement(mb2, 'A71')
+        a71.text = string_utils.xstr(registered_date)
+        a72 = ET.SubElement(mb2, 'A72')
+        a72.text = string_utils.xstr(prescript_type)
+        a73 = ET.SubElement(mb2, 'A73')
+        a73.text = string_utils.xstr(nhi_utils.TREAT_DICT[treatment])
+        a76 = ET.SubElement(mb2, 'A76')
+        a76.text = string_utils.xstr('{0:0>2}'.format(days))
+        a77 = ET.SubElement(mb2, 'A77')
+        a77.text = string_utils.xstr('{0:07.1f}'.format(dosage))
+        a78 = ET.SubElement(mb2, 'A78')
+        a78.text = string_utils.xstr(pharmacy_type)
+
+        if upload_type in ['1', '3']:
             sql = '''
             SELECT Content AS PrescriptSign FROM presextend WHERE 
                 PrescriptKey = {0} AND
@@ -535,11 +482,10 @@ class ICRecordUpload(QtWidgets.QMainWindow):
             rows = self.database.select_record(sql)
             if len(rows) > 0:
                 prescript_sign = string_utils.xstr(rows[0]['PrescriptSign'])
-                a79 = doc.createElement('A79')
-                a79.appendChild(doc.createTextNode(prescript_sign))
-                mb2.appendChild(a79)
+                a79 = ET.SubElement(mb2, 'A79')
+                a79.text = string_utils.xstr(prescript_sign)
 
-    def add_medicine(self, doc, mb, medical_record, upload_type):
+    def add_medicine(self, mb, medical_record, upload_type):
         case_key = string_utils.xstr(medical_record['CaseKey'])
 
         if upload_type == '1':
@@ -574,34 +520,21 @@ class ICRecordUpload(QtWidgets.QMainWindow):
         dosage_row = self.database.select_record(sql)
 
         for prescript_row in rows:
-            self.add_medicine_rows(doc, mb, prescript_row, dosage_row, case_key, upload_type)
+            self.add_medicine_rows(mb, medical_record, prescript_row, dosage_row, case_key, upload_type)
 
-    def add_medicine_rows(self, doc, mb, prescript_row, dosage_row, case_key, upload_type):
-        mb2 = doc.createElement('MB2')
-        mb.appendChild(mb2)
+    def add_medicine_rows(self, mb, medical_record, prescript_row, dosage_row,
+                          case_key, upload_type):
+        mb2 = ET.SubElement(mb, 'MB2')
 
-        registered_date = case_utils.extract_xml(
-            self.database, case_key, 'registered_date'
-        )
-        if registered_date == '':
-            row = self.database.select_record(
-                'SELECT * FROM cases WHERE CaseKey = {0}'.format(case_key)
-            )[0]
-            registered_date = row['CaseDate']
-        a71 = doc.createElement('A71')
-        a71.appendChild(doc.createTextNode(date_utils.west_datetime_to_nhi_datetime(
-            registered_date)))
-        mb2.appendChild(a71)
-
+        if upload_type in ['1', '3']:
+            registered_date = date_utils.west_datetime_to_nhi_datetime(
+                case_utils.extract_xml(self.database, case_key, 'registered_date')
+            )
+        else:
+            registered_date = date_utils.west_datetime_to_nhi_datetime(
+                medical_record['CaseDate']
+            )
         prescript_type = '1'  # 1-長期藥品
-        a72 = doc.createElement('A72')
-        a72.appendChild(doc.createTextNode(prescript_type))
-        mb2.appendChild(a72)
-
-        a73 = doc.createElement('A73')
-        a73.appendChild(doc.createTextNode(string_utils.xstr(prescript_row['InsCode'])))
-        mb2.appendChild(a73)
-
         if len(dosage_row) > 0:
             frequency = nhi_utils.FREQUENCY[dosage_row[0]['Packages']]
             days = number_utils.get_integer(dosage_row[0]['Days'])
@@ -611,26 +544,25 @@ class ICRecordUpload(QtWidgets.QMainWindow):
             days = 0
             dosage = 0
 
-        a75 = doc.createElement('A75')
-        a75.appendChild(doc.createTextNode(frequency))
-        mb2.appendChild(a75)
-
-        a76 = doc.createElement('A76')
-        a76.appendChild(doc.createTextNode('{0:0>2}'.format(days)))
-        mb2.appendChild(a76)
-
-        a77 = doc.createElement('A77')
-        a77.appendChild(doc.createTextNode('{0:07.1f}'.format(dosage)))
-        mb2.appendChild(a77)
-
         pharmacy_type = '01'  # 自行調劑
-        a78 = doc.createElement('A78')
-        a78.appendChild(doc.createTextNode(pharmacy_type))
-        mb2.appendChild(a78)
 
-        if upload_type == '1':
+        a71 = ET.SubElement(mb2, 'A71')
+        a71.text = string_utils.xstr(registered_date)
+        a72 = ET.SubElement(mb2, 'A72')
+        a72.text = string_utils.xstr(prescript_type)
+        a73 = ET.SubElement(mb2, 'A73')
+        a73.text = string_utils.xstr(prescript_row['InsCode'])
+        a75 = ET.SubElement(mb2, 'A75')
+        a75.text = string_utils.xstr(frequency)
+        a76 = ET.SubElement(mb2, 'A76')
+        a76.text = string_utils.xstr('{0:0>2}'.format(days))
+        a77 = ET.SubElement(mb2, 'A77')
+        a77.text = string_utils.xstr('{0:07.1f}'.format(dosage))
+        a78 = ET.SubElement(mb2, 'A78')
+        a78.text = string_utils.xstr(pharmacy_type)
+
+        if upload_type in ['1', '3']:
             prescript_sign = string_utils.xstr(prescript_row['PrescriptSign'])
             if prescript_sign != '':
-                a79 = doc.createElement('A79')
-                a79.appendChild(doc.createTextNode(prescript_sign))
-                mb2.appendChild(a79)
+                a79 = ET.SubElement(mb2, 'A79')
+                a79.text = string_utils.xstr(prescript_sign)

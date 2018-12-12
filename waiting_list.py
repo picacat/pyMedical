@@ -308,6 +308,10 @@ class WaitingList(QtWidgets.QMainWindow):
         else:
             age = '{0}歲{1}月'.format(age_year, age_month)
 
+        disease_name = string_utils.xstr(rec['DiseaseName1'])
+        if disease_name != '':
+            disease_name = disease_name[:8]  # 只取前8個字元
+
         wait_rec = [
             string_utils.xstr(rec['WaitKey']),
             string_utils.xstr(rec['CaseKey']),
@@ -324,7 +328,7 @@ class WaitingList(QtWidgets.QMainWindow):
             string_utils.xstr(rec['Visit']),
             string_utils.xstr(rec['Card']),
             string_utils.int_to_str(rec['Continuance']).strip('0'),
-            string_utils.xstr(rec['DiseaseName1'][:8]),
+            disease_name,
             string_utils.xstr(pres_days),
             string_utils.xstr(rec['Doctor']),
             string_utils.xstr(rec['Massager']),

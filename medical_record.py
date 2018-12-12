@@ -490,7 +490,7 @@ class MedicalRecord(QtWidgets.QMainWindow):
         dialog.deleteLater()
 
     def _read_prescript(self):
-        if self.medical_record['InsType'] == '健保':  # 健保無論如何一定要開啟
+        if self.medical_record['InsType'] == '健保':  # 健保一定要開啟
             self.add_prescript_tab(1)
 
         # 讀取自費資料
@@ -503,10 +503,12 @@ class MedicalRecord(QtWidgets.QMainWindow):
         '''.format(self.case_key)
         rows = self.database.select_record(sql)
         if len(rows) <= 0:
-            return
+            rows = []
+            if self.call_from == '醫師看診作業':  # 病歷登錄一定要開啟
+                rows.append({'MedicineSet': 2})
 
         for row in rows:
-                self.add_prescript_tab(row['MedicineSet'])
+            self.add_prescript_tab(row['MedicineSet'])
 
     def _get_new_tab(self, max_medicine_set):
         tab_name = None
@@ -603,22 +605,29 @@ class MedicalRecord(QtWidgets.QMainWindow):
 
     # 病歷存檔
     def save_medical_record(self):
-        treat_type = self.tab_registration.ui.comboBox_treat_type.currentText()
-        disease_code1 = string_utils.xstr(self.ui.lineEdit_disease_code1.text())
-        treatment = string_utils.xstr(self.tab_list[0].combo_box_treatment.currentText())
-        pres_days = number_utils.get_integer(self.tab_list[0].ui.comboBox_pres_days.currentText())
+        if self.medical_record['InsType'] == '健保':
+            treat_type = self.tab_registration.ui.comboBox_treat_type.currentText()
+            disease_code1 = string_utils.xstr(self.ui.lineEdit_disease_code1.text())
+            treatment = string_utils.xstr(self.tab_list[0].combo_box_treatment.currentText())
+            pres_days = number_utils.get_integer(self.tab_list[0].ui.comboBox_pres_days.currentText())
 
-        record_check = medical_record_check.MedicalRecordCheck(
-            self, self.database, self.system_settings,
-            self.medical_record, self.patient_record,
-            treat_type, disease_code1, treatment, pres_days,
-        )
+            if self.tab_list[11] is not None:
+                table_widget_ins_care = self.tab_list[11].ui.tableWidget_prescript
+            else:
+                table_widget_ins_care = None
 
-        check_ok = record_check.check_medical_record()
-        record_check.deleteLater()
+            record_check = medical_record_check.MedicalRecordCheck(
+                self, self.database, self.system_settings,
+                self.medical_record, self.patient_record,
+                treat_type, disease_code1, treatment, pres_days,
+                table_widget_ins_care,
+            )
 
-        if not check_ok:
-            return
+            check_ok = record_check.check_medical_record()
+            record_check.deleteLater()
+
+            if not check_ok:
+                return
 
         self.record_saved = True
         self._set_necessary_fields()
@@ -709,7 +718,7 @@ class MedicalRecord(QtWidgets.QMainWindow):
 
     def _set_doctor_done(self):
         self.database.exec_sql(
-            'UPDATE cases SET DoctorDone = "True", CompletionTime = "{0}" WHERE CaseKey = {1}'.format(
+            'UPDATE cases SET DoctorDone = "True", DoctorDate = "{0}" WHERE CaseKey = {1}'.format(
                 date_utils.now_to_str(), self.case_key))
 
     def _set_wait_done(self):

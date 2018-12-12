@@ -13,6 +13,8 @@ from classes import table_widget
 from printer import print_prescription
 from printer import print_receipt
 
+from dialog import dialog_medical_record_done
+
 
 # 主視窗
 class MedicalRecordList(QtWidgets.QMainWindow):
@@ -67,7 +69,7 @@ class MedicalRecordList(QtWidgets.QMainWindow):
 
     # 設定欄位寬度
     def _set_table_width(self):
-        width = [70, 160, 50, 40, 50, 80, 80, 40, 120, 50, 80, 80, 70, 40, 40, 80, 200,
+        width = [70, 160, 50, 40, 40, 40, 50, 80, 80, 40, 120, 50, 80, 80, 70, 40, 40, 80, 200,
                  80, 80, 80, 80, 80]
         self.table_widget_medical_record_list.set_table_heading_width(width)
 
@@ -125,6 +127,8 @@ class MedicalRecordList(QtWidgets.QMainWindow):
             string_utils.xstr(row['CaseKey']),
             string_utils.xstr(row['CaseDate']),
             string_utils.xstr(row['Period']),
+            None,
+            None,
             string_utils.xstr(row['Room']),
             string_utils.xstr(row['RegistNo']),
             string_utils.xstr(row['PatientKey']),
@@ -151,12 +155,12 @@ class MedicalRecordList(QtWidgets.QMainWindow):
                 row_no, column,
                 QtWidgets.QTableWidgetItem(medical_record[column])
             )
-            if column in [3, 4, 5, 13, 14, 18, 19, 20, 21]:
+            if column in [5, 6, 7, 15, 16, 20, 21, 22, 23]:
                 self.ui.tableWidget_medical_record_list.item(
                     row_no, column).setTextAlignment(
                     QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
                 )
-            elif column in [7]:
+            elif column in [2, 9]:
                 self.ui.tableWidget_medical_record_list.item(
                     row_no, column).setTextAlignment(
                     QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
@@ -176,6 +180,55 @@ class MedicalRecordList(QtWidgets.QMainWindow):
                     row_no, column).setForeground(
                     QtGui.QColor('darkgreen')
                 )
+
+        self._set_done_status(row, row_no)
+
+    def _set_done_status(self, row, row_no):
+        gtk_apply = './icons/gtk-apply.svg'
+        gtk_close = './icons/gtk-close.svg'
+        if string_utils.xstr(row['DoctorDone']) == 'True' and row['DoctorDate'] is not None:
+            gtk_icon_file = gtk_apply
+            property_value = True
+        else:
+            gtk_icon_file = gtk_close
+            property_value = False
+
+        ui_utils.set_table_widget_field_icon(
+            self.ui.tableWidget_medical_record_list, row_no, 3, gtk_icon_file,
+            'doctor_done', property_value, self._done_button_clicked)
+
+        if (string_utils.xstr(row['ChargeDone']) == 'True' and
+                row['ChargeDate'] is not None and
+                row['ChargePeriod'] is not None):
+            gtk_icon_file = gtk_apply
+            property_value = True
+        else:
+            gtk_icon_file = gtk_close
+            property_value = False
+
+        ui_utils.set_table_widget_field_icon(
+            self.ui.tableWidget_medical_record_list, row_no, 4, gtk_icon_file,
+            'charge_done', property_value, self._done_button_clicked)
+
+    # 更改完診或批價狀態
+    def _done_button_clicked(self):
+        property_name = string_utils.get_str(self.sender().dynamicPropertyNames()[0], 'utf-8')
+
+        row_no = self.ui.tableWidget_medical_record_list.currentRow()
+        doctor_done = self.ui.tableWidget_medical_record_list.cellWidget(
+            row_no, 3).property(property_name)
+        if doctor_done:
+            return
+
+        dialog = dialog_medical_record_done.DialogMedicalRecordDone(
+            self, self.database, self.system_settings,
+            self.table_widget_medical_record_list.field_value(0),
+            property_name,
+        )
+        if dialog.exec_():
+            self.refresh_medical_record()
+
+        dialog.deleteLater()
 
     def delete_medical_record(self):
         name = self.table_widget_medical_record_list.field_value(6)
@@ -209,11 +262,12 @@ class MedicalRecordList(QtWidgets.QMainWindow):
         case_key = self.table_widget_medical_record_list.field_value(0)
         sql = '''
             SELECT 
-                CaseKey, DATE_FORMAT(CaseDate, '%Y-%m-%d %H:%i') AS CaseDate, 
-                cases.PatientKey, cases.Name, Period, cases.InsType, 
+                CaseKey, DATE_FORMAT(CaseDate, '%Y-%m-%d %H:%i') AS CaseDate, DoctorDate, ChargeDate,
+                cases.PatientKey, cases.Name, Period, ChargePeriod, cases.InsType, 
                 Share, cases.RegistNo, Card, Continuance, TreatType, 
                 PresDays1, PresDays2, DiseaseCode1, DiseaseName1,
                 Doctor, Massager, Room, RegistFee, SDiagShareFee, SDrugShareFee,
+                ChargePeriod, DoctorDone, ChargeDone,
                 TotalFee, patient.Gender, patient.Birthday
             FROM cases
                 LEFT JOIN patient ON patient.PatientKey = cases.PatientKey

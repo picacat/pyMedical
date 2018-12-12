@@ -434,7 +434,7 @@ class PyMedical(QtWidgets.QMainWindow):
                 break
 
         current_tab.ui.lineEdit_query.setText(str(new_patient_key))
-        current_tab.query_clicked()
+        current_tab.query_patient()
 
     # 系統設定
     def open_settings(self):

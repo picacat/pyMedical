@@ -92,14 +92,14 @@ class Registration(QtWidgets.QMainWindow):
         self.ui.action_ic_card.triggered.connect(self._registration_by_ic_card)
         self.ui.action_save.triggered.connect(self._save_files)
         self.ui.action_close.triggered.connect(self.close_registration)
-        self.ui.toolButton_query.clicked.connect(self._query_patient)
+        self.ui.toolButton_query.clicked.connect(self.query_patient)
         self.ui.toolButton_delete_wait.clicked.connect(self.delete_wait_list)
         self.ui.toolButton_ic_cancel.clicked.connect(self.cancel_ic_card)
         self.ui.toolButton_print_wait.clicked.connect(self.print_wait)
         self.ui.toolButton_modify_patient.clicked.connect(self._modify_patient)
         self.ui.toolButton_modify_patient2.clicked.connect(self._modify_patient)
         self.ui.toolButton_modify_wait.clicked.connect(self._modify_wait)
-        self.ui.lineEdit_query.returnPressed.connect(self._query_patient)
+        self.ui.lineEdit_query.returnPressed.connect(self.query_patient)
         self.ui.comboBox_patient_share.currentIndexChanged.connect(self._selection_changed)
         self.ui.comboBox_patient_discount.currentIndexChanged.connect(self._selection_changed)
         self.ui.comboBox_ins_type.currentIndexChanged.connect(self._selection_changed)
@@ -437,7 +437,7 @@ class Registration(QtWidgets.QMainWindow):
             self._set_total_amount()
 
     # 開始查詢病患資料
-    def _query_patient(self):
+    def query_patient(self):
         keyword = string_utils.xstr(self.ui.lineEdit_query.text())
         if keyword == '':
             return
@@ -738,18 +738,24 @@ class Registration(QtWidgets.QMainWindow):
                 self.ui.comboBox_treat_type.currentText(),
                 self.ui.comboBox_course.currentText(),
             )
-            diag_share_fee = charge_utils.get_diag_share_fee(
-                self.database,
-                self.ui.comboBox_share_type.currentText(),
-                self.ui.comboBox_treat_type.currentText(),
-                self.ui.comboBox_course.currentText())
-            deposit_fee = charge_utils.get_deposit_fee(
-                self.database,
-                self.ui.comboBox_card.currentText())
 
-            traditional_health_care_fee = charge_utils.get_deposit_fee(
-                self.database,
-                self.ui.comboBox_ins_type.currentText())
+            if self.ui.comboBox_ins_type.currentText() == '健保':
+                diag_share_fee = charge_utils.get_diag_share_fee(
+                    self.database,
+                    self.ui.comboBox_share_type.currentText(),
+                    self.ui.comboBox_treat_type.currentText(),
+                    self.ui.comboBox_course.currentText())
+                deposit_fee = charge_utils.get_deposit_fee(
+                    self.database,
+                    self.ui.comboBox_card.currentText())
+
+                traditional_health_care_fee = charge_utils.get_deposit_fee(
+                    self.database,
+                    self.ui.comboBox_ins_type.currentText())
+            else:
+                diag_share_fee = 0
+                deposit_fee = 0
+                traditional_health_care_fee = 0
         else:
             regist_fee = medical_record['RegistFee']
             diag_share_fee = medical_record['SDiagShareFee']

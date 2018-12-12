@@ -50,55 +50,23 @@ class DialogIncome(QtWidgets.QDialog):
 
     # 設定信號
     def _set_signal(self):
-        self.ui.buttonBox.accepted.connect(self.accepted_button_clicked)
+        self.ui.buttonBox.accepted.connect(self.button_accepted)
+        self.ui.buttonBox.rejected.connect(self.button_rejected)
 
-    # 設定 mysql script
-    def get_sql(self):
-        start_date = self.ui.dateEdit_case_date.date().toString('yyyy-MM-dd 00:00:00')
-        end_date = self.ui.dateEdit_case_date.date().toString('yyyy-MM-dd 23:59:59')
+    def button_accepted(self):
+        self.start_date = self.ui.dateEdit_case_date.date().toString('yyyy-MM-dd 00:00:00')
+        self.end_date = self.ui.dateEdit_case_date.date().toString('yyyy-MM-dd 23:59:59')
 
-        sql = '''
-            SELECT 
-                cases.*, cases.Register as Registrar, deposit.ReturnDate, deposit.Fee, deposit.refunder,
-                debt.ReturnDate1, debt.Period1, debt.Cashier1, debt.Fee1
-            FROM cases
-                LEFT JOIN deposit ON deposit.CaseKey = cases.CaseKey
-                LEFT JOIN debt ON debt.CaseKey = cases.CaseKey
-            WHERE
-                ((cases.CaseDate BETWEEN "{0}" AND "{1}") OR
-                 (ReturnDate BETWEEN "{0}" AND "{1}") OR
-                 (ReturnDate1 BETWEEN "{0}" AND "{1}"))
-        '''.format(start_date, end_date)
-
-        period = None
+        self.period = '全部'
         if self.ui.radioButton_period1.isChecked():
-            period = '早班'
+            self.period = '早班'
         elif self.ui.radioButton_period2.isChecked():
-            period = '午班'
-        elif self.ui.radioButton_period2.isChecked():
-            period = '晚班'
+            self.period = '午班'
+        elif self.ui.radioButton_period3.isChecked():
+            self.period = '晚班'
 
-        if period is not None:
-            sql += '''
-                AND (cases.Period = "{0}" or deposit.Period = "{0}" or debt.Period1 = "{0}")
-            '''.format(period)
+        self.room = self.ui.comboBox_room.currentText()
+        self.cashier = self.ui.comboBox_cashier.currentText()
 
-        room = self.ui.comboBox_room.currentText()
-        if room != '全部':
-            sql += ' AND Room = {0}'.format(room)
-
-        cashier = self.ui.comboBox_cashier.currentText()
-        if cashier != '全部':
-            sql += ''' 
-                AND (Cashier = "{0}" or Refunder = "{0}" or Cashier1 = "{0}")
-            '''.format(cashier)
-
-        sql += ''' 
-            AND ChargeDone = "True" 
-            ORDER BY CaseDate, FIELD(cases.Period, {0})
-        '''.format(str(nhi_utils.PERIOD)[1:-1])
-
-        return sql
-
-    def accepted_button_clicked(self):
+    def button_rejected(self):
         pass

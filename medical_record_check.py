@@ -4,6 +4,7 @@
 
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QMessageBox
+import datetime
 
 from libs import string_utils
 from libs import system_utils
@@ -23,6 +24,7 @@ class MedicalRecordCheck(QtWidgets.QDialog):
         self.disease_code1 = args[5]
         self.treatment = args[6]
         self.pres_days = args[7]
+        self.table_widget_ins_care = args[8]
         self.parent = parent
 
         self._set_ui()
@@ -116,6 +118,83 @@ class MedicalRecordCheck(QtWidgets.QDialog):
             if treat_type == '兒童鼻炎':
                 error_message = '* 兒童過敏性鼻炎病患年齡非{0}-{1}歲兒童, 請改為一般門診'.format(
                     age_range[0], age_range[1],
+                )
+
+        return error_message
+
+    def _check_duration_by_ins_code(self, patient_key, case_date,
+                                    treat_type, check_ins_code, table_widget_ins_care):
+        error_message = None
+
+        if treat_type in ['乳癌照護', '肝癌照護']:
+            if table_widget_ins_care is None:
+                return error_message
+
+            treat_exists = False
+            for row_no in range(table_widget_ins_care.rowCount()):
+                ins_code = table_widget_ins_care.item(row_no, 8)
+                if ins_code is not None:
+                    ins_code = ins_code.text()
+                    if ins_code == check_ins_code:
+                        treat_exists = True
+                        break
+
+            if not treat_exists:  # 無此醫令
+                return error_message
+
+            last_two_months = datetime.date(case_date.year, case_date.month, 1) - datetime.timedelta(60)
+            start_date = last_two_months.replace(day=1).strftime('%Y-%m-%d 00:00:00')
+            end_date = '{0} 23:59:59'.format(case_date.date() - datetime.timedelta(1))
+            sql = '''
+                SELECT cases.CaseDate, prescript.MedicineName FROM prescript
+                LEFT JOIN cases ON prescript.CaseKey = cases.CaseKey
+                WHERE
+                    cases.PatientKey = {0} AND
+                    cases.CaseDate BETWEEN "{1}" AND "{2}" AND
+                    InsCode = "{3}"
+            '''.format(patient_key, start_date, end_date, check_ins_code)
+            rows = self.database.select_record(sql)
+            if len(rows) >= 1:
+                error_message = '* {0}限三個月申報一次, 上次申報日期為{1}, 請刪除此項醫令'.format(
+                    string_utils.xstr(rows[0]['MedicineName']),
+                    rows[0]['CaseDate'].date(),
+                )
+        elif treat_type == '兒童鼻炎':
+            if table_widget_ins_care is None:
+                return error_message
+
+            treat_exists = False
+            for row_no in range(table_widget_ins_care.rowCount()):
+                ins_code = table_widget_ins_care.item(row_no, 8)
+                if ins_code is not None:
+                    ins_code = ins_code.text()
+                    if ins_code == check_ins_code:
+                        treat_exists = True
+                        break
+
+            if not treat_exists:  # 無此醫令
+                return error_message
+
+            start_date = datetime.date(case_date.year, 1, 1)
+            end_date = '{0} 23:59:59'.format(case_date.date() - datetime.timedelta(1))
+            sql = '''
+                SELECT cases.CaseDate, prescript.MedicineName FROM prescript
+                LEFT JOIN cases ON prescript.CaseKey = cases.CaseKey
+                WHERE
+                    cases.PatientKey = {0} AND
+                    cases.CaseDate BETWEEN "{1}" AND "{2}" AND
+                    InsCode = "{3}"
+            '''.format(patient_key, start_date, end_date, check_ins_code)
+            rows = self.database.select_record(sql)
+            if len(rows) <= 0:
+                return
+
+            first_date = rows[0]['CaseDate']
+            duration = case_date.date() - first_date.date()
+            if duration.days >= 105:  # 今年度不可超過105天
+                error_message = '* {0}限105日內完成, 上次申報日期為{1}, 請改為一般門診'.format(
+                    string_utils.xstr(rows[0]['MedicineName']),
+                    rows[0]['CaseDate'].date(),
                 )
 
         return error_message
@@ -224,6 +303,18 @@ class MedicalRecordCheck(QtWidgets.QDialog):
         if error is not None:
             error_message.append(error)
 
+        check_ins_code_list = ['P56006', 'P56007']
+        for check_ins_code in check_ins_code_list:
+            error = self._check_duration_by_ins_code(
+                string_utils.xstr(self.patient_record['PatientKey']),
+                self.medical_record['CaseDate'],
+                self.treat_type,
+                check_ins_code,
+                self.table_widget_ins_care,
+            )
+            if error is not None:
+                error_message.append(error)
+
         if len(error_message) > 0:
             system_utils.show_message_box(
                 QMessageBox.Critical,
@@ -255,6 +346,16 @@ class MedicalRecordCheck(QtWidgets.QDialog):
             error_message.append(error)
 
         error = self._check_disease1_error(self.treat_type, self.disease_code1)
+        if error is not None:
+            error_message.append(error)
+
+        error = self._check_duration_by_ins_code(
+            string_utils.xstr(self.patient_record['PatientKey']),
+            self.medical_record['CaseDate'],
+            self.treat_type,
+            'P58005',
+            self.table_widget_ins_care,
+        )
         if error is not None:
             error_message.append(error)
 

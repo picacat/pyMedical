@@ -411,7 +411,8 @@ class Purchase(QtWidgets.QMainWindow):
         )
 
         fields = [
-            'PatientKey', 'Name', 'CaseDate', 'Period', 'InsType',
+            'PatientKey', 'Name', 'CaseDate', 'DoctorDate', 'ChargeDate',
+            'Period', 'ChargePeriod', 'InsType',
             'TreatType',
             'Register', 'Cashier', 'Doctor',
             'SelfTotalFee', 'DiscountFee', 'TotalFee', 'ReceiptFee',
@@ -421,6 +422,9 @@ class Purchase(QtWidgets.QMainWindow):
             patient_key,
             name,
             case_date,
+            case_date,
+            case_date,
+            self.ui.comboBox_period.currentText(),
             self.ui.comboBox_period.currentText(),
             '自費',
             '自購',

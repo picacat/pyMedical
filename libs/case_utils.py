@@ -305,7 +305,7 @@ def get_medical_record_html(database, system_settings, case_key):
         </div>
     '''.format(medical_record)
 
-    prescript_record = _get_prescript_record(database, system_settings, case_key)
+    prescript_record = get_prescript_record(database, system_settings, case_key)
 
     html = '''
         <html>
@@ -325,7 +325,7 @@ def get_medical_record_html(database, system_settings, case_key):
     return html
 
 
-def _get_prescript_record(database, system_settings, case_key):
+def get_prescript_record(database, system_settings, case_key):
     sql = '''
         SELECT Treatment FROM cases
         WHERE
@@ -337,7 +337,7 @@ def _get_prescript_record(database, system_settings, case_key):
     sql = 'SELECT * FROM prescript WHERE CaseKey = {0}'.format(case_key)
     rows = database.select_record(sql)
     if len(rows) <= 0:
-        return '<br><center>無處方</center><br>'
+        return '<br><br><br><center>無開立處方</center><br>'
 
     all_prescript = ''
     for i in range(1, MAX_MEDICINE_SET):
@@ -374,7 +374,7 @@ def _get_prescript_record(database, system_settings, case_key):
         sequence = 0
         total_dosage = 0
         for row in rows:
-            if row['MedicineName'] is None:
+            if string_utils.xstr(row['MedicineName']) == '':
                 continue
 
             sequence += 1
@@ -565,3 +565,10 @@ def get_disease_name_html(in_disease_name):
     in_disease_name = in_disease_name.replace(word, new_word)
 
     return QtWidgets.QLabel(in_disease_name)
+
+def get_full_card(card, course):
+    card = string_utils.xstr(card)
+    if number_utils.get_integer(course) >= 1:
+        card += '-{0}'.format(course)
+
+    return card

@@ -35,6 +35,8 @@ UI_TEMPLATE = "template.ui"
 UI_WAITING_LIST = "waiting_list.ui"
 UI_CASHIER = "cashier.ui"
 UI_INCOME = "income.ui"
+UI_INCOME_CASH_FLOW = "income_cash_flow.ui"
+UI_INCOME_LIST = "income_list.ui"
 UI_DEBT = "debt.ui"
 UI_PURCHASE = "purchase.ui"
 UI_PURCHASE_LIST = "purchase_list.ui"
@@ -80,6 +82,7 @@ UI_DIALOG_EDIT_DISEASE = "dialog_edit_disease.ui"
 UI_DIALOG_MEDICAL_RECORD_LIST = "dialog_medical_record_list.ui"
 UI_DIALOG_MEDICAL_RECORD_PAST_HISTORY = "dialog_medical_record_past_history.ui"
 UI_DIALOG_MEDICAL_RECORD_PICKER = "dialog_medical_record_picker.ui"
+UI_DIALOG_MEDICAL_RECORD_DONE = "dialog_medical_record_done.ui"
 UI_DIALOG_MEDICINE = "dialog_medicine.ui"
 UI_DIALOG_PAST_HISTORY = "dialog_past_history.ui"
 UI_DIALOG_PATIENT = "dialog_patient.ui"
@@ -180,3 +183,13 @@ def set_completer(database, sql, field, widget):
     completer.setModel(model)
     widget.setCompleter(completer)
 
+def set_table_widget_field_icon(table_widget, row_no, col_no, icon_file_name,
+                                property_name, property_value, function_call):
+    icon = QtGui.QIcon(icon_file_name)
+
+    button = QtWidgets.QPushButton(table_widget)
+    button.setProperty(property_name, property_value)
+    button.setIcon(icon)
+    button.setFlat(True)
+    button.clicked.connect(function_call)
+    table_widget.setCellWidget(row_no, col_no, button)

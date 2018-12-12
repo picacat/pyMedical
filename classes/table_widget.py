@@ -19,7 +19,7 @@ class TableWidget:
 
     # 設定 tableWidget heading width
     def set_table_heading_width(self, width):
-        for i in range(0, self.table_widget.columnCount()):
+        for i in range(0, len(width)):
             self.table_widget.setColumnWidth(i, width[i])
             self.table_widget.horizontalHeaderItem(i).setTextAlignment(Qt.AlignLeft)
 

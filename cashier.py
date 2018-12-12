@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
-# 病歷查詢 2014.09.22
+# 批價作業 2018.12.10
 #coding: utf-8
 
 from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtWidgets import QMessageBox, QPushButton
-import sys
 
+from classes import table_widget
 from libs import ui_utils
 from libs import string_utils
 from libs import nhi_utils
 from libs import date_utils
 from libs import number_utils
 from libs import case_utils
-from classes import table_widget
+from libs import registration_utils
 
 
-# 主視窗
+# 批價作業
 class Cashier(QtWidgets.QMainWindow):
     # 初始化
     def __init__(self, parent=None, *args):
@@ -188,89 +188,8 @@ class Cashier(QtWidgets.QMainWindow):
             return
 
         case_row = case_rows[0]
-
-        sql = 'SELECT * FROM prescript WHERE CaseKey = {0}'.format(case_key)
-        rows = self.database.select_record(sql)
-        if len(rows) <= 0:
-            return '<br><center>未開藥</center><br>'
-
-        all_prescript = ''
-        for i in range(1, case_utils.MAX_MEDICINE_SET):
-            sql = '''
-                SELECT * FROM prescript WHERE CaseKey = {0} AND
-                MedicineSet = {1}
-                ORDER BY PrescriptNo
-            '''.format(case_key, i)
-            rows = self.database.select_record(sql)
-
-            if len(rows) <= 0:
-                if i == 1:
-                    continue
-                else:
-                    break
-
-            prescript_data = ''
-            sequence = 0
-            for row in rows:
-                if row['MedicineName'] is None:
-                    continue
-
-                sequence += 1
-
-                dosage = ''
-                if row['Dosage'] is not None and row['Dosage'] > 0:
-                    dosage = string_utils.xstr(row['Dosage']) + string_utils.xstr(row['Unit'])
-
-                prescript_data += '''
-                    <tr>
-                        <td align="center">{0}</td>
-                        <td style="padding-left: 12px">{1}</td>
-                        <td style="padding-right: 12px" align="right">{2}</td>
-                        <td style="padding-left: 12px" align="left">{3}</td>
-                    </tr>
-                '''.format(
-                    sequence,
-                    string_utils.xstr(row['MedicineName']),
-                    dosage,
-                    string_utils.xstr(row['Instruction']),
-                )
-
-            if i == 1:
-                sql = '''
-                    SELECT * FROM dosage WHERE
-                    CaseKey = {0} AND MedicineSet = 1 
-                '''.format(case_key)
-                dosage_rows = self.database.select_record(sql)
-                dosage_row = dosage_rows[0] if len(dosage_rows) > 0 else None
-                if dosage_row is not None:
-                    medicine_title = '健保處方-------{0}包{1}天份, {2}服用'.format(
-                        number_utils.get_integer(dosage_row['Packages']),
-                        number_utils.get_integer(dosage_row['Days']),
-                        string_utils.xstr(dosage_row['Instruction'])
-                    )
-                else:
-                    medicine_title = '健保處方'
-            else:
-                medicine_title = '自費處方{0}'.format(i-1)
-
-            prescript_data = '''
-                <table border="1" width="100%">
-                    <thead>
-                        <tr>
-                            <th width="10%">序號</th>
-                            <th width="50%" style="padding-left: 12px" align="left">{0}</th>
-                            <th width="20%" style="padding-right: 12px" align="right">劑量</th>
-                            <th width="20%" style="padding-left: 12px" align="left">服用方式</th>
-                        </tr>
-                    <thead>
-                    <tbody>
-                        {1}
-                    <tbody>
-                </table><br>
-            '''.format(medicine_title, prescript_data)
-            all_prescript += prescript_data
-
-        self.ui.textEdit_prescript.setHtml(all_prescript)
+        html = case_utils.get_prescript_record(self.database, self.system_settings, case_key)
+        self.ui.textEdit_prescript.setHtml(html)
 
         self.ui.lineEdit_drug_share_fee.setText(string_utils.xstr(case_row['DrugShareFee']))
         self.ui.lineEdit_receipt_drug_share_fee.setText(string_utils.xstr(case_row['SDrugShareFee']))
@@ -345,14 +264,16 @@ class Cashier(QtWidgets.QMainWindow):
         self.database.exec_sql('UPDATE wait SET ChargeDone = "True" WHERE WaitKey = {0}'.format(wait_key))
 
         fields = [
-            'Cashier', 'SDrugShareFee', 'ReceiptFee', 'ChargeDone',
+            'Cashier', 'SDrugShareFee', 'ReceiptFee', 'ChargeDone', 'ChargeDate', 'ChargePeriod',
         ]
 
         data = [
             self.system_settings.field('使用者'),
             self.ui.lineEdit_receipt_drug_share_fee.text(),
             self.ui.lineEdit_receipt_fee.text(),
-            'True'
+            'True',
+            date_utils.now_to_str(),
+            registration_utils.get_period(self.system_settings),
         ]
 
         self.database.update_record('cases', fields, 'CaseKey', case_key, data)

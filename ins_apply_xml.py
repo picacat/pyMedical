@@ -15,6 +15,7 @@ from libs import number_utils
 from libs import charge_utils
 from libs import case_utils
 from libs import personnel_utils
+from libs import xml_utils
 
 
 # 候診名單 2018.01.31
@@ -70,17 +71,12 @@ class InsApplyXML(QtWidgets.QMainWindow):
         xml_file_name = nhi_utils.get_ins_xml_file_name(
             self.ins_total_fee['apply_type'],
             self.ins_total_fee['apply_date'],
-            'unix',
-        )
-        xml_out_file_name = nhi_utils.get_ins_xml_file_name(
-            self.ins_total_fee['apply_type'],
-            self.ins_total_fee['apply_date'],
         )
 
-        self._write_xml_file(xml_file_name, xml_out_file_name)
-        self._zip_xml_file(xml_out_file_name)
+        self._write_xml_file(xml_file_name)
+        self._zip_xml_file(xml_file_name)
 
-    def _write_xml_file(self, xml_file_name, xml_out_file_name):
+    def _write_xml_file(self, xml_file_name):
         rows = self._get_ins_rows()
         record_count = len(rows)
         if record_count <= 0:
@@ -104,25 +100,8 @@ class InsApplyXML(QtWidgets.QMainWindow):
         progress_dialog.setValue(record_count)
 
         tree = ET.ElementTree(root)
-        tree.write(xml_file_name, pretty_print=True, xml_declaration=True, encoding="Big5")
-
-        with open(xml_file_name, encoding='Big5') as in_file, open(xml_out_file_name, 'w', encoding='Big5') as out_file:
-            txt = in_file.read()
-            txt = txt.replace('\'', '"')
-            txt = txt.replace('BIG5', 'Big5')
-            out_file.write(txt)
-
-        # convert LF => CR/LF
-        # if sys.platform == 'win32':
-        #     with open(xml_file_name) as in_file, open(xml_out_file_name, 'w') as out_file:
-        #         txt = in_file.read()
-        #         txt = txt.replace('\n', '\n') # in windows system, \n will auto lead with \r
-        #         out_file.write(txt)
-        # else:
-        #     with open(xml_out_file_name, 'w') as out_file:
-        #         cmd = ['sed', 's/$/\r/', xml_file_name]
-        #         sp = subprocess.Popen(cmd, stderr=subprocess.STDOUT, stdout=out_file)
-        #         sp.communicate()
+        tree.write(xml_file_name, pretty_print=True, xml_declaration=True, encoding='Big5')
+        xml_utils.set_xml_file_to_big5(xml_file_name)
 
     def _add_tdata(self, root):
         generate_date = '{0:0>3}{1:0>2}{2:0>2}'.format(
