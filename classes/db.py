@@ -226,6 +226,7 @@ class Database:
             new_column = column[1]
         else:
             search_column = column
+            new_column = column
 
         sql = 'SHOW COLUMNS FROM {0} like "{1}"'.format(table_name, search_column)
         rows = self.select_record(sql)

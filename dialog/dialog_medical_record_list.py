@@ -7,9 +7,10 @@ import datetime
 from libs import ui_utils
 from libs import system_utils
 from libs import nhi_utils
+from dialog import dialog_select_patient
 
 
-# 主視窗
+# 病歷查詢視窗
 class DialogMedicalRecordList(QtWidgets.QDialog):
     # 初始化
     def __init__(self, parent=None, *args):
@@ -40,10 +41,15 @@ class DialogMedicalRecordList(QtWidgets.QDialog):
         self._set_combo_box()
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setText('確定')
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Cancel).setText('取消')
+        self.ui.lineEdit_patient_key.setEnabled(False)
+        self.ui.toolButton_select_patient.setEnabled(False)
 
     # 設定信號
     def _set_signal(self):
         self.ui.buttonBox.accepted.connect(self.accepted_button_clicked)
+        self.ui.radioButton_1.clicked.connect(self._set_patient)
+        self.ui.radioButton_2.clicked.connect(self._set_patient)
+        self.ui.toolButton_select_patient.clicked.connect(self._select_patient)
 
     # 設定comboBox
     def _set_combo_box(self):
@@ -60,6 +66,16 @@ class DialogMedicalRecordList(QtWidgets.QDialog):
         ui_utils.set_combo_box(self.ui.comboBox_apply_type, nhi_utils.APPLY_TYPE, '全部')
         ui_utils.set_combo_box(self.ui.comboBox_doctor, doctor_list, '全部')
         ui_utils.set_combo_box(self.ui.comboBox_room, nhi_utils.ROOM, '全部')
+
+    def _set_patient(self):
+        if self.ui.radioButton_1.isChecked():
+            self.ui.lineEdit_patient_key.setText('')
+            enabled = False
+        else:
+            enabled = True
+
+        self.ui.lineEdit_patient_key.setEnabled(enabled)
+        self.ui.toolButton_select_patient.setEnabled(enabled)
 
     # 設定 mysql script
     def get_sql(self):
@@ -120,3 +136,13 @@ class DialogMedicalRecordList(QtWidgets.QDialog):
 
     def accepted_button_clicked(self):
         pass
+
+    def _select_patient(self):
+        patient_key = ''
+        dialog = dialog_select_patient.DialogSelectPatient(self, self.database, self.system_settings)
+        if dialog.exec_():
+            patient_key = dialog.get_patient_key()
+
+        self.ui.lineEdit_patient_key.setText(patient_key)
+
+        dialog.deleteLater()

@@ -27,7 +27,7 @@
   </component>
   <component name="DBNavigator.Project.DatabaseConsoleManager">
     <connection id="85dd102d-4da3-4481-ba69-4172ba68c41d">
-      <console name="Connection" type="STANDARD"><![CDATA[select * from clinic where ClinicType = '舌診']]></console>
+      <console name="Connection" type="STANDARD" schema="" session="Main"><![CDATA[select * from clinic where ClinicType = '舌診']]></console>
     </connection>
   </component>
   <component name="DBNavigator.Project.DatabaseSessionManager">
@@ -36,7 +36,7 @@
   <component name="DBNavigator.Project.DatasetFilterManager">
     <filter-list connection-id="85dd102d-4da3-4481-ba69-4172ba68c41d" dataset="yiler.insapply" active-filter-id="26d6602e-dae4-47be-bb69-e0f91993b58b">
       <filter id="26d6602e-dae4-47be-bb69-e0f91993b58b" name="Filter" temporary="false" custom-name="false" type="custom">
-        <condition><![CDATA[ApplyDate = '10601' order by CaseType, Sequence]]></condition>
+        <condition>ApplyDate = '10601' order by CaseType, Sequence</condition>
       </filter>
     </filter-list>
     <filter-list connection-id="85dd102d-4da3-4481-ba69-4172ba68c41d" dataset="nd.insapply" active-filter-id="5ddd4f92-ee0b-4a3f-923d-a308367bd0e9">
@@ -108,6 +108,12 @@
           <key-file value="" />
           <key-passphrase value="" />
         </ssh-settings>
+        <ssl-settings>
+          <active value="false" />
+          <certificate-authority-file value="" />
+          <client-certificate-file value="" />
+          <client-key-file value="" />
+        </ssl-settings>
         <details>
           <charset value="UTF-8" />
           <session-management value="true" />

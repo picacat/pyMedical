@@ -191,8 +191,7 @@ class DictDrug(QtWidgets.QMainWindow):
     # 新增主訴
     def _add_drug(self):
         dialog = dialog_input_drug.DialogInputDrug(self, self.database, self.system_settings)
-        result = dialog.exec_()
-        if result != 0:
+        if dialog.exec_():
             current_row = self.ui.tableWidget_dict_drug.rowCount()
             self.ui.tableWidget_dict_drug.insertRow(current_row)
             dict_groups_type = self.table_widget_dict_groups.field_value(1)

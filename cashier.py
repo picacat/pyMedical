@@ -263,12 +263,20 @@ class Cashier(QtWidgets.QMainWindow):
 
         self.database.exec_sql('UPDATE wait SET ChargeDone = "True" WHERE WaitKey = {0}'.format(wait_key))
 
+        sql = 'SELECT Cashier FROM cases WHERE CaseKey = {0}'.format(case_key)
+        row = self.database.select_record(sql)[0]
+        cashier = string_utils.xstr(row['Cashier'])
+        if cashier == '':
+            cashier = self.system_settings.field('使用者')
+
         fields = [
-            'Cashier', 'SDrugShareFee', 'ReceiptFee', 'ChargeDone', 'ChargeDate', 'ChargePeriod',
+            'Register', 'Cashier', 'SDrugShareFee', 'ReceiptFee',
+            'ChargeDone', 'ChargeDate', 'ChargePeriod',
         ]
 
         data = [
             self.system_settings.field('使用者'),
+            cashier,
             self.ui.lineEdit_receipt_drug_share_fee.text(),
             self.ui.lineEdit_receipt_fee.text(),
             'True',

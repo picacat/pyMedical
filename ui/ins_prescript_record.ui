@@ -92,6 +92,13 @@
              </property>
             </spacer>
            </item>
+           <item>
+            <widget class="QLabel" name="label_total_dosage">
+             <property name="text">
+              <string>總量: 0.0</string>
+             </property>
+            </widget>
+           </item>
           </layout>
          </item>
          <item>
@@ -304,6 +311,17 @@
              <property name="icon">
               <iconset>
                <normaloff>../icons/gtk-remove.svg</normaloff>../icons/gtk-remove.svg</iconset>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QToolButton" name="toolButton_treat_dictionary">
+             <property name="text">
+              <string>...</string>
+             </property>
+             <property name="icon">
+              <iconset>
+               <normaloff>../icons/help-contents.svg</normaloff>../icons/help-contents.svg</iconset>
              </property>
             </widget>
            </item>

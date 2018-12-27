@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# 病歷查詢 2014.09.22
+# 處方詞庫-滑鼠輸入 2014.09.22
 #coding: utf-8
 
 from PyQt5 import QtWidgets, QtGui, QtCore
@@ -11,7 +11,7 @@ from libs import string_utils
 from libs import prescript_utils
 
 
-# 主視窗
+# 處方詞庫-滑鼠輸入
 class DialogMedicine(QtWidgets.QDialog):
     # 初始化
     def __init__(self, parent=None, *args):
@@ -21,10 +21,10 @@ class DialogMedicine(QtWidgets.QDialog):
         self.system_settings = args[1]
         self.table_widget_prescript = args[2]
         self.medicine_set = args[3]
+        self.dict_type = args[4]  # 藥品, 處置
 
         self.settings = QSettings('__settings.ini', QSettings.IniFormat)
         self.ui = None
-        self.dict_type = '藥品'
 
         self._set_ui()
         self._set_signal()
@@ -62,7 +62,7 @@ class DialogMedicine(QtWidgets.QDialog):
     # 設定信號
     def _set_signal(self):
         self.ui.tableWidget_dict_groups.itemSelectionChanged.connect(self.dict_groups_changed)
-        self.ui.tableWidget_medicine.clicked.connect(self.medicine_double_clicked)
+        self.ui.tableWidget_medicine.clicked.connect(self._add_prescript)
         self.ui.lineEdit_input_code.textChanged.connect(self.input_code_changed)
         self.ui.buttonBox.accepted.connect(self.accepted_button_clicked)
         self.ui.buttonBox.rejected.connect(self.rejected_button_clicked)
@@ -126,7 +126,23 @@ class DialogMedicine(QtWidgets.QDialog):
         self._read_dict_groups()
 
     def _read_dict_groups(self):
-        sql = 'SELECT * FROM dict_groups WHERE DictGroupsType = "{0}類別" ORDER BY DictGroupsKey'.format(self.dict_type)
+        if self.dict_type == '成方':
+            sql = '''
+                SELECT * FROM dict_groups 
+                WHERE 
+                    DictGroupsType = "藥品類別" OR
+                    DictGroupsType = "處置類別"
+                ORDER BY DictGroupsKey
+            '''
+        else:
+            sql = '''
+                SELECT * FROM dict_groups 
+                WHERE 
+                    DictGroupsType = "{0}類別" OR
+                    DictGroupsType = "成方類別"
+                ORDER BY DictGroupsKey
+            '''.format(self.dict_type)
+
         self.table_widget_dict_groups.set_db_data(sql, self._set_dict_groups_data)
 
     def _set_dict_groups_data(self, rec_no, rec):
@@ -152,10 +168,13 @@ class DialogMedicine(QtWidgets.QDialog):
             input_code_str = 'AND ((MedicineName LIKE "%{0}%") OR (InputCode LIKE "{0}%")) '.format(input_code)
 
         sql = '''
-            SELECT * FROM medicine WHERE 
-            (MedicineType = "{0}") {1}
+            SELECT * FROM medicine 
+            WHERE 
+                (MedicineType = "{0}")
+                {1}
             ORDER BY LENGTH(MedicineName), CAST(CONVERT(`MedicineName` using big5) AS BINARY)
         '''.format(dict_groups_type, input_code_str)
+
         self.table_widget_medicine.set_db_data(sql, self._set_medicine_data)
 
     def _set_medicine_data(self, row_no, row):
@@ -200,37 +219,116 @@ class DialogMedicine(QtWidgets.QDialog):
         self.ui.lineEdit_input_code.setFocus(True)
         self.ui.lineEdit_input_code.setCursorPosition(len(input_code))
 
-    def medicine_double_clicked(self):
-        self.parent.tab_list[self.medicine_set-1].append_null_medicine()
-        self.add_medicine()
+    def _add_prescript(self):
+        if self.dict_type == '成方':
+            self._add_compound()
+        else:
+            self._add_medicine()
+
+    def _add_compound(self):
+        row = self._get_medicine_row()
+        self.parent.add_ref_compound(row)
+
         self.ui.lineEdit_input_code.setText(None)
         self.ui.lineEdit_input_code.setFocus(True)
 
-    def add_medicine(self):
-        in_medicine_key = self.table_widget_medicine.field_value(0)
-        in_table_widget = self.parent.tab_list[self.medicine_set-1].ui.tableWidget_prescript
-        if prescript_utils.check_prescript_exist(
-                in_table_widget, 6, in_medicine_key):
+    def _add_medicine(self):
+        medicine_type = self.table_widget_medicine.field_value(1)
+
+        if medicine_type == '成方':
+            self._extract_compound()
+        elif medicine_type in ['穴道', '處置']:
+            self._add_treat()
+        else:
+            self._add_drug()
+
+    # 解開成方
+    def _extract_compound(self):
+        medicine_key = self.table_widget_medicine.field_value(0)
+        sql = '''
+            SELECT * FROM refcompound
+            WHERE
+                CompoundKey = {0}
+            ORDER BY RefCompoundKey
+        '''.format(medicine_key)
+
+        compound_rows = self.database.select_record(sql)
+        if len(compound_rows) <= 0:
             return
 
-        prescript_row = [
-            [0, '-1'],
-            [1, string_utils.xstr(self.table_widget_prescript.currentRow()+1)],
-            [2, string_utils.xstr(self.parent.tab_list[self.medicine_set-1].case_key)],
-            [3, string_utils.xstr(self.parent.tab_list[self.medicine_set-1].case_date)],
-            [4, string_utils.xstr(self.medicine_set)],
-            [5, self.table_widget_medicine.field_value(1)],
-            [6, self.table_widget_medicine.field_value(0)],
-            [7, self.table_widget_medicine.field_value(3)],
-            [8, self.system_settings.field('劑量模式')],
-            [9, self.table_widget_medicine.field_value(2)],
-            [10, None],
-            [11, self.table_widget_medicine.field_value(4)],
-            [12, None],
-            [13, self.table_widget_medicine.field_value(5)],
-            [14, None],
-        ]
+        for compound_row in compound_rows:
+            medicine_key = string_utils.xstr(compound_row['MedicineKey'])
+            if medicine_key == '':
+                continue
 
-        self.parent.tab_list[self.medicine_set-1].set_prescript(prescript_row)
-        if self.medicine_set == 1:  # 健保才預設藥日
-            self.parent.tab_list[self.medicine_set-1].set_default_pres_days()
+            sql = 'SELECT * FROM medicine WHERE MedicineKey = {0}'.format(medicine_key)
+            rows = self.database.select_record(sql)
+            if len(rows) <= 0:
+                continue
+
+            medicine_row = rows[0]
+            row = {
+                'MedicineType': string_utils.xstr(medicine_row['MedicineType']),
+                'MedicineKey': string_utils.xstr(medicine_row['MedicineKey']),
+                'InsCode': string_utils.xstr(medicine_row['InsCode']),
+                'MedicineName': string_utils.xstr(medicine_row['MedicineName']),
+                'Unit': string_utils.xstr(medicine_row['Unit']),
+                'Quantity': string_utils.xstr(compound_row['Quantity']),
+                'Price': string_utils.xstr(medicine_row['SalePrice']),
+                'Amount': None,
+            }
+
+            medicine_type = row['MedicineType']
+            if medicine_type in ['穴道', '處置']:
+                self._set_treatment(medicine_type)
+                self._add_treat(row)
+            else:
+                self._add_drug(row)
+
+    def _set_treatment(self, medicine_type):
+        if self.parent.tab_list[0].combo_box_treatment.currentText() != '':
+            return
+
+        medicine_type_dict = {'穴道': '針灸治療', '處置': '傷科治療'}
+        treatment = medicine_type_dict[medicine_type]
+
+        self.parent.tab_list[0].combo_box_treatment.setCurrentText(treatment)
+
+    def _add_drug(self, row=None):
+        tab_no = self.medicine_set - 1
+        self.parent.tab_list[tab_no].append_null_medicine()
+
+        if row is None:
+            row = self._get_medicine_row()
+
+        self.parent.tab_list[tab_no].append_prescript(row, row['Quantity'])
+
+        self.ui.lineEdit_input_code.setText(None)
+        self.ui.lineEdit_input_code.setFocus(True)
+
+    def _add_treat(self, row=None):
+        tab_no = self.medicine_set - 1
+        self.parent.tab_list[tab_no].append_null_treat()
+
+        if row is None:
+            row = self._get_medicine_row()
+
+        self._set_treatment(row['MedicineType'])
+        self.parent.tab_list[tab_no].append_treat(row)
+
+        self.ui.lineEdit_input_code.setText(None)
+        self.ui.lineEdit_input_code.setFocus(True)
+
+    def _get_medicine_row(self):
+        row = {
+            'MedicineType': self.table_widget_medicine.field_value(1),
+            'MedicineKey': self.table_widget_medicine.field_value(0),
+            'InsCode': self.table_widget_medicine.field_value(3),
+            'MedicineName': self.table_widget_medicine.field_value(2),
+            'Unit': self.table_widget_medicine.field_value(4),
+            'Quantity': None,
+            'Price': self.table_widget_medicine.field_value(5),
+            'Amount': None
+        }
+
+        return row

@@ -58,7 +58,7 @@ class Users(QtWidgets.QMainWindow):
     def _set_table_width(self):
         width = [
             100,
-            80, 100, 50, 120, 120, 100, 50, 200, 80,
+            80, 100, 50, 120, 120, 100, 50, 200, 180, 80,
             120, 120, 400, 250, 100, 120, 120, 120, 300,
         ]
         self.table_widget_users.set_table_heading_width(width)
@@ -73,37 +73,38 @@ class Users(QtWidgets.QMainWindow):
         '''
         self.table_widget_users.set_db_data(sql, self._set_user_data)
 
-    def _set_user_data(self, rec_no, rec):
+    def _set_user_data(self, row_no, row):
         users_rec = [
-            string_utils.xstr(rec['PersonKey']),
-            string_utils.xstr(rec['Code']),
-            string_utils.xstr(rec['Name']),
-            string_utils.xstr(rec['Gender']),
-            string_utils.xstr(rec['Birthday']),
-            string_utils.xstr(rec['ID']),
-            string_utils.xstr(rec['Position']),
-            string_utils.xstr(rec['FullTime']),
-            string_utils.xstr(rec['Certificate']),
+            string_utils.xstr(row['PersonKey']),
+            string_utils.xstr(row['Code']),
+            string_utils.xstr(row['Name']),
+            string_utils.xstr(row['Gender']),
+            string_utils.xstr(row['Birthday']),
+            string_utils.xstr(row['ID']),
+            string_utils.xstr(row['Position']),
+            string_utils.xstr(row['FullTime']),
+            string_utils.xstr(row['Certificate']),
+            string_utils.xstr(row['CertCardNo']),
             '******',  # password
-            string_utils.xstr(rec['Telephone']),
-            string_utils.xstr(rec['Cellphone']),
-            string_utils.xstr(rec['Address']),
-            string_utils.xstr(rec['Email']),
-            string_utils.xstr(rec['Department']),
-            string_utils.xstr(rec['InitDate']),
-            string_utils.xstr(rec['QuitDate']),
-            string_utils.xstr(rec['InputDate']),
-            string_utils.xstr(rec['Remark']),
+            string_utils.xstr(row['Telephone']),
+            string_utils.xstr(row['Cellphone']),
+            string_utils.xstr(row['Address']),
+            string_utils.xstr(row['Email']),
+            string_utils.xstr(row['Department']),
+            string_utils.xstr(row['InitDate']),
+            string_utils.xstr(row['QuitDate']),
+            string_utils.xstr(row['InputDate']),
+            string_utils.xstr(row['Remark']),
         ]
 
         for column in range(len(users_rec)):
             self.ui.tableWidget_users.setItem(
-                rec_no, column,
+                row_no, column,
                 QtWidgets.QTableWidgetItem(users_rec[column])
             )
 
             if column in [3]:
-                self.ui.tableWidget_users.item(rec_no, column).setTextAlignment(
+                self.ui.tableWidget_users.item(row_no, column).setTextAlignment(
                     QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
                 )
 

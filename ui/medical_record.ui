@@ -665,8 +665,8 @@
    <addaction name="separator"/>
    <addaction name="action_dictionary"/>
    <addaction name="separator"/>
-   <addaction name="action_save"/>
    <addaction name="action_save_and_print"/>
+   <addaction name="action_save"/>
    <addaction name="separator"/>
    <addaction name="action_close"/>
   </widget>

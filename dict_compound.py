@@ -5,11 +5,15 @@ import sys
 
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtWidgets import QInputDialog, QMessageBox, QPushButton
+
+from classes import table_widget
+from dialog import dialog_input_drug
+from dialog import dialog_medicine
+
 from libs import ui_utils
 from libs import string_utils
 from libs import dialog_utils
-from classes import table_widget
-from dialog import dialog_input_drug
+from libs import system_utils
 
 
 # 收費設定 2018.04.14
@@ -41,26 +45,26 @@ class DictCompound(QtWidgets.QMainWindow):
         self.table_widget_dict_compound = table_widget.TableWidget(self.ui.tableWidget_dict_compound, self.database)
         self.table_widget_dict_compound.set_column_hidden([0])
         self.table_widget_dict_medicine = table_widget.TableWidget(self.ui.tableWidget_dict_medicine, self.database)
-        self.table_widget_dict_medicine.set_column_hidden([0])
+        self.table_widget_dict_medicine.set_column_hidden([0, 1])
         self._set_table_width()
 
     # 設定信號
     def _set_signal(self):
         self.ui.tableWidget_dict_compound.itemSelectionChanged.connect(self.dict_compound_changed)
-        # self.ui.toolButton_add_dict_compound.clicked.connect(self._add_dict_compound)
-        # self.ui.toolButton_remove_dict_compound.clicked.connect(self._remove_dict_compound)
-        # self.ui.toolButton_edit_dict_compound.clicked.connect(self._edit_dict_compound)
-        # self.ui.tableWidget_dict_compound.doubleClicked.connect(self._edit_dict_compound)
-        # self.ui.toolButton_add_medicine.clicked.connect(self._add_medicine)
-        # self.ui.toolButton_remove_medicine.clicked.connect(self._remove_medicine)
-        # self.ui.toolButton_edit_medicine.clicked.connect(self._edit_medicine)
-        # self.ui.tableWidget_dict_medicine.doubleClicked.connect(self._edit_medicine)
-        # self.ui.tableWidget_dict_medicine.itemSelectionChanged.connect(self.dict_medicine_changed)
+
+        self.ui.toolButton_add_dict_compound.clicked.connect(self._add_dict_compound)
+        self.ui.toolButton_remove_dict_compound.clicked.connect(self._remove_dict_compound)
+        self.ui.toolButton_edit_dict_compound.clicked.connect(self._edit_dict_compound)
+        self.ui.tableWidget_dict_compound.doubleClicked.connect(self._edit_dict_compound)
+
+        self.ui.toolButton_add_dict_medicine.clicked.connect(self._add_dict_medicine)
+        self.ui.toolButton_remove_dict_medicine.clicked.connect(self._remove_dict_medicine)
+        self.ui.toolButton_save_dosage.clicked.connect(self._save_dosage)
 
     # 設定欄位寬度
     def _set_table_width(self):
         dict_compound_width = [100, 180, 100, 300, 50, 100]
-        dict_medicine_width = [100, 120, 250, 120, 50, 100, 120]
+        dict_medicine_width = [100, 100, 120, 60, 250, 120, 50, 60, 80]
         self.table_widget_dict_compound.set_table_heading_width(dict_compound_width)
         self.table_widget_dict_medicine.set_table_heading_width(dict_medicine_width)
 
@@ -68,7 +72,12 @@ class DictCompound(QtWidgets.QMainWindow):
         self._read_dict_compound()
 
     def _read_dict_compound(self):
-        sql = 'SELECT * FROM medicine WHERE MedicineType = "{0}" ORDER BY MedicineKey'.format(self.dict_type)
+        sql = '''
+            SELECT * FROM medicine 
+            WHERE 
+                MedicineType = "{0}" 
+            ORDER BY LENGTH(MedicineName), CAST(CONVERT(`MedicineName` using big5) AS BINARY)
+        '''.format(self.dict_type)
         self.table_widget_dict_compound.set_db_data(sql, self._set_dict_compound_data)
 
     def _set_dict_compound_data(self, rec_no, rec):
@@ -94,44 +103,60 @@ class DictCompound(QtWidgets.QMainWindow):
 
     def _read_ref_compound(self, compound_key):
         sql = '''
-            SELECT * FROM refcompound WHERE CompoundKey = {0} ORDER BY RefCompoundKey
+            SELECT * FROM refcompound 
+            WHERE 
+                CompoundKey = {0} AND
+                MedicineKey IS NOT NULL
+            ORDER BY RefCompoundKey
         '''.format(compound_key)
         self.table_widget_dict_medicine.set_db_data(sql, self._set_dict_medicine_data)
 
-    def _set_dict_medicine_data(self, rec_no, rec):
-        if rec['MedicineKey'] is None:
+    def _set_dict_medicine_data(self, row_no, row):
+        if row['MedicineKey'] is None:
             return
 
         sql = '''
             SELECT * FROM medicine WHERE MedicineKey = {0}
-        '''.format(rec['MedicineKey'])
+        '''.format(row['MedicineKey'])
         rows = self.database.select_record(sql)
         if len(rows) <= 0:
-            return
+            medicine_row = {
+                'RefCompoundKey': None,
+                'MedicineKey': None,
+                'MedicineCode': None,
+                'MedicineType': None,
+                'MedicineName': None,
+                'InsCode': None,
+                'Unit': None,
+                'Quantity': None,
+                'SalePrice': None,
+            }
+        else:
+            medicine_row = rows[0]
 
-        row = rows[0]
-
-        dict_medicine_rec = [
-            string_utils.xstr(rec['MedicineKey']),
-            string_utils.xstr(row['MedicineCode']),
-            string_utils.xstr(row['MedicineName']),
-            string_utils.xstr(row['InsCode']),
-            string_utils.xstr(row['Unit']),
-            string_utils.xstr(rec['Quantity']),
-            string_utils.xstr(row['SalePrice']),
+        dict_medicine_row = [
+            string_utils.xstr(row['RefCompoundKey']),
+            string_utils.xstr(medicine_row['MedicineKey']),
+            string_utils.xstr(medicine_row['MedicineCode']),
+            string_utils.xstr(medicine_row['MedicineType']),
+            string_utils.xstr(medicine_row['MedicineName']),
+            string_utils.xstr(medicine_row['InsCode']),
+            string_utils.xstr(medicine_row['Unit']),
+            string_utils.xstr(row['Quantity']),
+            string_utils.xstr(medicine_row['SalePrice']),
         ]
 
-        for column in range(len(dict_medicine_rec)):
+        for column in range(len(dict_medicine_row)):
             self.ui.tableWidget_dict_medicine.setItem(
-                rec_no, column,
-                QtWidgets.QTableWidgetItem(dict_medicine_rec[column])
+                row_no, column,
+                QtWidgets.QTableWidgetItem(dict_medicine_row[column])
             )
-            if column in [4, 5]:
-                self.ui.tableWidget_dict_medicine.item(rec_no, column).setTextAlignment(
+            if column in [7, 8]:
+                self.ui.tableWidget_dict_medicine.item(row_no, column).setTextAlignment(
                     QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
                 )
-            elif column in [3]:
-                self.ui.tableWidget_dict_medicine.item(rec_no, column).setTextAlignment(
+            elif column in [6]:
+                self.ui.tableWidget_dict_medicine.item(row_no, column).setTextAlignment(
                     QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
                 )
 
@@ -145,30 +170,49 @@ class DictCompound(QtWidgets.QMainWindow):
         self.close_all()
         self.close_tab()
 
-"""
-    # 新增主訴類別
+    # 新增成方
     def _add_dict_compound(self):
-        input_dialog = dialog_utils.get_dialog(
-            '{0}類別'.format(self.dict_type), '請輸入{0}類別'.format(self.dict_type),
-            None, QInputDialog.TextInput, 320, 200)
-        ok = input_dialog.exec_()
-        if not ok:
-            return
+        dialog = dialog_input_drug.DialogInputDrug(self, self.database, self.system_settings)
 
-        dict_compound = input_dialog.textValue()
-        field = ['DictGroupsType', 'DictGroupsName']
-        data = [
-            '{0}類別'.format(self.dict_type), dict_compound,
-        ]
-        self.database.insert_record('dict_compound', field, data)
-        self._read_dict_compound()
+        if dialog.exec_():
+            current_row = self.ui.tableWidget_dict_compound.rowCount()
+            self.ui.tableWidget_dict_compound.insertRow(current_row)
 
-    # 移除主訴類別
+            fields = [
+                'MedicineType', 'MedicineCode', 'InputCode', 'MedicineName', 'Unit', 'MedicineMode', 'InsCode',
+                'Dosage', 'MedicineAlias', 'Location', 'InPrice', 'SalePrice', 'Quantity', 'SafeQuantity',
+                'Description',
+            ]
+            data = [
+                '成方',
+                dialog.ui.lineEdit_medicine_code.text(),
+                dialog.ui.lineEdit_input_code.text(),
+                dialog.ui.lineEdit_medicine_name.text(),
+                dialog.ui.comboBox_unit.currentText(),
+                dialog.ui.comboBox_medicine_mode.currentText(),
+                dialog.ui.lineEdit_ins_code.text(),
+                dialog.ui.lineEdit_dosage.text(),
+                dialog.ui.lineEdit_medicine_alias.text(),
+                dialog.ui.lineEdit_location.text(),
+                dialog.ui.lineEdit_in_price.text(),
+                dialog.ui.lineEdit_sale_price.text(),
+                dialog.ui.lineEdit_quantity.text(),
+                dialog.ui.lineEdit_safe_quantity.text(),
+                dialog.ui.textEdit_description.toPlainText(),
+            ]
+            string_utils.str_to_none(data)
+            self.database.insert_record('medicine', fields, data)
+            self._read_dict_compound()
+
+        dialog.close_all()
+        dialog.deleteLater()
+
+    # 移除成方
     def _remove_dict_compound(self):
         msg_box = dialog_utils.get_message_box(
-            '刪除{0}類別資料'.format(self.dict_type), QMessageBox.Warning,
-            '<font size="4" color="red"><b>確定刪除 [{0}] {1}類別?</b></font>'.format(
-                self.table_widget_dict_compound.field_value(1), self.dict_type),
+            '刪除{0}資料'.format(self.dict_type), QMessageBox.Warning,
+            '<font size="4" color="red"><b>確定刪除{0}: "{1}"?</b></font>'.format(
+                self.dict_type, self.table_widget_dict_compound.field_value(3)),
             '注意！資料刪除後, 將無法回復!'
         )
         remove_record = msg_box.exec_()
@@ -176,114 +220,81 @@ class DictCompound(QtWidgets.QMainWindow):
             return
 
         key = self.table_widget_dict_compound.field_value(0)
-        self.database.delete_record('dict_compound', 'DictGroupsKey', key)
+        self.database.delete_record('refcompound', 'CompoundKey', key)
+        self.database.delete_record('medicine', 'MedicineKey', key)
+
         self.ui.tableWidget_dict_compound.removeRow(self.ui.tableWidget_dict_compound.currentRow())
 
-    # 更改主訴類別
+    # 更改成方
     def _edit_dict_compound(self):
-        old_compound = self.table_widget_dict_compound.field_value(1)
-        input_dialog = dialog_utils.get_dialog(
-            '{0}類別'.format(self.dict_type), '請輸入{0}類別'.format(self.dict_type),
-            old_compound,
-            QInputDialog.TextInput, 320, 200)
-        ok = input_dialog.exec_()
-        if not ok:
-            return
-
-        dict_compound_name = input_dialog.textValue()
-        data = [
-            dict_compound_name,
-        ]
-
-        sql = '''
-            UPDATE dict_compound set DictGroupsTopLevel = "{0}" WHERE 
-            DictGroupsType = "{1}" and DictGroupsTopLevel = "{2}"
-        '''.format(dict_compound_name, self.dict_type, old_compound)
-        self.database.exec_sql(sql)
-
-        fields = ['DictGroupsName']
-        self.database.update_record('dict_compound', fields, 'DictGroupsKey',
-                                    self.table_widget_dict_compound.field_value(0), data)
-        self.ui.tableWidget_dict_compound.item(self.ui.tableWidget_dict_compound.currentRow(), 1).setText(dict_compound_name)
-
-    # 新增主訴
-    def _add_medicine(self):
-        dialog = dialog_input_drug.DialogInputDrug(self, self.database, self.system_settings)
-        result = dialog.exec_()
-        if result != 0:
-            current_row = self.ui.tableWidget_dict_medicine.rowCount()
-            self.ui.tableWidget_dict_medicine.insertRow(current_row)
-            dict_compound_type = self.table_widget_dict_compound.field_value(1)
-            fields = [
-                'MedicineType', 'MedicineCode', 'InputCode', 'MedicineName', 'Unit', 'MedicineMode', 'InsCode',
-                'Dosage', 'MedicineAlias', 'Location', 'InPrice', 'SalePrice', 'Quantity', 'SafeQuantity',
-                'Description',
-            ]
-            data = [
-                dict_compound_type,
-                dialog.ui.lineEdit_medicine_code.text(),
-                dialog.ui.lineEdit_input_code.text(),
-                dialog.ui.lineEdit_medicine_name.text(),
-                dialog.ui.comboBox_unit.currentText(),
-                dialog.ui.comboBox_medicine_mode.currentText(),
-                dialog.ui.lineEdit_ins_code.text(),
-                dialog.ui.lineEdit_medicine_alias.text(),
-                dialog.ui.lineEdit_sale_price.text(),
-                dialog.ui.textEdit_description.toPlainText(),
-            ]
-            strings.str_to_none(data)
-            self.database.insert_record('medicine', fields, data)
-            self._read_ref_compound(dict_compound_type)
-
+        key = self.table_widget_dict_compound.field_value(0)
+        dialog = dialog_input_drug.DialogInputDrug(self, self.database, self.system_settings, key)
+        dialog.exec_()
         dialog.close_all()
         dialog.deleteLater()
 
-    # 移除主訴
-    def _remove_medicine(self):
+        # 重新顯示資料
+        sql = 'SELECT * FROM medicine WHERE MedicineKey = {0}'.format(key)
+        row_data = self.database.select_record(sql)[0]
+        self._set_dict_compound_data(self.ui.tableWidget_dict_compound.currentRow(), row_data)
+
+    # 移除成方內容
+    def _remove_dict_medicine(self):
         msg_box = dialog_utils.get_message_box(
-            '刪除{0}資料'.format(self.dict_type), QMessageBox.Warning,
-            '<font size="4" color="red"><b>確定刪除{0}: "{1}"?</b></font>'.format(
-                self.dict_type, self.table_widget_dict_medicine.field_value(3)),
-            '注意！資料刪除後, 將無法回復!'
+            '移除成方內容', QMessageBox.Warning,
+            '<font size="4" color="red"><b>確定移除{0}內容: "{1}"?</b></font>'.format(
+                self.dict_type, self.table_widget_dict_medicine.field_value(4)),
+            '注意！資料移除後, 將無法回復!'
         )
         remove_record = msg_box.exec_()
         if not remove_record:
             return
 
         key = self.table_widget_dict_medicine.field_value(0)
-        self.database.delete_record('medicine', 'MedicineKey', key)
+        self.database.delete_record('refcompound', 'RefCompoundKey', key)
         self.ui.tableWidget_dict_medicine.removeRow(self.ui.tableWidget_dict_medicine.currentRow())
 
-    # 更改主訴
-    def _edit_medicine(self):
-        key = self.table_widget_dict_medicine.field_value(0)
-        dialog = dialog_input_drug.DialogInputDrug(self, self.database, self.system_settings, key)
+    # 新增主訴
+    def _add_dict_medicine(self):
+        dialog = dialog_medicine.DialogMedicine(
+            self, self.database, self.system_settings,
+            self.ui.tableWidget_dict_medicine, None,
+            '成方',
+        )
         dialog.exec_()
-        dialog.close_all()
         dialog.deleteLater()
-        
-        sql = 'SELECT * FROM medicine WHERE MedicineKey = {0}'.format(key)
-        row_data = self.database.select_record(sql)[0]
-        self._set_dict_medicine_data(self.ui.tableWidget_dict_medicine.currentRow(), row_data)
-        self.dict_medicine_changed()
 
-    def dict_medicine_changed(self):
-        medicine_key = self.table_widget_dict_medicine.field_value(0)
-        self._read_medicine_description(medicine_key)
+    def add_ref_compound(self, row):
+        compound_key = self.table_widget_dict_compound.field_value(0)
 
-    def _read_medicine_description(self, medicine_key):
-        self.ui.textEdit_description.setText('')
+        fields = ['CompoundKey', 'MedicineKey']
+        data = [
+            compound_key,
+            row['MedicineKey'],
+        ]
 
-        sql = '''
-            SELECT * FROM medicine WHERE MedicineKey = "{0}"
-        '''.format(medicine_key)
-        rows = self.database.select_record(sql)
-        if len(rows) <= 0:
-            return
+        self.database.insert_record('refcompound', fields, data)
+        self._read_ref_compound(compound_key)
 
-        try:
-            self.ui.textEdit_description.setText(strings.get_str(rows[0]['Description'], 'utf8'))
-        except TypeError:
-            pass
-"""
+    def _save_dosage(self):
+        for row_no in range(self.ui.tableWidget_dict_medicine.rowCount()):
+            dosage = self.ui.tableWidget_dict_medicine.item(row_no, 7)
 
+            data = 'NULL'
+            if dosage is not None:
+                data = dosage.text()
+            if data == '':
+                data = 'NULL'
+
+            self.ui.tableWidget_dict_medicine.setCurrentCell(row_no, 0)
+            sql = '''
+                UPDATE refcompound SET Quantity = {0} WHERE RefCompoundKey = {1}
+            '''.format(data, self.table_widget_dict_medicine.field_value(0))
+            self.database.exec_sql(sql)
+
+        system_utils.show_message_box(
+            QMessageBox.Information,
+            '存檔完畢',
+            '<h3>劑量已全部存檔完成</h3>',
+            '資料正確.'
+        )

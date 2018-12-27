@@ -3,6 +3,7 @@
 
 from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtWidgets import QMessageBox, QPushButton
+import sip
 
 from classes import udp_socket_client
 from libs import ui_utils
@@ -109,7 +110,6 @@ class MedicalRecord(QtWidgets.QMainWindow):
         self.add_tab_button = QtWidgets.QToolButton()
         self.add_tab_button.setIcon(QtGui.QIcon('./icons/document-new.svg'))
         self.ui.tabWidget_prescript.setCornerWidget(self.add_tab_button, QtCore.Qt.TopLeftCorner)
-        self.ui.tabWidget_prescript.tabCloseRequested.connect(self.close_prescript_tab)
         self.tab_registration = medical_record_registration.MedicalRecordRegistration(
             self, self.database, self.system_settings, self.case_key, self.call_from)
         self.ui.tabWidget_medical.addTab(self.tab_registration, '門診資料')
@@ -145,14 +145,21 @@ class MedicalRecord(QtWidgets.QMainWindow):
         self.ui.toolButton_distincts.clicked.connect(self._tool_button_dictionary_clicked)
         self.ui.toolButton_cure.clicked.connect(self._tool_button_dictionary_clicked)
 
+        self.ui.tabWidget_prescript.tabCloseRequested.connect(self.close_prescript_tab)                  # 關閉分頁
+
     def close_prescript_tab(self, current_index):
         current_tab = self.ui.tabWidget_prescript.widget(current_index)
         tab_name = self.ui.tabWidget_prescript.tabText(current_index)
         if tab_name == '健保':
             return
 
+        self.tab_medical_record_fees.calculate_fees()
         current_tab.close_all()
         current_tab.deleteLater()
+
+        sip.delete(current_tab)  # 真正的刪除分頁
+
+        self.tab_medical_record_fees.calculate_fees()
 
     def close_medical_record(self):
         self.close_all()
@@ -441,6 +448,9 @@ class MedicalRecord(QtWidgets.QMainWindow):
                             dialog_type = '自費處方'
 
                         medicine_set = i + 1
+                    elif self.tab_list[0].ui.tableWidget_treat.hasFocus():
+                        dialog_type = '健保處置'
+                        medicine_set = 1
 
         if dialog_type is None:
             return
@@ -479,9 +489,23 @@ class MedicalRecord(QtWidgets.QMainWindow):
                 self, self.database, self.system_settings,
                 text_edit[dialog_type], line_edit, line_special_code)
         elif dialog_type in ['健保處方', '自費處方'] and medicine_set is not None:
+            if dialog_type == '健保處方':
+                dict_type = '健保藥品'
+            else:
+                dict_type = '藥品'
+
             dialog = dialog_medicine.DialogMedicine(
                 self, self.database, self.system_settings,
-                self.tab_list[medicine_set-1].tableWidget_prescript, medicine_set)
+                self.tab_list[medicine_set-1].tableWidget_prescript, medicine_set,
+                dict_type,
+            )
+        elif dialog_type in ['健保處置', '自費處置'] and medicine_set is not None:
+            dialog = dialog_medicine.DialogMedicine(
+                self, self.database, self.system_settings,
+                self.tab_list[medicine_set-1].tableWidget_prescript, medicine_set,
+                '處置',
+            )
+
 
         if dialog is None:
             return
@@ -647,9 +671,10 @@ class MedicalRecord(QtWidgets.QMainWindow):
                 (self.system_settings.field('使用讀卡機') == 'Y') and
                 (card not in nhi_utils.ABNORMAL_CARD) and
                 (card != '欠卡')):
-            self._write_ic_treatments(cshis_utils.NORMAL_CARD)
-            self._write_prescript_signature()
-            self._update_prescript_sign_time()
+            cshis_utils.write_ic_medical_record(
+                self.database, self.system_settings,
+                self.case_key, cshis_utils.NORMAL_CARD
+            )
 
         self.close_all()
         self.close_tab()
@@ -690,16 +715,6 @@ class MedicalRecord(QtWidgets.QMainWindow):
             self.tab_registration.ui.comboBox_treat_type.setCurrentText('內科')
             if course >= 1:
                 self.tab_registration.ui.comboBox_course.setCurrentText(None)
-
-    # 寫入病名, 費用
-    def _write_ic_treatments(self, treat_after_check):
-        cshis_utils.write_ic_treatment(
-            self.database, self.system_settings, self.case_key, treat_after_check)
-
-    # 寫入醫令簽章
-    def _write_prescript_signature(self):
-        cshis_utils.write_prescript_signature(
-            self.database, self.system_settings, self.case_key)
 
     # 病歷存檔
     def update_medical_record(self, doctor_done=False):
@@ -811,13 +826,6 @@ class MedicalRecord(QtWidgets.QMainWindow):
 
         self.database.update_record('cases', fields, 'CaseKey', self.case_key, data)
 
-    # 更新健保寫卡資料
-    def _update_prescript_sign_time(self):
-        case_utils.update_xml(
-            self.database, 'cases', 'Security', 'prescript_sign_time',
-            date_utils.now_to_str(), 'CaseKey', self.case_key
-        )
-
     def save_prescript(self):
         for medicine_set, tab_prescript in zip(range(1, self.max_tab+1), self.tab_list):
             if tab_prescript is not None:
@@ -842,6 +850,16 @@ class MedicalRecord(QtWidgets.QMainWindow):
     def calculate_ins_fees(self):
         try:
             self.tab_medical_record_fees.calculate_ins_fees()
+        except AttributeError:
+            pass
+
+    # 健保重新批價
+    def calculate_self_fees(self):
+        try:
+            self.tab_medical_record_fees.calculate_self_fees(
+                self.tab_list,
+                self.tab_medical_record_fees.ui.checkBox_disable_calculate,
+            )
         except AttributeError:
             pass
 

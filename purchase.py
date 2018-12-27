@@ -391,11 +391,11 @@ class Purchase(QtWidgets.QMainWindow):
     def _save_purchase(self):
         case_key, case_date = self._save_medical_record()
         self._save_prescript(case_key, case_date)
-
+        self._save_wait(case_key, case_date)
 
         self.close_purchase()
 
-    def _save_medical_record(self):
+    def _get_patient_data(self):
         if self.ui.radioButton_1.isChecked():
             patient_key = 0
             name = '自購藥'
@@ -405,26 +405,29 @@ class Purchase(QtWidgets.QMainWindow):
             if name == '':
                 name = '自購藥'
 
+        return patient_key, name
+
+    def _save_medical_record(self):
+        patient_key, name = self._get_patient_data()
+
         case_date = '{0} {1}'.format(
             self.ui.dateEdit_purchase_date.date().toString('yyyy-MM-dd'),
             datetime.datetime.now().time().strftime('%H:%M:%S')
         )
 
         fields = [
-            'PatientKey', 'Name', 'CaseDate', 'DoctorDate', 'ChargeDate',
-            'Period', 'ChargePeriod', 'InsType',
+            'PatientKey', 'Name', 'CaseDate', 'DoctorDate',
+            'Period', 'InsType',
             'TreatType',
             'Register', 'Cashier', 'Doctor',
-            'SelfTotalFee', 'DiscountFee', 'TotalFee', 'ReceiptFee',
-            'DoctorDone', 'ChargeDone', 'DrugDone',
+            'SDrugFee', 'SelfTotalFee', 'DiscountFee', 'TotalFee', 'ReceiptFee',
+            'DoctorDone',
         ]
         data = [
             patient_key,
             name,
             case_date,
             case_date,
-            case_date,
-            self.ui.comboBox_period.currentText(),
             self.ui.comboBox_period.currentText(),
             '自費',
             '自購',
@@ -432,10 +435,11 @@ class Purchase(QtWidgets.QMainWindow):
             self.ui.comboBox_cashier.currentText(),
             self.ui.comboBox_doctor.currentText(),
             self.ui.lineEdit_subtotal.text(),
+            self.ui.lineEdit_subtotal.text(),
             self.ui.lineEdit_discount.text(),
             self.ui.lineEdit_total.text(),
             self.ui.lineEdit_total.text(),
-            'True', 'True', 'True',
+            'True',
         ]
 
         case_key = self.database.insert_record('cases', fields, data)
@@ -466,6 +470,30 @@ class Purchase(QtWidgets.QMainWindow):
             ]
 
             self.database.insert_record('prescript', fields, data)
+
+    def _save_wait(self, case_key, case_date):
+        patient_key, name = self._get_patient_data()
+
+        fields = ['CaseKey', 'CaseDate', 'PatientKey', 'Name', 'Visit', 'RegistType',
+                  'TreatType', 'InsType', 'Period',
+                  'Room', 'RegistNo', 'DoctorDone']
+
+        data = [
+            case_key,
+            case_date,
+            patient_key,
+            name,
+            '複診',
+            '一般門診',
+            '自購',
+            '自費',
+            self.ui.comboBox_period.currentText(),
+            1,
+            0,
+            'True',
+        ]
+
+        self.database.insert_record('wait', fields, data)
 
     def _patient_picker(self):
         case_date = self.ui.dateEdit_purchase_date.date().toString('yyyy-MM-dd')

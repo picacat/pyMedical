@@ -1,5 +1,6 @@
 from dialog import dialog_patient
 import datetime
+from classes import address
 
 from libs import string_utils
 
@@ -12,12 +13,15 @@ def search_patient(ui, database, settings, keyword):
         else:
             script = 'SELECT * FROM patient WHERE PatientKey = {0}'.format(keyword)
     else:
-        script = ('SELECT * FROM patient WHERE '
-                  '(Name like "%{0}%") or '
-                  '(ID like "{0}%") or '
-                  '(Birthday = "{0}")').format(keyword)
+        script = '''
+            SELECT * FROM patient 
+            WHERE 
+                (Name like "%{0}%") or 
+                (ID like "{0}%") or 
+                (Birthday = "{0}")
+            ORDER BY PatientKey
+        '''.format(keyword)
 
-    script += ' ORDER BY PatientKey'
     row = database.select_record(script)
     row_count = len(list(row))
 
@@ -123,3 +127,70 @@ def get_patient_row(database, patient_key):
         return None
 
     return rows[0]
+
+
+def get_gender_code(gender):
+    gender_dict = {'男': 'M', '女': 'F'}
+
+    try:
+        gender_code = gender_dict[gender]
+    except KeyError:
+        gender_code = 'UN'
+
+    return  gender_code
+
+
+def get_marriage_code(marriage):
+    if marriage == '已婚':
+        marriage_code = 'M'
+    else:
+        marriage_code = 'S'
+
+    return marriage_code
+
+
+def get_zip_code(database, address_str):
+    zip_code = '100'
+    if address_str == '':
+        return ''
+
+    city_list = []
+    rows = database.select_record('SELECT City FROM address_list GROUP BY city')
+    for row in rows:
+        city_list.append(row['City'])
+
+    try:
+        addr = address.Address(address_str)
+        city = addr.flat(1)
+        district = addr.flat(2)
+
+        if city == '平鎮':  # 特殊狀況, 有雙關鍵字
+            city = '桃園市'
+            district = '平鎮區'
+        elif addr.tokens[0][addr.UNIT] == '縣' and city not in city_list:
+            city = addr.tokens[0][addr.NAME] + '市'
+            district = addr.tokens[1][addr.NAME] + '區'
+        elif addr.tokens[0][addr.UNIT] == '市' and city not in city_list:
+            city = None
+            district = addr.tokens[0][addr.NAME]
+            rows = database.select_record(
+                'SELECT City, District FROM address_list WHERE District LIKE "{0}%"'.format(district)
+            )
+            if len(rows) > 0:
+                district = string_utils.xstr(rows[0]['District'])
+                city = string_utils.xstr(rows[0]['City'])
+
+        sql = '''
+            SELECT ZipCode FROM address_list 
+            WHERE
+                City = "{0}" AND District = "{1}"
+            LIMIT 1
+        '''.format(city, district)
+        rows = database.select_record(sql)
+
+        if len(rows) > 0:
+            zip_code = rows[0]['ZipCode'][:3]
+    except:
+        pass
+
+    return zip_code

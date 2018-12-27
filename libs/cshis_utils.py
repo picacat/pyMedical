@@ -426,6 +426,14 @@ def write_ic_card(write_type, database, system_settings, patient_key, course, tr
 
     return ic_card
 
+# ic 醫令寫卡
+def write_ic_medical_record(database, system_settings, case_key, treat_after_check):
+    write_ic_treatment(database, system_settings, case_key, treat_after_check)  # 寫入病名, 費用
+    write_prescript_signature(database, system_settings, case_key)  # 寫入醫令簽章
+    case_utils.update_xml(
+        database, 'cases', 'Security', 'prescript_sign_time',
+        date_utils.now_to_str(), 'CaseKey', case_key
+    )  # 更新健保寫卡資料
 
 # 寫入藥品處方簽章
 def write_medicine_signature(database, system_settings, case_row, patient_row, prescript_rows, dosage_row):

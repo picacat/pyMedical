@@ -3,7 +3,7 @@
 
 
 from PyQt5 import QtWidgets, QtCore
-import sys
+from PyQt5.QtWidgets import QFileDialog
 
 from libs import ui_utils
 from libs import system_utils
@@ -43,6 +43,7 @@ class DialogSettings(QtWidgets.QDialog):
         self.ui.buttonBox.accepted.connect(self.button_accepted)
         self.ui.buttonBox.rejected.connect(self.button_rejected)
         self.ui.spinBox_station_no.valueChanged.connect(self.spin_button_value_changed)
+        self.ui.toolButton_emr_path.clicked.connect(self._get_emr_path)
 
     def _set_combo_box(self):
         # if sys.platform == 'win32':
@@ -245,6 +246,7 @@ class DialogSettings(QtWidgets.QDialog):
         self.ui.spinBox_station_no.setValue(number_utils.get_integer(self.system_settings.field('工作站編號')))
         self.ui.lineEdit_position.setText(self.system_settings.field('工作站位置'))
         self.ui.comboBox_theme.setCurrentText(self.system_settings.field('外觀主題'))
+        self.ui.lineEdit_emr_path.setText(self.system_settings.field('電子病歷交換檔輸出路徑'))
         self._set_check_box(self.ui.checkBox_side_bar, '顯示側邊欄')
 
     ####################################################################################################################
@@ -390,7 +392,18 @@ class DialogSettings(QtWidgets.QDialog):
         self.system_settings.post('工作站編號', str(self.ui.spinBox_station_no.value()))
         self.system_settings.post('工作站位置', self.ui.lineEdit_position.text())
         self.system_settings.post('外觀主題', self.ui.comboBox_theme.currentText())
+        self.system_settings.post('電子病歷交換檔輸出路徑', self.ui.lineEdit_emr_path.text())
         self._save_check_box(self.ui.checkBox_side_bar, '顯示側邊欄')
+
+    # 取得電子病歷輸出路徑
+    def _get_emr_path(self):
+        options = QFileDialog.DontResolveSymlinks | QFileDialog.ShowDirsOnly
+        directory = QFileDialog.getExistingDirectory(
+            self, "QFileDialog.getExistingDirectory()",
+            self.ui.lineEdit_emr_path.text(), options = options
+        )
+        if directory:
+            self.ui.lineEdit_emr_path.setText(directory)
 
     ####################################################################################################################
     # 讀取 check_box 的資料
@@ -452,3 +465,4 @@ class DialogSettings(QtWidgets.QDialog):
     def spin_button_value_changed(self):
         self.system_settings = system_settings.SystemSettings(self.database, self.ui.spinBox_station_no.value())
         self._read_settings()
+

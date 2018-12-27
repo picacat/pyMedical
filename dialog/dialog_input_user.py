@@ -71,6 +71,8 @@ class DialogInputUser(QtWidgets.QDialog):
         self.ui.comboBox_position.setCurrentText(string_utils.xstr(row['Position']))
         self.ui.comboBox_fulltime.setCurrentText(string_utils.xstr(row['FullTime']))
         self.ui.lineEdit_certificate.setText(string_utils.xstr(row['Certificate']))
+        self.ui.lineEdit_cert_card_no.setText(string_utils.xstr(row['CertCardNo']))
+
         self.ui.lineEdit_password.setText(string_utils.xstr(row['Password']))
         self.ui.lineEdit_telephone.setText(string_utils.xstr(row['Telephone']))
         self.ui.lineEdit_cellphone.setText(string_utils.xstr(row['Cellphone']))
@@ -92,7 +94,7 @@ class DialogInputUser(QtWidgets.QDialog):
     def save_user(self):
         fields = [
             'Code', 'Name', 'Gender', 'Birthday', 'ID', 'Position',
-            'FullTime', 'Certificate', 'Password', 'Telephone', 'Cellphone', 'Address', 'Email',
+            'FullTime', 'Certificate', 'CertCardNo', 'Password', 'Telephone', 'Cellphone', 'Address', 'Email',
             'Department', 'InputDate', 'InitDate', 'QuitDate', 'Remark',
         ]
         data = [
@@ -104,6 +106,7 @@ class DialogInputUser(QtWidgets.QDialog):
             self.ui.comboBox_position.currentText(),
             self.ui.comboBox_fulltime.currentText(),
             self.ui.lineEdit_certificate.text(),
+            self.ui.lineEdit_cert_card_no.text(),
             self.ui.lineEdit_password.text(),
             self.ui.lineEdit_telephone.text(),
             self.ui.lineEdit_cellphone.text(),

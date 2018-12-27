@@ -689,8 +689,8 @@ class PrintInsApplyOrder:
         order_row['order_name'] = nhi_utils.TREAT_NAME_DICT[treat_code]
         order_row['start_date'] = '{0}0000'.format(date_utils.west_date_to_nhi_date(case_row['CaseDate']))
         order_row['stop_date'] = '{0}0000'.format(date_utils.west_date_to_nhi_date(case_row['CaseDate']))
-        order_row['doctor_id'] = personnel_utils.get_personnel_id(
-            self.database, string_utils.xstr(case_row['Doctor'])
+        order_row['doctor_id'] = personnel_utils.get_personnel_field_value(
+            self.database, string_utils.xstr(case_row['Doctor']), 'ID'
         )
         order_row['dosage'] = '1'
         order_row['percent'] = '{0:05.2f}'.format(percent)
@@ -752,8 +752,8 @@ class PrintInsApplyOrder:
         order_row['stop_date'] = '{0}0000'.format( date_utils.west_date_to_nhi_date(
             case_row['CaseDate'].date() + datetime.timedelta(days=pres_days-1))
         )
-        order_row['doctor_id'] = personnel_utils.get_personnel_id(
-            self.database, string_utils.xstr(case_row['Doctor'])
+        order_row['doctor_id'] = personnel_utils.get_personnel_field_value(
+            self.database, string_utils.xstr(case_row['Doctor']), 'ID'
         )
         order_row['dosage'] = '{0:7.2f}'.format(pres_days)
         order_row['percent'] = '{0:05.2f}'.format(100)
@@ -804,8 +804,8 @@ class PrintInsApplyOrder:
         order_row['order_name'] = charge_utils.get_item_name_from_ins_code(self.database, pharmacy_code)
         order_row['start_date'] = '{0}0000'.format(date_utils.west_date_to_nhi_date(case_row['CaseDate']))
         order_row['stop_date'] = '{0}0000'.format(date_utils.west_date_to_nhi_date(case_row['CaseDate']))
-        order_row['doctor_id'] = personnel_utils.get_personnel_id(
-            self.database, string_utils.xstr(case_row['Doctor'])
+        order_row['doctor_id'] = personnel_utils.get_personnel_field_value(
+            self.database, string_utils.xstr(case_row['Doctor']), 'ID'
         )
         order_row['dosage'] = '1'
         order_row['percent'] = '{0:05.2f}'.format(100)

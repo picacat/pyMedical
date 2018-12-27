@@ -45,7 +45,8 @@ class MedicalRecordRegistration(QtWidgets.QMainWindow):
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_MEDICAL_RECORD_REGISTRATION, self)
-        self.table_widget_prescript_sign = table_widget.TableWidget(self.ui.tableWidget_prescript_sign, self.database)
+        self.table_widget_prescript_sign = table_widget.TableWidget(
+            self.ui.tableWidget_prescript_sign, self.database)
         self._set_combo_box()
         self._set_table_width()
         system_utils.set_css(self)
@@ -166,14 +167,14 @@ class MedicalRecordRegistration(QtWidgets.QMainWindow):
         self.ui.comboBox_cashier.setCurrentText(string_utils.xstr(row['Cashier']))
         self.ui.comboBox_doctor.setCurrentText(string_utils.xstr(row['Doctor']))
         self.ui.lineEdit_doctor_id.setText(
-            personnel_utils.get_personnel_id(
-                self.database, string_utils.xstr(row['Doctor'])
+            personnel_utils.get_personnel_field_value(
+                self.database, string_utils.xstr(row['Doctor']), 'ID'
             )
         )
         self.ui.comboBox_pharmacist.setCurrentText(string_utils.xstr(row['Pharmacist']))
         self.ui.lineEdit_pharmacist_id.setText(
-            personnel_utils.get_personnel_id(
-                self.database, string_utils.xstr(row['Pharmacist'])
+            personnel_utils.get_personnel_field_value(
+                self.database, string_utils.xstr(row['Pharmacist']), 'ID'
             )
         )
         self.ui.comboBox_massager.setCurrentText(string_utils.xstr(row['Massager']))

@@ -85,6 +85,9 @@ class Patient(QtWidgets.QMainWindow):
         if self.ic_card:
             return
 
+        if self.patient_key is not None:  # 此人已存在
+            return
+
         name = self.ui.lineEdit_name.text()
         if name == '':
             return

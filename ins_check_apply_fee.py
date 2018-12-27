@@ -17,7 +17,7 @@ from libs import nhi_utils
 from libs import number_utils
 
 
-# 候診名單 2018.01.31
+# 申報金額核對 2018.12.17
 class InsCheckApplyFee(QtWidgets.QMainWindow):
     # 初始化
     def __init__(self, parent=None, *args):
@@ -90,7 +90,7 @@ class InsCheckApplyFee(QtWidgets.QMainWindow):
 
         self._parse_ins_calculated_data()
 
-        xml_file_name = nhi_utils.get_ins_xml_file_name(self.apply_type_code, self.apply_date, 'unix')
+        xml_file_name = nhi_utils.get_ins_xml_file_name(self.apply_type_code, self.apply_date)
         if not os.path.isfile(xml_file_name):
             return
 

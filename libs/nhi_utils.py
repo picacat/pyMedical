@@ -242,6 +242,7 @@ DISCOUNT = ['員工', '眷屬', '親友', '殘障', '僧侶', '教友', '老人'
 DIVISION = ['台北業務組', '北區業務組', '中區業務組', '南區業務組', '高屏業務組', '東區業務組']
 PACKAGE = ['1', '2', '3', '4', '5', '6']
 PRESDAYS = ['3', '4', '5', '6', '7', '10', '14', '21', '28', '30']
+SELF_PRESDAYS = ['1', '2', '3', '4', '5', '6', '7', '10', '14', '21', '28', '30']
 INSTRUCTION = ['飯前', '飯後', '飯後睡前']
 
 
@@ -475,7 +476,7 @@ def get_pharmacist_id(database, system_settings, row):
     if pharmacist_name == '':
         pharmacist_name = string_utils.xstr(row['Doctor'])
 
-    pharmacist_id = personnel_utils.get_personnel_id(database, pharmacist_name)
+    pharmacist_id = personnel_utils.get_personnel_field_value(database, pharmacist_name, 'ID')
 
     return pharmacist_id
 
@@ -495,7 +496,7 @@ def get_diag_code(database, system_settings, doctor_name, treat_type, diag_fee):
     else:
         diag_code = 'A02'  # 診察費第一段無護士
 
-    position = personnel_utils.get_personnel_position(database, doctor_name)
+    position = personnel_utils.get_personnel_field_value(database, doctor_name, 'Position')
     if position == '支援醫師':
         diag_code = 'A02'
 
@@ -504,7 +505,8 @@ def get_diag_code(database, system_settings, doctor_name, treat_type, diag_fee):
 
 # 藥服代號: A31-A32;  6次: 120010: 0-無調劑 1-A31藥師 2-A32醫師
 def get_pharmacy_code(system_settings, row, pres_days, pharmacy_code='000000'):
-    if string_utils.xstr(row['TreatType']) in IMPROVE_CARE_TREAT:  # 加強照護不可申報調劑費
+    treat_type = string_utils.xstr(row['TreatType'])
+    if treat_type in IMPROVE_CARE_TREAT and treat_type != '兒童鼻炎':  # 加強照護不可申報調劑費, 兒童鼻炎除外
         return pharmacy_code
 
     pharmacy_code = [x for x in pharmacy_code]

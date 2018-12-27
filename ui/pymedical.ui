@@ -611,6 +611,7 @@
      <string>系統作業</string>
     </property>
     <addaction name="action_convert"/>
+    <addaction name="action_export_emr_xml"/>
    </widget>
    <widget class="QMenu" name="menu_5">
     <property name="title">
@@ -639,8 +640,16 @@
     <addaction name="action_show_side_bar"/>
     <addaction name="separator"/>
    </widget>
+   <widget class="QMenu" name="menu_6">
+    <property name="title">
+     <string>醫務行政</string>
+    </property>
+    <addaction name="action_certificate_diagnosis"/>
+    <addaction name="action_certificate_payment"/>
+   </widget>
    <addaction name="menu"/>
    <addaction name="menu_2"/>
+   <addaction name="menu_6"/>
    <addaction name="menu_5"/>
    <addaction name="menu_3"/>
    <addaction name="menu_4"/>
@@ -863,6 +872,33 @@
    </property>
    <property name="text">
     <string>櫃台購藥</string>
+   </property>
+  </action>
+  <action name="action_export_emr_xml">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/document-export.svg</normaloff>../icons/document-export.svg</iconset>
+   </property>
+   <property name="text">
+    <string>匯出電子病歷交換檔 - xml</string>
+   </property>
+  </action>
+  <action name="action_certificate_diagnosis">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/accessories-text-editor.png</normaloff>../icons/accessories-text-editor.png</iconset>
+   </property>
+   <property name="text">
+    <string>診斷證明書</string>
+   </property>
+  </action>
+  <action name="action_certificate_payment">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/edit-select-all.svg</normaloff>../icons/edit-select-all.svg</iconset>
+   </property>
+   <property name="text">
+    <string>醫療費用證明書</string>
    </property>
   </action>
  </widget>

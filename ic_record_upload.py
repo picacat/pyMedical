@@ -203,8 +203,8 @@ class ICRecordUpload(QtWidgets.QMainWindow):
         if string_utils.xstr(row['Card']) == '':
             error_message += '[無卡序]'
 
-        doctor_id = personnel_utils.get_personnel_id(
-            self.database, string_utils.xstr(row['Doctor']))
+        doctor_id = personnel_utils.get_personnel_field_value(
+            self.database, string_utils.xstr(row['Doctor']), 'ID')
         position_list = personnel_utils.get_personnel(self.database, '醫師')
 
         if doctor_id == '':
@@ -380,8 +380,8 @@ class ICRecordUpload(QtWidgets.QMainWindow):
         a14 = ET.SubElement(mb1, 'A14')
         a14.text = string_utils.xstr(clinic_id)
         a15 = ET.SubElement(mb1, 'A15')
-        a15.text = string_utils.xstr(personnel_utils.get_personnel_id(
-            self.database, string_utils.xstr(medical_record['Doctor']))
+        a15.text = string_utils.xstr(personnel_utils.get_personnel_field_value(
+            self.database, string_utils.xstr(medical_record['Doctor']), 'ID')
         )
 
         if upload_type in ['1', '3']:

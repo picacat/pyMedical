@@ -30,3 +30,4 @@ def set_xml_file_to_big5(xml_file_name, dest_file_name=None):
     #         cmd = ['sed', 's/$/\r/', xml_file_name]
     #         sp = subprocess.Popen(cmd, stderr=subprocess.STDOUT, stdout=out_file)
     #         sp.communicate()
+

@@ -44,29 +44,6 @@ class Template(QtWidgets.QMainWindow):
         self.close_all()
         self.close_tab()
 
-"""
-    # 設定信號
-    def _set_signal(self):
-        self.ui.tableWidget_prescript.keyPressEvent = self._table_widget_prescript_key_press
-
-    def _table_widget_prescript_key_press(self, event):
-        key = event.key()
-        if key == QtCore.Qt.Key_Delete:
-            print('delete')
-        elif key == QtCore.Qt.Key_Up:
-            current_row = self.ui.tableWidget_prescript.currentRow()
-            if self.ui.tableWidget_prescript.item(current_row, 1) is None:
-                self.ui.tableWidget_prescript.removeRow(current_row)
-                return
-        elif key == QtCore.Qt.Key_Down:
-            current_row = self.ui.tableWidget_prescript.currentRow()
-            if current_row == self.ui.tableWidget_prescript.rowCount() - 1 and \
-                    self.ui.tableWidget_prescript.item(current_row, 1) is not None:
-                self.append_null_medicine()
-
-        return QtWidgets.QTableWidget.keyPressEvent(self.ui.tableWidget_prescript, event)
-"""
-
 
 # 主程式
 def main():

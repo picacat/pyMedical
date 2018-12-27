@@ -87,7 +87,7 @@ class InsApplyCalculate(QtWidgets.QMainWindow):
 
         for row in rows:
             self._init_doctor_data(row)
-            position = personnel_utils.get_personnel_position(self.database, row['DoctorName'])
+            position = personnel_utils.get_personnel_field_value(self.database, row['DoctorName'], 'Position')
             if position == '醫師':
                 self._calculate_diag_section()
                 self._calculate_treat_section()
@@ -114,8 +114,8 @@ class InsApplyCalculate(QtWidgets.QMainWindow):
         }
         doctor_data['doctor_name'] = row['DoctorName']
         doctor_data['doctor_id'] = row['DoctorID']
-        doctor_data['doctor_type'] = personnel_utils.get_personnel_position(
-            self.database, doctor_data['doctor_name']
+        doctor_data['doctor_type'] = personnel_utils.get_personnel_field_value(
+            self.database, doctor_data['doctor_name'], 'Position'
         )
 
         max_progress = 6

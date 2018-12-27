@@ -647,8 +647,8 @@ class InsApplyXML(QtWidgets.QMainWindow):
         amount = number_utils.get_integer(row['TreatFee1'])
         percent = number_utils.get_integer(row['Percent1'])
         unit_price = number_utils.get_integer(amount / percent * 100)
-        doctor_id = personnel_utils.get_personnel_id(
-            self.database, string_utils.xstr(case_row['Doctor']))
+        doctor_id = personnel_utils.get_personnel_field_value(
+            self.database, string_utils.xstr(case_row['Doctor']), 'ID')
 
         p2 = ET.SubElement(pdata, 'p2')
         p2.text = '0'  # 0=自行調劑或物理治療

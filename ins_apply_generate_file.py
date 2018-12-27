@@ -280,8 +280,8 @@ class InsApplyGenerateFile(QtWidgets.QMainWindow):
             pres_days,
             nhi_utils.get_pres_type(pres_days),
             string_utils.xstr(row['Doctor']),
-            personnel_utils.get_personnel_id(
-                self.database, string_utils.xstr(row['Doctor'])
+            personnel_utils.get_personnel_field_value(
+                self.database, string_utils.xstr(row['Doctor']), 'ID'
             ),
             nhi_utils.get_pharmacist_id(self.database, self.system_settings, row),
             drug_fee, treat_fee,

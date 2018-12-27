@@ -28,8 +28,11 @@ def get_instruction_code(instruction):
     return  instruction_code
 
 # 檢查是否重複＼開立處方
-def check_prescript_exist(in_table_widget, col_no, check_value):
+def check_prescript_duplicates(in_table_widget, col_no, check_value):
     exists = False
+
+    if check_value == '':  # 特殊處方或處置不檢查 (波形, 頻率, 時間)
+        return exists
 
     row_count = in_table_widget.rowCount()
     field_value = None
@@ -98,4 +101,43 @@ def insert_ins_care_item(database, case_key, case_date, ins_code):
     ]
 
     database.insert_record('prescript', fields, data)
+
+
+# 解開成方
+'''
+prescript_row = [
+    [0, '-1'],
+    [1, string_utils.xstr(self.ui.tableWidget_prescript.currentRow() + 1)],
+    [2, string_utils.xstr(self.case_key)],
+    [3, string_utils.xstr(self.case_date)],
+    [4, string_utils.xstr(self.medicine_set)],
+    [5, string_utils.xstr(row['MedicineType'])],
+    [6, string_utils.xstr(row['MedicineKey'])],
+    [7, string_utils.xstr(row['InsCode'])],
+    [8, self.system_settings.field('劑量模式')],
+    [9, string_utils.xstr(row['MedicineName'])],
+    [10, string_utils.xstr(dosage)],
+    [11, string_utils.xstr(row['Unit'])],
+    [12, None],
+]
+
+'''
+def extract_compound(database, prescript_row, table_widget_prescript, table_widget_treat=None):
+    medicine_key = prescript_row[6][1]
+    sql = '''
+        SELECT * FROM refcompound
+        WHERE
+            CompoundKey = {0}
+        ORDER BY RefCompoundKey
+    '''.format(medicine_key)
+
+    compound_rows = database.select_record(sql)
+    if len(compound_rows) <= 0:
+        return
+
+    for compound_row in compound_rows:
+        medicine_key = string_utils.xstr(compound_row['MedicineKey'])
+        if medicine_key == '':
+            return
+
 

@@ -26,6 +26,9 @@ from ins_check import *
 from ins_apply import *
 from ins_judge import *
 
+from certificate_diagnosis import *
+from certificate_payment import *
+
 from template import *
 
 module_dict = {
@@ -56,6 +59,9 @@ module_dict = {
     '申報預檢': InsCheck,
     '健保申報': InsApply,
     '健保抽審': InsJudge,
+
+    '診斷證明書': CertificateDiagnosis,
+    '醫療費用證明書': CertificatePayment,
 }
 
 

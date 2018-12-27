@@ -27,7 +27,7 @@ def _get_basic_regist_fee(database, ins_type):
         return regist_fee
 
     if len(row) > 0:
-        regist_fee = number_utils.get_integer(row['Amount'])
+        regist_fee = number_utils.get_float(row['Amount'])
 
     return regist_fee
 
@@ -615,6 +615,65 @@ def calculate_ins_fee(database, system_settings, case_key):
     database.update_record('cases', fields, 'CaseKey', case_key, data)
 
 
+# 自費批價
+def get_self_fee(tab_list):
+    self_fee = {}
+    self_fee['drug_fee'] = 0.0
+    self_fee['herb_fee'] = 0.0
+    self_fee['expensive_fee'] = 0.0
+    self_fee['acupuncture_fee'] = 0.0
+    self_fee['massage_fee'] = 0.0
+    self_fee['material_fee'] = 0.0
+
+    for medicine_set, tab in zip(range(len(tab_list)), tab_list):
+        medicine_set += 1
+        if tab is None:
+            continue
+
+        calculate_self_fee(
+            tab.ui.tableWidget_prescript,
+            tab.ui.comboBox_pres_days,
+            self_fee,
+        )
+
+    return self_fee
+
+
+# 計算自費批價
+def calculate_self_fee(table_widget_prescript, combo_box_pres_days, self_fee):
+    try:
+        row_count = table_widget_prescript.rowCount()
+    except RuntimeError:
+        return
+
+    for row_no in range(row_count):
+        medicine_set = table_widget_prescript.item(row_no, 4).text()
+        if medicine_set == 1:  #  健保不計算
+            break
+
+        medicine_type = table_widget_prescript.item(row_no, 5).text()
+        amount = get_table_widget_item_fee(table_widget_prescript, row_no, 14)
+
+        pres_days = number_utils.get_integer(combo_box_pres_days.currentText())
+        if pres_days <= 0:
+            pres_days = 1
+
+        amount *= pres_days
+
+        if medicine_type == '水藥':
+            self_fee['herb_fee'] += amount
+        elif medicine_type == '高貴':
+            self_fee['expensive_fee'] += amount
+        elif medicine_type == '穴道':
+            self_fee['acupuncture_fee'] += amount
+        elif medicine_type == '處置':
+            self_fee['massage_fee'] += amount
+        elif medicine_type == '器材':
+            self_fee['material_fee'] += amount
+        else:
+            self_fee['drug_fee'] += amount
+
+
 def update_ins_apply_diag_fee(database, system_settings, ins_apply_key, diag_code):
     sql = 'SELECT * FROM insapply WHERE InsApplyKey = {0}'.format(ins_apply_key)
     rows = database.select_record(sql)
@@ -891,3 +950,11 @@ def set_discount_basic_data(database):
         database.insert_record('charge_settings', fields, row)
 
 
+def get_table_widget_item_fee(table_widget, row_no, col_no):
+    fee = table_widget.item(row_no, col_no)
+    if fee is not None:
+        fee = number_utils.get_float(fee.text())
+    else:
+        fee = 0.0
+
+    return fee

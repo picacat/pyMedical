@@ -18,6 +18,7 @@ from libs import personnel_utils
 
 from dialog import dialog_system_settings
 from dialog import dialog_ic_card
+from dialog import dialog_export_emr_xml
 
 import check_database
 import login
@@ -130,6 +131,8 @@ class PyMedical(QtWidgets.QMainWindow):
         self.ui.pushButton_quit.clicked.connect(self.close)                                 # 離開系統
 
         self.ui.action_convert.triggered.connect(self.convert)                              # 轉檔作業
+        self.ui.action_export_emr_xml.triggered.connect(self.export_emr_xml)                              # 轉檔作業
+
         self.ui.action_ins_check.triggered.connect(self._open_subroutine)                   # 申報預檢
         self.ui.action_ins_apply.triggered.connect(self._open_subroutine)                   # 申報預檢
         self.ui.action_ins_judge.triggered.connect(self._open_subroutine)                   # 申報預檢
@@ -154,6 +157,9 @@ class PyMedical(QtWidgets.QMainWindow):
         self.ui.action_medicine.triggered.connect(self._open_subroutine)
         self.ui.action_ic_card.triggered.connect(self.open_ic_card)
         self.ui.action_show_side_bar.triggered.connect(self.switch_side_bar)
+
+        self.ui.action_certificate_diagnosis.triggered.connect(self._open_subroutine)       # 申請診斷證明書
+        self.ui.action_certificate_payment.triggered.connect(self._open_subroutine)         # 申請醫療費用證明書
 
         self.ui.tabWidget_window.tabCloseRequested.connect(self.close_tab)                  # 關閉分頁
         self.ui.tabWidget_window.currentChanged.connect(self.tab_changed)                   # 切換分頁
@@ -464,6 +470,11 @@ class PyMedical(QtWidgets.QMainWindow):
     # 轉檔
     def convert(self):
         dialog = convert.DialogConvert(self.ui, self.database, self.system_settings)
+        dialog.exec_()
+        dialog.deleteLater()
+
+    def export_emr_xml(self):
+        dialog = dialog_export_emr_xml.DialogExportEMRXml(self.ui, self.database, self.system_settings)
         dialog.exec_()
         dialog.deleteLater()
 

@@ -30,7 +30,7 @@ class TableWidget:
             self.table_widget.setColumnHidden(i, True)
 
     # 設定資料庫資料
-    def set_db_data(self, sql=None, process_data=None, rows=None, start_index=0):
+    def set_db_data(self, sql=None, process_data=None, rows=None, start_index=0, set_focus=True):
         self.process_data = process_data
 
         if rows is None:
@@ -47,7 +47,8 @@ class TableWidget:
 
         self.table_widget.setAlternatingRowColors(True)
         self.table_widget.selectRow(0)
-        self.table_widget.setFocus(True)
+        if set_focus:
+            self.table_widget.setFocus(True)
 
     def row_count(self):
         return self.table_widget.rowCount()

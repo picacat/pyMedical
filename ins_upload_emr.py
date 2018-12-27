@@ -13,6 +13,7 @@ from libs import printer_utils
 from libs import nhi_utils
 from libs import date_utils
 from libs import string_utils
+from libs import xml_utils
 
 
 # 健保電子化抽審 2018.11.05
@@ -222,6 +223,7 @@ class InsUploadEMR(QtWidgets.QMainWindow):
         f4.text = '病歷本文(含病歷首頁, 雙月病歷及服務點數醫令清單)'
 
         tree.write(xml_file_name, pretty_print=True, xml_declaration=True, encoding="Big5")
+        xml_utils.set_xml_file_to_big5(xml_file_name)
 
     def _zip_all_files(self):
         zip_file = '{0}/{1}_{2}_{3:0>3}.zip'.format(

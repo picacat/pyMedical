@@ -3,9 +3,10 @@
 
 
 from PyQt5 import QtWidgets
+from classes import table_widget
+
 from libs import ui_utils
 from libs import system_utils
-from classes import table_widget
 
 
 # 門診掛號 2018.01.22
@@ -48,20 +49,20 @@ class DialogPatient(QtWidgets.QDialog):
     def _set_data(self, row):
         self.table_widget_patient_list.set_db_data(None, self._set_table_data, row)
 
-    def _set_table_data(self, rec_no, rec):
-        patient_rec = [str(rec['PatientKey']),
-                       str(rec['Name']),
-                       str(rec['Gender']),
-                       str(rec['Birthday']),
-                       str(rec['ID']),
-                       str(rec['InsType']),
-                       str(rec['Telephone']),
-                       str(rec['Cellphone']),
-                       str(rec['Address'])]
+    def _set_table_data(self, row_no, row):
+        patient_rec = [str(row['PatientKey']),
+                       str(row['Name']),
+                       str(row['Gender']),
+                       str(row['Birthday']),
+                       str(row['ID']),
+                       str(row['InsType']),
+                       str(row['Telephone']),
+                       str(row['Cellphone']),
+                       str(row['Address'])]
 
         for column in range(len(patient_rec)):
             self.ui.tableWidget_patient_list.setItem(
-                rec_no, column,
+                row_no, column,
                 QtWidgets.QTableWidgetItem(patient_rec[column])
             )
 

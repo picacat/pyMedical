@@ -30,6 +30,11 @@ class CvtUtec():
         else:
             self._convert_medical()
 
+        if self.parent.ui.checkBox_address_list.isChecked():
+            self._cvt_address_list()
+        if self.parent.ui.checkBox_certificate.isChecked():
+            self._cvt_certificate()
+
     def _convert_med2000(self):
         if self.parent.ui.checkBox_groups.isChecked():
             self._cvt_groups()
@@ -290,3 +295,55 @@ class CvtUtec():
         sql = 'UPDATE reserve SET ReserveNo = Sequence WHERE Sequence IS NOT NULL'
         self.database.exec_sql(sql)
         self.progress_bar.setValue(self.progress_bar.value() + 1)
+
+    def _cvt_address_list(self):
+        self.parent.ui.label_progress.setText('地址郵遞區號轉檔')
+        self.progress_bar.setMaximum(61034)
+        self.progress_bar.setValue(0)
+
+        self.database.exec_sql('truncate address_list')
+
+        fields = ['ZipCode', 'City', 'District', 'Street', 'MailRange']
+        import csv
+        f = open('zip_code.csv', 'r', encoding='utf8')
+        for row in csv.DictReader(f):
+            try:
+                data = [row['郵遞區號'], row['縣市名稱'], row['鄉鎮市區'], row['原始路名'], row['投遞範圍']]
+                self.database.insert_record('address_list', fields, data)
+            except:
+                pass
+
+            self.progress_bar.setValue(self.progress_bar.value() + 1)
+
+    def _cvt_certificate(self):
+        rows = self.database.select_record('SELECT * FROM proof ORDER BY ProofKey')
+        row_count = len(rows)
+
+        self.parent.ui.label_progress.setText('診斷及收費證明轉檔')
+        self.progress_bar.setMaximum(row_count)
+        self.progress_bar.setValue(0)
+
+        self.database.exec_sql('truncate certificate')
+
+        fields = [
+            'CertificateKey', 'CaseKey', 'PatientKey', 'Name', 'CertificateDate', 'CertificateType',
+            'InsType', 'StartDate', 'EndDate', 'Diagnosis', 'DoctorComment',
+
+        ]
+        for row in rows:
+            self.progress_bar.setValue(self.progress_bar.value() + 1)
+            data = [
+                row['ProofKey'],
+                0,
+                row['PatientKey'],
+                row['Name'],
+                row['ProofDate'],
+                row['ProofType'],
+                row['InsType'],
+                row['StartDate'],
+                row['StopDate'],
+                row['Disease'],
+                row['Diagnosis'],
+            ]
+
+            self.database.insert_record('certificate', fields, data)

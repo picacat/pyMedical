@@ -100,8 +100,10 @@ class DialogReturnCard(QtWidgets.QDialog):
         if self.ui.comboBox_card.currentText() == '自動產生':
             ic_card = self._write_ic_card(cshis_utils.RETURN_CARD)
             self.update_cases_by_ic_card(ic_card)
-            self._write_ic_treatments(cshis_utils.RETURN_CARD)
-            self._write_prescript_signature()
+            cshis_utils.write_ic_medical_record(
+                self.database, self.system_settings,
+                self.case_key, cshis_utils.RETURN_CARD,
+            )
             self.update_wait_by_ic_card(ic_card)
         else:
             self.update_cases_by_abnormal_card()
@@ -122,16 +124,6 @@ class DialogReturnCard(QtWidgets.QDialog):
             return None
 
         return ic_card
-
-    # 寫入病名, 費用
-    def _write_ic_treatments(self, treat_after_check):
-        cshis_utils.write_ic_treatment(
-            self.database, self.system_settings, self.case_key, treat_after_check)
-
-    # 寫入醫令簽章
-    def _write_prescript_signature(self):
-        cshis_utils.write_prescript_signature(
-            self.database, self.system_settings, self.case_key)
 
     def update_cases_by_ic_card(self, ic_card):
         if ic_card is None:
