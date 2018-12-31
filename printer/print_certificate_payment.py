@@ -12,11 +12,12 @@ from libs import string_utils
 from libs import nhi_utils
 from libs import patient_utils
 from libs import personnel_utils
+from libs import number_utils
 
 
 # 掛號收據格式1 80mm * 80mm 熱感紙
 # 2018.07.09
-class PrintCertificateDiagnosis:
+class PrintCertificatePayment:
     # 初始化
     def __init__(self, parent=None, *args):
         self.parent = parent
@@ -105,9 +106,11 @@ class PrintCertificateDiagnosis:
             return
 
         row = rows[0]
+
         html_title = self._get_html_title(row)
         html_patient = self._get_html_patient(row)
-        html_detail = self._get_html_detail(row)
+        html_payment = self._get_html_payment()
+        html_summary = self._get_html_summary(row)
         html_remark = self._get_html_remark()
 
         html = '''
@@ -115,14 +118,16 @@ class PrintCertificateDiagnosis:
               <body>
                 {html_title}
                 {html_patient}
-                {html_detail}
+                {html_payment}
+                {html_summary}
                 {html_remark}
               </body>
             </html>
         '''.format(
             html_title=html_title,
             html_patient=html_patient,
-            html_detail=html_detail,
+            html_payment=html_payment,
+            html_summary=html_summary,
             html_remark=html_remark,
         )
 
@@ -130,57 +135,57 @@ class PrintCertificateDiagnosis:
 
     def _get_html_title(self, row):
         html = '''
-            <h1 style="text-align: center">{clinic_name} 診斷證明書<br>CERTIFICATE OF DIAGNOSIS</h1>
+            <h1 style="text-align: center">{clinic_name} 醫療費用明細</h1>
             <table align=center width="98%" cellspacing="0">
                 <tbody>
                     <tr>
-                        <td><h3>編號 <font size="3">Certificate No.</font> {certificate_key}</h3></td>
+                        <td><h3>編號: {certificate_key}</h3></td>
                     </tr>
-                </tbody>  
+                </tbody>
             </table>
         '''.format(
-            certificate_key='{0:0>8}'.format(row['CertificateKey']),
             clinic_name=self.system_settings.field('院所名稱'),
+            certificate_key='{0:0>8}'.format(row['CertificateKey']),
         )
+
         return html
 
     def _get_html_patient(self, row):
         patient_row = patient_utils.get_patient_row(self.database, row['PatientKey'])
-
         case_date = string_utils.xstr(row['StartDate'])
+
         if row['EndDate'] != row['StartDate']:
             case_date += ' 至 {0}'.format(string_utils.xstr(row['EndDate']))
-
 
         html = '''
             <table align=center cellpadding="2" cellspacing="0" width="98%" style="font-size: 14px; border-width: 1px; border-style: solid;">
                 <tbody>
                     <tr>
-                        <th bgcolor="LightGray">姓名<br><font size="3">Name</font></th>
+                        <th bgcolor="LightGray">姓名</th>
                         <td style="text-align: center; vertical-align: middle">{name}</td>
-                        <th bgcolor="LightGray">性別<br><font size="3">Gender</font></th>
+                        <th bgcolor="LightGray">性別</th>
                         <td style="text-align: center; vertical-align: middle">{gender}</td>
-                        <th bgcolor="LightGray">出生日期<br><font size="3">Date of Birth</font></th>
+                        <th bgcolor="LightGray">出生日期</th>
                         <td style="text-align: center; vertical-align: middle">{birthday}</td>
                     </tr>
                     <tr>
-                        <th bgcolor="LightGray">病歷號碼<br><font size="3">Chart No.</font></th>
+                        <th bgcolor="LightGray">病歷號碼</th>
                         <td style="text-align: center; vertical-align: middle">{patient_key}</td>
-                        <th bgcolor="LightGray">身份證號<br><font size="3">ID No.</font></th>
+                        <th bgcolor="LightGray">身份證號</th>
                         <td style="text-align: center; vertical-align: middle">{id}</td>
-                        <th bgcolor="LightGray">電話<br><font size="3">Telephone</font></th>
+                        <th bgcolor="LightGray">電話</th>
                         <td style="text-align: center; vertical-align: middle">{telephone}</td>
                     <tr>
-                        <th bgcolor="LightGray">地址<br><font size="3">Address</font></th>
+                        <th bgcolor="LightGray">地址</th>
                         <td colspan="5" style="text-align: left; vertical-align: middle">{address}</td>
                     </tr>
                     <tr>
-                        <th bgcolor="LightGray" style="vertical-align: middle">科別<br><font size="3">Speciality</font></th>
+                        <th bgcolor="LightGray" style="vertical-align: middle">科別</th>
                         <td style="text-align: center; vertical-align: middle">60 中醫科</td>
-                        <th bgcolor="LightGray">診療日期<br><font size="3">Date of Examination</font></th>
+                        <th bgcolor="LightGray">診療日期</th>
                         <td colspan="3" style="text-align: center; vertical-align: middle">{case_date}</td>
                     </tr>
-                </tbody>  
+                </tbody>
             </table>
         '''.format(
             case_date=case_date,
@@ -192,58 +197,158 @@ class PrintCertificateDiagnosis:
             telephone=string_utils.xstr(patient_row['Telephone']),
             cellphone=string_utils.xstr(patient_row['Cellphone']),
             address=string_utils.xstr(patient_row['Address']),
+
         )
+
         return html
 
-    def _get_html_detail(self, row):
-        certificate_date = '{0} 年 {1} 月 {2} 日'.format(
-            row['CertificateDate'].year,
-            row['CertificateDate'].month,
-            row['CertificateDate'].day,
+    def _get_html_payment(self):
+        fees_detail = self._get_fees_detail()
+
+        html = '''
+            <table align=center cellpadding="2" cellspacing="0" width="98%" style="font-size: 14px; border-width: 1px; border-style: solid;">
+                <tbody>
+                    <tr bgcolor="LightGray">
+                        <th>序號</th>
+                        <th>門診日期</th>
+                        <th>保險類別</th>
+                        <th>掛號費</th>
+                        <th>門診負擔</th>
+                        <th>藥品負擔</th>
+                        <th>自付金額</th>
+                        <th>健保申報</th>
+                        <th>自費金額</th>
+                        <th>自付合計</th>
+                    </tr>
+                    {fees_detail}
+                </tbody>
+            </table>
+        '''.format(
+            fees_detail=fees_detail,
         )
+
+        return html
+
+    def _get_fees_detail(self):
+        sql = 'SELECT * FROM certificate_items WHERE CertificateKey = {0} ORDER BY CaseDate'.format(
+            self.certificate_key
+        )
+
+        rows = self.database.select_record(sql)
+
+        total_regist_fee = 0
+        total_diag_share_fee = 0
+        total_drug_share_fee = 0
+        total_cash_fee = 0
+        total_ins_apply_fee = 0
+        total_total_fee = 0
+        total_cash_total = 0
+
+        html = ''
+        for row_no, row in zip(range(1, len(rows)+1), rows):
+            regist_fee = number_utils.get_integer(row['RegistFee'])
+            diag_share_fee = number_utils.get_integer(row['SDiagShareFee'])
+            drug_share_fee = number_utils.get_integer(row['SDrugShareFee'])
+            cash_fee = regist_fee + diag_share_fee + drug_share_fee
+            ins_apply_fee = number_utils.get_integer(row['InsApplyFee'])
+            total_fee = number_utils.get_integer(row['TotalFee'])
+            cash_total = cash_fee + total_fee
+
+            total_regist_fee += regist_fee
+            total_diag_share_fee += diag_share_fee
+            total_drug_share_fee += drug_share_fee
+            total_cash_fee += cash_fee
+            total_ins_apply_fee += ins_apply_fee
+            total_total_fee += total_fee
+            total_cash_total += cash_total
+            if row_no % 2 > 0:
+                bgcolor = '#E3E3E3'
+            else:
+                bgcolor = 'White'
+
+            html += '''
+                <tr>
+                    <td bgcolor="{bgcolor}" style="text-align: center">{row_no}</td>
+                    <td bgcolor="{bgcolor}" style="text-align: center">{case_date}</td>
+                    <td bgcolor="{bgcolor}" style="text-align: center">{ins_type}</td>
+                    <td bgcolor="{bgcolor}" style="text-align: right">{regist_fee}</td>
+                    <td bgcolor="{bgcolor}" style="text-align: right">{diag_share_fee}</td>
+                    <td bgcolor="{bgcolor}" style="text-align: right">{drug_share_fee}</td>
+                    <td bgcolor="{bgcolor}" style="text-align: right">{cash_fee}</td>
+                    <td bgcolor="{bgcolor}" style="text-align: right">{ins_apply_fee}</td>
+                    <td bgcolor="{bgcolor}" style="text-align: right">{total_fee}</td>
+                    <td bgcolor="{bgcolor}" style="text-align: right">{cash_total}</td>
+                </tr>
+            '''.format(
+                row_no=row_no,
+                bgcolor=bgcolor,
+                case_date=string_utils.xstr(row['CaseDate'].date()),
+                ins_type=string_utils.xstr(row['InsType']),
+                regist_fee=string_utils.xstr(regist_fee),
+                diag_share_fee=string_utils.xstr(diag_share_fee),
+                drug_share_fee=string_utils.xstr(drug_share_fee),
+                cash_fee=string_utils.xstr(cash_fee),
+                ins_apply_fee=string_utils.xstr(ins_apply_fee),
+                total_fee=string_utils.xstr(total_fee),
+                cash_total=string_utils.xstr(cash_total),
+            )
+
+        html += '''
+            <tr>
+                <td bgcolor="LightGray" style="text-align: center" colspan=3>合計</td>
+                <td style="text-align: right">{total_regist_fee}</td>
+                <td style="text-align: right">{total_diag_share_fee}</td>
+                <td style="text-align: right">{total_drug_share_fee}</td>
+                <td style="text-align: right">{total_cash_fee}</td>
+                <td style="text-align: right">{total_ins_apply_fee}</td>
+                <td style="text-align: right">{total_total_fee}</td>
+                <td style="text-align: right">{total_cash_total}</td>
+            </tr>
+        '''.format(
+            total_regist_fee=string_utils.xstr(total_regist_fee),
+            total_diag_share_fee=string_utils.xstr(total_diag_share_fee),
+            total_drug_share_fee=string_utils.xstr(total_drug_share_fee),
+            total_cash_fee=string_utils.xstr(total_cash_fee),
+            total_ins_apply_fee=string_utils.xstr(total_ins_apply_fee),
+            total_total_fee=string_utils.xstr(total_total_fee),
+            total_cash_total=string_utils.xstr(total_cash_total),
+        )
+
+        return html
+
+    def _get_html_summary(self, row):
         physician = self._get_physician(row)
-        physician_cert_no = personnel_utils.get_personnel_field_value(
+        pyysician_cert_no = personnel_utils.get_personnel_field_value(
             self.database, physician, 'Certificate')
         president = self.system_settings.field('負責醫師')
         license_no = self.system_settings.field('院所代號')
         clinic_telephone = self.system_settings.field('院所電話')
         clinic_address = self.system_settings.field('院所地址')
 
+        certificate_date = '{0} 年 {1} 月 {2} 日'.format(
+            row['CertificateDate'].year,
+            row['CertificateDate'].month,
+            row['CertificateDate'].day,
+        )
+
         html = '''
             <table align=center cellpadding="10" cellspacing="0" width="98%" style="font-size: 14px; border-width: 1px; border-style: solid;">
                 <tbody>
                     <tr>
-                        <th bgcolor="LightGray" style="text-align: left; vertical-align: middle">診斷 <font size="3">Diagnosis</font></th>
-                    </tr>
-                    <tr>
-                        <td>{diagnosis}<br><br><br><br></td>
-                    </tr>
-                    <tr>
-                        <th bgcolor="LightGray" style="text-align: left; vertical-align: middle">醫囑 <font size="3">Doctor's Comment</font></th>
-                    </tr>
-                    <tr>
-                        <td>{doctor_comment}<br><br><br><br></td>
-                    </tr>
-                    <tr>
                         <td>
+                            <h2>本收據可為報稅之憑證，請妥善保存，遺失恕不補發。</h2>
                             <h3>
-                                以上病人經本院(所)醫師診斷屬實特予證明<br>
-                                <font size="3">
-                                    This certificate is invalid without the seal of the Hospital Director.
-                                </font>
+                                主治醫師: {physician}<br>
+                                醫師證書號碼: {physician_cert_no}<br>
+                                院長: {president}<br>
+                                開業執照號碼: {license_no}
                             </h3>
                             <h3>
-                                主治醫師 <font size="3">Physician</font>: {physician}<br>
-                                醫師證書號碼 <font size="3">Physician Certificate No.</font>: {physician_cert_no}<br>
-                                院長 <font size="3">President</font>: {president}<br>
-                                開業執照號碼 <font size="3">License Number</font>: {license_no}
+                                院所電話: {clinic_telephone}<br>
+                                院所地址: {clinic_address}
                             </h3>
                             <h3>
-                                院所電話 <font size="3">Telephone</font>: {clinic_telephone}<br>
-                                院所地址 <font size="3">Address</font>: {clinic_address}
-                            </h3>
-                            <h3>
-                                開立診斷證明書日期 <font size="3">Certificate Date</font>: {certificate_date}
+                                開立醫療費用證明日期: {certificate_date}
                             </h3>
                         </td>
                     </tr>
@@ -251,10 +356,8 @@ class PrintCertificateDiagnosis:
             </table>
         '''.format(
             certificate_date=certificate_date,
-            diagnosis=string_utils.get_str(row['Diagnosis'], 'utf-8'),
-            doctor_comment=string_utils.get_str(row['DoctorComment'], 'utf-8'),
             physician=physician,
-            physician_cert_no=physician_cert_no,
+            physician_cert_no=pyysician_cert_no,
             president=president,
             license_no=license_no,
             clinic_telephone=clinic_telephone,
@@ -269,9 +372,6 @@ class PrintCertificateDiagnosis:
                 <tbody>
                     <tr>
                         <td>本證明書經塗改或未加蓋本院印章者無效</td>
-                    </tr>
-                    <tr>
-                        <td>本證明書訴訟無效</td>
                     </tr>
                 </tbody>  
             </table>

@@ -49,7 +49,7 @@ class MedicalRecordRegistration(QtWidgets.QMainWindow):
             self.ui.tableWidget_prescript_sign, self.database)
         self._set_combo_box()
         self._set_table_width()
-        system_utils.set_css(self)
+        system_utils.set_css(self, self.system_settings)
 
     # 設定信號
     def _set_signal(self):

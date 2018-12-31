@@ -544,9 +544,9 @@ class Registration(QtWidgets.QMainWindow):
             msg_box.addButton(QPushButton("確定"), QMessageBox.YesRole)
             arrival = msg_box.exec_()
             if arrival:
-                reserve_key = rows[0]['ReserveKey']
                 reservation_exists = True
                 self._cancel_registration()
+                reserve_key = rows[0]['ReserveKey']
                 self.parent.open_reservation(reserve_key)
 
         return reservation_exists

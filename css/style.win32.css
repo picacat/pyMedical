@@ -1,10 +1,10 @@
 /*
-    PyMedical windows css style sheet
+    PyMedical linux 版本 css 樣式表
     2018-02-07
 */
 
 /**************************************************************************************
-    All program
+ 所有程式 樣式表
 **************************************************************************************/
 * {
 	font-size: 18px;
@@ -12,17 +12,18 @@
 }
 
 /**************************************************************************************
-    Main program
+ 主畫面 樣式表 灰色
 **************************************************************************************/
 #frameSidebar {
-    background: #8af;
+    background: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #6b6b6b, stop: 1 #abacad);
     border: none;
-    border-right: 1px solid black;
+    /* border-right: 1px solid black; */
+    border-right: 1px;
 }
 
 #label_title {
     color: white;
-    font: 16px;
+    font: 18px;
 }
 
 #label_eng_title {
@@ -36,8 +37,8 @@ QFrame.SidebarFrame {
     border: 1px solid black;
     background: QLinearGradient(
         x1: 0, y1: 0, x2: 0, y2: 1,
-        stop: 0 #56a,
-        stop: 0.1 #016
+        stop: 0 #4f5051,
+        stop: 0.1 #0a0a0a
     );
 }
 
@@ -45,7 +46,7 @@ QFrame.SidebarInnerFrame {
     background: QLinearGradient(
         x1: 0, y1: 0, x2: 0, y2: 1,
         stop: 0 #eef,
-        stop: 1 #ccf);
+        stop: 1 #bfbfbf);
     border: none;
     border-top: 1px solid black;
 }
@@ -56,13 +57,15 @@ QFrame.SidebarFrame QLabel {
 }
 
 /**************************************************************************************
-    medical_record
+ 病歷資料 樣式表
 **************************************************************************************/
 /*
 #textEdit_symptom, #textEdit_tongue, #textEdit_pulse {
-	background: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #eef, stop: 1 #ccf);
+    background: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #eef, stop: 1 #ccf);
 }
+*/
 
+/*
 #textEdit_remark {
 	background: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #eef, stop: 1 #ccf);
 }

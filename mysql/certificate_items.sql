@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS certificate_items
 
     CaseKey	                INT NOT NULL,	# 病歷號
     CaseDate                DATETIME,       # 就醫日期
+    InsType	                VARCHAR(10),	# 保險類別: 健保, 自費
 
 #------------------ 收費證明用 ---------------------------------------
     RegistFee	      INT,	    # 掛號費

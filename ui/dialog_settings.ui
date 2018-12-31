@@ -1877,12 +1877,22 @@
                 </property>
                </spacer>
               </item>
-              <item row="1" column="1">
+              <item row="2" column="1">
                <widget class="QLabel" name="label_57">
                 <property name="text">
                  <string>外觀主題會在下次進入系統時生效</string>
                 </property>
                </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="label_61">
+                <property name="text">
+                 <string>外觀顏色</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QComboBox" name="comboBox_color"/>
               </item>
              </layout>
             </item>

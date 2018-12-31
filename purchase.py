@@ -50,7 +50,9 @@ class Purchase(QtWidgets.QMainWindow):
             self.ui.tableWidget_prescript, self.database
         )
         self.ui.dateEdit_purchase_date.setDate(datetime.datetime.now().date())
+        self.ui.label_patient_key.setEnabled(False)
         self.ui.lineEdit_patient_key.setEnabled(False)
+        self.ui.label_name.setEnabled(False)
         self.ui.lineEdit_name.setEnabled(False)
         self.ui.toolButton_patient_list.setEnabled(False)
 
@@ -384,7 +386,9 @@ class Purchase(QtWidgets.QMainWindow):
         else:
             enabled = True
 
+        self.ui.label_patient_key.setEnabled(enabled)
         self.ui.lineEdit_patient_key.setEnabled(enabled)
+        self.ui.label_name.setEnabled(enabled)
         self.ui.lineEdit_name.setEnabled(enabled)
         self.ui.toolButton_patient_list.setEnabled(enabled)
 

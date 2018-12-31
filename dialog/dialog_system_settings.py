@@ -2,7 +2,7 @@
 #coding: utf-8
 
 
-from PyQt5 import QtWidgets, QtCore
+from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtWidgets import QFileDialog
 
 from libs import ui_utils
@@ -32,7 +32,7 @@ class DialogSettings(QtWidgets.QDialog):
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_DIALOG_SETTINGS, self)
         self.setFixedSize(self.size())  # non resizable dialog
-        system_utils.set_css(self)
+        system_utils.set_css(self, self.system_settings)
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setText('確定')
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Cancel).setText('取消')
         self.ui.tabWidget_settings.setCurrentIndex(0)
@@ -56,7 +56,17 @@ class DialogSettings(QtWidgets.QDialog):
         )
         ui_utils.set_combo_box(self.ui.comboBox_division, nhi_utils.DIVISION)
         ui_utils.set_combo_box(self.ui.comboBox_instruction, ['飯前', '飯後', '飯後睡前'])
+        ui_utils.set_combo_box(self.ui.comboBox_color, ['紅色','綠色', '藍色', '灰色'])
         self._set_combo_box_printer()
+
+        ui_utils.set_combo_box_item_color(
+            self.ui.comboBox_color, [
+                QtGui.QBrush(QtCore.Qt.red),
+                QtGui.QBrush(QtCore.Qt.darkGreen),
+                QtGui.QBrush(QtCore.Qt.blue),
+                QtGui.QBrush(QtCore.Qt.darkGray),
+            ]
+        )
 
     def _set_combo_box_printer(self):
         printer_list = printer_utils.get_printer_list()
@@ -246,6 +256,7 @@ class DialogSettings(QtWidgets.QDialog):
         self.ui.spinBox_station_no.setValue(number_utils.get_integer(self.system_settings.field('工作站編號')))
         self.ui.lineEdit_position.setText(self.system_settings.field('工作站位置'))
         self.ui.comboBox_theme.setCurrentText(self.system_settings.field('外觀主題'))
+        self.ui.comboBox_color.setCurrentText(self.system_settings.field('外觀顏色'))
         self.ui.lineEdit_emr_path.setText(self.system_settings.field('電子病歷交換檔輸出路徑'))
         self._set_check_box(self.ui.checkBox_side_bar, '顯示側邊欄')
 
@@ -392,6 +403,7 @@ class DialogSettings(QtWidgets.QDialog):
         self.system_settings.post('工作站編號', str(self.ui.spinBox_station_no.value()))
         self.system_settings.post('工作站位置', self.ui.lineEdit_position.text())
         self.system_settings.post('外觀主題', self.ui.comboBox_theme.currentText())
+        self.system_settings.post('外觀顏色', self.ui.comboBox_color.currentText())
         self.system_settings.post('電子病歷交換檔輸出路徑', self.ui.lineEdit_emr_path.text())
         self._save_check_box(self.ui.checkBox_side_bar, '顯示側邊欄')
 

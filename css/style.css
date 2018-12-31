@@ -11,12 +11,10 @@
 }
 
 /**************************************************************************************
- 主畫面 樣式表
+ 主畫面 樣式表 灰色
 **************************************************************************************/
 #frameSidebar {
-    /*background: #8af; */
-    /* background: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #4d7fff, stop: 1 #b3c8ff); */
-    background: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #8af, stop: 1 #b3c8ff);
+    background: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #6b6b6b, stop: 1 #abacad);
     border: none;
     /* border-right: 1px solid black; */
     border-right: 1px;
@@ -38,8 +36,8 @@ QFrame.SidebarFrame {
     border: 1px solid black;
     background: QLinearGradient(
         x1: 0, y1: 0, x2: 0, y2: 1,
-        stop: 0 #56a,
-        stop: 0.1 #016
+        stop: 0 #4f5051,
+        stop: 0.1 #0a0a0a
     );
 }
 
@@ -47,7 +45,7 @@ QFrame.SidebarInnerFrame {
     background: QLinearGradient(
         x1: 0, y1: 0, x2: 0, y2: 1,
         stop: 0 #eef,
-        stop: 1 #ccf);
+        stop: 1 #bfbfbf);
     border: none;
     border-top: 1px solid black;
 }

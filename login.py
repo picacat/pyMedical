@@ -29,7 +29,7 @@ class Login(QtWidgets.QDialog):
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_LOGIN, self)
         self.setFixedSize(self.size())  # non resizable dialog
-        system_utils.set_css(self)
+        system_utils.set_css(self, self.system_settings)
         self._set_combo_box()
         self.center()
         self.ui.label_login_error.setVisible(False)

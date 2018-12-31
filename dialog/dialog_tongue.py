@@ -40,7 +40,7 @@ class DialogTongue(QtWidgets.QDialog):
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_DIALOG_TONGUE, self)
         # self.setFixedSize(self.size())  # non resizable dialog
-        system_utils.set_css(self)
+        system_utils.set_css(self, self.system_settings)
         self.table_widget_groups = table_widget.TableWidget(self.ui.tableWidget_groups, self.database)
         self.table_widget_tongue = table_widget.TableWidget(self.ui.tableWidget_tongue, self.database)
         self.table_widget_groups.set_column_hidden([0])

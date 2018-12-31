@@ -23,6 +23,7 @@ from printer.print_ins_apply_order import *
 from printer.print_medical_records import *
 from printer.print_medical_chart import *
 from printer.print_certificate_diagnosis import *
+from printer.print_certificate_payment import *
 
 PRINT_MODE = ['不印', '列印', '詢問', '預覽']
 PRINT_REGISTRATION_FORM = {
@@ -867,6 +868,34 @@ def print_certificate_diagnosis(parent, database, system_settings, certificate_k
             print_type = 'print'
 
     print_certificate = PrintCertificateDiagnosis(
+        parent, database, system_settings,
+        certificate_key,
+    )
+
+    if print_type == 'print':
+        print_certificate.print()
+    elif print_type == 'preview':
+        print_certificate.preview()
+    elif print_type == 'pdf':
+        print_certificate.save_to_pdf()
+
+    del print_certificate
+
+# 列印醫療費用證明書
+def print_certificate_payment(parent, database, system_settings, certificate_key, print_type=None):
+    if print_type is None:  # 如果未指定列印方式，以系統設定為主
+        if system_settings.field('列印報表') == '不印':
+            return
+        elif system_settings.field('列印報表') == '詢問':
+            dialog = QtPrintSupport.QPrintDialog()
+            if dialog.exec() == QtWidgets.QDialog.Rejected:
+                return
+        elif system_settings.field('列印報表') == '預覽':
+            print_type = 'preview'
+        elif system_settings.field('列印報表') == '列印':
+            print_type = 'print'
+
+    print_certificate = PrintCertificatePayment(
         parent, database, system_settings,
         certificate_key,
     )

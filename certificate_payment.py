@@ -11,6 +11,7 @@ from dialog import dialog_certificate_query
 
 from libs import ui_utils
 from libs import string_utils
+from libs import number_utils
 from libs import dialog_utils
 from libs import printer_utils
 
@@ -40,9 +41,15 @@ class CertificatePayment(QtWidgets.QMainWindow):
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_CERTIFICATE_PAYMENT, self)
+
         self.table_widget_certificate_list = table_widget.TableWidget(
             self.ui.tableWidget_certificate_list, self.database)
         self.table_widget_certificate_list.set_column_hidden([0, 1])
+
+        self.table_widget_certificate_items = table_widget.TableWidget(
+            self.ui.tableWidget_certificate_items, self.database)
+        self.table_widget_certificate_items.set_column_hidden([0])
+
         self._set_table_width()
 
     # 設定信號
@@ -52,6 +59,7 @@ class CertificatePayment(QtWidgets.QMainWindow):
         self.ui.action_remove_certificate.triggered.connect(self._remove_certificate)
         self.ui.action_print_certificate.triggered.connect(self._print_certificate)
         self.ui.action_query_certificate.triggered.connect(self._query_certificate)
+        self.ui.tableWidget_certificate_list.itemSelectionChanged.connect(self._table_item_changed)
 
     def close_tab(self):
         current_tab = self.parent.ui.tabWidget_window.currentIndex()
@@ -115,6 +123,92 @@ class CertificatePayment(QtWidgets.QMainWindow):
                     QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
                 )
 
+    def _table_item_changed(self):
+        certificate_key = self.table_widget_certificate_list.field_value(0)
+        if certificate_key is None:
+            return
+
+        sql = 'SELECT * FROM certificate_items WHERE CertificateKey = {0} ORDER BY CaseDate'.format(certificate_key)
+        self.table_widget_certificate_items.set_db_data(sql, self._set_certificate_items_data, set_focus=False)
+        self._calculate_items_total()
+
+    def _set_certificate_items_data(self, row_no, row):
+        cash_total = (
+                number_utils.get_integer(row['RegistFee']) +
+                number_utils.get_integer(row['SDiagShareFee']) +
+                number_utils.get_integer(row['SDrugShareFee'])
+        )
+        payment = cash_total + number_utils.get_integer(row['TotalFee'])
+
+        certificate_items_record = [
+            string_utils.xstr(row['CaseKey']),
+            string_utils.xstr(row['CaseDate']),
+            string_utils.xstr(row['InsType']),
+            string_utils.xstr(number_utils.get_integer(row['RegistFee'])),
+            string_utils.xstr(number_utils.get_integer(row['SDiagShareFee'])),
+            string_utils.xstr(number_utils.get_integer(row['SDrugShareFee'])),
+            string_utils.xstr(cash_total),
+            string_utils.xstr(number_utils.get_integer(row['InsApplyFee'])),
+            string_utils.xstr(number_utils.get_integer(row['TotalFee'])),
+            string_utils.xstr(payment)
+        ]
+
+        for col_no in range(len(certificate_items_record)):
+            self.ui.tableWidget_certificate_items.setItem(
+                row_no, col_no,
+                QtWidgets.QTableWidgetItem(certificate_items_record[col_no])
+            )
+            if col_no >= 3:
+                self.ui.tableWidget_certificate_items.item(
+                    row_no, col_no).setTextAlignment(
+                    QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
+                )
+
+    def _calculate_items_total(self):
+        row_count = self.ui.tableWidget_certificate_items.rowCount()
+
+        regist_fee = 0
+        diag_share_fee = 0
+        drug_share_fee = 0
+        cash_fee = 0
+        ins_apply_fee = 0
+        total_fee = 0
+        cash_total = 0
+        for row_no in range(row_count):
+            regist_fee += number_utils.get_integer(self.ui.tableWidget_certificate_items.item(row_no, 3).text())
+            diag_share_fee += number_utils.get_integer(self.ui.tableWidget_certificate_items.item(row_no, 4).text())
+            drug_share_fee += number_utils.get_integer(self.ui.tableWidget_certificate_items.item(row_no, 5).text())
+            cash_fee += number_utils.get_integer(self.ui.tableWidget_certificate_items.item(row_no, 6).text())
+            ins_apply_fee += number_utils.get_integer(self.ui.tableWidget_certificate_items.item(row_no, 7).text())
+            total_fee += number_utils.get_integer(self.ui.tableWidget_certificate_items.item(row_no, 8).text())
+            cash_total += number_utils.get_integer(self.ui.tableWidget_certificate_items.item(row_no, 9).text())
+
+        total_fee_row = [
+            None,
+            '合計',
+            None,
+            string_utils.xstr(regist_fee),
+            string_utils.xstr(diag_share_fee),
+            string_utils.xstr(drug_share_fee),
+            string_utils.xstr(cash_fee),
+            string_utils.xstr(ins_apply_fee),
+            string_utils.xstr(total_fee),
+            string_utils.xstr(cash_total),
+        ]
+
+        self.ui.tableWidget_certificate_items.setRowCount(row_count + 1)
+        for col_no in range(len(total_fee_row)):
+            self.ui.tableWidget_certificate_items.setItem(
+                row_count, col_no,
+                QtWidgets.QTableWidgetItem(total_fee_row[col_no])
+            )
+            if col_no >= 3:
+                self.ui.tableWidget_certificate_items.item(
+                    row_count, col_no).setTextAlignment(
+                    QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
+                )
+
+
     # 開立證明
     def _add_certificate(self):
         dialog = dialog_certificate_payment.DialogCertificatePayment(
@@ -123,6 +217,7 @@ class CertificatePayment(QtWidgets.QMainWindow):
 
         if dialog.exec_():
             self._read_certificate()
+            self._table_item_changed()
 
         dialog.close_all()
         dialog.deleteLater()
@@ -150,7 +245,7 @@ class CertificatePayment(QtWidgets.QMainWindow):
         self.ui.tableWidget_certificate_list.removeRow(current_row)
 
     def _print_certificate(self):
-        printer_utils.print_certificate_diagnosis(
+        printer_utils.print_certificate_payment(
             self, self.database, self.system_settings,
             self.table_widget_certificate_list.field_value(0), 'preview',
         )

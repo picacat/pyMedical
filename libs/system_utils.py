@@ -10,11 +10,24 @@ BASE_DIR = os.path.abspath(os.path.join(os.path.dirname("__file__")))
 CSS_PATH = "css"
 
 
-def get_css_file():
+def get_css_file(system_settings):
+    css_file = 'style'
+
+    if system_settings.field('外觀顏色') == '紅色':
+        css_file += '.red'
+    elif system_settings.field('外觀顏色') == '綠色':
+        css_file += '.green'
+    elif system_settings.field('外觀顏色') == '藍色':
+        css_file += '.blue'
+    elif system_settings.field('外觀顏色') == '灰色':
+        css_file += '.gray'
+
     if sys.platform == 'win32':
-        return 'style.win32.css'
-    else:
-        return 'style.css'
+        css_file += '.win32'
+
+    css_file += '.css'
+
+    return css_file
 
 
 def get_font():
@@ -25,14 +38,15 @@ def get_font():
 
     return font
 
-def set_css(widget):
-    css_file = os.path.join(BASE_DIR, CSS_PATH, get_css_file())
-    widget.setStyleSheet(open(css_file, "r").read())
+
+def set_css(widget, system_settings):
+    css_file = os.path.join(BASE_DIR, CSS_PATH, get_css_file(system_settings))
+    widget.setStyleSheet(open(css_file, "r", encoding='utf-8').read())
 
 
 # 設定主題
-def set_theme(ui, settings):
-    style = settings.field('外觀主題')
+def set_theme(ui, system_settings):
+    style = system_settings.field('外觀主題')
     if style is None:
         style = 'Fusion'
 

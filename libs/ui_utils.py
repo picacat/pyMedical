@@ -182,6 +182,11 @@ def set_combo_box(combobox, items, *args):
         combobox.addItem(item)
 
 
+def set_combo_box_item_color(combobox, colors):
+    for item_no in range(len(colors)):
+        combobox.setItemData(
+            item_no, colors[item_no], QtCore.Qt.TextColorRole)
+
 # 設定輸入文字補全
 def set_completer(database, sql, field, widget):
     rows = database.select_record(sql)

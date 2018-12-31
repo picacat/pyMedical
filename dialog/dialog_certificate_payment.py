@@ -40,7 +40,7 @@ class DialogCertificatePayment(QtWidgets.QDialog):
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_DIALOG_CERTIFICATE_PAYMENT, self)
         self.setFixedSize(self.size())  # non resizable dialog
-        system_utils.set_css(self)
+        system_utils.set_css(self, self.system_settings)
         self.ui.dateEdit_start_date.setDate(datetime.datetime.now())
         self.ui.dateEdit_end_date.setDate(datetime.datetime.now())
         self._set_combo_box()
@@ -260,7 +260,7 @@ class DialogCertificatePayment(QtWidgets.QDialog):
 
     def _write_certificate_items(self, certificate_key):
         fields = [
-            'CertificateKey', 'CaseKey', 'CaseDate',
+            'CertificateKey', 'CaseKey', 'CaseDate', 'InsType',
             'RegistFee', 'DiagFee', 'InterDrugFee', 'PharmacyFee',
             'AcupunctureFee', 'MassageFee',
             'SDiagShareFee', 'SDrugShareFee',
@@ -281,7 +281,7 @@ class DialogCertificatePayment(QtWidgets.QDialog):
             row = self.database.select_record(sql)[0]
 
             data = [
-                certificate_key, row['CaseKey'], row['CaseDate'],
+                certificate_key, row['CaseKey'], row['CaseDate'], row['InsType'],
                 row['RegistFee'], row['DiagFee'], row['InterDrugFee'], row['PharmacyFee'],
                 row['AcupunctureFee'], row['MassageFee'],
                 row['SDiagShareFee'], row['SDrugShareFee'],

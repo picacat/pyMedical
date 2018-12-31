@@ -85,7 +85,7 @@ class PyMedical(QtWidgets.QMainWindow):
         self.ui.tabWidget_window.setTabsClosable(True)
         self._set_button_enabled()
         self.ui.setWindowTitle('{0} 醫療資訊管理系統'.format(self.system_settings.field('院所名稱')))
-        self._set_css()
+        self._set_style()
         self.set_status_bar()
 
         if self.system_settings.field('顯示側邊欄') == 'Y':
@@ -165,8 +165,8 @@ class PyMedical(QtWidgets.QMainWindow):
         self.ui.tabWidget_window.currentChanged.connect(self.tab_changed)                   # 切換分頁
 
     # 設定 css style
-    def _set_css(self):
-        system_utils.set_css(self)
+    def _set_style(self):
+        system_utils.set_css(self, self.system_settings)
         system_utils.set_theme(self.ui, self.system_settings)
 
     # 候診名單歸零
@@ -217,6 +217,8 @@ class PyMedical(QtWidgets.QMainWindow):
         self.ui.tabWidget_window.setCurrentWidget(new_tab)
         self._set_focus(tab_name, new_tab)
 
+        return new_tab
+
     # 設定 focus
     @staticmethod
     def _set_focus(widget_name, widget):
@@ -237,10 +239,6 @@ class PyMedical(QtWidgets.QMainWindow):
             widget.ui.tableWidget_waiting_list.setFocus()
         elif widget_name == "新病患資料":
             widget.ui.lineEdit_name.setFocus()
-        elif widget_name == "預約掛號":
-            widget.ui.tableWidget_reservation.setFocus()
-            if widget.reserve_key is not None:
-                widget.set_reservation_arrival()
 
     # 關閉 tab
     def close_tab(self, current_index):
@@ -402,9 +400,11 @@ class PyMedical(QtWidgets.QMainWindow):
                     current_tab = self.ui.tabWidget_window.widget(i)
                     break
 
-            current_tab.set_reservation_arrival(reserve_key)
         else:
-            self._add_tab(tab_name, self.database, self.system_settings, reserve_key)
+            current_tab = self._add_tab(tab_name, self.database, self.system_settings, reserve_key)
+
+        if reserve_key is not None:
+            current_tab.set_reservation_arrival(reserve_key)
 
     # 預約掛號
     def open_purchase_tab(self, case_key=None):

@@ -35,12 +35,13 @@ class DialogMedicalRecordList(QtWidgets.QDialog):
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_DIALOG_MEDICAL_RECORD_LIST, self)
         self.setFixedSize(self.size())  # non resizable dialog
-        system_utils.set_css(self)
+        system_utils.set_css(self, self.system_settings)
         self.ui.dateEdit_start_date.setDate(datetime.datetime.now())
         self.ui.dateEdit_end_date.setDate(datetime.datetime.now())
         self._set_combo_box()
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setText('確定')
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Cancel).setText('取消')
+        self.ui.label_patient_key.setEnabled(False)
         self.ui.lineEdit_patient_key.setEnabled(False)
         self.ui.toolButton_select_patient.setEnabled(False)
 
@@ -74,6 +75,7 @@ class DialogMedicalRecordList(QtWidgets.QDialog):
         else:
             enabled = True
 
+        self.ui.label_patient_key.setEnabled(enabled)
         self.ui.lineEdit_patient_key.setEnabled(enabled)
         self.ui.toolButton_select_patient.setEnabled(enabled)
 

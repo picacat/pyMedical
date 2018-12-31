@@ -48,7 +48,7 @@ class DialogDiagnosis(QtWidgets.QDialog):
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_DIALOG_DIAGNOSIS, self)
         # self.setFixedSize(self.size())  # non resizable dialog
-        system_utils.set_css(self)
+        system_utils.set_css(self, self.system_settings)
         system_utils.set_theme(self.ui, self.system_settings)
 
         self.ui.resize(self.settings.value("dialog_diagnosis_size", QSize(635, 769)))

@@ -64,6 +64,9 @@ class Reservation(QtWidgets.QMainWindow):
         period = registration_utils.get_period(self.system_settings)
         self._set_radio_button_period(period)
 
+        self.ui.action_cancel_reservation.setEnabled(False)
+        self.ui.action_reservation_arrival.setEnabled(False)
+
     def _set_radio_button_period(self, period):
         if period == '早班':
             self.ui.radioButton_period1.setChecked(True)
@@ -90,6 +93,7 @@ class Reservation(QtWidgets.QMainWindow):
         self.ui.radioButton_arrival1.clicked.connect(self._read_reservation_list)
         self.ui.radioButton_arrival2.clicked.connect(self._read_reservation_list)
         self.ui.radioButton_arrival3.clicked.connect(self._read_reservation_list)
+        self.ui.tableWidget_reservation.itemSelectionChanged.connect(self._reservation_table_item_changed)
 
     # 設定欄位寬度
     def _set_table_width(self):
@@ -357,27 +361,56 @@ class Reservation(QtWidgets.QMainWindow):
         else:
             self._cancel_reservation_by_list()
 
-    def _cancel_reservation_by_table(self):
-        current_column = self.ui.tableWidget_reservation.currentColumn()
-        header = self.ui.tableWidget_reservation.horizontalHeaderItem(current_column).text()
+    def _get_reserve_key_by_table(self, row_no, col_no):
+        header = self.ui.tableWidget_reservation.horizontalHeaderItem(col_no)
+        if header is None:
+            return None
+
+        header = header.text()
         if header != '姓名':
-            return
+            return None
 
-        current_row = self.ui.tableWidget_reservation.currentRow()
-        name = self.ui.tableWidget_reservation.item(current_row, current_column)
+        name = self.ui.tableWidget_reservation.item(row_no, col_no)
         if name is None:
-            return
+            return None
 
-        reserve_key = self.ui.tableWidget_reservation.item(current_row, current_column+1)
+        reserve_key = self.ui.tableWidget_reservation.item(row_no, col_no + 1)
         if reserve_key is None:
-            return
+            return None
 
         arrival = self._check_reservation_arrival(reserve_key.text())
         if arrival:  # 已報到
-            return
+            return None
 
         reserve_key = reserve_key.text()
-        if self._delete_reserve_record(reserve_key, name.text()):
+
+        return reserve_key
+
+    def _get_name_by_table(self, row_no, col_no):
+        header = self.ui.tableWidget_reservation.horizontalHeaderItem(col_no)
+        if header is None:
+            return None
+
+        header = header.text()
+        if header != '姓名':
+            return None
+
+        name = self.ui.tableWidget_reservation.item(row_no, col_no)
+        if name is None:
+            return None
+
+        return name.text()
+
+    def _cancel_reservation_by_table(self):
+        current_row = self.ui.tableWidget_reservation.currentRow()
+        current_column = self.ui.tableWidget_reservation.currentColumn()
+
+        reserve_key = self._get_reserve_key_by_table(current_row, current_column)
+        if reserve_key is None:
+            return
+
+        name = self._get_name_by_table(current_row, current_column)
+        if self._delete_reserve_record(reserve_key, name):
             self.read_reservation()
 
     def _cancel_reservation_by_list(self):
@@ -408,6 +441,19 @@ class Reservation(QtWidgets.QMainWindow):
         self.database.exec_sql('DELETE FROM reserve WHERE ReserveKey = {0}'.format(reserve_key))
 
         return True
+
+    def _reservation_table_item_changed(self):
+        current_row = self.ui.tableWidget_reservation.currentRow()
+        current_column = self.ui.tableWidget_reservation.currentColumn()
+
+        reserve_key = self._get_reserve_key_by_table(current_row, current_column)
+        if reserve_key is None:
+            enabled = False
+        else:
+            enabled = True
+
+        self.ui.action_cancel_reservation.setEnabled(enabled)
+        self.ui.action_reservation_arrival.setEnabled(enabled)
 
     def reservation_arrival(self):
         current_column = self.ui.tableWidget_reservation.currentColumn()
@@ -467,8 +513,8 @@ class Reservation(QtWidgets.QMainWindow):
         return arrival
 
     def set_reservation_arrival(self, reserve_key=None):
-        if reserve_key is None:
-            reserve_key = self.reserve_key
+        # if reserve_key is None:
+        #     reserve_key = self.reserve_key
 
         sql = '''
             SELECT * FROM reserve 
