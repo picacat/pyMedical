@@ -424,7 +424,7 @@ class PrintInsApplyOrder:
                         <th style="text-align: center; vertical-align: middle">p3<br>醫令<br>類別</th>
                         <th style="text-align: center; vertical-align: middle">p1<br>藥品<br>給藥<br>日份</th>
                         <th style="text-align: center; vertical-align: middle">p4<br>藥品項目<br>代號</th>
-                        <th colspan="3" style="text-align: center; vertical-align: middle">診療項目或<br>藥品材料<br>名稱規格</th>
+                        <th style="text-align: center; vertical-align: middle">診療項目或<br>藥品材料<br>名稱規格</th>
                         <th style="text-align: center; vertical-align: middle">p21<br>自費<br>特材<br>群組<br>序號</th>
                         <th style="text-align: center; vertical-align: middle">p14<br>執行時<br>間-起</th>
                         <th style="text-align: center; vertical-align: middle">p15<br>執行時<br>間-迄</th>
@@ -826,7 +826,7 @@ class PrintInsApplyOrder:
 
         order_name = case_utils.get_drug_name(self.database, ins_code)
         if order_name == '':
-            order_name = case_utils.get_medicine_name(self.database, ins_code)
+            order_name = case_utils.get_medicine_name(self.database, 'InsCode', ins_code)
 
         self.sequence += 1
         order_row = {}
@@ -886,26 +886,26 @@ class PrintInsApplyOrder:
     def _get_html_order_row(self, row):
         html = '''
             <tr>
-                <td style="text-align: center; vertical-align: middle">{sequence}</td>
-                <td style="text-align: center; vertical-align: middle">{clinic_class}</td>
-                <td style="text-align: center; vertical-align: middle">{course_type}</td>
-                <td style="text-align: center; vertical-align: middle">{pres_type}</td>
-                <td style="text-align: center; vertical-align: middle">{order_type}</td>
-                <td style="text-align: right; vertical-align: middle">{pres_days}</td>
-                <td style="text-align: center; vertical-align: middle">{ins_code}</td>
-                <td colspan="3" style="text-align: center; vertical-align: middle">{order_name}</td>
-                <td></td>
-                <td style="text-align: center; vertical-align: middle; font-size:7px">{start_date}</td>
-                <td style="text-align: center; vertical-align: middle; font-size:7px">{stop_date}</td>
-                <td style="text-align: center; vertical-align: middle; font-size:7px">{doctor_id}</td>
-                <td></td>
-                <td></td>
-                <td style="text-align: right; vertical-align: middle">{dosage}</td>
-                <td style="text-align: right; vertical-align: middle">{percent}</td>
-                <td style="text-align: center; vertical-align: middle">{usage}</td>
-                <td style="text-align: right; vertical-align: middle">{total_dosage}</td>
-                <td style="text-align: right; vertical-align: middle">{unit_price}</td>
-                <td style="text-align: right; vertical-align: middle">{amount}</td>
+                <td width="3%" style="text-align: center; vertical-align: middle">{sequence}</td>
+                <td width="3%" style="text-align: center; vertical-align: middle">{clinic_class}</td>
+                <td width="4%" style="text-align: center; vertical-align: middle">{course_type}</td>
+                <td width="3%" style="text-align: center; vertical-align: middle">{pres_type}</td>
+                <td width="3%" style="text-align: center; vertical-align: middle">{order_type}</td>
+                <td width="3%" style="text-align: right; vertical-align: middle">{pres_days}</td>
+                <td width="6%" style="text-align: center; vertical-align: middle">{ins_code}</td>
+                <td width="18%" style="text-align: center; vertical-align: middle">{order_name}</td>
+                <td width="5%"></td>
+                <td width="6%" style="text-align: center; vertical-align: middle; font-size:7px">{start_date}</td>
+                <td width="6%" style="text-align: center; vertical-align: middle; font-size:7px">{stop_date}</td>
+                <td width="6%" style="text-align: center; vertical-align: middle; font-size:7px">{doctor_id}</td>
+                <td width="3%"></td>
+                <td width="3%"></td>
+                <td width="4%" style="text-align: right; vertical-align: middle">{dosage}</td>
+                <td width="5%" style="text-align: right; vertical-align: middle">{percent}</td>
+                <td width="3%" style="text-align: center; vertical-align: middle">{usage}</td>
+                <td width="4%" style="text-align: right; vertical-align: middle">{total_dosage}</td>
+                <td width="4%" style="text-align: right; vertical-align: middle">{unit_price}</td>
+                <td width="5%" style="text-align: right; vertical-align: middle">{amount}</td>
                 <td></td> 
             </tr>
         '''.format(

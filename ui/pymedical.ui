@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1212</width>
-    <height>941</height>
+    <width>1234</width>
+    <height>889</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -39,76 +39,18 @@
        <number>1</number>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_10">
-       <item>
-        <widget class="QLabel" name="label_title">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="font">
-          <font>
-           <weight>50</weight>
-           <italic>false</italic>
-           <bold>false</bold>
-          </font>
-         </property>
-         <property name="styleSheet">
-          <string notr="true"/>
-         </property>
-         <property name="frameShape">
-          <enum>QFrame::NoFrame</enum>
-         </property>
-         <property name="frameShadow">
-          <enum>QFrame::Plain</enum>
-         </property>
-         <property name="lineWidth">
-          <number>1</number>
-         </property>
-         <property name="midLineWidth">
-          <number>0</number>
-         </property>
-         <property name="text">
-          <string>滿地富醫療資訊管理系統</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-         <property name="margin">
-          <number>0</number>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLabel" name="label_eng_title">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="font">
-          <font>
-           <weight>50</weight>
-           <italic>false</italic>
-           <bold>false</bold>
-          </font>
-         </property>
-         <property name="styleSheet">
-          <string notr="true"/>
-         </property>
-         <property name="text">
-          <string>Bountiful Medical Info System</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-         <property name="margin">
-          <number>0</number>
-         </property>
-        </widget>
-       </item>
+       <property name="leftMargin">
+        <number>6</number>
+       </property>
+       <property name="topMargin">
+        <number>6</number>
+       </property>
+       <property name="rightMargin">
+        <number>6</number>
+       </property>
+       <property name="bottomMargin">
+        <number>6</number>
+       </property>
        <item>
         <widget class="QFrame" name="frame_registration">
          <property name="styleSheet">
@@ -546,32 +488,19 @@
      </widget>
     </item>
     <item>
-     <layout class="QVBoxLayout" name="verticalLayout_9">
-      <property name="leftMargin">
+     <widget class="QTabWidget" name="tabWidget_window">
+      <property name="currentIndex">
        <number>0</number>
       </property>
-      <property name="topMargin">
-       <number>6</number>
+      <property name="movable">
+       <bool>true</bool>
       </property>
-      <property name="rightMargin">
-       <number>6</number>
-      </property>
-      <item>
-       <widget class="QTabWidget" name="tabWidget_window">
-        <property name="currentIndex">
-         <number>0</number>
-        </property>
-        <property name="movable">
-         <bool>true</bool>
-        </property>
-        <widget class="QWidget" name="tab">
-         <attribute name="title">
-          <string>首頁</string>
-         </attribute>
-        </widget>
-       </widget>
-      </item>
-     </layout>
+      <widget class="QWidget" name="tab">
+       <attribute name="title">
+        <string>首頁</string>
+       </attribute>
+      </widget>
+     </widget>
     </item>
    </layout>
   </widget>
@@ -580,7 +509,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1212</width>
+     <width>1234</width>
      <height>26</height>
     </rect>
    </property>

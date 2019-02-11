@@ -68,7 +68,8 @@ class DialogMedicalRecordPastHistory(QtWidgets.QDialog):
             self.ui.checkBox_diagnostic.isChecked(),
             self.ui.checkBox_remark.isChecked(),
             self.ui.checkBox_disease.isChecked(),
-            self.ui.checkBox_prescript.isChecked(),
+            self.ui.checkBox_ins_prescript.isChecked(),
+            self.ui.checkBox_self_prescript.isChecked(),
         )
 
     def get_past_case_key(self):
@@ -142,6 +143,28 @@ class DialogMedicalRecordPastHistory(QtWidgets.QDialog):
 
     def _past_history_changed(self):
         case_key = self.table_widget_past_history.field_value(0)
+        ins_type = self.table_widget_past_history.field_value(2)
+        self._set_copy_prescript_check_box(ins_type)
         html = case_utils.get_medical_record_html(self.database, self.system_settings, case_key)
         self.ui.textEdit_medical_record.setHtml(html)
 
+    def _set_copy_prescript_check_box(self, ins_type):
+        if ins_type == '健保':
+            copy_ins_prescript = True
+        else:
+            copy_ins_prescript = False
+
+        case_key = self.table_widget_past_history.field_value(0)
+        sql = 'SELECT MedicineSet FROM prescript WHERE CaseKey = {0} AND MedicineSet >= 2'.format(case_key)
+        rows = self.database.select_record(sql)
+        if len(rows) > 0:
+            copy_self_prescript = True
+        else:
+            copy_self_prescript = False
+
+        self.ui.checkBox_ins_prescript.setEnabled(copy_ins_prescript)
+        self.ui.checkBox_ins_prescript.setChecked(copy_ins_prescript)
+        self.ui.checkBox_self_prescript.setEnabled(copy_self_prescript)
+        self.ui.checkBox_self_prescript.setChecked(copy_self_prescript)
+        if copy_self_prescript:
+            self.ui.checkBox_self_prescript.setChecked(False)  # 預設不要拷貝

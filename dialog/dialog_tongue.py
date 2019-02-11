@@ -119,3 +119,5 @@ class DialogTongue(QtWidgets.QDialog):
             else selected_tongue
         self.text_edit.setText(string_utils.get_str(tongue, 'utf8'))
         self.text_edit.document().setModified(True)
+
+        self.parent.reset_query()

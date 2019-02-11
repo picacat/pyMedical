@@ -52,6 +52,7 @@ UI_INS_JUDGE = "ins_judge.ui"
 UI_INS_APPLY_CALCULATED_DATA = "ins_apply_calculated_data.ui"
 UI_INS_APPLY_TOTAL_FEE = "ins_apply_total_fee.ui"
 UI_INS_CHECK_APPLY_FEE = "ins_check_apply_fee.ui"
+UI_INS_APPLY_SCHEDULE_TABLE = "ins_apply_schedule_table.ui"
 
 UI_DOCTOR_NURSE_TABLE = "doctor_nurse_table.ui"
 
@@ -192,13 +193,26 @@ def set_completer(database, sql, field, widget):
     rows = database.select_record(sql)
     completer_list = []
     for row in rows:
-        completer_list.append(row[field])
+        if type(field) is list:
+            field_name = ''
+            for f in field:
+                field_name += row[f]
+        else:
+            field_name = row[field]
+
+        completer_list.append(field_name)
 
     model = QtCore.QStringListModel()
     model.setStringList(completer_list)
     completer = QtWidgets.QCompleter()
     completer.setModel(model)
-    widget.setCompleter(completer)
+    completer.setCompletionColumn(2)
+
+    if type(widget) is list:
+        for w in widget:
+            w.setCompleter(completer)
+    else:
+        widget.setCompleter(completer)
 
 def set_table_widget_field_icon(table_widget, row_no, col_no, icon_file_name,
                                 property_name, property_value, function_call):

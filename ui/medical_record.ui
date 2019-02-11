@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>TemplateWindow</class>
- <widget class="QMainWindow" name="TemplateWindow">
+ <class>MedicalRecordWindow</class>
+ <widget class="QMainWindow" name="MedicalRecordWindow">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -14,639 +14,690 @@
    <string>病歷內容</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QVBoxLayout" name="verticalLayout_13">
+   <layout class="QVBoxLayout" name="verticalLayout_5">
+    <property name="leftMargin">
+     <number>5</number>
+    </property>
+    <property name="topMargin">
+     <number>10</number>
+    </property>
+    <property name="rightMargin">
+     <number>5</number>
+    </property>
+    <property name="bottomMargin">
+     <number>10</number>
+    </property>
     <item>
-     <layout class="QGridLayout" name="gridLayout">
-      <property name="leftMargin">
-       <number>6</number>
+     <widget class="QTabWidget" name="tabWidget_medical">
+      <property name="currentIndex">
+       <number>0</number>
       </property>
-      <property name="topMargin">
-       <number>6</number>
-      </property>
-      <property name="rightMargin">
-       <number>6</number>
-      </property>
-      <item row="0" column="0">
-       <widget class="QTabWidget" name="tabWidget_medical">
-        <property name="currentIndex">
-         <number>0</number>
-        </property>
-        <widget class="QWidget" name="tab_medical_record">
-         <attribute name="title">
-          <string>診療資料</string>
-         </attribute>
-         <layout class="QVBoxLayout" name="verticalLayout">
+      <widget class="QWidget" name="tab_medical_record">
+       <attribute name="title">
+        <string>診療資料</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout">
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_2">
           <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_2">
+           <layout class="QVBoxLayout" name="verticalLayout_8">
             <item>
-             <widget class="QFrame" name="verticalFrame_diagnostic">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
+             <layout class="QHBoxLayout" name="horizontalLayout_6">
+              <item>
+               <widget class="QLabel" name="label_8">
+                <property name="text">
+                 <string>  主訴  </string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QToolButton" name="toolButton_symptom">
+                <property name="text">
+                 <string>...</string>
+                </property>
+                <property name="icon">
+                 <iconset>
+                  <normaloff>../icons/help-contents.svg</normaloff>../icons/help-contents.svg</iconset>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <spacer name="horizontalSpacer_2">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <widget class="QTextEdit" name="textEdit_symptom">
+              <property name="autoFillBackground">
+               <bool>false</bool>
               </property>
-              <layout class="QVBoxLayout" name="verticalLayout_2">
-               <property name="spacing">
-                <number>0</number>
-               </property>
-               <property name="leftMargin">
-                <number>0</number>
-               </property>
-               <property name="topMargin">
-                <number>0</number>
-               </property>
-               <property name="rightMargin">
-                <number>0</number>
-               </property>
-               <property name="bottomMargin">
-                <number>0</number>
-               </property>
-               <item>
-                <widget class="QGroupBox" name="groupBox_symptom">
-                 <property name="title">
-                  <string>主訴</string>
-                 </property>
-                 <property name="checkable">
-                  <bool>false</bool>
-                 </property>
-                 <property name="checked">
-                  <bool>false</bool>
-                 </property>
-                 <layout class="QHBoxLayout" name="horizontalLayout_3">
-                  <item>
-                   <widget class="QTextEdit" name="textEdit_symptom">
-                    <property name="autoFillBackground">
-                     <bool>false</bool>
-                    </property>
-                   </widget>
-                  </item>
-                 </layout>
-                </widget>
-               </item>
-               <item>
-                <widget class="QGroupBox" name="groupBox_tongue">
-                 <property name="maximumSize">
-                  <size>
-                   <width>16777215</width>
-                   <height>124</height>
-                  </size>
-                 </property>
-                 <property name="title">
-                  <string>舌診</string>
-                 </property>
-                 <layout class="QVBoxLayout" name="verticalLayout_8">
-                  <item>
-                   <widget class="QTextEdit" name="textEdit_tongue"/>
-                  </item>
-                 </layout>
-                </widget>
-               </item>
-               <item>
-                <widget class="QGroupBox" name="groupBox_pulse">
-                 <property name="maximumSize">
-                  <size>
-                   <width>16777215</width>
-                   <height>124</height>
-                  </size>
-                 </property>
-                 <property name="title">
-                  <string>脈象</string>
-                 </property>
-                 <layout class="QVBoxLayout" name="verticalLayout_9">
-                  <item>
-                   <widget class="QTextEdit" name="textEdit_pulse"/>
-                  </item>
-                 </layout>
-                </widget>
-               </item>
-               <item>
-                <widget class="QGroupBox" name="groupBox_remark">
-                 <property name="maximumSize">
-                  <size>
-                   <width>16777215</width>
-                   <height>146</height>
-                  </size>
-                 </property>
-                 <property name="title">
-                  <string>備註</string>
-                 </property>
-                 <layout class="QVBoxLayout" name="verticalLayout_10">
-                  <item>
-                   <widget class="QTextEdit" name="textEdit_remark"/>
-                  </item>
-                 </layout>
-                </widget>
-               </item>
-              </layout>
              </widget>
             </item>
             <item>
-             <widget class="QFrame" name="verticalFrame_prescript">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
+             <layout class="QHBoxLayout" name="horizontalLayout_3">
+              <item>
+               <widget class="QLabel" name="label_10">
+                <property name="text">
+                 <string>  舌診  </string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QToolButton" name="toolButton_tongue">
+                <property name="text">
+                 <string>...</string>
+                </property>
+                <property name="icon">
+                 <iconset>
+                  <normaloff>../icons/help-contents.svg</normaloff>../icons/help-contents.svg</iconset>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <spacer name="horizontalSpacer_5">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <widget class="QTextEdit" name="textEdit_tongue">
               <property name="maximumSize">
                <size>
-                <width>630</width>
-                <height>16777215</height>
+                <width>16777215</width>
+                <height>100</height>
                </size>
               </property>
-              <layout class="QVBoxLayout" name="verticalLayout_11">
-               <property name="spacing">
-                <number>6</number>
-               </property>
-               <property name="leftMargin">
-                <number>0</number>
-               </property>
-               <property name="topMargin">
-                <number>0</number>
-               </property>
-               <property name="rightMargin">
-                <number>0</number>
-               </property>
-               <property name="bottomMargin">
-                <number>0</number>
-               </property>
-               <item>
-                <widget class="QGroupBox" name="groupBox_diagnostic">
-                 <property name="title">
-                  <string>診斷</string>
-                 </property>
-                 <layout class="QVBoxLayout" name="verticalLayout_7">
-                  <item>
-                   <layout class="QGridLayout" name="gridLayout_2" columnstretch="0,0,0,0">
-                    <item row="0" column="0">
-                     <widget class="QLabel" name="label">
-                      <property name="frameShape">
-                       <enum>QFrame::NoFrame</enum>
-                      </property>
-                      <property name="frameShadow">
-                       <enum>QFrame::Plain</enum>
-                      </property>
-                      <property name="text">
-                       <string>主診斷</string>
-                      </property>
-                      <property name="alignment">
-                       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                      </property>
-                      <property name="openExternalLinks">
-                       <bool>false</bool>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="4" column="0">
-                     <widget class="QLabel" name="label_5">
-                      <property name="text">
-                       <string>治則</string>
-                      </property>
-                      <property name="alignment">
-                       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="3" column="0">
-                     <widget class="QLabel" name="label_4">
-                      <property name="text">
-                       <string>辨證</string>
-                      </property>
-                      <property name="alignment">
-                       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="2" column="1">
-                     <widget class="QLineEdit" name="lineEdit_disease_code3">
-                      <property name="maximumSize">
-                       <size>
-                        <width>120</width>
-                        <height>16777215</height>
-                       </size>
-                      </property>
-                      <property name="maxLength">
-                       <number>10</number>
-                      </property>
-                      <property name="clearButtonEnabled">
-                       <bool>true</bool>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="1" column="0">
-                     <widget class="QLabel" name="label_2">
-                      <property name="text">
-                       <string>次診斷1</string>
-                      </property>
-                      <property name="alignment">
-                       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="2" column="0">
-                     <widget class="QLabel" name="label_3">
-                      <property name="text">
-                       <string>次診斷2</string>
-                      </property>
-                      <property name="alignment">
-                       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="1" column="1">
-                     <widget class="QLineEdit" name="lineEdit_disease_code2">
-                      <property name="maximumSize">
-                       <size>
-                        <width>120</width>
-                        <height>16777215</height>
-                       </size>
-                      </property>
-                      <property name="maxLength">
-                       <number>10</number>
-                      </property>
-                      <property name="clearButtonEnabled">
-                       <bool>true</bool>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="0" column="1">
-                     <widget class="QLineEdit" name="lineEdit_disease_code1">
-                      <property name="maximumSize">
-                       <size>
-                        <width>120</width>
-                        <height>16777215</height>
-                       </size>
-                      </property>
-                      <property name="text">
-                       <string/>
-                      </property>
-                      <property name="maxLength">
-                       <number>10</number>
-                      </property>
-                      <property name="clearButtonEnabled">
-                       <bool>true</bool>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="1" column="2">
-                     <widget class="QLineEdit" name="lineEdit_disease_name2">
-                      <property name="focusPolicy">
-                       <enum>Qt::NoFocus</enum>
-                      </property>
-                      <property name="readOnly">
-                       <bool>true</bool>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="0" column="2">
-                     <widget class="QLineEdit" name="lineEdit_disease_name1">
-                      <property name="focusPolicy">
-                       <enum>Qt::NoFocus</enum>
-                      </property>
-                      <property name="readOnly">
-                       <bool>true</bool>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="3" column="1" colspan="2">
-                     <widget class="QLineEdit" name="lineEdit_distinguish">
-                      <property name="clearButtonEnabled">
-                       <bool>true</bool>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="2" column="2">
-                     <widget class="QLineEdit" name="lineEdit_disease_name3">
-                      <property name="focusPolicy">
-                       <enum>Qt::NoFocus</enum>
-                      </property>
-                      <property name="readOnly">
-                       <bool>true</bool>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="4" column="1" colspan="2">
-                     <widget class="QLineEdit" name="lineEdit_cure">
-                      <property name="clearButtonEnabled">
-                       <bool>true</bool>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="0" column="3">
-                     <widget class="QToolButton" name="toolButton_disease1">
-                      <property name="text">
-                       <string>...</string>
-                      </property>
-                      <property name="icon">
-                       <iconset>
-                        <normaloff>../icons/help-contents.svg</normaloff>../icons/help-contents.svg</iconset>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="1" column="3">
-                     <widget class="QToolButton" name="toolButton_disease2">
-                      <property name="text">
-                       <string>...</string>
-                      </property>
-                      <property name="icon">
-                       <iconset>
-                        <normaloff>../icons/help-contents.svg</normaloff>../icons/help-contents.svg</iconset>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="2" column="3">
-                     <widget class="QToolButton" name="toolButton_disease3">
-                      <property name="text">
-                       <string>...</string>
-                      </property>
-                      <property name="icon">
-                       <iconset>
-                        <normaloff>../icons/help-contents.svg</normaloff>../icons/help-contents.svg</iconset>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="3" column="3">
-                     <widget class="QToolButton" name="toolButton_distincts">
-                      <property name="text">
-                       <string>...</string>
-                      </property>
-                      <property name="icon">
-                       <iconset>
-                        <normaloff>../icons/help-hint.svg</normaloff>../icons/help-hint.svg</iconset>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="4" column="3">
-                     <widget class="QToolButton" name="toolButton_cure">
-                      <property name="text">
-                       <string>...</string>
-                      </property>
-                      <property name="icon">
-                       <iconset>
-                        <normaloff>../icons/help-hint.svg</normaloff>../icons/help-hint.svg</iconset>
-                      </property>
-                     </widget>
-                    </item>
-                   </layout>
-                  </item>
-                 </layout>
-                </widget>
-               </item>
-               <item>
-                <widget class="QTabWidget" name="tabWidget_prescript">
-                 <property name="currentIndex">
-                  <number>-1</number>
-                 </property>
-                 <property name="documentMode">
-                  <bool>false</bool>
-                 </property>
-                 <property name="tabsClosable">
-                  <bool>true</bool>
-                 </property>
-                 <property name="movable">
-                  <bool>true</bool>
-                 </property>
-                </widget>
-               </item>
-              </layout>
              </widget>
             </item>
             <item>
-             <widget class="QFrame" name="verticalFrame_past_history">
+             <layout class="QHBoxLayout" name="horizontalLayout_4">
+              <item>
+               <widget class="QLabel" name="label_13">
+                <property name="text">
+                 <string>  脈象  </string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QToolButton" name="toolButton_pulse">
+                <property name="text">
+                 <string>...</string>
+                </property>
+                <property name="icon">
+                 <iconset>
+                  <normaloff>../icons/help-contents.svg</normaloff>../icons/help-contents.svg</iconset>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <spacer name="horizontalSpacer_6">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <widget class="QTextEdit" name="textEdit_pulse">
               <property name="maximumSize">
                <size>
-                <width>400</width>
-                <height>16777215</height>
+                <width>16777215</width>
+                <height>100</height>
                </size>
               </property>
-              <layout class="QVBoxLayout" name="verticalLayout_4">
-               <property name="spacing">
-                <number>6</number>
-               </property>
-               <property name="leftMargin">
-                <number>0</number>
-               </property>
-               <property name="topMargin">
-                <number>0</number>
-               </property>
-               <property name="rightMargin">
-                <number>0</number>
-               </property>
-               <property name="bottomMargin">
-                <number>0</number>
-               </property>
-               <item>
-                <widget class="QGroupBox" name="groupBox_patient">
-                 <property name="title">
-                  <string>病患基本資料</string>
-                 </property>
-                 <layout class="QVBoxLayout" name="verticalLayout_3">
-                  <item>
-                   <layout class="QGridLayout" name="gridLayout_3">
-                    <item row="0" column="2">
-                     <widget class="QLabel" name="label_15">
-                      <property name="font">
-                       <font>
-                        <weight>50</weight>
-                        <bold>false</bold>
-                       </font>
-                      </property>
-                      <property name="text">
-                       <string>門診:</string>
-                      </property>
-                      <property name="alignment">
-                       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="1" column="0">
-                     <widget class="QLabel" name="label_6">
-                      <property name="font">
-                       <font>
-                        <weight>50</weight>
-                        <bold>false</bold>
-                       </font>
-                      </property>
-                      <property name="text">
-                       <string>姓名:</string>
-                      </property>
-                      <property name="alignment">
-                       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="1" column="1">
-                     <widget class="QLabel" name="label_patient_name">
-                      <property name="text">
-                       <string>TextLabel</string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="0" column="0">
-                     <widget class="QLabel" name="label_7">
-                      <property name="font">
-                       <font>
-                        <weight>50</weight>
-                        <bold>false</bold>
-                       </font>
-                      </property>
-                      <property name="text">
-                       <string>日期:</string>
-                      </property>
-                      <property name="alignment">
-                       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="0" column="1">
-                     <widget class="QLabel" name="label_case_date">
-                      <property name="text">
-                       <string>TextLabel</string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="0" column="3">
-                     <widget class="QLabel" name="label_ins_type">
-                      <property name="text">
-                       <string>TextLabel</string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="1" column="2">
-                     <widget class="QLabel" name="label_12">
-                      <property name="font">
-                       <font>
-                        <weight>50</weight>
-                        <bold>false</bold>
-                       </font>
-                      </property>
-                      <property name="text">
-                       <string>診號:</string>
-                      </property>
-                      <property name="alignment">
-                       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="1" column="3">
-                     <widget class="QLabel" name="label_regist_no">
-                      <property name="text">
-                       <string>TextLabel</string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="2" column="2">
-                     <widget class="QLabel" name="label_11">
-                      <property name="font">
-                       <font>
-                        <weight>50</weight>
-                        <bold>false</bold>
-                       </font>
-                      </property>
-                      <property name="text">
-                       <string>卡序:</string>
-                      </property>
-                      <property name="alignment">
-                       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="2" column="3">
-                     <widget class="QLabel" name="label_card">
-                      <property name="text">
-                       <string>TextLabel</string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="2" column="1">
-                     <widget class="QLabel" name="label_share_type">
-                      <property name="text">
-                       <string>TextLabel</string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="2" column="0">
-                     <widget class="QLabel" name="label_9">
-                      <property name="font">
-                       <font>
-                        <weight>50</weight>
-                        <bold>false</bold>
-                       </font>
-                      </property>
-                      <property name="text">
-                       <string>負擔:</string>
-                      </property>
-                      <property name="alignment">
-                       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="0" column="4">
-                     <spacer name="horizontalSpacer">
-                      <property name="orientation">
-                       <enum>Qt::Horizontal</enum>
-                      </property>
-                      <property name="sizeHint" stdset="0">
-                       <size>
-                        <width>40</width>
-                        <height>20</height>
-                       </size>
-                      </property>
-                     </spacer>
-                    </item>
-                    <item row="1" column="4">
-                     <spacer name="horizontalSpacer_3">
-                      <property name="orientation">
-                       <enum>Qt::Horizontal</enum>
-                      </property>
-                      <property name="sizeHint" stdset="0">
-                       <size>
-                        <width>40</width>
-                        <height>20</height>
-                       </size>
-                      </property>
-                     </spacer>
-                    </item>
-                    <item row="2" column="4">
-                     <spacer name="horizontalSpacer_4">
-                      <property name="orientation">
-                       <enum>Qt::Horizontal</enum>
-                      </property>
-                      <property name="sizeHint" stdset="0">
-                       <size>
-                        <width>40</width>
-                        <height>20</height>
-                       </size>
-                      </property>
-                     </spacer>
-                    </item>
-                   </layout>
-                  </item>
-                 </layout>
-                </widget>
-               </item>
-               <item>
-                <widget class="QTabWidget" name="tabWidget_past_record">
-                 <property name="currentIndex">
-                  <number>-1</number>
-                 </property>
-                </widget>
-               </item>
-              </layout>
+             </widget>
+            </item>
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_5">
+              <item>
+               <widget class="QLabel" name="label_14">
+                <property name="text">
+                 <string>  備註  </string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QToolButton" name="toolButton_remark">
+                <property name="text">
+                 <string>...</string>
+                </property>
+                <property name="icon">
+                 <iconset>
+                  <normaloff>../icons/help-contents.svg</normaloff>../icons/help-contents.svg</iconset>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <spacer name="horizontalSpacer_7">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <widget class="QTextEdit" name="textEdit_remark">
+              <property name="maximumSize">
+               <size>
+                <width>16777215</width>
+                <height>100</height>
+               </size>
+              </property>
              </widget>
             </item>
            </layout>
           </item>
+          <item>
+           <layout class="QVBoxLayout" name="verticalLayout_2">
+            <item>
+             <widget class="QGroupBox" name="groupBox_diagnostic">
+              <property name="title">
+               <string>診斷</string>
+              </property>
+              <layout class="QGridLayout" name="gridLayout">
+               <property name="leftMargin">
+                <number>9</number>
+               </property>
+               <property name="topMargin">
+                <number>9</number>
+               </property>
+               <property name="rightMargin">
+                <number>9</number>
+               </property>
+               <property name="bottomMargin">
+                <number>9</number>
+               </property>
+               <item row="4" column="0">
+                <widget class="QLabel" name="label_5">
+                 <property name="text">
+                  <string>治則</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item row="2" column="3">
+                <widget class="QToolButton" name="toolButton_disease3">
+                 <property name="text">
+                  <string>...</string>
+                 </property>
+                 <property name="icon">
+                  <iconset>
+                   <normaloff>../icons/help-contents.svg</normaloff>../icons/help-contents.svg</iconset>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="1">
+                <widget class="QLineEdit" name="lineEdit_disease_code1">
+                 <property name="maximumSize">
+                  <size>
+                   <width>120</width>
+                   <height>16777215</height>
+                  </size>
+                 </property>
+                 <property name="text">
+                  <string/>
+                 </property>
+                 <property name="maxLength">
+                  <number>10</number>
+                 </property>
+                 <property name="clearButtonEnabled">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="0">
+                <widget class="QLabel" name="label">
+                 <property name="frameShape">
+                  <enum>QFrame::NoFrame</enum>
+                 </property>
+                 <property name="frameShadow">
+                  <enum>QFrame::Plain</enum>
+                 </property>
+                 <property name="text">
+                  <string>主診斷</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                 </property>
+                 <property name="openExternalLinks">
+                  <bool>false</bool>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="0">
+                <widget class="QLabel" name="label_2">
+                 <property name="text">
+                  <string>次診斷1</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="2">
+                <widget class="QLineEdit" name="lineEdit_disease_name1">
+                 <property name="focusPolicy">
+                  <enum>Qt::NoFocus</enum>
+                 </property>
+                 <property name="readOnly">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+               <item row="3" column="0">
+                <widget class="QLabel" name="label_4">
+                 <property name="text">
+                  <string>辨證</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="3">
+                <widget class="QToolButton" name="toolButton_disease2">
+                 <property name="text">
+                  <string>...</string>
+                 </property>
+                 <property name="icon">
+                  <iconset>
+                   <normaloff>../icons/help-contents.svg</normaloff>../icons/help-contents.svg</iconset>
+                 </property>
+                </widget>
+               </item>
+               <item row="2" column="1">
+                <widget class="QLineEdit" name="lineEdit_disease_code3">
+                 <property name="maximumSize">
+                  <size>
+                   <width>120</width>
+                   <height>16777215</height>
+                  </size>
+                 </property>
+                 <property name="maxLength">
+                  <number>10</number>
+                 </property>
+                 <property name="clearButtonEnabled">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="1">
+                <widget class="QLineEdit" name="lineEdit_disease_code2">
+                 <property name="maximumSize">
+                  <size>
+                   <width>120</width>
+                   <height>16777215</height>
+                  </size>
+                 </property>
+                 <property name="maxLength">
+                  <number>10</number>
+                 </property>
+                 <property name="clearButtonEnabled">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+               <item row="2" column="2">
+                <widget class="QLineEdit" name="lineEdit_disease_name3">
+                 <property name="focusPolicy">
+                  <enum>Qt::NoFocus</enum>
+                 </property>
+                 <property name="readOnly">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+               <item row="4" column="3">
+                <widget class="QToolButton" name="toolButton_cure">
+                 <property name="text">
+                  <string>...</string>
+                 </property>
+                 <property name="icon">
+                  <iconset>
+                   <normaloff>../icons/help-hint.svg</normaloff>../icons/help-hint.svg</iconset>
+                 </property>
+                </widget>
+               </item>
+               <item row="3" column="1" colspan="2">
+                <widget class="QLineEdit" name="lineEdit_distinguish">
+                 <property name="clearButtonEnabled">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+               <item row="2" column="0">
+                <widget class="QLabel" name="label_3">
+                 <property name="text">
+                  <string>次診斷2</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="3">
+                <widget class="QToolButton" name="toolButton_disease1">
+                 <property name="text">
+                  <string>...</string>
+                 </property>
+                 <property name="icon">
+                  <iconset>
+                   <normaloff>../icons/help-contents.svg</normaloff>../icons/help-contents.svg</iconset>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="2">
+                <widget class="QLineEdit" name="lineEdit_disease_name2">
+                 <property name="focusPolicy">
+                  <enum>Qt::NoFocus</enum>
+                 </property>
+                 <property name="readOnly">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+               <item row="3" column="3">
+                <widget class="QToolButton" name="toolButton_distincts">
+                 <property name="text">
+                  <string>...</string>
+                 </property>
+                 <property name="icon">
+                  <iconset>
+                   <normaloff>../icons/help-hint.svg</normaloff>../icons/help-hint.svg</iconset>
+                 </property>
+                </widget>
+               </item>
+               <item row="4" column="1" colspan="2">
+                <widget class="QLineEdit" name="lineEdit_cure">
+                 <property name="clearButtonEnabled">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <widget class="QTabWidget" name="tabWidget_prescript">
+              <property name="currentIndex">
+               <number>-1</number>
+              </property>
+              <property name="documentMode">
+               <bool>false</bool>
+              </property>
+              <property name="tabsClosable">
+               <bool>true</bool>
+              </property>
+              <property name="movable">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <widget class="QFrame" name="verticalFrame_past_history">
+            <property name="maximumSize">
+             <size>
+              <width>400</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_4">
+             <property name="spacing">
+              <number>6</number>
+             </property>
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
+             <item>
+              <widget class="QGroupBox" name="groupBox_patient">
+               <property name="title">
+                <string>病患基本資料</string>
+               </property>
+               <layout class="QGridLayout" name="gridLayout_2">
+                <item row="0" column="1">
+                 <widget class="QLabel" name="label_case_date">
+                  <property name="text">
+                   <string>TextLabel</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="1">
+                 <widget class="QLabel" name="label_patient_name">
+                  <property name="text">
+                   <string>TextLabel</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="3">
+                 <widget class="QLabel" name="label_regist_no">
+                  <property name="text">
+                   <string>TextLabel</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="2">
+                 <widget class="QLabel" name="label_15">
+                  <property name="font">
+                   <font>
+                    <weight>50</weight>
+                    <bold>false</bold>
+                   </font>
+                  </property>
+                  <property name="text">
+                   <string>門診:</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="4">
+                 <spacer name="horizontalSpacer_3">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>40</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+                <item row="2" column="4">
+                 <spacer name="horizontalSpacer_4">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>40</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+                <item row="1" column="2">
+                 <widget class="QLabel" name="label_12">
+                  <property name="font">
+                   <font>
+                    <weight>50</weight>
+                    <bold>false</bold>
+                   </font>
+                  </property>
+                  <property name="text">
+                   <string>診號:</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                  </property>
+                 </widget>
+                </item>
+                <item row="2" column="0">
+                 <widget class="QLabel" name="label_9">
+                  <property name="font">
+                   <font>
+                    <weight>50</weight>
+                    <bold>false</bold>
+                   </font>
+                  </property>
+                  <property name="text">
+                   <string>負擔:</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="4">
+                 <spacer name="horizontalSpacer">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>40</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+                <item row="2" column="3">
+                 <widget class="QLabel" name="label_card">
+                  <property name="text">
+                   <string>TextLabel</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="2" column="2">
+                 <widget class="QLabel" name="label_11">
+                  <property name="font">
+                   <font>
+                    <weight>50</weight>
+                    <bold>false</bold>
+                   </font>
+                  </property>
+                  <property name="text">
+                   <string>卡序:</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="3">
+                 <widget class="QLabel" name="label_ins_type">
+                  <property name="text">
+                   <string>TextLabel</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="2" column="1">
+                 <widget class="QLabel" name="label_share_type">
+                  <property name="text">
+                   <string>TextLabel</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="0">
+                 <widget class="QLabel" name="label_7">
+                  <property name="font">
+                   <font>
+                    <weight>50</weight>
+                    <bold>false</bold>
+                   </font>
+                  </property>
+                  <property name="text">
+                   <string>日期:</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="0">
+                 <widget class="QLabel" name="label_6">
+                  <property name="font">
+                   <font>
+                    <weight>50</weight>
+                    <bold>false</bold>
+                   </font>
+                  </property>
+                  <property name="text">
+                   <string>姓名:</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
+             <item>
+              <widget class="QTabWidget" name="tabWidget_past_record">
+               <property name="currentIndex">
+                <number>-1</number>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
          </layout>
-        </widget>
-       </widget>
-      </item>
-     </layout>
+        </item>
+       </layout>
+      </widget>
+     </widget>
     </item>
    </layout>
   </widget>
-  <widget class="QStatusBar" name="statusbar"/>
   <widget class="QToolBar" name="toolBar">
    <property name="windowTitle">
     <string>toolBar</string>

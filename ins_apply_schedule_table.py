@@ -1,0 +1,351 @@
+#!/usr/bin/env python3
+#coding: utf-8
+
+from PyQt5 import QtWidgets
+import datetime
+import calendar
+
+from libs import ui_utils
+from libs import nhi_utils
+from libs import string_utils
+from libs import printer_utils
+from libs import personnel_utils
+
+
+# 醫護排班表 2019-01-04
+class InsApplyScheduleTable(QtWidgets.QMainWindow):
+    # 初始化
+    def __init__(self, parent=None, *args):
+        super(InsApplyScheduleTable, self).__init__(parent)
+        self.parent = parent
+        self.database = args[0]
+        self.system_settings = args[1]
+        self.apply_year = args[2]
+        self.apply_month = args[3]
+        self.start_date = args[4]
+        self.end_date = args[5]
+        self.period = args[6]
+        self.apply_type = args[7]
+        self.clinic_id = args[8]
+        self.ins_generate_date = args[9]
+        self.ins_calculated_table = args[10]
+        self.ui = None
+
+        self.apply_date = nhi_utils.get_apply_date(self.apply_year, self.apply_month)
+        self.apply_type_code = nhi_utils.APPLY_TYPE_CODE[self.apply_type]
+
+        self.month_table = self._get_month_table()
+        self.medical_record = self._get_medical_record()
+
+        self._set_ui()
+        self._set_signal()
+        self._display_schedule_table()
+
+    # 解構
+    def __del__(self):
+        self.close_all()
+
+    # 關閉
+    def close_all(self):
+        pass
+
+    def close_tab(self):
+        current_tab = self.parent.ui.tabWidget_window.currentIndex()
+        self.parent.close_tab(current_tab)
+
+    def close_app(self):
+        self.close_all()
+        self.close_tab()
+
+    # 設定GUI
+    def _set_ui(self):
+        self.ui = ui_utils.load_ui_file(ui_utils.UI_INS_APPLY_SCHEDULE_TABLE, self)
+
+    # 設定信號
+    def _set_signal(self):
+        self.ui.toolButton_print.clicked.connect(self._print_total_fee)
+
+    def _display_schedule_table(self):
+        html = self._get_html()
+        self.ui.textEdit_schedule_table.setHtml(html)
+
+    def _get_medical_record(self):
+        last_day = calendar.monthrange(self.apply_year, self.apply_month)[1]
+        medical_record = [
+            {'早班': [], '午班': [], '晚班': []} for x in range(last_day+1)
+        ]
+
+        start_date = '{0}-{1}-01 00:00:00'.format(self.apply_year, self.apply_month)
+        end_date = '{0}-{1}-{2} 23:59:59'.format(self.apply_year, self.apply_month, last_day)
+        sql = '''
+            SELECT DayOfMonth(CaseDate) AS CaseDay, Period, Doctor FROM cases
+            WHERE
+                (InsType = "健保") AND
+                (CaseDate BETWEEN "{0}" AND "{1}")
+            ORDER BY CaseDate
+        '''.format(start_date, end_date)
+
+        rows = self.database.select_record(sql)
+        for row in rows:
+            doctor_name = string_utils.xstr(row['Doctor'])
+            schedule_date = '{0}-{1}-{2}'.format(self.apply_year, self.apply_month, row['CaseDay'])
+            nurse = personnel_utils.get_doctor_nurse(self.database, schedule_date, row['Period'], doctor_name)
+            if nurse != '':
+                doctor_name += '({0})'.format(nurse)
+
+            if doctor_name not in medical_record[row['CaseDay']][row['Period']]:
+                medical_record[row['CaseDay']][row['Period']].append(doctor_name)
+
+        return medical_record
+
+    def _get_summary_html(self):
+        apply_date = '{0:0>3} 年 {1:0>2} 月 {2:0>2} 日'.format(
+            self.ins_generate_date.year()-1911,
+            self.ins_generate_date.month(),
+            self.ins_generate_date.day(),
+        )
+
+        doctor_count = 0
+        total_days = 0
+        doctor_html = ''
+        for row in self.ins_calculated_table:
+            if row['doctor_type'] == '醫師':
+                doctor_count += 1
+                total_days += row['diag_days']
+                doctor_html += '''
+                    <tr>
+                        <td>
+                            {doctor_name}醫師: {doctor_days}天
+                        </td>
+                    </tr>
+                '''.format(
+                    doctor_name=row['doctor_name'],
+                    doctor_days=row['diag_days'],
+                )
+
+        html = '''
+            <div>
+                <table align=center cellpadding="1" cellspacing="0" width="90%">
+                    <tbody>
+                        <br>
+                        <tr>
+                            <td>
+                                <h4>* 本月份專任醫師合計{doctor_count}名, 門診天數合計{total_days}天.</h4>
+                            </td>
+                        </tr>
+                        {doctor_html}
+                        <br>
+                        <br>
+                        <tr>
+                            <td><h4>負責醫師 (簽名):</h4></td>
+                            <td><h4>日期: {ins_generate_date}</h4></td>
+                        </hr>
+                    </tbody>
+                </table>
+            </div
+        '''.format(
+            doctor_count=doctor_count,
+            total_days=total_days,
+            doctor_html=doctor_html,
+            ins_generate_date=apply_date,
+        )
+
+        return html
+
+    def _get_html(self):
+        apply_date = '{0:0>3}年{1:0>2}月 {2}'.format(
+            self.apply_year-1911, self.apply_month, self.period
+        )
+
+        summary = self._get_summary_html()
+
+        html = '''
+        <html>
+        <body>
+            <div>
+                <h2 style="text-align: center;">{clinic_name}  醫師護士(月)門診排班表</h2>
+                <h4 style="text-align: center;">院所代號: {clinic_id}  電話: {telephone}  送核月份: {apply_date}</h4>
+            </div>
+            <div>
+                <table align=center cellpadding="1" cellspacing="0" width="100%" style="border-width: 1px; border-style: solid;">
+                    <thead>
+                        <tr>
+                            <th width="5%">周別</th>
+                            <th width="13%">週日</th>
+                            <th width="13%">週一</th>
+                            <th width="13%">週二</th>
+                            <th width="13%">週三</th>
+                            <th width="13%">週四</th>
+                            <th width="13%">週五</th>
+                            <th width="13%">週六</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {week_1}
+                        {week_2}
+                        {week_3}
+                        {week_4}
+                        {week_5}
+                        {week_6}
+                    </tbody>
+                </table>
+            </div> 
+            {summary}
+        </body>
+        </html>
+        '''.format(
+            clinic_id=self.clinic_id,
+            clinic_name=self.system_settings.field('院所名稱'),
+            apply_date=apply_date,
+            address=self.system_settings.field('院所地址'),
+            telephone=self.system_settings.field('院所電話'),
+            week_1=self._get_week_data(1),
+            week_2=self._get_week_data(2),
+            week_3=self._get_week_data(3),
+            week_4=self._get_week_data(4),
+            week_5=self._get_week_data(5),
+            week_6=self._get_week_data(6),
+            summary=summary,
+        )
+
+        return html
+
+    def _get_doctor_list(self, day, period):
+        if day == '':
+            return None
+
+        return self.medical_record[day][period]
+
+    def _get_week_data(self, week_no):
+        week_list = ['', '', '', '', '', '', '']
+        doctor_week = [
+            [None, None, None, None, None, None, None],
+            [None, None, None, None, None, None, None],
+            [None, None, None, None, None, None, None],
+        ]
+        doctor_list = [
+            ['', '', '', '', '', '', ''],
+            ['', '', '', '', '', '', ''],
+            ['', '', '', '', '', '', '']
+        ]
+
+        for day in range(1, len(self.month_table)+1):
+            week = self.month_table[day][0]
+            if week == week_no:
+                week_list[self.month_table[day][1]] = day
+                doctor_week[0][self.month_table[day][1]] = self._get_doctor_list(day, '早班')
+                doctor_week[1][self.month_table[day][1]] = self._get_doctor_list(day, '午班')
+                doctor_week[2][self.month_table[day][1]] = self._get_doctor_list(day, '晚班')
+
+        for i in range(len(doctor_week)):
+            for j in range(len(doctor_week[i])):
+                if doctor_week[i][j] is not None:
+                    doctor_list[i][j] = '<br>'.join(doctor_week[i][j])
+
+        html = self._get_week_html(week_list, doctor_list)
+
+        return html
+
+    def _get_week_html(self, week_list, doctor_list):
+        html = '''
+            <tr bgcolor="LightGray">
+                <td align=center>日期</td>
+                <td><b>{sun}</b></td>
+                <td><b>{mon}</b></td>
+                <td><b>{tue}</b></td>
+                <td><b>{wed}</b></td>
+                <td><b>{thu}</b></td>
+                <td><b>{fri}</b></td>
+                <td><b>{sat}</b></td>
+            </tr>
+            <tr>
+                <td style="text-align:center; vertical-align:middle">早診</td>
+                <td>{doctor_11}</td>
+                <td>{doctor_12}</td>
+                <td>{doctor_13}</td>
+                <td>{doctor_14}</td>
+                <td>{doctor_15}</td>
+                <td>{doctor_16}</td>
+                <td>{doctor_17}</td>
+            </tr>
+            <tr>
+                <td style="text-align:center; vertical-align:middle">午診</td>
+                <td>{doctor_21}</td>
+                <td>{doctor_22}</td>
+                <td>{doctor_23}</td>
+                <td>{doctor_24}</td>
+                <td>{doctor_25}</td>
+                <td>{doctor_26}</td>
+                <td>{doctor_27}</td>
+            </tr>
+            <tr>
+                <td style="text-align:center; vertical-align:middle">晚診</td>
+                <td>{doctor_31}</td>
+                <td>{doctor_32}</td>
+                <td>{doctor_33}</td>
+                <td>{doctor_34}</td>
+                <td>{doctor_35}</td>
+                <td>{doctor_36}</td>
+                <td>{doctor_37}</td>
+            </tr>
+        '''.format(
+            sun=week_list[0],
+            mon=week_list[1],
+            tue=week_list[2],
+            wed=week_list[3],
+            thu=week_list[4],
+            fri=week_list[5],
+            sat=week_list[6],
+            doctor_11=doctor_list[0][0],
+            doctor_12=doctor_list[0][1],
+            doctor_13=doctor_list[0][2],
+            doctor_14=doctor_list[0][3],
+            doctor_15=doctor_list[0][4],
+            doctor_16=doctor_list[0][5],
+            doctor_17=doctor_list[0][6],
+            doctor_21=doctor_list[1][0],
+            doctor_22=doctor_list[1][1],
+            doctor_23=doctor_list[1][2],
+            doctor_24=doctor_list[1][3],
+            doctor_25=doctor_list[1][4],
+            doctor_26=doctor_list[1][5],
+            doctor_27=doctor_list[1][6],
+            doctor_31=doctor_list[2][0],
+            doctor_32=doctor_list[2][1],
+            doctor_33=doctor_list[2][2],
+            doctor_34=doctor_list[2][3],
+            doctor_35=doctor_list[2][4],
+            doctor_36=doctor_list[2][5],
+            doctor_37=doctor_list[2][6],
+        )
+
+        return html
+
+    def _get_month_table(self):
+        last_day = calendar.monthrange(self.apply_year, self.apply_month)[1]
+
+        start_day = datetime.datetime(self.apply_year, self.apply_month, 1).weekday()
+        if start_day == 6:
+            start_day = 0
+        else:
+            start_day += 1
+
+        month_table = {}
+        week_no = 1
+        for i in range(1, last_day+1):
+            month_table[i] = (week_no, start_day)
+            start_day += 1
+            if start_day > 6:
+                start_day = 0
+                week_no += 1
+
+        return month_table
+
+    # 列印申請總表
+    def _print_total_fee(self):
+        html = self._get_html()
+
+        printer_utils.print_ins_apply_schedule_table(
+            self, self.database, self.system_settings, html
+        )
+

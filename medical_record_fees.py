@@ -39,6 +39,8 @@ class MedicalRecordFees(QtWidgets.QMainWindow):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_MEDICAL_RECORD_FEES, self)
         self.table_widget_ins_fees = table_widget.TableWidget(self.ui.tableWidget_ins_fees, self.database)
         self.table_widget_cash_fees = table_widget.TableWidget(self.ui.tableWidget_cash_fees, self.database)
+        self.ui.tableWidget_ins_fees.resizeRowsToContents()
+        self.ui.tableWidget_cash_fees.resizeRowsToContents()
         self._set_table_width()
         self.ins_table_headers = [
             '門診診察費', '內服藥費', '藥事服務費', '針灸治療費', '傷科治療費', '脫臼治療費',
@@ -65,8 +67,9 @@ class MedicalRecordFees(QtWidgets.QMainWindow):
 
 
     def _set_table_width(self):
-        self.table_widget_ins_fees.set_table_heading_width([90])
-        self.table_widget_cash_fees.set_table_heading_width([90])
+        self.table_widget_ins_fees.set_table_heading_width([75])
+        self.table_widget_cash_fees.set_table_heading_width([75])
+
 
     def _read_fees(self):
         sql = '''

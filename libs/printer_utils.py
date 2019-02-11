@@ -1,27 +1,27 @@
 import sys
-from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtWidgets import QInputDialog
 from PyQt5.QtPrintSupport import QPrinter, QPrinterInfo
-from PyQt5 import QtPrintSupport
 
-from libs import string_utils
-from libs import number_utils
-from libs import date_utils
-from libs import case_utils
 from libs import dialog_utils
-from libs import nhi_utils
 
 from printer.print_registration_form1 import *
 from printer.print_registration_form2 import *
 
 from printer.print_prescription_ins_form1 import *
+from printer.print_prescription_ins_form2 import *
+
 from printer.print_prescription_self_form1 import *
+
 from printer.print_receipt_ins_form1 import *
 from printer.print_receipt_self_form1 import *
+
 from printer.print_ins_apply_total_fee import *
 from printer.print_ins_apply_order import *
+from printer.print_ins_apply_schedule_table import *
+
 from printer.print_medical_records import *
 from printer.print_medical_chart import *
+
 from printer.print_certificate_diagnosis import *
 from printer.print_certificate_payment import *
 
@@ -33,6 +33,7 @@ PRINT_REGISTRATION_FORM = {
 
 PRINT_PRESCRIPTION_INS_FORM = {
     '01-11"中二刀健保處方箋': PrintPrescriptionInsForm1,
+    '02-2"健保處方箋': PrintPrescriptionInsForm2,
 }
 
 PRINT_PRESCRIPTION_SELF_FORM = {
@@ -42,6 +43,7 @@ PRINT_PRESCRIPTION_SELF_FORM = {
 PRINT_RECEIPT_INS_FORM = {
     '01-11"中二刀健保醫療收據': PrintReceiptInsForm1,
 }
+
 PRINT_RECEIPT_SELF_FORM = {
     '01-11"中二刀自費醫療收據': PrintReceiptSelfForm1,
 }
@@ -128,7 +130,7 @@ def get_case_html_1(database, case_key, background_color=None):
           <td>病歷號:{patient_key}</td>
           <td>姓名:{name} ({gender})</td>
           <td>身分證:{id}</td>
-          <td colspan="2">生日:{birthday} {age}</td>
+          <td colspan="2">生日:{birthday}</td>
         </tr> 
         <tr>
           <td>保險別:{ins_type}</td>
@@ -741,7 +743,7 @@ def print_self_receipt(parent, database, system_settings, case_key, print_type, 
 
 
 # 列印申請總表
-def print_ins_apply_total_fee(parent, database, system_settings, html):
+def print_ins_apply_total_fee(parent, database, system_settings, ins_total_fee):
     print_type = 'print'
 
     if system_settings.field('列印報表') == '詢問':
@@ -753,7 +755,7 @@ def print_ins_apply_total_fee(parent, database, system_settings, html):
 
     print_total_fee = PrintInsApplyTotalFee(
         parent, database, system_settings,
-        html
+        ins_total_fee
     )
 
     if print_type == 'print':
@@ -762,6 +764,29 @@ def print_ins_apply_total_fee(parent, database, system_settings, html):
         print_total_fee.preview()
 
     del print_total_fee
+
+
+# 列印申請總表
+def print_ins_apply_schedule_table(parent, database, system_settings, html):
+    print_type = 'print'
+
+    if system_settings.field('列印報表') == '詢問':
+        dialog = QtPrintSupport.QPrintDialog()
+        if dialog.exec() == QtWidgets.QDialog.Rejected:
+            return
+    elif system_settings.field('列印報表') == '預覽':
+        print_type = 'preview'
+
+    print_schedule_table = PrintInsApplyScheduleTable(
+        parent, database, system_settings, html
+    )
+
+    if print_type == 'print':
+        print_schedule_table.print()
+    else:
+        print_schedule_table.preview()
+
+    del print_schedule_table
 
 
 # 列印醫令明細
@@ -853,6 +878,7 @@ def print_medical_chart(parent, database, system_settings, patient_key, apply_da
 
     del print_chart
 
+
 # 列印診斷證明書
 def print_certificate_diagnosis(parent, database, system_settings, certificate_key, print_type=None):
     if print_type is None:  # 如果未指定列印方式，以系統設定為主
@@ -880,6 +906,7 @@ def print_certificate_diagnosis(parent, database, system_settings, certificate_k
         print_certificate.save_to_pdf()
 
     del print_certificate
+
 
 # 列印醫療費用證明書
 def print_certificate_payment(parent, database, system_settings, certificate_key, print_type=None):

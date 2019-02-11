@@ -556,7 +556,7 @@ class Registration(QtWidgets.QMainWindow):
         today = datetime.date.today()
         last_treat_date = (today - datetime.timedelta(days=30)).strftime('%Y-%m-%d 00:00:00')
         sql = '''
-            SELECT Card, Continuance FROM cases WHERE
+            SELECT Card, Continuance, XCard FROM cases WHERE
             (CaseDate >= "{0}") AND
             (PatientKey = {1}) AND
             (InsType = "健保") AND
@@ -574,6 +574,11 @@ class Registration(QtWidgets.QMainWindow):
         course = str(row['Continuance'] + 1)  # 療程自動續1次
         self.ui.comboBox_card.setCurrentText(row['Card'])
         self.ui.comboBox_course.setCurrentText(course)
+
+        # xcard = string_utils.xstr(row['XCard'])
+        # if xcard in nhi_utils.ABNORMAL_CARD:
+        #     xcard = nhi_utils.ABNORMAL_CARD_DICT[xcard]
+        #     self.ui.comboBox_card_abnormal.setCurrentText(xcard)
 
     # 掛號預檢
     def _registration_precheck(self, patient_key):

@@ -458,8 +458,10 @@ def get_prescript_record(database, system_settings, case_key):
     return all_prescript
 
 
+# 拷貝過去病歷
 def copy_past_medical_record(
-        database, widget, case_key, copy_diagnostic, copy_remark, copy_disease, copy_prescript):
+        database, widget, case_key, copy_diagnostic, copy_remark, copy_disease,
+        copy_ins_prescript, copy_self_prescript):
     sql = 'SELECT * FROM cases WHERE CaseKey = {0}'.format(case_key)
     rows = database.select_record(sql)
     if len(rows) <= 0:
@@ -476,17 +478,69 @@ def copy_past_medical_record(
         ui.textEdit_remark.setText(string_utils.get_str(row['Remark'], 'utf8'))
 
     if copy_disease:
-        ui.lineEdit_disease_code1.setText(string_utils.get_str(row['DiseaseCode1'], 'utf8'))
-        ui.lineEdit_disease_name1.setText(string_utils.get_str(row['DiseaseName1'], 'utf8'))
-        ui.lineEdit_disease_code2.setText(string_utils.get_str(row['DiseaseCode2'], 'utf8'))
-        ui.lineEdit_disease_name2.setText(string_utils.get_str(row['DiseaseName2'], 'utf8'))
-        ui.lineEdit_disease_code3.setText(string_utils.get_str(row['DiseaseCode3'], 'utf8'))
-        ui.lineEdit_disease_name3.setText(string_utils.get_str(row['DiseaseName3'], 'utf8'))
+        line_edit_disease = [
+            [ui.lineEdit_disease_code1, ui.lineEdit_disease_name1],
+            [ui.lineEdit_disease_code2, ui.lineEdit_disease_name2],
+            [ui.lineEdit_disease_code3, ui.lineEdit_disease_name3],
+        ]
 
-    if copy_prescript:
+        for i in range(3):
+            disease_code = string_utils.get_str(row['DiseaseCode{0}'.format(i+1)], 'utf8')
+            disease_name = string_utils.get_str(row['DiseaseName{0}'.format(i+1)], 'utf8')
+
+            if disease_code.isdigit():
+                disease_code = icd9_to_icd10(database, disease_code)
+
+            line_edit_disease[i][0].setText(disease_code)
+            line_edit_disease[i][1].setText(disease_name)
+
+    if copy_ins_prescript:
         if widget.tab_list[0] is not None:
-            widget.tab_list[0].copy_past_prescript(case_key)
+            widget.tab_list[0].copy_past_prescript(case_key, '病歷拷貝')
 
+    if copy_self_prescript:
+        sql = '''
+            SELECT * FROM prescript 
+            WHERE 
+                CaseKey = {0} AND
+                MedicineSet >= 2
+            GROUP BY MedicineSet ORDER BY MedicineSet
+        '''.format(case_key)
+        rows = database.select_record(sql)
+
+        widget.close_all_self_prescript_tabs()
+        for row in rows:
+            medicine_set = row['MedicineSet']
+            if medicine_set == 11:
+                continue
+
+            tab_index = medicine_set - 1
+            if widget.tab_list[tab_index] is None:
+                widget.add_prescript_tab(medicine_set)
+
+            pres_days = get_pres_days(database, case_key, medicine_set)
+            packages = get_packages(database, case_key, medicine_set)
+            instruction = get_instruction(database, case_key, medicine_set)
+
+            widget.tab_list[tab_index].copy_past_prescript(case_key)
+            widget.tab_list[tab_index].ui.comboBox_pres_days.setCurrentText(string_utils.xstr(pres_days))
+            widget.tab_list[tab_index].ui.comboBox_package.setCurrentText(string_utils.xstr(packages))
+            widget.tab_list[tab_index].ui.comboBox_instruction.setCurrentText(instruction)
+
+
+def icd9_to_icd10(database, icd9_code):
+    sql = '''
+        SELECT * FROM icdmap 
+        WHERE
+            ICD9Code = "{0}"
+        ORDER BY ICD10Code LIMIT 1
+    '''.format(icd9_code)
+
+    rows = database.select_record(sql)
+    if len(rows) <= 0:
+        return icd9_code
+
+    return string_utils.xstr(rows[0]['ICD10Code'])
 
 #  取得中(英)文病名
 def get_disease_name(database, disease_code, field_name=None):
@@ -511,12 +565,17 @@ def get_disease_name(database, disease_code, field_name=None):
     return disease_name
 
 
-def get_medicine_name(database, ins_code):
+def get_medicine_name(database, field_name, field_value):
+    if field_name == 'MedicineKey':
+        condition = '{0} = {1}'.format(field_name, field_value)
+    else:
+        condition = '{0} = "{1}"'.format(field_name, field_value)
+
     sql = '''
         SELECT MedicineName FROM medicine
         WHERE
-            InsCode = "{0}"
-    '''.format(ins_code)
+            {condition}
+    '''.format(condition=condition)
 
     rows = database.select_record(sql)
     if len(rows) <= 0:
@@ -526,6 +585,7 @@ def get_medicine_name(database, ins_code):
     medicine_name = string_utils.xstr(row['MedicineName'])
 
     return medicine_name
+
 
 def get_drug_name(database, ins_code):
 

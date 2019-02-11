@@ -212,6 +212,8 @@ class DialogMedicine(QtWidgets.QDialog):
         dict_groups_type = self.table_widget_dict_groups.field_value(1)
         input_code = str(self.ui.lineEdit_input_code.text()).strip()
         if input_code == '':
+            self._read_medicine(dict_groups_type)
+            self.ui.lineEdit_input_code.setFocus(True)
             return
 
         input_code = string_utils.phonetic_to_str(input_code)

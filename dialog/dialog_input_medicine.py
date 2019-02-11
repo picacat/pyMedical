@@ -23,6 +23,7 @@ class DialogInputMedicine(QtWidgets.QDialog):
         self.dict_type = args[2]
         self.medicine_set = args[3]
         self.table_widget_prescript = args[4]
+        self.previous_medicine_name = args[5]
         self.input_code = self.table_widget_prescript.currentItem().text()
 
         self.settings = QSettings('__settings.ini', QSettings.IniFormat)
@@ -46,7 +47,7 @@ class DialogInputMedicine(QtWidgets.QDialog):
         self.settings.setValue("dialog_medicine_size", self.size())
         self.settings.setValue("dialog_medicine_pos", self.pos())
         if self.medicine_key is None:
-            self.table_widget_prescript.currentItem().setText(self.input_code)
+            self.table_widget_prescript.currentItem().setText(self.previous_medicine_name)
         else:
             if self.dict_type == '健保處置':
                 self._add_treat()

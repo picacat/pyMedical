@@ -1,8 +1,57 @@
 
+from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QMessageBox
 from libs import system_utils
 from libs import string_utils
 
+
+PRESCRIPT_COL_NO = {
+    'PrescriptKey': 0,
+    'PrescriptNo': 1,
+    'CaseKey': 2,
+    'CaseDate': 3,
+    'MedicineSet': 4,
+    'MedicineType': 5,
+    'MedicineKey': 6,
+    'InsCode': 7,
+    'DosageMode': 8,
+}
+
+
+INS_PRESCRIPT_COL_NO = {
+    **PRESCRIPT_COL_NO,
+    'BackupMedicineName': 9,
+    'MedicineName': 10,
+    'Dosage': 11,
+    'Unit': 12,
+    'Instruction': 13,
+}
+
+
+SELF_PRESCRIPT_COL_NO = {
+    **PRESCRIPT_COL_NO,
+    'BackupMedicineName': 9,
+    'MedicineName': 10,
+    'Dosage': 11,
+    'Unit': 12,
+    'Instruction': 13,
+    'Price': 14,
+    'Amount': 15,
+}
+
+INS_TREAT_COL_NO = {
+    'PrescriptKey': 0,
+    'CaseKey': 1,
+    'CaseDate': 2,
+    'MedicineSet': 3,
+    'MedicineType': 4,
+    'MedicineKey': 5,
+    'InsCode': 6,
+    'BackupMedicineName': 7,
+    'MedicineName': 8,
+}
+
+PRESCRIPT_TREAT = ['穴道', '處置']
 
 # 取得服藥頻率代碼
 def get_usage_code(package):
@@ -27,8 +76,8 @@ def get_instruction_code(instruction):
 
     return  instruction_code
 
-# 檢查是否重複＼開立處方
-def check_prescript_duplicates(in_table_widget, col_no, check_value):
+# 檢查是否重複開立處方
+def check_prescript_duplicates(in_table_widget, medicine_type, col_no, check_value):
     exists = False
 
     if check_value == '':  # 特殊處方或處置不檢查 (波形, 頻率, 時間)
@@ -42,13 +91,28 @@ def check_prescript_duplicates(in_table_widget, col_no, check_value):
             field_value = field.text()
 
         if check_value == field_value:
+            row_no = in_table_widget.currentRow()
+
+            if medicine_type in PRESCRIPT_TREAT:
+                backup_medicine_name = INS_TREAT_COL_NO['BackupMedicineName']
+                medicine_name = INS_TREAT_COL_NO['MedicineName']
+            else:
+                backup_medicine_name = INS_PRESCRIPT_COL_NO['BackupMedicineName']
+                medicine_name = INS_PRESCRIPT_COL_NO['MedicineName']
+
+            previous_medicine_item = in_table_widget.item(row_no, backup_medicine_name)
+
+            in_table_widget.setItem(
+                row_no, medicine_name,
+                QtWidgets.QTableWidgetItem(previous_medicine_item)
+            )
+
             system_utils.show_message_box(
                 QMessageBox.Critical,
                 '重複處方或處置',
                 '<font size="4" color="red"><b>處方或處置重複開立, 請重新輸入.</b></font>',
                 '處方或處置重複輸入.'
             )
-            in_table_widget.removeRow(in_table_widget.currentRow())
             exists = True
             break
 

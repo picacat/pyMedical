@@ -30,6 +30,9 @@
       <console name="Connection" type="STANDARD" schema="" session="Main"><![CDATA[select * from clinic where ClinicType = '舌診']]></console>
     </connection>
   </component>
+  <component name="DBNavigator.Project.DatabaseFileManager">
+    <open-files />
+  </component>
   <component name="DBNavigator.Project.DatabaseSessionManager">
     <connection id="85dd102d-4da3-4481-ba69-4172ba68c41d" />
   </component>

@@ -24,7 +24,9 @@ class MedicalRecordCheck(QtWidgets.QDialog):
         self.disease_code1 = args[5]
         self.treatment = args[6]
         self.pres_days = args[7]
-        self.table_widget_ins_care = args[8]
+        self.table_widget_ins_prescript = args[8]
+        self.table_widget_ins_treat = args[9]
+        self.table_widget_ins_care = args[10]
         self.parent = parent
 
         self._set_ui()
@@ -39,8 +41,6 @@ class MedicalRecordCheck(QtWidgets.QDialog):
         pass
 
     def check_medical_record(self):
-        check_ok = True
-
         if self.treat_type == '腦血管疾病':
             check_ok = self._check_brain()
         elif self.treat_type == '助孕照護':
@@ -51,6 +51,8 @@ class MedicalRecordCheck(QtWidgets.QDialog):
             check_ok = self._check_cancer_care()
         elif self.treat_type == '兒童鼻炎':
             check_ok = self._check_child_rhinitis()
+        else:
+            check_ok = self._check_general()
 
         return check_ok
 
@@ -378,3 +380,46 @@ class MedicalRecordCheck(QtWidgets.QDialog):
 
         return check_ok
 
+    def _check_general(self):
+        check_ok = self._check_dosage()
+
+        return check_ok
+
+    def _check_dosage(self):
+        check_ok = True
+        error_message = []
+
+        row_count = self.table_widget_ins_prescript.rowCount()
+
+        if row_count <= 0:
+            return check_ok
+
+        for row_no in range(row_count):
+            self.table_widget_ins_prescript.setCurrentCell(row_no, 10)
+            medicine_name = self.table_widget_ins_prescript.item(row_no, 9)
+            if medicine_name is None or medicine_name.text() == '':  # 無效的處方, 不需檢查
+                continue
+
+            dosage = self.table_widget_ins_prescript.item(row_no, 10)
+            if dosage is None or dosage.text() == '':
+                error_message.append('{0} 無劑量'.format(medicine_name.text()))
+                break
+
+        if len(error_message) > 0:
+            system_utils.show_message_box(
+                QMessageBox.Critical,
+                '劑量檢查錯誤',
+                '''
+                    <font size="4" color="red">
+                      <b>
+                        處方劑量檢查錯誤如下:<br>
+                        <br>
+                        {0}
+                      </b>
+                    </font>
+                '''.format('<br>'.join(error_message)),
+                '請更正上述的錯誤，以利健保申報.'
+            )
+            check_ok = False
+
+        return check_ok

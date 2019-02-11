@@ -18,6 +18,7 @@ import ins_apply_calculated_data
 import ins_apply_calculate
 import ins_apply_adjust_fee
 import ins_apply_total_fee
+import ins_apply_schedule_table
 import ins_check_apply_fee
 import ins_apply_xml
 import ins_apply_tab
@@ -223,8 +224,18 @@ class InsApply(QtWidgets.QMainWindow):
             self.ins_calculated_table,
         )
 
+        self.tab_ins_apply_schedule_table = ins_apply_schedule_table.InsApplyScheduleTable(
+            self, self.database, self.system_settings,
+            self.apply_year, self.apply_month,
+            self.start_date, self.end_date,
+            self.period, self.apply_type, self.clinic_id,
+            self.ins_generate_date,
+            self.ins_calculated_table,
+        )
+
         self.ui.tabWidget_ins_data.addTab(self.tab_ins_apply_calculated_data, '申報統計資料')
         self.ui.tabWidget_ins_data.addTab(self.tab_ins_apply_total_fee, '申報總表')
+        self.ui.tabWidget_ins_data.addTab(self.tab_ins_apply_schedule_table, '醫護排班表')
         self.ui.tabWidget_ins_data.addTab(self.tab_ins_apply_tab, '申報資料')
 
     def _create_xml_file(self):

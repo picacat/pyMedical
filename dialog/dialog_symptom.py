@@ -120,3 +120,5 @@ class DialogSymptom(QtWidgets.QDialog):
             else selected_symptom
         self.text_edit.setText(string_utils.get_str(symptom, 'utf8'))
         self.text_edit.document().setModified(True)
+
+        self.parent.reset_query()

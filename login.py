@@ -3,6 +3,9 @@
 
 
 from PyQt5 import QtWidgets
+from PyQt5.Qt import PYQT_VERSION_STR
+import sys
+import mysql.connector
 
 from libs import ui_utils
 from libs import system_utils
@@ -33,6 +36,47 @@ class Login(QtWidgets.QDialog):
         self._set_combo_box()
         self.center()
         self.ui.label_login_error.setVisible(False)
+        self._display_info()
+
+    def _display_info(self):
+        sql = 'SHOW VARIABLES LIKE "version"'
+        rows = self.database.select_record(sql)
+        mysql_version = rows[0]['Value']
+
+        title = '''
+            <html>
+                <head/>
+                <body>
+                    <p>
+                        <span style="font-size:18pt;">
+                            歡迎進入{0}醫療系統
+                        </span>
+                    </p>
+                </body>
+            </html>
+        '''.format(self.system_settings.field('院所名稱'))
+        self.ui.label_system_title.setText(title)
+
+        version = '''
+            <html>
+                <head/>
+                <body>
+                    <p>
+                        <span style="font-size:9pt;">
+                            PyMedical 2019.1.1<br>
+                            Python {0}, PyQt {1}, MySQL {2}, MySQL Connector {3}<br>
+                            Copyright © 2018-2020 Bountiful H.I.S. Studio. All Rights Reserved.
+                        </span>
+                    </p>
+                </body>
+            </html>
+        '''.format(
+            '.'.join(map(str, sys.version_info[0:3])),
+            PYQT_VERSION_STR,
+            mysql_version,
+            mysql.connector.__version__,
+        )
+        self.ui.label_version.setText(version)
 
     def center(self):
         frame_geometry = self.frameGeometry()

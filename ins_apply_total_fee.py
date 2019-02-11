@@ -11,7 +11,7 @@ from libs import number_utils
 from libs import printer_utils
 
 
-# 候診名單 2018.01.31
+# 申請總表 2018.10.01
 class InsApplyTotalFee(QtWidgets.QMainWindow):
     # 初始化
     def __init__(self, parent=None, *args):
@@ -142,12 +142,12 @@ class InsApplyTotalFee(QtWidgets.QMainWindow):
                         <tr>
                             <td style="text-align: center;">10</td>
                             <td style="text-align: center;">門診申報總表</td>
-                            <td style="text-align: center;">{0}</td>
-                            <td style="text-align: center;">{1}</td>
-                            <td style="text-align: center;">{2}</td>
+                            <td style="text-align: center;">{clinic_id}</td>
+                            <td style="text-align: center;">{clinic_name}</td>
+                            <td style="text-align: center;">{apply_date}</td>
                             <td style="text-align: center;">3網路</td>
-                            <td style="text-align: center;">{15}</td>
-                            <td style="text-align: center;">{3}</td>
+                            <td style="text-align: center;">{apply_type_name}</td>
+                            <td style="text-align: center;">{generate_date}</td>
                             <td></td>
                         </tr>
                     </tbody>
@@ -161,11 +161,11 @@ class InsApplyTotalFee(QtWidgets.QMainWindow):
                         <td width="20%" style="text-align: center;" colspan="2">申請點數</td>
                         <td style="padding-left: 20%; text-align: left;" rowspan="20">
                             <br>
-                            負責醫師姓名: {4}<br>
+                            負責醫師姓名: {owner}<br>
                             <br>
-                            醫事服務機構地址: {5}<br>
+                            醫事服務機構地址: {address}<br>
                             <br>
-                            電話: {6}<br>
+                            電話: {telephone}<br>
                             <br>
                             印信:
                         </td>
@@ -232,23 +232,23 @@ class InsApplyTotalFee(QtWidgets.QMainWindow):
                         <td rowspan="3" style="text-align: center;"><br>中<br>醫</td>    
                         <td style="text-align: center;">一般案件</td>    
                         <td style="text-align: center;">t25</td>
-                        <td style="text-align: right;">{7:,}</td>    
+                        <td style="text-align: right;">{general_count:,}</td>    
                         <td style="text-align: center;">t26</td>    
-                        <td style="text-align: right;">{8:,}</td>    
+                        <td style="text-align: right;">{general_amount:,}</td>    
                     </tr>
                     <tr>
                         <td style="text-align: center;">專案案件</td>    
                         <td style="text-align: center;">t27</td>
-                        <td style="text-align: right;">{9:,}</td>    
+                        <td style="text-align: right;">{special_count:,}</td>    
                         <td style="text-align: center;">t28</td>    
-                        <td style="text-align: right;">{10:,}</td>    
+                        <td style="text-align: right;">{special_amount:,}</td>    
                     </tr>
                     <tr>
                         <td style="text-align: center;">小計</td>    
                         <td style="text-align: center;">t29</td>
-                        <td style="text-align: right;">{11:,}</td>    
+                        <td style="text-align: right;">{total_count:,}</td>    
                         <td style="text-align: center;">t30</td>    
-                        <td style="text-align: right;">{12:,}</td>    
+                        <td style="text-align: right;">{total_amount:,}</td>    
                     </tr>
                     <tr>
                         <td style="text-align: center;" colspan="2">預防保健</td>    
@@ -281,23 +281,23 @@ class InsApplyTotalFee(QtWidgets.QMainWindow):
                     <tr>
                         <td style="text-align: center;" colspan="2">總計</td>    
                         <td style="text-align: center;">t37</td>
-                        <td style="text-align: right;">{11:,}</td>    
+                        <td style="text-align: right;">{total_count:,}</td>    
                         <td style="text-align: center;">t38</td>    
-                        <td style="text-align: right;">{12:,}</td>    
+                        <td style="text-align: right;">{total_amount:,}</td>    
                     </tr>
                     <tr>
                         <td style="text-align: center;" colspan="2">部份負擔</td>    
                         <td style="text-align: center;">t39</td>
-                        <td style="text-align: right;">{13:,}</td>    
+                        <td style="text-align: right;">{share_count:,}</td>    
                         <td style="text-align: center;">t40</td>    
-                        <td style="text-align: right;">{14:,}</td>    
+                        <td style="text-align: right;">{share_amount:,}</td>    
                     </tr>
                     <tr>
                         <td style="text-align: center;" colspan="2">本次連線申報起迄日期</td>    
                         <td style="text-align: center;">t41</td>
-                        <td style="text-align: center;">{16}</td>    
+                        <td style="text-align: center;">{start_date}</td>    
                         <td style="text-align: center;">t42</td>    
-                        <td style="text-align: center;">{17}</td>    
+                        <td style="text-align: center;">{end_date}</td>    
                     </tr>
                 </tbody>
                 </table>
@@ -305,28 +305,27 @@ class InsApplyTotalFee(QtWidgets.QMainWindow):
         </body>
         </html>
         '''.format(
-            self.ins_total_fee['clinic_id'],
-            self.system_settings.field('院所名稱'),
-            apply_date,
-            generate_date,
-            self.system_settings.field('負責醫師'),
-            self.system_settings.field('院所地址'),
-            self.system_settings.field('院所電話'),
-            ins_total_fee['general_count'],
-            ins_total_fee['general_amount'],
-            ins_total_fee['special_count'],
-            ins_total_fee['special_amount'],
-            ins_total_fee['total_count'],
-            ins_total_fee['total_amount'],
-            ins_total_fee['share_count'],
-            ins_total_fee['share_amount'],
-            apply_type_name,
-            start_date,
-            end_date,
+            clinic_id=self.ins_total_fee['clinic_id'],
+            clinic_name=self.system_settings.field('院所名稱'),
+            apply_date=apply_date,
+            generate_date=generate_date,
+            owner=self.system_settings.field('負責醫師'),
+            address=self.system_settings.field('院所地址'),
+            telephone=self.system_settings.field('院所電話'),
+            general_count=ins_total_fee['general_count'],
+            general_amount=ins_total_fee['general_amount'],
+            special_count=ins_total_fee['special_count'],
+            special_amount=ins_total_fee['special_amount'],
+            total_count=ins_total_fee['total_count'],
+            total_amount=ins_total_fee['total_amount'],
+            share_count=ins_total_fee['share_count'],
+            share_amount=ins_total_fee['share_amount'],
+            apply_type_name=apply_type_name,
+            start_date=start_date,
+            end_date=end_date,
         )
 
         return html
-
 
     def _calculate_fees(self):
         sql = '''
@@ -367,7 +366,6 @@ class InsApplyTotalFee(QtWidgets.QMainWindow):
     # 列印申請總表
     def _print_total_fee(self):
         self._calculate_total_fee()
-        html = self._get_html(self.ins_total_fee, '14px')
 
         printer_utils.print_ins_apply_total_fee(
             self, self.database, self.system_settings,

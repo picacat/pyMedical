@@ -50,6 +50,8 @@ class TableWidget:
         if set_focus:
             self.table_widget.setFocus(True)
 
+        self.table_widget.resizeRowsToContents()
+
     def row_count(self):
         return self.table_widget.rowCount()
 

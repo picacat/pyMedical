@@ -36,10 +36,18 @@ class DialogPatientList(QtWidgets.QDialog):
         self.setFixedSize(self.size())  # non resizable dialog
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setText('確定')
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Cancel).setText('取消')
+        self.ui.label_patient_key.setEnabled(False)
+        self.ui.lineEdit_start.setEnabled(False)
+        self.ui.label_to.setEnabled(False)
+        self.ui.lineEdit_end.setEnabled(False)
 
     # 設定信號
     def _set_signal(self):
         self.ui.buttonBox.accepted.connect(self.accepted_button_clicked)
+        self.ui.radioButton_all_range.clicked.connect(self._set_patient)
+        self.ui.radioButton_range.clicked.connect(self._set_patient)
+        self.ui.lineEdit_start.textChanged.connect(self._range_check)
+        self.ui.lineEdit_end.textChanged.connect(self._range_check)
 
     # 設定 mysql script
     def get_sql(self):
@@ -82,3 +90,25 @@ class DialogPatientList(QtWidgets.QDialog):
 
     def accepted_button_clicked(self):
         pass
+
+    def _set_patient(self):
+        if self.ui.radioButton_all_range.isChecked():
+            self.ui.lineEdit_start.setText('')
+            self.ui.lineEdit_end.setText('')
+            enabled = False
+        else:
+            enabled = True
+
+        self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setEnabled(not enabled)
+        self.ui.label_patient_key.setEnabled(enabled)
+        self.ui.lineEdit_start.setEnabled(enabled)
+        self.ui.label_to.setEnabled(enabled)
+        self.ui.lineEdit_end.setEnabled(enabled)
+
+    def _range_check(self):
+        if self.ui.lineEdit_start.text() == '' or self.ui.lineEdit_end.text() == '':
+            enabled = False
+        else:
+            enabled = True
+
+        self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setEnabled(enabled)

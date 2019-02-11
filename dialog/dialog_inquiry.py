@@ -29,6 +29,7 @@ class DialogInquiry(QtWidgets.QDialog):
         self._set_ui()
         self._set_signal()
         self.read_dictionary()
+        self.lineEdit_query.setFocus(True)
 
     # 解構
     def __del__(self):
@@ -56,6 +57,7 @@ class DialogInquiry(QtWidgets.QDialog):
 
     # 設定信號
     def _set_signal(self):
+        self.ui.lineEdit_query.textChanged.connect(self._query_diagnostic)
         self.ui.buttonBox.accepted.connect(self.accepted_button_clicked)
 
     def accepted_button_clicked(self):
@@ -99,3 +101,38 @@ class DialogInquiry(QtWidgets.QDialog):
                         self, self.database, self.system_settings, groups_name, self.text_edit),
                     groups_name)
 
+    def _query_diagnostic(self):
+        keyword = self.ui.lineEdit_query.text()
+        if keyword == '':
+            return
+
+        tab = self.ui.tabWidget_inquiry.currentWidget()
+        dialog = None
+        if self.dialog_type == '主訴':
+            dialog = [tab.table_widget_symptom, tab._set_symptom_data]
+        elif self.dialog_type == '舌診':
+            dialog = [tab.table_widget_tongue, tab._set_tongue_data]
+        elif self.dialog_type == '脈象':
+            dialog = [tab.table_widget_pulse, tab._set_pulse_data]
+        elif self.dialog_type == '備註':
+            dialog = [tab.table_widget_remark, tab._set_remark_data]
+
+        if dialog is None:
+            return
+
+        sql = '''
+            SELECT * FROM clinic
+            WHERE
+                ClinicType = "{0}" AND
+                (InputCode LIKE "{1}%" OR ClinicName LIKE "%{1}%")
+            GROUP BY ClinicName 
+            ORDER BY LENGTH(ClinicName), CAST(CONVERT(`ClinicName` using big5) AS BINARY)
+        '''.format(self.dialog_type, keyword)
+        dialog[0].set_db_data(sql, dialog[1])
+
+        self.ui.lineEdit_query.setFocus(True)
+        self.ui.lineEdit_query.setCursorPosition(len(keyword))
+
+    def reset_query(self):
+        self.ui.lineEdit_query.setText(None)
+        self.ui.lineEdit_query.setFocus(True)

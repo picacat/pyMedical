@@ -42,7 +42,7 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_SELF_PRESCRIPT_RECORD, self)
         self.table_widget_prescript = table_widget.TableWidget(self.ui.tableWidget_prescript, self.database)
-        self.table_widget_prescript.set_column_hidden([0, 1, 2, 3, 4, 5, 6, 7, 8])
+        self.table_widget_prescript.set_column_hidden([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
         self._set_table_width()
         self._set_combo_box()
 
@@ -67,25 +67,39 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
         if key == QtCore.Qt.Key_Delete:
             self.remove_medicine()
         elif key == QtCore.Qt.Key_Up:
-            if self.ui.tableWidget_prescript.item(current_row, 0) is None:
+            if self.ui.tableWidget_prescript.item(
+                    current_row, prescript_utils.SELF_PRESCRIPT_COL_NO['PrescriptKey']) is None:
                 self.ui.tableWidget_prescript.removeRow(current_row)
                 return
-            if self.ui.tableWidget_prescript.currentColumn() in [10, 13, 14]:
+            if self.ui.tableWidget_prescript.currentColumn() in [
+                prescript_utils.SELF_PRESCRIPT_COL_NO['Dosage'],
+                prescript_utils.SELF_PRESCRIPT_COL_NO['Price'],
+                prescript_utils.SELF_PRESCRIPT_COL_NO['Amount']
+            ]:
                 self._set_dosage_format(current_row, self.ui.tableWidget_prescript.currentColumn())
         elif key == QtCore.Qt.Key_Down:
             if (current_row == self.ui.tableWidget_prescript.rowCount() - 1 and
-                    self.ui.tableWidget_prescript.item(current_row, 0) is not None):
+                    self.ui.tableWidget_prescript.item(
+                        current_row, prescript_utils.SELF_PRESCRIPT_COL_NO['PrescriptKey']) is not None):
                 self.append_null_medicine()
-            if self.ui.tableWidget_prescript.currentColumn() in [10, 13, 14]:
+            if self.ui.tableWidget_prescript.currentColumn() in [
+                prescript_utils.SELF_PRESCRIPT_COL_NO['Dosage'],
+                prescript_utils.SELF_PRESCRIPT_COL_NO['Price'],
+                prescript_utils.SELF_PRESCRIPT_COL_NO['Amount']
+            ]:
                 self._set_dosage_format(current_row, self.ui.tableWidget_prescript.currentColumn())
         elif key == QtCore.Qt.Key_Return or key == QtCore.Qt.Key_Enter:
-            if self.ui.tableWidget_prescript.currentColumn() == 9:
+            if self.ui.tableWidget_prescript.currentColumn() == prescript_utils.SELF_PRESCRIPT_COL_NO['MedicineName']:
                 self.open_medicine_dialog()
-            elif self.ui.tableWidget_prescript.currentColumn() in [10, 13, 14]:
+            elif self.ui.tableWidget_prescript.currentColumn() in [
+                prescript_utils.SELF_PRESCRIPT_COL_NO['Dosage'],
+                prescript_utils.SELF_PRESCRIPT_COL_NO['Price'],
+                prescript_utils.SELF_PRESCRIPT_COL_NO['Amount']
+            ]:
                 self._set_dosage_format(current_row, self.ui.tableWidget_prescript.currentColumn())
                 if current_row < self.ui.tableWidget_prescript.rowCount() - 1:
                     self.ui.tableWidget_prescript.setCurrentCell(
-                        self.ui.tableWidget_prescript.currentRow()+1, 10
+                        self.ui.tableWidget_prescript.currentRow()+1, prescript_utils.SELF_PRESCRIPT_COL_NO['Dosage']
                     )
 
         return QtWidgets.QTableWidget.keyPressEvent(self.ui.tableWidget_prescript, event)
@@ -101,10 +115,21 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
         )
 
     def open_medicine_dialog(self):
-        self.ui.tableWidget_prescript.setCurrentCell(self.ui.tableWidget_prescript.currentRow(), 10)
-        self.ui.tableWidget_prescript.setCurrentCell(self.ui.tableWidget_prescript.currentRow(), 9)
-        item = self.ui.tableWidget_prescript.item(self.ui.tableWidget_prescript.currentRow(), 9)
+        self.ui.tableWidget_prescript.setCurrentCell(
+            self.ui.tableWidget_prescript.currentRow(), prescript_utils.SELF_PRESCRIPT_COL_NO['Dosage'])
+        self.ui.tableWidget_prescript.setCurrentCell(
+            self.ui.tableWidget_prescript.currentRow(), prescript_utils.SELF_PRESCRIPT_COL_NO['MedicineName'])
+        item = self.ui.tableWidget_prescript.item(
+            self.ui.tableWidget_prescript.currentRow(), prescript_utils.SELF_PRESCRIPT_COL_NO['MedicineName'])
+
         if item is None or item.text() == '':
+            return
+
+        previous_medicine_name = self.table_widget_prescript.field_value(
+            prescript_utils.SELF_PRESCRIPT_COL_NO['BackupMedicineName']
+        )
+
+        if item.text() == previous_medicine_name:
             return
 
         sql = '''
@@ -112,11 +137,9 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
             (MedicineName like "{0}%" OR InputCode LIKE "{0}%" OR MedicineCode = "{0}" OR InsCode = "{0}") 
         '''.format(item.text())
         rows = self.database.select_record(sql)
+
         if len(rows) <= 0:
-            if self.table_widget_prescript.field_value(0) is None:
-                item.setText(None)
-            else:
-                item.setText(item.text())
+            item.setText(previous_medicine_name)
         elif len(rows) == 1:
             self.append_prescript(rows[0])
             self.append_null_medicine()
@@ -127,35 +150,41 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
                 None,
                 self.medicine_set,
                 self.ui.tableWidget_prescript,
+                previous_medicine_name,
             )
             dialog.exec_()
             dialog.deleteLater()
 
     def append_prescript(self, row, dosage=None):
         medicine_key = string_utils.xstr(row['MedicineKey'])
+        medicine_type = string_utils.xstr(row['MedicineType'])
         if prescript_utils.check_prescript_duplicates(
-                self.ui.tableWidget_prescript, 6, medicine_key):
+                self.ui.tableWidget_prescript,
+                medicine_type,
+                prescript_utils.SELF_PRESCRIPT_COL_NO['MedicineKey'], medicine_key):
             return
 
         price = string_utils.get_formatted_str('單價', row['Price'])
         amount = string_utils.get_formatted_str('單價', row['Amount'])
 
         prescript_row = [
-            [0, '-1'],
-            [1, string_utils.xstr(self.ui.tableWidget_prescript.currentRow() + 1)],
-            [2, string_utils.xstr(self.case_key)],
-            [3, string_utils.xstr(self.case_date)],
-            [4, string_utils.xstr(self.medicine_set)],
-            [5, string_utils.xstr(row['MedicineType'])],
-            [6, medicine_key],
-            [7, string_utils.xstr(row['InsCode'])],
-            [8, self.system_settings.field('劑量模式')],
-            [9, string_utils.xstr(row['MedicineName'])],
-            [10, string_utils.xstr(dosage)],
-            [11, string_utils.xstr(row['Unit'])],
-            [12, None],
-            [13, price],
-            [14, amount],
+            [prescript_utils.SELF_PRESCRIPT_COL_NO['PrescriptKey'], '-1'],
+            [prescript_utils.SELF_PRESCRIPT_COL_NO['PrescriptNo'],
+             string_utils.xstr(self.ui.tableWidget_prescript.currentRow() + 1)],
+            [prescript_utils.SELF_PRESCRIPT_COL_NO['CaseKey'], string_utils.xstr(self.case_key)],
+            [prescript_utils.SELF_PRESCRIPT_COL_NO['CaseDate'], string_utils.xstr(self.case_date)],
+            [prescript_utils.SELF_PRESCRIPT_COL_NO['MedicineSet'], string_utils.xstr(self.medicine_set)],
+            [prescript_utils.SELF_PRESCRIPT_COL_NO['MedicineType'], string_utils.xstr(row['MedicineType'])],
+            [prescript_utils.SELF_PRESCRIPT_COL_NO['MedicineKey'], medicine_key],
+            [prescript_utils.SELF_PRESCRIPT_COL_NO['InsCode'], string_utils.xstr(row['InsCode'])],
+            [prescript_utils.SELF_PRESCRIPT_COL_NO['DosageMode'], self.system_settings.field('劑量模式')],
+            [prescript_utils.SELF_PRESCRIPT_COL_NO['BackupMedicineName'], string_utils.xstr(row['MedicineName'])],
+            [prescript_utils.SELF_PRESCRIPT_COL_NO['MedicineName'], string_utils.xstr(row['MedicineName'])],
+            [prescript_utils.SELF_PRESCRIPT_COL_NO['Dosage'], string_utils.xstr(dosage)],
+            [prescript_utils.SELF_PRESCRIPT_COL_NO['Unit'], string_utils.xstr(row['Unit'])],
+            [prescript_utils.SELF_PRESCRIPT_COL_NO['Instruction'], None],
+            [prescript_utils.SELF_PRESCRIPT_COL_NO['Price'], price],
+            [prescript_utils.SELF_PRESCRIPT_COL_NO['Amount'], amount],
         ]
 
         self.set_prescript(prescript_row)
@@ -167,10 +196,13 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
                 row_no, item[0], QtWidgets.QTableWidgetItem(item[1])
             )
 
-            if item[0] in [11]:
+            if item[0] in [prescript_utils.SELF_PRESCRIPT_COL_NO['Unit']]:
                 self.ui.tableWidget_prescript.item(row_no, item[0]).setTextAlignment(
                     QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter)
-            elif item[0] in [13, 14]:
+            elif item[0] in [
+                prescript_utils.SELF_PRESCRIPT_COL_NO['Price'],
+                prescript_utils.SELF_PRESCRIPT_COL_NO['Amount']
+            ]:
                 item = self.ui.tableWidget_prescript.item(row_no, item[0])
                 if item is not None:
                     item.setTextAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
@@ -179,8 +211,8 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
     def _set_table_width(self):
         medicine_width = [
             70,
-            100, 100, 100, 100, 100, 100, 100, 100,
-            240, 60, 50, 60, 70, 70
+            100, 100, 100, 100, 100, 100, 100, 100, 100,
+            240, 60, 50, 60, 80, 80
         ]
         self.table_widget_prescript.set_table_heading_width(medicine_width)
 
@@ -229,6 +261,7 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
             string_utils.xstr(row['InsCode']),
             string_utils.xstr(row['DosageMode']),
             string_utils.xstr(row['MedicineName']),
+            string_utils.xstr(row['MedicineName']),
             dosage,
             string_utils.xstr(row['Unit']),
             string_utils.xstr(row['Instruction']),
@@ -243,19 +276,22 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
             )
 
             align = QtCore.Qt.AlignLeft
-            if col_no in [10, 13, 14]:
+            if col_no in [
+                prescript_utils.SELF_PRESCRIPT_COL_NO['Dosage'],
+                prescript_utils.SELF_PRESCRIPT_COL_NO['Price'],
+                prescript_utils.SELF_PRESCRIPT_COL_NO['Amount']
+            ]:
                 align = QtCore.Qt.AlignRight
-            elif col_no in [11]:
+            elif col_no in [prescript_utils.SELF_PRESCRIPT_COL_NO['Unit']]:
                 align = QtCore.Qt.AlignCenter
 
             self.ui.tableWidget_prescript.item(
                 row_no, col_no).setTextAlignment(align | QtCore.Qt.AlignVCenter)
 
-            if col_no in [13, 14]:
+            if col_no in [prescript_utils.SELF_PRESCRIPT_COL_NO['Price'], prescript_utils.SELF_PRESCRIPT_COL_NO['Amount']]:
                 item = self.ui.tableWidget_prescript.item(row_no, col_no)
                 if item is not None:
                     item.setFlags(QtCore.Qt.ItemIsEnabled)
-
 
     # 增加處方資料
     def append_null_medicine(self):
@@ -264,7 +300,7 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
             self._insert_medicine_row(row_count)
             return
 
-        item = self.ui.tableWidget_prescript.item(row_count-1, 9)
+        item = self.ui.tableWidget_prescript.item(row_count-1, prescript_utils.SELF_PRESCRIPT_COL_NO['MedicineName'])
         if item is None or item.text().strip() == '':
             return
 
@@ -273,10 +309,12 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
     def _insert_medicine_row(self, index):
         self.ui.tableWidget_prescript.setFocus(True)
         self.ui.tableWidget_prescript.insertRow(index)
-        self.ui.tableWidget_prescript.setCurrentCell(index, 9)
+        self.ui.tableWidget_prescript.setCurrentCell(index, prescript_utils.SELF_PRESCRIPT_COL_NO['MedicineName'])
 
-        self.ui.tableWidget_prescript.setItem(index, 10, QtWidgets.QTableWidgetItem(''))
-        self.ui.tableWidget_prescript.item(index, 10).setTextAlignment(
+        self.ui.tableWidget_prescript.setItem(
+            index, prescript_utils.SELF_PRESCRIPT_COL_NO['Dosage'], QtWidgets.QTableWidgetItem(''))
+        self.ui.tableWidget_prescript.item(
+            index, prescript_utils.SELF_PRESCRIPT_COL_NO['Dosage']).setTextAlignment(
             QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
 
     # 刪除處方
@@ -332,16 +370,16 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
 
         prescript_no = 0  # 重編 PrescriptNo
         for items in prescript_data_set:
-            if items[0] is None:
+            if items[prescript_utils.SELF_PRESCRIPT_COL_NO['PrescriptKey']] is None:
                 continue
 
-            if items[10] == '':
-                items[10] = None
+            if items[prescript_utils.SELF_PRESCRIPT_COL_NO['Dosage']] == '':
+                items[prescript_utils.SELF_PRESCRIPT_COL_NO['Dosage']] = None
 
             prescript_no += 1
-            items[1] = str(prescript_no)
+            items[prescript_utils.SELF_PRESCRIPT_COL_NO['PrescriptNo']] = str(prescript_no)
 
-            if items[0] == '-1':
+            if items[prescript_utils.SELF_PRESCRIPT_COL_NO['PrescriptKey']] == '-1':
                 self.insert_prescript(items)
             else:
                 self.update_prescript(items)
@@ -350,7 +388,7 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
     def delete_not_exists_prescript(self, prescript_data_set, medicine_type):
         prescript_key_list = []
         for items in prescript_data_set:
-            prescript_key_list.append(items[0])
+            prescript_key_list.append(items[prescript_utils.SELF_PRESCRIPT_COL_NO['PrescriptKey']])
 
         sql = '''
             SELECT * FROM prescript WHERE 
@@ -373,17 +411,28 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
         ]
 
         data = [
-            items[1], items[2], items[3],
-            items[4], items[5], items[6], items[7], items[8],
-            items[9], items[10], items[11], items[12],
-            items[13], items[14],
+            items[prescript_utils.SELF_PRESCRIPT_COL_NO['PrescriptNo']],
+            items[prescript_utils.SELF_PRESCRIPT_COL_NO['CaseKey']],
+            items[prescript_utils.SELF_PRESCRIPT_COL_NO['CaseDate']],
+            items[prescript_utils.SELF_PRESCRIPT_COL_NO['MedicineSet']],
+            items[prescript_utils.SELF_PRESCRIPT_COL_NO['MedicineType']],
+            items[prescript_utils.SELF_PRESCRIPT_COL_NO['MedicineKey']],
+            items[prescript_utils.SELF_PRESCRIPT_COL_NO['InsCode']],
+            items[prescript_utils.SELF_PRESCRIPT_COL_NO['DosageMode']],
+            items[prescript_utils.SELF_PRESCRIPT_COL_NO['MedicineName']],
+            items[prescript_utils.SELF_PRESCRIPT_COL_NO['Dosage']],
+            items[prescript_utils.SELF_PRESCRIPT_COL_NO['Unit']],
+            items[prescript_utils.SELF_PRESCRIPT_COL_NO['Instruction']],
+            items[prescript_utils.SELF_PRESCRIPT_COL_NO['Price']],
+            items[prescript_utils.SELF_PRESCRIPT_COL_NO['Amount']],
         ]
+
         self.database.insert_record('prescript', fields, data)
 
     # 更新處方資料至資料庫內
     def update_prescript(self, items):
-        if items[6] == '':
-            items[6] = None
+        if items[prescript_utils.SELF_PRESCRIPT_COL_NO['MedicineKey']] == '':
+            items[prescript_utils.SELF_PRESCRIPT_COL_NO['MedicineKey']] = None
 
         fields = [
             'PrescriptNo', 'CaseKey', 'CaseDate',
@@ -392,11 +441,22 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
             'Price', 'Amount',
         ]
         data = [
-            items[1], items[2], items[3],
-            items[4], items[5], items[6], items[7], items[8],
-            items[9], items[10], items[11], items[12],
-            items[13], items[14],
+            items[prescript_utils.SELF_PRESCRIPT_COL_NO['PrescriptNo']],
+            items[prescript_utils.SELF_PRESCRIPT_COL_NO['CaseKey']],
+            items[prescript_utils.SELF_PRESCRIPT_COL_NO['CaseDate']],
+            items[prescript_utils.SELF_PRESCRIPT_COL_NO['MedicineSet']],
+            items[prescript_utils.SELF_PRESCRIPT_COL_NO['MedicineType']],
+            items[prescript_utils.SELF_PRESCRIPT_COL_NO['MedicineKey']],
+            items[prescript_utils.SELF_PRESCRIPT_COL_NO['InsCode']],
+            items[prescript_utils.SELF_PRESCRIPT_COL_NO['DosageMode']],
+            items[prescript_utils.SELF_PRESCRIPT_COL_NO['MedicineName']],
+            items[prescript_utils.SELF_PRESCRIPT_COL_NO['Dosage']],
+            items[prescript_utils.SELF_PRESCRIPT_COL_NO['Unit']],
+            items[prescript_utils.SELF_PRESCRIPT_COL_NO['Instruction']],
+            items[prescript_utils.SELF_PRESCRIPT_COL_NO['Price']],
+            items[prescript_utils.SELF_PRESCRIPT_COL_NO['Amount']],
         ]
+
         self.database.update_record(
             'prescript', fields, 'PrescriptKey', items[0], data)
 
@@ -408,12 +468,17 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
             SELECT * FROM prescript WHERE CaseKey = {0} AND 
                 MedicineSet = {1} ORDER BY PrescriptKey'''.format(case_key, self.medicine_set)
         rows = self.database.select_record(sql)
-        for row in rows:
+        for row_no, row in zip(range(len(rows)), rows):
             if row['MedicineName'] is None:
                 continue
 
             self.append_null_medicine()
-            self.append_prescript(row)
+            self.append_prescript(row, row['Dosage'])
+            self._set_dosage_format(row_no, prescript_utils.SELF_PRESCRIPT_COL_NO['Dosage'])
+            self._set_dosage_format(row_no, prescript_utils.SELF_PRESCRIPT_COL_NO['Price'])
+            self._set_dosage_format(row_no, prescript_utils.SELF_PRESCRIPT_COL_NO['Amount'])
+
+        self.ui.tableWidget_prescript.resizeRowsToContents()
 
     # 藥日變更重新批價
     def pres_days_changed(self):
@@ -425,15 +490,15 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
 
         row_no = item.row()
         col_no = item.column()
-        if col_no == 10:
-            self._calculate_total_price(row_no, col_no, item)
+        if col_no in [prescript_utils.SELF_PRESCRIPT_COL_NO['Dosage']]:
+            self._calculate_total_price(row_no, item)
             self._adjust_price_column_align(row_no)
             self.parent.calculate_self_fees()
 
             self ._calculate_total_dosage()
 
-    def _calculate_total_price(self, row_no, col_no, item):
-        sale_price = self.ui.tableWidget_prescript.item(row_no, 13)
+    def _calculate_total_price(self, row_no, item):
+        sale_price = self.ui.tableWidget_prescript.item(row_no, prescript_utils.SELF_PRESCRIPT_COL_NO['Price'])
         if sale_price is None:
             return
 
@@ -448,12 +513,15 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
         subtotal = float(dosage) * float(sale_price)
 
         self.ui.tableWidget_prescript.setItem(
-            row_no, 14,
+            row_no, prescript_utils.SELF_PRESCRIPT_COL_NO['Amount'],
             QtWidgets.QTableWidgetItem(string_utils.get_formatted_str('單價', subtotal))
         )
 
     def _adjust_price_column_align(self, row_no):
-        for col_no in [13, 14]:
+        for col_no in [
+            prescript_utils.SELF_PRESCRIPT_COL_NO['Price'],
+            prescript_utils.SELF_PRESCRIPT_COL_NO['Amount']
+        ]:
             item = self.ui.tableWidget_prescript.item(row_no, col_no)
 
             if item is not None:
@@ -463,7 +531,7 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
     def _calculate_total_dosage(self):
         total_dosage = 0.0
         for row_no in range(self.ui.tableWidget_prescript.rowCount()):
-            item = self.ui.tableWidget_prescript.item(row_no, 10)
+            item = self.ui.tableWidget_prescript.item(row_no, prescript_utils.SELF_PRESCRIPT_COL_NO['Dosage'])
             if item is None:
                 continue
 

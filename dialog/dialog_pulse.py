@@ -119,3 +119,5 @@ class DialogPulse(QtWidgets.QDialog):
             else selected_pulse
         self.text_edit.setText(string_utils.get_str(pulse, 'utf8'))
         self.text_edit.document().setModified(True)
+
+        self.parent.reset_query()

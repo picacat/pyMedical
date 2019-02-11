@@ -166,18 +166,18 @@ class MedicalRecordRegistration(QtWidgets.QMainWindow):
         self.ui.comboBox_registrar.setCurrentText(string_utils.xstr(row['Register']))
         self.ui.comboBox_cashier.setCurrentText(string_utils.xstr(row['Cashier']))
         self.ui.comboBox_doctor.setCurrentText(string_utils.xstr(row['Doctor']))
-        self.ui.lineEdit_doctor_id.setText(
-            personnel_utils.get_personnel_field_value(
-                self.database, string_utils.xstr(row['Doctor']), 'ID'
-            )
-        )
         self.ui.comboBox_pharmacist.setCurrentText(string_utils.xstr(row['Pharmacist']))
-        self.ui.lineEdit_pharmacist_id.setText(
-            personnel_utils.get_personnel_field_value(
-                self.database, string_utils.xstr(row['Pharmacist']), 'ID'
-            )
-        )
         self.ui.comboBox_massager.setCurrentText(string_utils.xstr(row['Massager']))
+        # self.ui.lineEdit_doctor_id.setText(
+        #     personnel_utils.get_personnel_field_value(
+        #         self.database, string_utils.xstr(row['Doctor']), 'ID'
+        #     )
+        # )
+        # self.ui.lineEdit_pharmacist_id.setText(
+        #     personnel_utils.get_personnel_field_value(
+        #         self.database, string_utils.xstr(row['Pharmacist']), 'ID'
+        #     )
+        # )
 
     def _set_ic_card_data(self, row):
         card_datetime = case_utils.extract_security_xml(row['Security'], '寫卡時間')
@@ -225,13 +225,13 @@ class MedicalRecordRegistration(QtWidgets.QMainWindow):
         self.ui.lineEdit_special_code.setText(string_utils.xstr(row['SpecialCode']))
 
         self.ui.lineEdit_ins_total_fee.setText(string_utils.xstr(number_utils.get_integer(row['InsTotalFee'])))
-        self.ui.lineEdit_share_fee.setText(
-            string_utils.xstr(
-                number_utils.get_integer(row['DiagShareFee']) +
-                number_utils.get_integer(row['DrugShareFee'])
-            )
-        )
-        self.ui.lineEdit_ins_apply_fee.setText(string_utils.xstr(number_utils.get_integer(row['InsApplyFee'])))
+        # self.ui.lineEdit_share_fee.setText(
+        #     string_utils.xstr(
+        #         number_utils.get_integer(row['DiagShareFee']) +
+        #         number_utils.get_integer(row['DrugShareFee'])
+        #     )
+        # )
+        # self.ui.lineEdit_ins_apply_fee.setText(string_utils.xstr(number_utils.get_integer(row['InsApplyFee'])))
 
     def _set_treat_sign(self):
         sql = '''

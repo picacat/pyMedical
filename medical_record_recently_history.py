@@ -181,7 +181,8 @@ class MedicalRecordRecentlyHistory(QtWidgets.QMainWindow):
             self.ui.checkBox_diagnostic.isChecked(),
             self.ui.checkBox_remark.isChecked(),
             self.ui.checkBox_disease.isChecked(),
-            self.ui.checkBox_prescript.isChecked(),
+            self.ui.checkBox_ins_prescript.isChecked(),
+            self.ui.checkBox_self_prescript.isChecked(),
         )
 
     # 設定核取方塊
@@ -189,5 +190,5 @@ class MedicalRecordRecentlyHistory(QtWidgets.QMainWindow):
         self.ui.checkBox_diagnostic.setChecked(not self.ui.checkBox_diagnostic.isChecked())
         self.ui.checkBox_disease.setChecked(not self.ui.checkBox_disease.isChecked())
         self.ui.checkBox_remark.setChecked(not self.ui.checkBox_remark.isChecked())
-        self.ui.checkBox_prescript.setChecked(not self.ui.checkBox_prescript.isChecked())
+        self.ui.checkBox_ins_prescript.setChecked(not self.ui.checkBox_ins_prescript.isChecked())
 

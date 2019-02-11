@@ -5,6 +5,7 @@ from libs import number_utils
 from libs import string_utils
 from libs import nhi_utils
 from libs import case_utils
+from libs import prescript_utils
 
 
 # 基本掛號費
@@ -627,12 +628,22 @@ def get_self_fee(tab_list):
 
     for medicine_set, tab in zip(range(len(tab_list)), tab_list):
         medicine_set += 1
+        if medicine_set == 1:  # 健保不批價
+            continue
+
         if tab is None:
             continue
 
+        try:
+            pres_days = number_utils.get_integer(tab.ui.comboBox_pres_days.currentText())
+            if pres_days <= 0:
+                pres_days = 1
+        except:
+            pres_days = 1
+
         calculate_self_fee(
             tab.ui.tableWidget_prescript,
-            tab.ui.comboBox_pres_days,
+            pres_days,
             self_fee,
         )
 
@@ -640,25 +651,20 @@ def get_self_fee(tab_list):
 
 
 # 計算自費批價
-def calculate_self_fee(table_widget_prescript, combo_box_pres_days, self_fee):
+def calculate_self_fee(table_widget_prescript, pres_days, self_fee):
     try:
         row_count = table_widget_prescript.rowCount()
     except RuntimeError:
         return
 
     for row_no in range(row_count):
-        medicine_set = table_widget_prescript.item(row_no, 4).text()
-        if medicine_set == 1:  #  健保不計算
-            break
+        item = table_widget_prescript.item(row_no, prescript_utils.SELF_PRESCRIPT_COL_NO['MedicineType'])
+        if item is None:
+            continue
 
-        medicine_type = table_widget_prescript.item(row_no, 5).text()
-        amount = get_table_widget_item_fee(table_widget_prescript, row_no, 14)
-
-        pres_days = number_utils.get_integer(combo_box_pres_days.currentText())
-        if pres_days <= 0:
-            pres_days = 1
-
-        amount *= pres_days
+        medicine_type = item.text()
+        amount = get_table_widget_item_fee(
+            table_widget_prescript, row_no, prescript_utils.SELF_PRESCRIPT_COL_NO['Amount']) * pres_days
 
         if medicine_type == '水藥':
             self_fee['herb_fee'] += amount
