@@ -38,6 +38,7 @@ class PatientList(QtWidgets.QMainWindow):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_PATIENT_LIST, self)
         self.table_widget_patient_list = table_widget.TableWidget(self.ui.tableWidget_patient_list, self.database)
         # self._set_table_width()
+        self._set_tool_button()
 
     # 設定信號
     def _set_signal(self):
@@ -45,6 +46,7 @@ class PatientList(QtWidgets.QMainWindow):
         self.ui.action_delete_record.triggered.connect(self.delete_patient_record)
         self.ui.action_open_record.triggered.connect(self.open_patient_record)
         self.ui.action_close.triggered.connect(self.close_patient_list)
+        self.ui.action_print_patient_list.triggered.connect(self.print_patient_list)
         self.ui.tableWidget_patient_list.doubleClicked.connect(self.open_patient_record)
 
     # 設定欄位寬度
@@ -71,6 +73,17 @@ class PatientList(QtWidgets.QMainWindow):
             return
 
         self.table_widget_patient_list.set_db_data(sql, self._set_table_data)
+        self._set_tool_button()
+
+    def _set_tool_button(self):
+        if self.ui.tableWidget_patient_list.rowCount() > 0:
+            enabled = True
+        else:
+            enabled = False
+
+        self.ui.action_delete_record.setEnabled(enabled)
+        self.ui.action_open_record.setEnabled(enabled)
+        self.ui.action_print_patient_list.setEnabled(enabled)
 
     def _set_table_data(self, rec_no, rec):
         patient_record = [
@@ -143,3 +156,6 @@ class PatientList(QtWidgets.QMainWindow):
     def close_patient_list(self):
         self.close_all()
         self.close_tab()
+
+    def print_patient_list(self):
+        pass

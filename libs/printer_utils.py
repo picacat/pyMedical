@@ -6,14 +6,23 @@ from libs import dialog_utils
 
 from printer.print_registration_form1 import *
 from printer.print_registration_form2 import *
+from printer.print_registration_form3 import *
 
 from printer.print_prescription_ins_form1 import *
 from printer.print_prescription_ins_form2 import *
+from printer.print_prescription_ins_form3 import *
 
 from printer.print_prescription_self_form1 import *
+from printer.print_prescription_self_form2 import *
+from printer.print_prescription_self_form3 import *
 
 from printer.print_receipt_ins_form1 import *
+from printer.print_receipt_ins_form2 import *
+from printer.print_receipt_ins_form3 import *
+
 from printer.print_receipt_self_form1 import *
+from printer.print_receipt_self_form2 import *
+from printer.print_receipt_self_form3 import *
 
 from printer.print_ins_apply_total_fee import *
 from printer.print_ins_apply_order import *
@@ -29,23 +38,31 @@ PRINT_MODE = ['不印', '列印', '詢問', '預覽']
 PRINT_REGISTRATION_FORM = {
     '01-熱感紙掛號單': PrintRegistrationForm1,
     '02-11"中二刀空白掛號單': PrintRegistrationForm2,
+    '03-3"套表掛號單': PrintRegistrationForm3,
 }
 
 PRINT_PRESCRIPTION_INS_FORM = {
     '01-11"中二刀健保處方箋': PrintPrescriptionInsForm1,
     '02-2"健保處方箋': PrintPrescriptionInsForm2,
+    '03-3"健保處方箋': PrintPrescriptionInsForm3,
 }
 
 PRINT_PRESCRIPTION_SELF_FORM = {
     '01-11"中二刀自費處方箋': PrintPrescriptionSelfForm1,
+    '02-2"自費處方箋': PrintPrescriptionSelfForm2,
+    '03-3"自費處方箋': PrintPrescriptionSelfForm3,
 }
 
 PRINT_RECEIPT_INS_FORM = {
     '01-11"中二刀健保醫療收據': PrintReceiptInsForm1,
+    '02-2"健保醫療收據': PrintReceiptInsForm2,
+    '03-3"健保醫療收據': PrintReceiptInsForm3,
 }
 
 PRINT_RECEIPT_SELF_FORM = {
     '01-11"中二刀自費醫療收據': PrintReceiptSelfForm1,
+    '02-2"自費醫療收據': PrintReceiptSelfForm2,
+    '03-3"自費醫療收據': PrintReceiptSelfForm3,
 }
 
 
@@ -87,8 +104,8 @@ def get_printer(system_settings, printer_name):
     return printer
 
 
-# 處方箋格式1
-def get_case_html_1(database, case_key, background_color=None):
+# 處方箋格式1,2使用
+def get_case_html_1(database, case_key, ins_type, background_color=None):
     sql = '''
         SELECT cases.*, patient.Birthday, patient.ID, patient.Gender FROM cases 
             LEFT JOIN patient on patient.PatientKey = cases.PatientKey
@@ -101,6 +118,7 @@ def get_case_html_1(database, case_key, background_color=None):
         return ''
 
     row = rows[0]
+
     card = string_utils.xstr(row['Card'])
     if number_utils.get_integer(row['Continuance']) >= 1:
         card += '-' + string_utils.xstr(row['Continuance'])
@@ -132,26 +150,121 @@ def get_case_html_1(database, case_key, background_color=None):
           <td>身分證:{id}</td>
           <td colspan="2">生日:{birthday}</td>
         </tr> 
+    '''.format(
+        case_date=row['CaseDate'].strftime('%Y-%m-%d'),
+        patient_key=string_utils.xstr(row['PatientKey']),
+        name=string_utils.xstr(row['Name']),
+        gender=string_utils.xstr(row['Gender']),
+        id=string_utils.xstr(id),
+        birthday=string_utils.xstr(birthday),
+        color=color,
+    )
+
+    if ins_type == '健保':
+        html += '''
+            <tr>
+              <td>保險別:{ins_type}</td>
+              <td>負擔別:{share_type}</td>
+              <td>卡序:{card}</td>
+              <td>就診號:{regist_no}</td>
+            </tr>
+        '''.format(
+            ins_type=ins_type,
+            share_type=string_utils.xstr(row['Share']),
+            card=card,
+            regist_no=string_utils.xstr(row['RegistNo']),
+        )
+    else:
+        html += '''
+            <tr>
+              <td>保險別:{ins_type}</td>
+              <td>就診號:{regist_no}</td>
+            </tr>
+        '''.format(
+            ins_type=ins_type,
+            regist_no=string_utils.xstr(row['RegistNo']),
+        )
+
+    return html
+
+
+# 處方箋格式3使用
+def get_case_html_2(database, case_key, ins_type, background_color=None):
+    sql = '''
+        SELECT cases.*, patient.Birthday, patient.ID, patient.Gender FROM cases 
+            LEFT JOIN patient on patient.PatientKey = cases.PatientKey
+        WHERE 
+            CaseKey = {0}
+    '''.format(case_key)
+
+    rows = database.select_record(sql)
+    if len(rows) <= 0:
+        return ''
+
+    row = rows[0]
+    card = string_utils.xstr(row['Card'])
+    if number_utils.get_integer(row['Continuance']) >= 1:
+        card += '-' + string_utils.xstr(row['Continuance'])
+
+    birthday = row['Birthday']
+    age = ''
+    if birthday is not None:
+        birthday = birthday.strftime('%Y-*-*')
+        age_year, age_month = date_utils.get_age(row['Birthday'], row['CaseDate'])
+        if age_year is None:
+            age = ''
+        else:
+            age = '{0}歲'.format(age_year)
+
+    id = row['ID']
+    if id is not None:
+        id = id[:6] + '****'
+
+    if background_color is not None:
+        color = ' style="background-color: {0}"'.format(background_color)
+    else:
+        color = ''
+
+    html = '''
         <tr>
-          <td>保險別:{ins_type}</td>
-          <td>負擔別:{share_type}</td>
-          <td>卡序:{card}</td>
-          <td>就診號:{regist_no}</td>
-        </tr>
+          <td{color} width="30%">門診日:{case_date}</td>
+          <td width="20%">病歷號:{patient_key}</td>
+          <td width="28%">姓名:{name}({gender})</td>
+          <td width="22%">生日:{birthday}</td>
+        </tr> 
     '''.format(
         case_date=row['CaseDate'].strftime('%Y-%m-%d'),
         patient_key=string_utils.xstr(row['PatientKey']),
         name=string_utils.xstr(row['Name']),
         gender=string_utils.xstr(row['Gender']),
         birthday=string_utils.xstr(birthday),
-        age=string_utils.xstr(age),
-        id=string_utils.xstr(id),
-        ins_type=string_utils.xstr(row['InsType']),
-        share_type=string_utils.xstr(row['Share']),
-        card=card,
-        regist_no=string_utils.xstr(row['RegistNo']),
         color=color,
     )
+
+    if ins_type == '健保':
+        html += '''
+            <tr>
+              <td>身分證:{id}</td>
+              <td>保險別:{ins_type}</td>
+              <td>負擔:{share_type}</td>
+              <td>卡序:{card}</td>
+            </tr>
+        '''.format(
+            id=string_utils.xstr(id),
+            ins_type=ins_type,
+            share_type=string_utils.xstr(row['Share']),
+            card=card,
+        )
+    else:
+        html += '''
+            <tr>
+              <td>身分證:{id}</td>
+              <td>保險別:{ins_type}</td>
+            </tr>
+        '''.format(
+            id=string_utils.xstr(id),
+            ins_type=ins_type,
+        )
 
     return html
 
@@ -228,8 +341,19 @@ def get_disease(database, case_key):
     return disease
 
 
-def get_prescript_html(database, system_setting, case_key, medicine_set, blocks, print_total_dosage=True):
+def get_prescript_html(database, system_setting, case_key, medicine_set,
+                       print_alias, print_total_dosage, blocks):
+    if medicine_set is None:
+        prescript = '''
+            <tr>
+              <td>無處方</td>
+            </tr>
+            <hr>
+        '''
+        return prescript
+
     pres_days = case_utils.get_pres_days(database, case_key, medicine_set)
+
     sql = '''
         SELECT Treatment FROM cases
         WHERE
@@ -238,14 +362,13 @@ def get_prescript_html(database, system_setting, case_key, medicine_set, blocks,
     rows = database.select_record(sql)
     treatment = rows[0]['Treatment']
 
-
     sql = '''
-        SELECT prescript.*, medicine.Location FROM prescript 
+        SELECT prescript.*, medicine.Location, medicine.MedicineAlias FROM prescript 
             LEFT JOIN medicine ON medicine.MedicineKey = prescript.MedicineKey
         WHERE 
             CaseKey = {0} AND
             MedicineSet = {1} AND
-            (prescript.MedicineName IS NOT NULL OR LENGTH(prescript.MedicineName) > 0)
+            (prescript.MedicineName IS NOT NULL AND LENGTH(prescript.MedicineName) > 0)
         ORDER BY PrescriptNo, PrescriptKey
     '''.format(case_key, medicine_set)
 
@@ -260,6 +383,7 @@ def get_prescript_html(database, system_setting, case_key, medicine_set, blocks,
             0,
             {
                 'MedicineName': treatment,
+                'MedicineAlias': treatment,
                 'MedicineType': medicine_type,
                 'Dosage': 1,
                 'Unit': '次',
@@ -273,13 +397,25 @@ def get_prescript_html(database, system_setting, case_key, medicine_set, blocks,
     if pres_days is None or pres_days <= 0:
         pres_days = 1
 
+    block_width = {
+        3: {'medicine_name_width': 20,
+            'dosage_width': 5,
+            'total_dosage_width': 4,
+            'separator_width': 1},
+        2: {'medicine_name_width': 30,
+            'dosage_width': 10,
+            'total_dosage_width': 8,
+            'separator_width': 1},
+    }
+
     prescript = ''
     row_count = int((len(rows)-1) / blocks) + 1
     for row_no in range(1, row_count+1):
         separator = ''
         prescript_line = ''
         for i in range(blocks):
-            prescript_block = get_medicine_detail(rows, (row_no-1)*blocks + i, pres_days)
+            prescript_block = get_medicine_detail(
+                rows, (row_no-1)*blocks + i, pres_days, print_alias)
 
             location=string_utils.xstr(prescript_block[1])
             if system_setting.field('列印藥品存放位置') != 'Y':
@@ -290,10 +426,10 @@ def get_prescript_html(database, system_setting, case_key, medicine_set, blocks,
                 total_dosage = ''
 
             prescript_line += '''
-                <td align="left" width="20%">{medicine_name} {location}</td>
-                <td align="right" width="5%">{dosage}{unit}</td>
-                <td align="right" width="4%">{total_dosage}</td>
-                <td width="1%">{separator}</td> 
+                <td align="left" width="{medicine_name_width}%">{medicine_name} {location}</td>
+                <td align="right" width="{dosage_width}%">{dosage}{unit}</td>
+                <td align="right" width="{total_dosage_width}%">{total_dosage}</td>
+                <td width="{separator_width}%">{separator}</td> 
             '''.format(
                 medicine_name=string_utils.xstr(prescript_block[0]),
                 location=location,
@@ -301,6 +437,10 @@ def get_prescript_html(database, system_setting, case_key, medicine_set, blocks,
                 unit=string_utils.xstr(prescript_block[3]),
                 total_dosage=total_dosage,
                 separator=string_utils.xstr(separator),
+                medicine_name_width=block_width[blocks]['medicine_name_width'],
+                dosage_width=block_width[blocks]['dosage_width'],
+                total_dosage_width=block_width[blocks]['total_dosage_width'],
+                separator_width=block_width[blocks]['separator_width'],
             )
 
         prescript += '''
@@ -333,7 +473,6 @@ def get_ins_fees_html(database, case_key):
           <td>掛號費:{regist_fee}</td>
           <td>門診負擔:{diag_share_fee}</td>
           <td>藥品負擔:{drug_share_fee}</td>
-          <td>實收負擔:{total_share_fee}</td>
           <td>欠卡費:{deposit_fee}</td>
           <td>實收金額:{total_fee}</td>
         </tr> 
@@ -342,7 +481,6 @@ def get_ins_fees_html(database, case_key):
           <td>藥費:{drug_fee}</td>
           <td>調劑費:{pharmacy_fee}</td>
           <td>處置費:{treat_fee}</td>
-          <td>健保合計:{ins_total_fee}</td>
           <td>健保申請:{ins_apply_fee}</td>
         </tr> 
     '''.format(
@@ -400,11 +538,13 @@ def get_self_fees_html(database, case_key):
           <td>一般藥費:{drug_fee}</td>
           <td>水煎藥費:{herb_fee}</td>
           <td>高貴藥費:{expensive_fee}</td>
-          <td>自費材料費:{material_fee}</td>
         </tr>
         <tr>  
           <td>針灸治療費:{acupuncture_fee}</td>
           <td>民俗調理費:{massage_fee}</td>
+          <td>自費材料費:{material_fee}</td>
+        </tr>
+        <tr>  
           <td>合計金額:{self_total_fee}</td>
           <td>折扣金額:{discount_fee}</td>
           <td>應收金額:{total_fee}</td>
@@ -427,30 +567,36 @@ def get_self_fees_html(database, case_key):
     )
 
     return html
-def get_medicine_detail(rows, row_no, pres_days):
+
+def get_medicine_detail(rows, row_no, pres_days, print_alias=False):
     try:
         medicine_name = rows[row_no]['MedicineName']
+        medicine_ailas = string_utils.xstr(rows[row_no]['MedicineAlias'])
+        if print_alias and medicine_ailas != '':
+            medicine_name = medicine_ailas
+
         medicine_type = rows[row_no]['MedicineType']
+        unit = rows[row_no]['Unit']
         location = rows[row_no]['Location']
+    except (IndexError, TypeError):
+        medicine_name, medicine_type, unit, location = '', '', '', ''
+
+    try:
         if medicine_type in ['穴道', '處置', '檢驗']:
             dosage, unit, total_dosage = '', '', ''
         else:
             dosage = rows[row_no]['Dosage']
             total_dosage = dosage * pres_days
+
             dosage = format(dosage, '.1f')
-            unit = rows[row_no]['Unit']
             total_dosage = format(total_dosage, '.1f')
     except (IndexError, TypeError):
-        medicine_name, location, dosage, unit, total_dosage = '', '', '', '', ''  # ascii 0->null 填補
+        dosage, total_dosage = '', ''  # ascii 0->null 填補
 
     return medicine_name, location, dosage, unit, total_dosage
 
 
 def get_instruction_html(database, case_key, medicine_set):
-    pres_days = case_utils.get_pres_days(database, case_key, medicine_set)
-    packages = case_utils.get_packages(database, case_key, medicine_set)
-    instruction = case_utils.get_instruction(database, case_key, medicine_set)
-
     sql = '''
         SELECT * FROM cases 
         WHERE 
@@ -462,6 +608,18 @@ def get_instruction_html(database, case_key, medicine_set):
         return ''
 
     row = rows[0]
+
+    if medicine_set is None:
+        html = '''
+              主治醫師: {doctor}
+        '''.format(
+            doctor=string_utils.xstr(row['Doctor']),
+        )
+        return html
+
+    pres_days = case_utils.get_pres_days(database, case_key, medicine_set)
+    packages = case_utils.get_packages(database, case_key, medicine_set)
+    instruction = case_utils.get_instruction(database, case_key, medicine_set)
 
     if pres_days > 0:
         html = '''
@@ -483,7 +641,7 @@ def get_instruction_html(database, case_key, medicine_set):
 
 
 # 取得列印健保或自費處方dialog
-def get_medicine_set_items(database, case_key):
+def get_medicine_set_items(database, case_key, form_type, print_type='選擇列印'):
     sql = '''
         SELECT InsType FROM cases
         WHERE
@@ -502,48 +660,52 @@ def get_medicine_set_items(database, case_key):
 
     rows = database.select_record(sql)
     if len(rows) <= 0:
-        return ('{0}處方'.format(ins_type), None)
+        return ('{0}{1}'.format(ins_type, form_type), None)
     elif len(rows) == 1:
         medicine_set = rows[0]['MedicineSet']
         if medicine_set == 1:
-            item = '健保處方'
+            item = '健保{0}'.format(form_type)
         else:
-            item = '自費處方'
+            item = '自費{0}'.format(form_type)
 
         return (item, medicine_set)
 
-    items = ['全部處方']
+    items = ['全部{0}'.format(form_type)]
     for row in rows:
         medicine_set = row['MedicineSet']
         if medicine_set == 1:
-            items.append('健保處方')
+            items.append('健保{0}'.format(form_type))
         else:
-            items.append('自費處方{0}'.format(medicine_set-1))
+            items.append('自費{0}{1}'.format(form_type, medicine_set-1))
 
-    input_dialog = dialog_utils.get_dialog(
-        '多重處方', '請選擇欲列印的處方箋',
-        None, QInputDialog.TextInput, 320, 200)
-    input_dialog.setComboBoxItems(items)
-    ok = input_dialog.exec_()
+    if print_type == '選擇列印':
+        input_dialog = dialog_utils.get_dialog(
+            '多重{0}'.format(form_type), '請選擇欲列印的{0}'.format(form_type),
+            None, QInputDialog.TextInput, 320, 200)
+        input_dialog.setComboBoxItems(items)
+        ok = input_dialog.exec_()
 
-    if not ok:
-        return False, None
+        if not ok:
+            return False, None
 
-    item = input_dialog.textValue()
-    if item == '全部處方':
+        item = input_dialog.textValue()
+    else:
+        item = '全部{0}'.format(form_type)
+
+    if item == '全部{0}'.format(form_type):
         del items[0]
         return (item, items)
-    elif item == '健保處方':
+    elif item == '健保{0}'.format(form_type):
         medicine_set = 1
     else:
-        medicine_set = number_utils.get_integer(item.split('自費處方')[1]) + 1
-        item = '自費處方'
+        medicine_set = number_utils.get_integer(item.split('自費{0}'.format(form_type))[1]) + 1
+        item = '自費{0}'.format(form_type)
 
     return (item, medicine_set)
 
 
 # 取得列印健保或自費收據dialog
-def get_receipt_items(database, case_key):
+def get_receipt_items(database, case_key, print_type='選擇列印'):
     sql = '''
         SELECT InsType FROM cases
         WHERE
@@ -577,16 +739,20 @@ def get_receipt_items(database, case_key):
         if len(items) >= 3:
             break
 
-    input_dialog = dialog_utils.get_dialog(
-        '多重醫療收據', '請選擇欲列印的醫療收據',
-        None, QInputDialog.TextInput, 320, 200)
-    input_dialog.setComboBoxItems(items)
-    ok = input_dialog.exec_()
+    if print_type == '選擇列印':
+        input_dialog = dialog_utils.get_dialog(
+            '多重醫療收據', '請選擇欲列印的醫療收據',
+            None, QInputDialog.TextInput, 320, 200)
+        input_dialog.setComboBoxItems(items)
+        ok = input_dialog.exec_()
 
-    if not ok:
-        return None
+        if not ok:
+            return None
 
-    item = input_dialog.textValue()
+        item = input_dialog.textValue()
+    else:
+        item = '全部醫療收據'
+
     if item == '全部醫療收據':
         del items[0]
         return items
@@ -595,14 +761,16 @@ def get_receipt_items(database, case_key):
 
 
 # 列印門診掛號單
-def print_registration(parent, database, system_settings, case_key, print_type, printable=None):
-    if printable is None:
-        printable = system_settings.field('列印門診掛號單')
+def print_registration(parent, database, system_settings, case_key,
+                       print_type, print_option='系統設定'):
+    printable = system_settings.field('列印門診掛號單')
 
-    if printable == '不印':
+    if print_option != '系統設定' and printable == '不印':
+        printable = '列印'
+
+    if printable == '不印' :
         return
-
-    if system_settings.field('列印門診掛號單') == '詢問':
+    elif system_settings.field('列印門診掛號單') == '詢問':
         dialog = QtPrintSupport.QPrintDialog()
         if dialog.exec() == QtWidgets.QDialog.Rejected:
             return
@@ -624,18 +792,19 @@ def print_registration(parent, database, system_settings, case_key, print_type, 
 
 
 # 列印健保處方箋
-def print_ins_prescript(parent, database, system_settings, case_key, print_type, printable=None):
-    if printable is None:
-        printable = system_settings.field('列印健保處方箋')
+def print_ins_prescript(parent, database, system_settings, case_key,
+                        print_type, print_option='系統設定'):
+    printable = system_settings.field('列印健保處方箋')
+    if print_option != '系統設定' and printable == '不印':
+        printable = '列印'
 
     if printable == '不印':
         return
-
-    if system_settings.field('列印健保處方箋') == '詢問':
+    elif printable == '詢問':
         dialog = QtPrintSupport.QPrintDialog()
         if dialog.exec() == QtWidgets.QDialog.Rejected:
             return
-    elif system_settings.field('列印健保處方箋') == '預覽':
+    elif printable == '預覽':
         print_type = 'preview'
 
     form = system_settings.field('健保處方箋格式')
@@ -654,18 +823,19 @@ def print_ins_prescript(parent, database, system_settings, case_key, print_type,
 
 
 # 列印自費處方箋
-def print_self_prescript(parent, database, system_settings, case_key, medicine_set, print_type, printable=None):
-    if printable is None:
-        printable = system_settings.field('列印自費處方箋')
+def print_self_prescript(parent, database, system_settings, case_key, medicine_set,
+                         print_type, print_option='系統設定'):
+    printable = system_settings.field('列印自費處方箋')
+    if print_option != '系統設定' and printable == '不印':
+        printable = '列印'
 
     if printable == '不印':
         return
-
-    if system_settings.field('列印自費處方箋') == '詢問':
+    elif printable == '詢問':
         dialog = QtPrintSupport.QPrintDialog()
         if dialog.exec() == QtWidgets.QDialog.Rejected:
             return
-    elif system_settings.field('列印自費處方箋') == '預覽':
+    elif printable == '預覽':
         print_type = 'preview'
 
     form = system_settings.field('自費處方箋格式')
@@ -683,18 +853,19 @@ def print_self_prescript(parent, database, system_settings, case_key, medicine_s
 
 
 # 列印健保醫療收據
-def print_ins_receipt(parent, database, system_settings, case_key, print_type, printable=None):
-    if printable is None:
-        printable = system_settings.field('列印健保醫療收據')
+def print_ins_receipt(parent, database, system_settings, case_key,
+                      print_type, print_option='系統設定'):
+    printable = system_settings.field('列印健保醫療收據')
+    if print_option != '系統設定' and printable == '不印':
+        printable = '列印'
 
     if printable == '不印':
         return
-
-    if system_settings.field('列印健保醫療收據') == '詢問':
+    elif printable == '詢問':
         dialog = QtPrintSupport.QPrintDialog()
         if dialog.exec() == QtWidgets.QDialog.Rejected:
             return
-    elif system_settings.field('列印健保醫療收據') == '預覽':
+    elif printable == '預覽':
         print_type = 'preview'
 
     form = system_settings.field('健保醫療收據格式')
@@ -713,18 +884,20 @@ def print_ins_receipt(parent, database, system_settings, case_key, print_type, p
 
 
 # 列印自費醫療收據
-def print_self_receipt(parent, database, system_settings, case_key, print_type, printable=None):
-    if printable is None:
-        printable = system_settings.field('列印自費醫療收據')
+def print_self_receipt(parent, database, system_settings, case_key, medicine_set,
+                       print_type, print_option='系統設定'):
+    printable = system_settings.field('列印自費醫療收據')
+
+    if print_option != '系統設定' and printable == '不印':
+        printable = '列印'
 
     if printable == '不印':
         return
-
-    if system_settings.field('列印自費醫療收據') == '詢問':
+    elif printable == '詢問':
         dialog = QtPrintSupport.QPrintDialog()
         if dialog.exec() == QtWidgets.QDialog.Rejected:
             return
-    elif system_settings.field('列印自費醫療收據') == '預覽':
+    elif printable == '預覽':
         print_type = 'preview'
 
     form = system_settings.field('自費醫療收據格式')
@@ -732,7 +905,7 @@ def print_self_receipt(parent, database, system_settings, case_key, print_type, 
         return
 
     print_receipt_form = PRINT_RECEIPT_SELF_FORM[form](
-        parent, database, system_settings, case_key)
+        parent, database, system_settings, case_key, medicine_set)
 
     if print_type == 'print':
         print_receipt_form.print()

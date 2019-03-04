@@ -56,6 +56,7 @@ class MedicalRecordList(QtWidgets.QMainWindow):
             self.ui.tableWidget_medical_record_list, self.database)
         self.table_widget_medical_record_list.set_column_hidden([0])
         # self._set_table_width()
+        self._set_tool_button()
 
     # 設定信號
     def _set_signal(self):
@@ -107,6 +108,18 @@ class MedicalRecordList(QtWidgets.QMainWindow):
             return
 
         self.table_widget_medical_record_list.set_db_data(sql, self._set_table_data)
+        self._set_tool_button()
+
+    def _set_tool_button(self):
+        if self.ui.tableWidget_medical_record_list.rowCount() > 0:
+            enabled = True
+        else:
+            enabled = False
+
+        self.ui.action_open_record.setEnabled(enabled)
+        self.ui.action_delete_record.setEnabled(enabled)
+        self.ui.action_print_prescript.setEnabled(enabled)
+        self.ui.action_print_receipt.setEnabled(enabled)
 
     def _set_table_data(self, row_no, row):
         if row['InsType'] == '健保':
@@ -290,7 +303,7 @@ class MedicalRecordList(QtWidgets.QMainWindow):
     def _print_prescript(self):
         case_key = self.table_widget_medical_record_list.field_value(0)
         print_prescript = print_prescription.PrintPrescription(
-            self, self.database, self.system_settings, case_key, '列印')
+            self, self.database, self.system_settings, case_key, '選擇列印')
         print_prescript.print()
 
         del print_prescript
@@ -299,7 +312,7 @@ class MedicalRecordList(QtWidgets.QMainWindow):
     def _print_receipt(self):
         case_key = self.table_widget_medical_record_list.field_value(0)
         print_charge = print_receipt.PrintReceipt(
-            self, self.database, self.system_settings, case_key, '列印')
+            self, self.database, self.system_settings, case_key, '選擇列印')
         print_charge.print()
 
         del print_charge

@@ -3,6 +3,7 @@ from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QMessageBox
 from libs import system_utils
 from libs import string_utils
+from libs import number_utils
 
 
 PRESCRIPT_COL_NO = {
@@ -25,6 +26,7 @@ INS_PRESCRIPT_COL_NO = {
     'Dosage': 11,
     'Unit': 12,
     'Instruction': 13,
+    'Info': 14,
 }
 
 
@@ -37,6 +39,7 @@ SELF_PRESCRIPT_COL_NO = {
     'Instruction': 13,
     'Price': 14,
     'Amount': 15,
+    'Info': 16,
 }
 
 INS_TREAT_COL_NO = {
@@ -204,4 +207,130 @@ def extract_compound(database, prescript_row, table_widget_prescript, table_widg
         if medicine_key == '':
             return
 
+
+def get_medicine_description(database, medicine_key):
+    sql = '''
+        SELECT Description FROM medicine
+        WHERE
+            MedicineKey = {medicine_key}
+    '''.format(medicine_key=medicine_key)
+    medicine_row = database.select_record(sql)
+    if len(medicine_row) <= 0:
+        return None
+
+    try:
+        description = string_utils.get_str(medicine_row[0]['Description'], 'utf8')
+    except TypeError:
+        return None
+
+    if description is not None and description.strip() == '':
+        return None
+
+    return description
+
+
+def get_costs_html(database, table_widget, prescript_col_dict):
+    prescript_record = ''
+    sequence = 0
+    total_costs = 0
+    for row_no in range(table_widget.rowCount()):
+        item = table_widget.item(row_no, prescript_col_dict['MedicineName']
+        )
+        if item is None:
+            continue
+
+        medicine_name = item.text()
+
+        item = table_widget.item(row_no, prescript_col_dict['Dosage']
+        )
+        if item is None:
+            continue
+
+        dosage = number_utils.get_float(item.text())
+
+        item = table_widget.item(row_no, prescript_col_dict['MedicineKey']
+        )
+        if item is None:
+            medicine_key = item
+        else:
+            medicine_key = item.text()
+
+        item = table_widget.item(row_no, prescript_col_dict['Unit']
+        )
+        if item is not None:
+            unit = item.text()
+        else:
+            unit = ''
+
+        cost = 0
+        if medicine_key is not None:
+            sql = 'SELECT InPrice FROM medicine WHERE MedicineKey = {0}'.format(medicine_key)
+            rows = database.select_record(sql)
+            if len(rows) > 0:
+                cost = number_utils.get_float(rows[0]['InPrice'])
+
+        sequence += 1
+
+        prescript_record += '''
+                <tr>
+                    <td align="center" style="padding-right: 8px;">{0}</td>
+                    <td style="padding-left: 8px;">{1}</td>
+                    <td align="right" style="padding-right: 8px">{2}</td>
+                    <td align="right" style="padding-right: 8px">{3} {4}</td>
+                    <td align="right" style="padding-right: 8px">{5:.1f}</td>
+                </tr>
+            '''.format(
+            string_utils.xstr(sequence),
+            string_utils.xstr(medicine_name),
+            cost,
+            dosage,
+            unit,
+            dosage * cost,
+            )
+
+        total_costs += dosage * cost
+
+    prescript_record += '''
+            <tr>
+                <td align="center" style="padding-right: 8px;"></td>
+                <td style="padding-left: 8px;">合計成本</td>
+                <td align="right" style="padding-right: 8px"></td>
+                <td align="right" style="padding-right: 8px"></td>
+                <td align="right" style="padding-right: 8px">{0:.1f}</td>
+            </tr>
+        '''.format(total_costs)
+
+    prescript_data = '''
+            <table align=center cellpadding="2" cellspacing="0" width="98%" style="border-width: 1px; border-style: solid;">
+                <thead>
+                    <tr bgcolor="LightGray">
+                        <th style="text-align: center; padding-left: 8px" width="5%">序</th>
+                        <th style="padding-left: 8px" width="50%" align="left">藥品名稱</th>
+                        <th style="padding-right: 8px" align="right" width="15%">進價</th>
+                        <th style="padding-right: 8px" align="right" width="15%">數量</th>
+                        <th style="padding-right: 8px" align="right" width="15%">成本小計</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {0}
+                </tbody>
+            </table>
+            <br>
+        '''.format(prescript_record)
+
+    html = '''
+            <html>
+                <head>
+                    <meta charset="UTF-8">
+                </head>
+                <body>
+                    <center><h4>用藥成本</h4></center>
+                    {0}
+                </body>
+            </html>
+        '''.format(
+        prescript_data,
+    )
+
+    return html
 

@@ -37,15 +37,8 @@ class Income(QtWidgets.QMainWindow):
     def close_all(self):
         pass
 
-    def open_medical_record(self):
-        if self.ui.tableWidget_registration.hasFocused():
-            case_key = self.table_widget_registration.field_value(0)
-        elif self.ui.tableWidget_charge.hasFocused():
-            case_key = self.table_widget_charge.field_value(0)
-        else:
-            return
-
-        self.parent.open_medical_record(case_key, '病歷查詢')
+    def open_medical_record(self, case_key, call_from):
+        self.parent.open_medical_record(case_key, call_from)
 
     def close_tab(self):
         current_tab = self.parent.ui.tabWidget_window.currentIndex()
@@ -63,7 +56,6 @@ class Income(QtWidgets.QMainWindow):
     def _set_signal(self):
         self.ui.action_close.triggered.connect(self.close_income)
         self.ui.action_requery.triggered.connect(self.open_dialog)
-        self.ui.action_open_medical_record.triggered.connect(self.open_medical_record)
 
     # 讀取病歷
     def open_dialog(self):

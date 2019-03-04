@@ -95,7 +95,8 @@ class DialogInputMedicine(QtWidgets.QDialog):
 
     def read_dictionary(self):
         if self.dict_type == '健保藥品':
-            medicine_type = 'AND (MedicineType in ("單方", "複方", "成方"))'
+            # medicine_type = 'AND (MedicineType in ("單方", "複方", "成方"))'
+            medicine_type = 'AND (MedicineType NOT IN ("水藥", "外用", "高貴", "穴道", "處置", "檢驗"))'
         elif self.dict_type == '所有藥品':
             medicine_type = 'AND (MedicineType in ("單方", "複方", "水藥", "外用", "高貴", "成方"))'
         elif self.dict_type == '健保處置':
@@ -108,14 +109,20 @@ class DialogInputMedicine(QtWidgets.QDialog):
         else:
             medicine_type = ''
 
+        order_type = '''
+            ORDER BY FIELD(MedicineType, "單方", "複方", "水藥", "外用", "高貴", "穴道", "處置", "成方"),
+                LENGTH(MedicineName),
+                CAST(CONVERT(`MedicineName` using big5) AS BINARY)
+        '''
+        if self.system_settings.field('詞庫排序') == '點擊率':
+            order_type = 'ORDER BY HitRate DESC'
+
         sql = '''
             SELECT * FROM medicine WHERE 
             (MedicineName LIKE "{0}%" OR InputCode LIKE "{0}%" OR MedicineCode = "{0}" OR InsCode = "{0}")
             {1}
-            ORDER BY FIELD(MedicineType, "單方", "複方", "水藥", "外用", "高貴", "穴道", "處置", "成方"), 
-                     LENGTH(MedicineName), 
-            CAST(CONVERT(`MedicineName` using big5) AS BINARY)
-        '''.format(self.input_code, medicine_type)
+            {2}
+        '''.format(self.input_code, medicine_type, order_type)
         self.table_widget_medicine.set_db_data(sql, self._set_medicine_data)
 
     def _set_medicine_data(self, row_no, row):

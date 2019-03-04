@@ -10,6 +10,7 @@ from libs import ui_utils
 from libs import string_utils
 from dialog import dialog_purchase_list
 from classes import table_widget
+from printer import print_receipt
 
 
 # 主視窗
@@ -39,6 +40,7 @@ class PurchaseList(QtWidgets.QMainWindow):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_PURCHASE_LIST, self)
         self.table_widget_purchase_list = table_widget.TableWidget(self.ui.tableWidget_purchase_list, self.database)
         self._set_table_width()
+        self._set_tool_button()
 
     # 設定信號
     def _set_signal(self):
@@ -47,6 +49,8 @@ class PurchaseList(QtWidgets.QMainWindow):
         self.ui.action_delete_record.triggered.connect(self.delete_purchase)
         self.ui.action_open_record.triggered.connect(self.open_medical_record)
         self.ui.action_close.triggered.connect(self.close_purchase_list)
+        self.ui.action_print_receipt.triggered.connect(self._print_receipt)
+        self.ui.action_print_purchase_list.triggered.connect(self._print_purchase_list)
         self.ui.tableWidget_purchase_list.doubleClicked.connect(self.open_medical_record)
 
     # 設定欄位寬度
@@ -79,6 +83,7 @@ class PurchaseList(QtWidgets.QMainWindow):
 
         self.ui.label_data_period.setText('資料期間: {0} 至 {1}'.format(start_date, end_date))
         self.table_widget_purchase_list.set_db_data(sql, self._set_table_data)
+        self._set_tool_button()
 
     def read_purchase_today(self):
         start_date = datetime.datetime.now().strftime('%Y-%m-%d')
@@ -98,6 +103,18 @@ class PurchaseList(QtWidgets.QMainWindow):
             start_date, end_date,
         )
         self.table_widget_purchase_list.set_db_data(sql, self._set_table_data)
+        self._set_tool_button()
+
+    def _set_tool_button(self):
+        if self.ui.tableWidget_purchase_list.rowCount() > 0:
+            enabled = True
+        else:
+            enabled = False
+
+        self.ui.action_delete_record.setEnabled(enabled)
+        self.ui.action_print_receipt.setEnabled(enabled)
+        self.ui.action_print_purchase_list.setEnabled(enabled)
+        self.ui.action_open_record.setEnabled(enabled)
 
     def _set_table_data(self, row_no, row):
         content = self._get_purchase_content(row['CaseKey'])
@@ -188,3 +205,14 @@ class PurchaseList(QtWidgets.QMainWindow):
     def close_purchase_list(self):
         self.close_all()
         self.close_tab()
+
+    def _print_receipt(self):
+        case_key = self.table_widget_purchase_list.field_value(0)
+        print_charge = print_receipt.PrintReceipt(
+            self, self.database, self.system_settings, case_key, '選擇列印')
+        print_charge.print()
+
+        del print_charge
+
+    def _print_purchase_list(self):
+        pass

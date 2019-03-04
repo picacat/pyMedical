@@ -63,17 +63,22 @@ class IncomeCashFlow(QtWidgets.QMainWindow):
 
     # 設定欄位寬度
     def _set_table_width(self):
-        width = [100, 120, 50, 80, 100, 60, 80, 100, 90, 90, 90, 90, 90, 90, 90, 100]
+        width = [100, 120, 50, 80, 100, 60, 80, 100, 90, 90, 90, 90, 90, 90, 90, 90, 100]
         self.table_widget_registration.set_table_heading_width(width)
-        width = [100, 120, 50, 80, 100, 60, 80, 100, 90, 50, 100, 90, 90, 90, 90, 100]
+        width = [100, 120, 50, 80, 100, 60, 80, 100, 90, 50, 100, 90, 90, 90, 90, 90, 100]
         self.table_widget_charge.set_table_heading_width(width)
 
     def open_medical_record(self):
-        if self.ui.tableWidget_registration.hasFocused():
+        sender_name = self.sender().objectName()
+
+        if sender_name == 'tableWidget_registration':
             case_key = self.table_widget_registration.field_value(0)
-        elif self.ui.tableWidget_charge.hasFocused():
+        elif sender_name == 'tableWidget_charge':
             case_key = self.table_widget_charge.field_value(0)
         else:
+            return
+
+        if case_key == '':
             return
 
         self.parent.open_medical_record(case_key, '病歷查詢')
@@ -97,22 +102,23 @@ class IncomeCashFlow(QtWidgets.QMainWindow):
 
     def _set_registration_fees(self):
         sql = '''
-            SELECT * FROM cases 
+            SELECT cases.*, debt.DebtType, debt.Fee FROM cases
+                LEFT JOIN debt ON cases.CaseKey = debt.CaseKey
             WHERE 
-                CaseDate BETWEEN "{0}" AND "{1}" AND
+                cases.CaseDate BETWEEN "{0}" AND "{1}" AND
                 (InsType = "健保" OR RegistFee > 0)
         '''.format(
             self.start_date, self.end_date
         )
 
         if self.period != '全部':
-            sql += ' AND Period = "{0}"'.format(self.period)
+            sql += ' AND cases.Period = "{0}"'.format(self.period)
         if self.room != '全部':
             sql += ' AND Room = {0}'.format(self.room)
         if self.cashier != '全部':
             sql += ' AND Register = "{0}"'.format(self.cashier)
 
-        sql += ' ORDER BY CaseDate, FIELD(cases.Period, {0})'.format(
+        sql += ' ORDER BY cases.CaseDate, FIELD(cases.Period, {0})'.format(
             string_utils.xstr(nhi_utils.PERIOD)[1:-1])
 
         self.table_widget_registration.set_db_data(sql, self._set_registration_table_data)
@@ -123,7 +129,12 @@ class IncomeCashFlow(QtWidgets.QMainWindow):
         regist_fee = number_utils.get_integer(row['RegistFee'])
         diag_share_fee = number_utils.get_integer(row['SDiagShareFee'])
         deposit_fee = number_utils.get_integer(row['DepositFee'])
-        subtotal = regist_fee + diag_share_fee + deposit_fee
+        if string_utils.xstr(row['DebtType']) == '掛號欠款':
+            debt_fee = -number_utils.get_integer(row['Fee'])
+        else:
+            debt_fee = 0
+
+        subtotal = regist_fee + diag_share_fee + deposit_fee + debt_fee
 
         card = case_utils.get_full_card(row['Card'], row['Continuance'])
         medical_record = [
@@ -140,6 +151,7 @@ class IncomeCashFlow(QtWidgets.QMainWindow):
             string_utils.xstr(diag_share_fee),
             string_utils.xstr(deposit_fee),
             None,
+            string_utils.xstr(debt_fee),
             None,
             string_utils.xstr(subtotal),
             string_utils.xstr(row['Register']),
@@ -150,7 +162,7 @@ class IncomeCashFlow(QtWidgets.QMainWindow):
                 row_no, col_no,
                 QtWidgets.QTableWidgetItem(medical_record[col_no])
             )
-            if col_no in [3, 9, 10, 11, 14]:
+            if col_no in [3, 9, 10, 11, 12, 13, 14, 15]:
                 self.ui.tableWidget_registration.item(
                     row_no, col_no).setTextAlignment(
                     QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
@@ -313,14 +325,15 @@ class IncomeCashFlow(QtWidgets.QMainWindow):
                 )
     def _calculate_registration_total(self):
         row_count = self.ui.tableWidget_registration.rowCount()
-        regist_fee, diag_share_fee, deposit_fee, refund_fee, repayment, subtotal = 0, 0, 0, 0, 0, 0
+        regist_fee, diag_share_fee, deposit_fee, refund_fee, debt_fee, repayment, subtotal = 0, 0, 0, 0, 0, 0, 0
         for row_no in range(row_count):
             regist_fee += number_utils.get_integer(self.ui.tableWidget_registration.item(row_no, 9).text())
             diag_share_fee += number_utils.get_integer(self.ui.tableWidget_registration.item(row_no, 10).text())
             deposit_fee += number_utils.get_integer(self.ui.tableWidget_registration.item(row_no, 11).text())
             refund_fee += number_utils.get_integer(self.ui.tableWidget_registration.item(row_no, 12).text())
-            repayment += number_utils.get_integer(self.ui.tableWidget_registration.item(row_no, 13).text())
-            subtotal += number_utils.get_integer(self.ui.tableWidget_registration.item(row_no, 14).text())
+            debt_fee += number_utils.get_integer(self.ui.tableWidget_registration.item(row_no, 13).text())
+            repayment += number_utils.get_integer(self.ui.tableWidget_registration.item(row_no, 14).text())
+            subtotal += number_utils.get_integer(self.ui.tableWidget_registration.item(row_no, 15).text())
 
         total_record = [
             None, None, None, None,
@@ -330,6 +343,7 @@ class IncomeCashFlow(QtWidgets.QMainWindow):
             string_utils.xstr(diag_share_fee),
             string_utils.xstr(deposit_fee),
             string_utils.xstr(refund_fee),
+            string_utils.xstr(debt_fee),
             string_utils.xstr(repayment),
             string_utils.xstr(subtotal),
         ]
@@ -343,7 +357,7 @@ class IncomeCashFlow(QtWidgets.QMainWindow):
                 row_count, col_no,
                 QtWidgets.QTableWidgetItem(total_record[col_no])
             )
-            if col_no in [9, 10, 11, 12, 13, 14]:
+            if col_no in [9, 10, 11, 12, 13, 14, 15]:
                 self.ui.tableWidget_registration.item(
                     row_count, col_no).setTextAlignment(
                     QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
@@ -360,7 +374,7 @@ class IncomeCashFlow(QtWidgets.QMainWindow):
 
     def _set_charge_fees(self):
         sql = '''
-            SELECT cases.*, debt.Fee FROM cases
+            SELECT cases.*, debt.DebtType, debt.Fee FROM cases
                 LEFT JOIN debt ON cases.CaseKey = debt.CaseKey
             WHERE 
                 cases.CaseDate BETWEEN "{0}" AND "{1}" AND 
@@ -386,7 +400,12 @@ class IncomeCashFlow(QtWidgets.QMainWindow):
         pres_days = case_utils.get_pres_days(self.database, case_key)
 
         drug_share_fee = number_utils.get_integer(row['SDrugShareFee'])
-        debt_fee = -number_utils.get_integer(row['Fee'])
+        if string_utils.xstr(row['DebtType']) == '批價欠款':
+            debt_fee = -number_utils.get_integer(row['Fee'])
+        else:
+            debt_fee = 0
+
+        receipt_fee = number_utils.get_integer(row['ReceiptFee'])
         total_fee = number_utils.get_integer(row['TotalFee'])
         subtotal = drug_share_fee + total_fee + debt_fee
 
@@ -405,6 +424,7 @@ class IncomeCashFlow(QtWidgets.QMainWindow):
             string_utils.xstr(row['Doctor']),
             string_utils.xstr(drug_share_fee),
             string_utils.xstr(total_fee),
+            string_utils.xstr(receipt_fee),
             string_utils.xstr(debt_fee),
             string_utils.xstr(subtotal),
             string_utils.xstr(row['Cashier']),
@@ -415,7 +435,7 @@ class IncomeCashFlow(QtWidgets.QMainWindow):
                 row_no, col_no,
                 QtWidgets.QTableWidgetItem(medical_record[col_no])
             )
-            if col_no in [3, 9, 11, 12, 13, 14]:
+            if col_no in [3, 9, 11, 12, 13, 14, 15]:
                 self.ui.tableWidget_charge.item(
                     row_no, col_no).setTextAlignment(
                     QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
@@ -439,7 +459,7 @@ class IncomeCashFlow(QtWidgets.QMainWindow):
 
         if debt_fee < 0:
             self.ui.tableWidget_charge.item(
-                row_no, 13).setForeground(
+                row_no, 14).setForeground(
                 QtGui.QColor('red')
             )
 
@@ -448,17 +468,19 @@ class IncomeCashFlow(QtWidgets.QMainWindow):
         drug_share_fee, debt_fee, total_fee, receipt_fee, subtotal = 0, 0, 0, 0, 0
         for row_no in range(row_count):
             drug_share_fee += number_utils.get_integer(self.ui.tableWidget_charge.item(row_no, 11).text())
-            debt_fee += number_utils.get_integer(self.ui.tableWidget_charge.item(row_no, 12).text())
-            total_fee += number_utils.get_integer(self.ui.tableWidget_charge.item(row_no, 13).text())
-            subtotal += number_utils.get_integer(self.ui.tableWidget_charge.item(row_no, 14).text())
+            total_fee += number_utils.get_integer(self.ui.tableWidget_charge.item(row_no, 12).text())
+            receipt_fee += number_utils.get_integer(self.ui.tableWidget_charge.item(row_no, 13).text())
+            debt_fee += number_utils.get_integer(self.ui.tableWidget_charge.item(row_no, 14).text())
+            subtotal += number_utils.get_integer(self.ui.tableWidget_charge.item(row_no, 15).text())
 
         total_record = [
             None, None, None, None,
             '合計',
             None, None, None, None, None, None,
             string_utils.xstr(drug_share_fee),
-            string_utils.xstr(debt_fee),
             string_utils.xstr(total_fee),
+            string_utils.xstr(receipt_fee),
+            string_utils.xstr(debt_fee),
             string_utils.xstr(subtotal),
         ]
 
@@ -471,7 +493,7 @@ class IncomeCashFlow(QtWidgets.QMainWindow):
                 row_count, col_no,
                 QtWidgets.QTableWidgetItem(total_record[col_no])
             )
-            if col_no in [11, 12, 13, 14]:
+            if col_no in [11, 12, 13, 14, 15]:
                 self.ui.tableWidget_charge.item(
                     row_count, col_no).setTextAlignment(
                     QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
@@ -483,9 +505,9 @@ class IncomeCashFlow(QtWidgets.QMainWindow):
 
         total_fee = (
                 number_utils.get_integer(self.ui.tableWidget_registration.item(
-                    self.ui.tableWidget_registration.rowCount()-1, 14).text()) +
+                    self.ui.tableWidget_registration.rowCount()-1, 15).text()) +
                 number_utils.get_integer(self.ui.tableWidget_charge.item(
-                    self.ui.tableWidget_charge.rowCount()-1, 14).text())
+                    self.ui.tableWidget_charge.rowCount()-1, 15).text())
         )
 
         total_rows = [
@@ -494,9 +516,11 @@ class IncomeCashFlow(QtWidgets.QMainWindow):
             ['藥品負擔', self.ui.tableWidget_charge.item(self.ui.tableWidget_charge.rowCount()-1, 11).text()],
             ['欠卡費', self.ui.tableWidget_registration.item(self.ui.tableWidget_registration.rowCount()-1, 11).text()],
             ['還卡費', self.ui.tableWidget_registration.item(self.ui.tableWidget_registration.rowCount()-1, 12).text()],
-            ['自費還款', self.ui.tableWidget_registration.item(self.ui.tableWidget_registration.rowCount()-1, 13).text()],
+            ['自費還款', self.ui.tableWidget_registration.item(self.ui.tableWidget_registration.rowCount()-1, 14).text()],
             ['自費應收', self.ui.tableWidget_charge.item(self.ui.tableWidget_charge.rowCount()-1, 12).text()],
-            ['自費欠款', self.ui.tableWidget_charge.item(self.ui.tableWidget_charge.rowCount()-1, 13).text()],
+            ['自費實收', self.ui.tableWidget_charge.item(self.ui.tableWidget_charge.rowCount()-1, 13).text()],
+            ['掛號欠款', self.ui.tableWidget_registration.item(self.ui.tableWidget_charge.rowCount()-1, 13).text()],
+            ['批價欠款', self.ui.tableWidget_charge.item(self.ui.tableWidget_charge.rowCount()-1, 14).text()],
             ['實收現金', string_utils.xstr(total_fee)],
         ]
 
@@ -512,7 +536,7 @@ class IncomeCashFlow(QtWidgets.QMainWindow):
                         row_no, col_no).setTextAlignment(
                         QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
                     )
-                if row_no in [4, 7]:
+                if row_no in [4, 8, 9]:
                     self.ui.tableWidget_total.item(
                         row_no, col_no).setForeground(
                         QtGui.QColor('red')

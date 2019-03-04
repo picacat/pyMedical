@@ -5,6 +5,7 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 
 from classes import table_widget
 from dialog import dialog_input_medicine
+from dialog import dialog_rich_text
 
 from libs import ui_utils
 from libs import string_utils
@@ -51,6 +52,7 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
         self.ui.toolButton_add_medicine.clicked.connect(self.append_null_medicine)
         self.ui.toolButton_remove_medicine.clicked.connect(self.remove_medicine)
         self.ui.toolButton_dictionary.clicked.connect(self._open_dictionary)
+        self.ui.toolButton_show_costs.clicked.connect(self._show_costs)
         self.ui.tableWidget_prescript.keyPressEvent = self._table_widget_prescript_key_press
         self.ui.tableWidget_prescript.itemChanged.connect(self._prescript_item_changed)
         self.ui.comboBox_pres_days.currentTextChanged.connect(self.pres_days_changed)
@@ -164,8 +166,13 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
                 prescript_utils.SELF_PRESCRIPT_COL_NO['MedicineKey'], medicine_key):
             return
 
-        price = string_utils.get_formatted_str('單價', row['Price'])
-        amount = string_utils.get_formatted_str('單價', row['Amount'])
+        try:
+            price = string_utils.get_formatted_str('單價', row['Price'])
+            amount = string_utils.get_formatted_str('單價', row['Amount'])
+        except Exception:
+            price = string_utils.get_formatted_str('單價', row['SalePrice'])
+            amount = string_utils.get_formatted_str('單價', None)
+
 
         prescript_row = [
             [prescript_utils.SELF_PRESCRIPT_COL_NO['PrescriptKey'], '-1'],
@@ -201,18 +208,23 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
                     QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter)
             elif item[0] in [
                 prescript_utils.SELF_PRESCRIPT_COL_NO['Price'],
-                prescript_utils.SELF_PRESCRIPT_COL_NO['Amount']
+                prescript_utils.SELF_PRESCRIPT_COL_NO['Amount'],
+                prescript_utils.SELF_PRESCRIPT_COL_NO['Info'],
             ]:
                 item = self.ui.tableWidget_prescript.item(row_no, item[0])
                 if item is not None:
                     item.setTextAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
                     item.setFlags(QtCore.Qt.ItemIsEnabled)
 
+        medicine_key = row[prescript_utils.SELF_PRESCRIPT_COL_NO['MedicineKey']][1]
+        description = prescript_utils.get_medicine_description(self.database, medicine_key)
+        self._add_prescript_info_button(row_no, description)
+
     def _set_table_width(self):
         medicine_width = [
             70,
             100, 100, 100, 100, 100, 100, 100, 100, 100,
-            240, 60, 50, 60, 80, 80
+            220, 60, 50, 60, 80, 80, 20
         ]
         self.table_widget_prescript.set_table_heading_width(medicine_width)
 
@@ -220,6 +232,7 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
         self._read_dosage()
         self._read_medicine()
         self._calculate_total_dosage()
+        self._calculate_total_costs()
 
         if self.parent.call_from == '醫師看診作業':
             self.append_null_medicine()
@@ -246,6 +259,7 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
         self.table_widget_prescript.set_db_data(sql, self._set_medicine_data)
 
     def _set_medicine_data(self, row_no, row):
+        medicine_key = row['MedicineKey']
         dosage = string_utils.get_formatted_str(self.system_settings.field('劑量形式'), row['Dosage'])
         price = string_utils.get_formatted_str('單價', row['Price'])
         amount = string_utils.get_formatted_str('單價', row['Amount'])
@@ -257,7 +271,7 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
             string_utils.xstr(row['CaseDate']),
             string_utils.xstr(row['MedicineSet']),
             string_utils.xstr(row['MedicineType']),
-            string_utils.xstr(row['MedicineKey']),
+            string_utils.xstr(medicine_key),
             string_utils.xstr(row['InsCode']),
             string_utils.xstr(row['DosageMode']),
             string_utils.xstr(row['MedicineName']),
@@ -288,10 +302,37 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
             self.ui.tableWidget_prescript.item(
                 row_no, col_no).setTextAlignment(align | QtCore.Qt.AlignVCenter)
 
-            if col_no in [prescript_utils.SELF_PRESCRIPT_COL_NO['Price'], prescript_utils.SELF_PRESCRIPT_COL_NO['Amount']]:
+            if col_no in [
+                prescript_utils.SELF_PRESCRIPT_COL_NO['Price'],
+                prescript_utils.SELF_PRESCRIPT_COL_NO['Amount'],
+                prescript_utils.SELF_PRESCRIPT_COL_NO['Info']
+            ]:
                 item = self.ui.tableWidget_prescript.item(row_no, col_no)
                 if item is not None:
                     item.setFlags(QtCore.Qt.ItemIsEnabled)
+
+        description = prescript_utils.get_medicine_description(self.database, medicine_key)
+        self._add_prescript_info_button(row_no, description)
+
+    def _add_prescript_info_button(self, row_no, description):
+        button = QtWidgets.QPushButton(self.ui.tableWidget_prescript)
+        button.setIcon(QtGui.QIcon('./icons/gtk-info.svg'))
+        button.setFlat(True)
+        if description is None:
+            button.setEnabled(False)
+
+        button.clicked.connect(lambda : self._show_medicine_description(description))
+        self.ui.tableWidget_prescript.setCellWidget(
+            row_no, prescript_utils.SELF_PRESCRIPT_COL_NO['Info'], button)
+
+    def _show_medicine_description(self, description):
+        dialog = dialog_rich_text.DialogRichText(
+            self, self.database, self.system_settings,
+            'rich_text', description
+        )
+        dialog.exec_()
+        dialog.close_all()
+        dialog.deleteLater()
 
     # 增加處方資料
     def append_null_medicine(self):
@@ -329,6 +370,7 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
 
         self.parent.calculate_self_fees()
         self._calculate_total_dosage()
+        self._calculate_total_costs()
 
     def save_prescript(self):
         self._save_dosage()
@@ -496,6 +538,7 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
             self.parent.calculate_self_fees()
 
             self ._calculate_total_dosage()
+            self ._calculate_total_costs()
 
     def _calculate_total_price(self, row_no, item):
         sale_price = self.ui.tableWidget_prescript.item(row_no, prescript_utils.SELF_PRESCRIPT_COL_NO['Price'])
@@ -520,7 +563,8 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
     def _adjust_price_column_align(self, row_no):
         for col_no in [
             prescript_utils.SELF_PRESCRIPT_COL_NO['Price'],
-            prescript_utils.SELF_PRESCRIPT_COL_NO['Amount']
+            prescript_utils.SELF_PRESCRIPT_COL_NO['Amount'],
+            prescript_utils.SELF_PRESCRIPT_COL_NO['Info'],
         ]:
             item = self.ui.tableWidget_prescript.item(row_no, col_no)
 
@@ -540,5 +584,46 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
 
         self.ui.label_total_dosage.setText('總量: {0}'.format(total_dosage))
 
+    def _calculate_total_costs(self):
+        total_costs = 0.0
+        for row_no in range(self.ui.tableWidget_prescript.rowCount()):
+            dosage_item = self.ui.tableWidget_prescript.item(
+                row_no, prescript_utils.SELF_PRESCRIPT_COL_NO['Dosage'])
+            if dosage_item is None:
+                continue
+
+            medicine_key_item = self.ui.tableWidget_prescript.item(
+                row_no, prescript_utils.SELF_PRESCRIPT_COL_NO['MedicineKey'])
+            if medicine_key_item is None:
+                continue
+
+            medicine_key = medicine_key_item.text()
+            if medicine_key == '':
+                continue
+
+            sql = 'SELECT InPrice FROM medicine WHERE MedicineKey = {0}'.format(medicine_key)
+            rows = self.database.select_record(sql)
+            if len(rows) <= 0:
+                continue
+
+            cost = number_utils.get_float(rows[0]['InPrice'])
+            dosage = number_utils.get_float(dosage_item.text())
+            total_costs += dosage * cost
+
+        self.ui.label_total_costs.setText('成本: {0:.1f}'.format(total_costs))
+
     def _open_dictionary(self):
         self.parent.open_dictionary(self.medicine_set, '自費處方')
+
+    def _show_costs(self):
+        html = prescript_utils.get_costs_html(
+            self.database, self.ui.tableWidget_prescript, prescript_utils.SELF_PRESCRIPT_COL_NO
+        )
+        dialog = dialog_rich_text.DialogRichText(
+            self, self.database, self.system_settings,
+            'html', html
+        )
+        dialog.exec_()
+        dialog.close_all()
+        dialog.deleteLater()
+

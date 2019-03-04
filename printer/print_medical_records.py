@@ -195,7 +195,8 @@ class PrintMedicalRecords:
             disease_record = printer_utils.get_disease(self.database, case_key)
             prescript_record = printer_utils.get_prescript_html(
                 self.database, self.system_settings,
-                case_key, medicine_set, blocks=3)
+                case_key, medicine_set, print_alias=Fase,
+                print_total_dosage=True, blocks=3)
             instruction = printer_utils.get_instruction_html(
                 self.database, case_key, medicine_set
             )

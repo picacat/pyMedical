@@ -59,6 +59,7 @@ class DialogMedicalRecordPastHistory(QtWidgets.QDialog):
     def _set_signal(self):
         self.ui.buttonBox.accepted.connect(self.accepted_button_clicked)
         self.ui.tableWidget_past_history.itemSelectionChanged.connect(self._past_history_changed)
+        self.ui.tableWidget_past_history.doubleClicked.connect(self._edit_past_history)
 
     def accepted_button_clicked(self):
         case_key = self.table_widget_past_history.field_value(0)
@@ -168,3 +169,10 @@ class DialogMedicalRecordPastHistory(QtWidgets.QDialog):
         self.ui.checkBox_self_prescript.setChecked(copy_self_prescript)
         if copy_self_prescript:
             self.ui.checkBox_self_prescript.setChecked(False)  # 預設不要拷貝
+
+    def _edit_past_history(self):
+        case_key = self.table_widget_past_history.field_value(0)
+        self.parent.parent.open_medical_record(case_key, '過去病歷')
+
+        self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).animateClick()
+

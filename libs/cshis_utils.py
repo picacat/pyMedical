@@ -1,25 +1,19 @@
 # 2018.04.30
 from PyQt5.QtWidgets import QMessageBox, QPushButton
-import sys
-import os
-import ctypes
-from classes import cshis
+
 from libs import date_utils
 from libs import patient_utils
 from libs import number_utils
 from libs import nhi_utils
-from libs import string_utils
-from libs import case_utils
-from libs import prescript_utils
-from libs import system_utils
 
 NORMAL_CARD = '1'
 RETURN_CARD = '2'
+
 ERROR_MESSAGE = {
     4000: ['讀卡機timeout', '請檢查讀卡機連接埠是否接妥, 或是系統設定->讀卡機連接埠是否正確'],
     4012: ['未置入安全模組卡', '安全模組可能未正確安裝至讀卡機內, 請關掉讀卡機電源, 打開螺絲背蓋, 檢查安全模組卡是否安裝妥當.'],
     4013: ['未置入健保IC卡', '請確定健保IC卡已經正確的插入讀卡機'],
-    4014: ['未置入醫事人員卡', None],
+    4014: ['未置入醫事人員卡', '請插入醫事人員卡'],
     4029: ['IC卡權限不足', None],
     4032: ['所插入非安全模組卡', None],
     4033: ['所置入非健保IC卡', None],
@@ -137,9 +131,27 @@ ERROR_MESSAGE = {
     9091: ['聲明不實', None],
     9092: ['其他', None],
     9100: ['藥師藥局無權限', None],
+    9101: ['所置入非醫師卡', None],
     9129: ['持卡人於非限制院所就診', None],
     9130: ['醫事卡失效', None],
     9140: ['醫事卡逾效期', None],
+
+    9200: ['安全模組檔目錄錯誤或不存在或數量超過一個以上', None],
+    9201: ['初始安全模組檔讀取異常，請在C:\\NHI\\SAM\\COMX1目錄下放置健保署正確安全模組檔', None],
+    9202: ['安全模組檔讀取異常，已在其它電腦使用過，請在C:\\NHI\\SAM\\COMX1目錄下放置健保署正確安全模組檔。', None],
+    9203: ['卡片配對錯誤，正式卡與測試卡不能混用', None],
+    9204: ['找不到讀卡機，或PCSC環境異常', None],
+    9205: ['開啟讀卡機連結埠失敗', None],
+    9210: ['健保IC卡內部認證失敗', None],
+    9211: ['雲端安全模組(IDC)對健保IC卡認證失敗', None],
+    9212: ['健保IC卡對雲端安全模組認證失敗', None],
+    9213: ['雲端安全模組卡片更新逾時', None],
+    9220: ['醫事人員卡內部認證失敗', None],
+    9221: ['雲端安全模組(IDC)驗證醫事人員卡失敗', None],
+    9230: ['安全模組檔「醫療院所名稱」讀取失敗', None],
+    9231: ['安全模組檔「醫療院所簡稱」讀取失敗', None],
+    9240: ['雲端安全模組主控台沒起動 ', None],
+    9999: ['找不到醫事人員卡讀卡機', None],
 }
 
 
@@ -193,14 +205,6 @@ TREAT_AFTER_CHECK_DICT = {
     '1': '1 - 正常',
     '2': '2 - 補卡',
 }
-
-# 取得健保讀卡機函數
-def get_cshis():
-    cshis = None
-    if sys.platform == 'win32':
-        cshis = ctypes.windll.LoadLibrary('cshis.dll')
-
-    return cshis
 
 
 def get_treat_item(course):
@@ -341,297 +345,4 @@ def show_ic_card_message(error_code, process_name=None):
     msg_box.exec_()
 
 
-def insert_correct_ic_card(database, ic_card, patient_key):
-    try:
-        if not ic_card.read_basic_data():
-            return False
-    except AttributeError:
-        msg_box = QMessageBox()
-        msg_box.setIcon(QMessageBox.Critical)
-        msg_box.setWindowTitle('無法使用健保卡')
-        msg_box.setText(
-            '''
-            <font size="4" color="red">
-              <b>無法使用讀卡機, 請改掛異常卡序或欠卡<br>
-            </font>
-            '''
-        )
-        msg_box.setInformativeText("請確定讀卡機使用正常")
-        msg_box.addButton(QPushButton("確定"), QMessageBox.YesRole)
-        msg_box.exec_()
-        return False
 
-    sql = '''
-        SELECT * FROM patient WHERE
-        PatientKey = {0}
-    '''.format(patient_key)
-    row = database.select_record(sql)[0]
-    if ic_card.basic_data['patient_id'] != string_utils.xstr(row['ID']):
-        msg_box = QMessageBox()
-        msg_box.setIcon(QMessageBox.Critical)
-        msg_box.setWindowTitle('健保卡身分不符')
-        msg_box.setText(
-            '''
-            <font size="4" color="red">
-              <b>此健保卡基本資料為<br>
-              </font>
-                <font size="4" color="blue">
-                {0}: {1}<br>
-                </font>
-                <font size="4" color="red">
-                與現行掛號病患<br>
-                </font>
-                <font size="4" color="blue">
-                {2}: {3}<br>
-                </font>
-                <font size="4" color="red">
-                身分證號不相符, 請檢查是否插入錯誤的健保卡.</b>
-            </font>
-            '''.format(ic_card.basic_data['name'],
-                       ic_card.basic_data['patient_id'],
-                       string_utils.xstr(row['Name']),
-                       string_utils.xstr(row['ID']))
-        )
-        msg_box.setInformativeText("請確定插入的健保卡是否為此病患所有.")
-        msg_box.addButton(QPushButton("確定"), QMessageBox.YesRole)
-        msg_box.exec_()
-        return False
-
-    if string_utils.xstr(row['CardNo']) == '':
-        sql = '''
-            UPDATE patient SET CardNo = "{0}" WHERE PatientKey = {1}
-        '''.format(ic_card.basic_data['card_no'],
-                   patient_key)
-        database.exec_sql(sql)
-
-    return True
-
-
-# ic卡寫卡
-def write_ic_card(write_type, database, system_settings, patient_key, course, treat_after_check=None):
-    treat_item = get_treat_item(course)
-    ic_card = cshis.CSHIS(system_settings)
-    if not insert_correct_ic_card(
-            database,
-            ic_card, patient_key):
-        return False
-
-    available_date, available_count = ic_card.get_card_status()
-    if available_count <= 0:
-        ic_card.update_hc(False)
-
-    if write_type in ['全部', '掛號寫卡']:
-        if not ic_card.get_seq_number_256(treat_item, ' ', treat_after_check):
-            return False
-
-    return ic_card
-
-# ic 醫令寫卡
-def write_ic_medical_record(database, system_settings, case_key, treat_after_check):
-    write_ic_treatment(database, system_settings, case_key, treat_after_check)  # 寫入病名, 費用
-    write_prescript_signature(database, system_settings, case_key)  # 寫入醫令簽章
-    case_utils.update_xml(
-        database, 'cases', 'Security', 'prescript_sign_time',
-        date_utils.now_to_str(), 'CaseKey', case_key
-    )  # 更新健保寫卡資料
-
-# 寫入藥品處方簽章
-def write_medicine_signature(database, system_settings, case_row, patient_row, prescript_rows, dosage_row):
-    registration_datetime = case_utils.extract_security_xml(case_row['Security'], '寫卡時間')
-    registration_nhi_datetime = date_utils.west_datetime_to_nhi_datetime(registration_datetime)
-    patient_id = string_utils.xstr(patient_row['ID'])
-    patient_birthday = string_utils.xstr(patient_row['Birthday'])
-    birthday_nhi_datetime = date_utils.west_date_to_nhi_date(patient_birthday)
-
-    usage = (prescript_utils.get_usage_code(dosage_row['Packages']) +
-             prescript_utils.get_instruction_code(dosage_row['Instruction']))
-    days = number_utils.get_integer(dosage_row['Days'])
-
-    data_write = ''
-    for row in prescript_rows:
-        try:
-            total_dosage = format(row['Dosage'] * dosage_row['Days'], '.1f')
-        except TypeError:
-            total_dosage = 0
-
-        data_write += '{0}{1}{2}{3}{4}{5}{6}{7}'.format(
-            registration_nhi_datetime,                      # 就診日期時間 13 bytes: EEEmmddHHMMSS
-            '1',                                            # 醫令類別 1 bytes: 1-非長期藥品 2-長期藥品 3-診療 4-特殊材料
-            '{0:<12}'.format(row['InsCode']),               # 診療項目代號 12 bytes
-            ' ' * 6,                                        # 診療部位 6 bytes
-            '{0:<18}'.format(usage),                        # 用法 18 bytes
-            '{0:0>2}'.format(days),                         # 天數 2 bytes: 00
-            '{0:0>7}'.format(total_dosage),                 # 總量 7 bytes: 00000.0
-            '01',                                           # 交付處方註記 2 bytes: 01-自行調劑 02-交付調劑 03-自行執行
-        )
-
-    ic_card = cshis.CSHIS(system_settings)
-    prescript_sign_list = ic_card.write_multi_prescript_sign(
-        registration_nhi_datetime, patient_id, birthday_nhi_datetime, data_write, len(prescript_rows)
-    )
-
-    if prescript_sign_list is None:
-        return
-
-    for row, prescript_sign in zip(prescript_rows, prescript_sign_list):
-        database.exec_sql(
-            'DELETE FROM presextend WHERE PrescriptKey = {0} AND ExtendType = "處方簽章"'.format(row['PrescriptKey'])
-        )
-        fields = [
-            'PrescriptKey', 'ExtendType', 'Content',
-        ]
-        data = [
-            row['PrescriptKey'], '處方簽章', prescript_sign,
-        ]
-        database.insert_record('presextend', fields, data)
-
-
-# 寫入處置處方簽章
-def write_treat_signature(database, system_settings, case_row, dosage_row, patient_row):
-    registration_datetime = case_utils.extract_security_xml(case_row['Security'], '寫卡時間')
-    registration_nhi_datetime = date_utils.west_datetime_to_nhi_datetime(registration_datetime)
-    patient_id = string_utils.xstr(patient_row['ID'])
-    patient_birthday = string_utils.xstr(patient_row['Birthday'])
-    birthday_nhi_datetime = date_utils.west_date_to_nhi_date(patient_birthday)
-
-    treat_code = nhi_utils.get_treat_code(
-        database, case_row['CaseKey']
-    )
-    usage = ''  # 處置免填
-    days = 0
-    total_dosage = 1
-    data_write = '{0}{1}{2}{3}{4}{5}{6}{7}'.format(
-        registration_nhi_datetime,                      # 就診日期時間 13 bytes: EEEmmddHHMMSS
-        '3',                                            # 醫令類別 1 bytes: 1-非長期藥品 2-長期藥品 3-診療 4-特殊材料
-        '{0:<12}'.format(treat_code),                   # 診療項目代號 12 bytes
-        ' ' * 6,                                        # 診療部位 6 bytes
-        '{0:<18}'.format(usage),                         # 用法 18 bytes
-        '{0:0>2}'.format(days),                         # 天數 2 bytes: 00
-        '{0:0>7}'.format(total_dosage),                 # 總量 7 bytes: 00000.0
-        '03',                                           # 交付處方註記 2 bytes: 01-自行調劑 02-交付調劑 03-自行執行
-    )
-
-    ic_card = cshis.CSHIS(system_settings)
-    treat_sign = ic_card.write_prescript_sign(
-        registration_nhi_datetime, patient_id, birthday_nhi_datetime, data_write,
-    )
-
-    if treat_sign is None:
-        return
-
-    database.exec_sql(
-        'DELETE FROM presextend WHERE PrescriptKey = {0} AND ExtendType = "處置簽章"'.format(case_row['CaseKey'])
-    )
-    fields = [
-        'PrescriptKey', 'ExtendType', 'Content',
-    ]
-    data = [
-        case_row['CaseKey'], '處置簽章', treat_sign,
-    ]
-    database.insert_record('presextend', fields, data)
-
-
-# 寫入病名及費用
-def write_ic_treatment(database, system_settings, case_key, treat_after_check):
-    ic_card = cshis.CSHIS(system_settings)
-
-    sql = '''
-        SELECT PatientKey, DiseaseCode1, DiseaseCode2, DiseaseCode3, 
-        DiagShareFee, DrugShareFee, InsTotalFee, Security FROM cases WHERE
-        CaseKey = {0} 
-    '''.format(case_key)
-    case_row = database.select_record(sql)[0]
-
-    sql = '''
-        SELECT ID, Birthday FROM patient WHERE
-        PatientKey = {0} 
-    '''.format(case_row['PatientKey'])
-    patient_row = database.select_record(sql)[0]
-
-    registration_datetime = case_utils.extract_security_xml(case_row['Security'], '寫卡時間')
-    registration_nhi_datetime = date_utils.west_datetime_to_nhi_datetime(registration_datetime)
-    patient_id = string_utils.xstr(patient_row['ID'])
-    patient_birthday = string_utils.xstr(patient_row['Birthday'])
-    birthday_nhi_datetime = date_utils.west_date_to_nhi_date(patient_birthday)
-
-    disease_code1 = string_utils.xstr(case_row['DiseaseCode1'])
-    disease_code2 = string_utils.xstr(case_row['DiseaseCode2'])
-    disease_code3 = string_utils.xstr(case_row['DiseaseCode3'])
-    data_write = '{0}{1}{2}{3}{4}{5}{6}'.format(
-        treat_after_check,
-        '{0:<7}'.format(disease_code1),
-        '{0:<7}'.format(disease_code2),
-        '{0:<7}'.format(disease_code3),
-        ' ' * 7,
-        ' ' * 7,
-        ' ' * 7,
-    )
-    doctor_id = ic_card.write_treatment_code(registration_nhi_datetime, patient_id, birthday_nhi_datetime, data_write)
-
-    ins_total_fee = string_utils.xstr(case_row['InsTotalFee'])
-    share_fee = string_utils.xstr(
-        (number_utils.get_integer(case_row['DiagShareFee']) +
-         number_utils.get_integer(case_row['DrugShareFee']))
-    )
-    data_write = '{0}{1}{2}{3}{4}'.format(
-        '{0:0>8}'.format(ins_total_fee),
-        '{0:0>8}'.format(share_fee),
-        '0' * 8,
-        '0' * 7,
-        '0' * 7,
-        )
-    ic_card.write_treatment_fee(registration_nhi_datetime, patient_id, birthday_nhi_datetime, data_write)
-
-    return doctor_id
-
-# 寫入處方簽章
-def write_prescript_signature(database, system_settings, case_key):
-    sql = '''
-        SELECT CaseKey, PatientKey, Treatment, Security FROM cases WHERE
-        CaseKey = {0} 
-    '''.format(case_key)
-    case_row = database.select_record(sql)[0]
-
-    sql = '''
-        SELECT * FROM dosage WHERE
-        CaseKey = {0} AND MedicineSet = 1 
-    '''.format(case_key)
-    rows = database.select_record(sql)
-    dosage_row = rows[0] if len(rows) > 0 else None
-
-    sql = '''
-        SELECT ID, Birthday FROM patient WHERE
-        PatientKey = {0} 
-    '''.format(case_row['PatientKey'])
-    patient_row = database.select_record(sql)[0]
-
-    sql = '''
-        SELECT * FROM prescript WHERE
-        CaseKey = {0} AND MedicineSet = 1 AND InsCode IS NOT NULL
-    '''.format(case_key)
-    prescript_rows = database.select_record(sql)
-
-    if string_utils.xstr(case_row['Treatment']) in nhi_utils.INS_TREAT:
-        write_treat_signature(database, system_settings, case_row, dosage_row, patient_row)
-
-    if len(prescript_rows) > 0:
-        write_medicine_signature(database, system_settings, case_row, patient_row, prescript_rows, dosage_row)
-
-
-# 健保IC卡資料上傳
-def upload_data(system_settings, xml_file_name, record_count):
-    ic_card = cshis.CSHIS(system_settings)
-    if ic_card.cshis is None:
-        system_utils.show_message_box(
-            QMessageBox.Critical,
-            '無法驅動讀卡機',
-            '<font size="4" color="red"><b>無法載入健保讀卡機驅動程式, 無法執行健保卡掛號.</b></font>',
-            '請確定讀卡機驅動程式是否正確.'
-        )
-        return
-
-    file_size = os.path.getsize(xml_file_name)
-    if not ic_card.upload_file(xml_file_name, file_size, record_count):
-        return None
-    else:
-        return ic_card

@@ -11,17 +11,17 @@ from libs import number_utils
 
 # 健保處方箋格式1 241mm x 93mm
 # 2018.10.09
-class PrintPrescriptionInsForm2:
+class PrintPrescriptionSelfForm2:
     # 初始化
     def __init__(self, parent=None, *args):
         self.parent = parent
         self.database = args[0]
         self.system_settings = args[1]
         self.case_key = args[2]
+        self.medicine_set = args[3]
         self.ui = None
-        self.medicine_set = 1
 
-        self.printer = printer_utils.get_printer(self.system_settings, '健保處方箋印表機')
+        self.printer = printer_utils.get_printer(self.system_settings, '自費處方箋印表機')
         self.preview_dialog = QtPrintSupport.QPrintPreviewDialog(self.printer)
 
         self.current_print = None
@@ -67,9 +67,7 @@ class PrintPrescriptionInsForm2:
             document.print(self.printer)
 
     def _html(self):
-        case_record = printer_utils.get_case_html_1(self.database, self.case_key, '健保')
-        symptom_record = printer_utils.get_symptom_html(self.database, self.case_key, colspan=5)
-        disease_record = printer_utils.get_disease(self.database, self.case_key)
+        case_record = printer_utils.get_case_html_1(self.database, self.case_key, '自費')
         prescript_record = printer_utils.get_prescript_html(
             self.database, self.system_settings,
             self.case_key, self.medicine_set,
@@ -81,26 +79,22 @@ class PrintPrescriptionInsForm2:
         html = '''
             <html>
               <body>
-                <table width="98%" cellspacing="0">
+                <table width="98%" cellspacing=0>
                   <tbody>
                     {case}
-                    {symptom}
                   </tbody>  
                 </table>
-                {disease}
                 <hr>
-                <table width="98%" cellspacing="0">
+                <table cellspacing=0>
                   <tbody>
                     {prescript}
-                  </tbody>
-                </table>        
+                  </tbody>  
+                </table>
                 {instruction}
               </body>
             </html>
         '''.format(
             case=case_record,
-            symptom=symptom_record,
-            disease=disease_record,
             prescript=prescript_record,
             instruction=instruction,
         )

@@ -61,9 +61,9 @@ class IncomeList(QtWidgets.QMainWindow):
     # 設定欄位寬度
     def _set_table_width(self):
         width = [
-            100, 120, 50, 80, 80, 50, 80, 100, 90, 50,
-            70, 85, 85, 70, 70, 85, 85, 85, 85,
-            90, 90,
+            100, 120, 50, 70, 80, 50, 80, 90, 90, 50,
+            70, 85, 85, 70, 70, 85, 85, 85, 85, 85,
+            80, 80,
         ]
         self.table_widget_income.set_table_heading_width(width)
 
@@ -112,12 +112,13 @@ class IncomeList(QtWidgets.QMainWindow):
             [7, self.tableWidget_registration.item(registration_row_no, 7)],
             [8, self.tableWidget_registration.item(registration_row_no, 8)],
 
-            [10, self.tableWidget_registration.item(registration_row_no, 9)],
-            [11, self.tableWidget_registration.item(registration_row_no, 10)],
-            [13, self.tableWidget_registration.item(registration_row_no, 11)],
-            [14, self.tableWidget_registration.item(registration_row_no, 12)],
-            [15, self.tableWidget_registration.item(registration_row_no, 13)],
-            [19, self.tableWidget_registration.item(registration_row_no, 15)],
+            [10, self.tableWidget_registration.item(registration_row_no, 9)],  # 掛號費
+            [11, self.tableWidget_registration.item(registration_row_no, 10)], # 門診負擔
+            [13, self.tableWidget_registration.item(registration_row_no, 11)], # 欠卡費
+            [14, self.tableWidget_registration.item(registration_row_no, 12)], # 還卡費
+            [15, self.tableWidget_registration.item(registration_row_no, 14)], # 自費還款
+            [18, self.tableWidget_registration.item(registration_row_no, 13)], # 掛號欠款
+            # [19, self.tableWidget_registration.item(registration_row_no, 15)],
 
         ]
 
@@ -141,11 +142,12 @@ class IncomeList(QtWidgets.QMainWindow):
             [7, self.tableWidget_registration.item(registration_row_no, 7)],
             [8, self.tableWidget_registration.item(registration_row_no, 8)],
 
-            [10, self.tableWidget_registration.item(registration_row_no, 9)],
-            [11, self.tableWidget_registration.item(registration_row_no, 10)],
-            [13, self.tableWidget_registration.item(registration_row_no, 11)],
-            [14, self.tableWidget_registration.item(registration_row_no, 12)],
-            [15, self.tableWidget_registration.item(registration_row_no, 13)],
+            [10, self.tableWidget_registration.item(registration_row_no, 9)],  # 掛號費
+            [11, self.tableWidget_registration.item(registration_row_no, 10)], # 門診負擔
+            [13, self.tableWidget_registration.item(registration_row_no, 11)], # 欠卡費
+            [14, self.tableWidget_registration.item(registration_row_no, 12)], # 還卡費
+            [15, self.tableWidget_registration.item(registration_row_no, 14)], # 自費還款
+            [18, self.tableWidget_registration.item(registration_row_no, 13)], # 自費還款
 
         ]
 
@@ -186,8 +188,8 @@ class IncomeList(QtWidgets.QMainWindow):
             [12, self.tableWidget_charge.item(charge_row_no, 11)],
             [16, self.tableWidget_charge.item(charge_row_no, 12)],
             [17, self.tableWidget_charge.item(charge_row_no, 13)],
-
-            [19, self.tableWidget_charge.item(charge_row_no, 15)],
+            #
+            # [19, self.tableWidget_charge.item(charge_row_no, 15)],
 
         ]
 
@@ -215,8 +217,8 @@ class IncomeList(QtWidgets.QMainWindow):
             [12, self.tableWidget_charge.item(charge_row_no, 11)],
             [16, self.tableWidget_charge.item(charge_row_no, 12)],
             [17, self.tableWidget_charge.item(charge_row_no, 13)],
-
-            [20, self.tableWidget_charge.item(charge_row_no, 15)],
+            #
+            # [20, self.tableWidget_charge.item(charge_row_no, 15)],
 
         ]
 
@@ -238,7 +240,7 @@ class IncomeList(QtWidgets.QMainWindow):
         row_count = self.ui.tableWidget_income.rowCount()
         for row_no in range(row_count):
             subtotal = 0
-            for col_no in range(10, 18):
+            for col_no in range(10, 19):
                 cell = self.ui.tableWidget_income.item(row_no, col_no)
                 if cell is None or cell.text() == '':
                     self.ui.tableWidget_income.setItem(
@@ -255,11 +257,11 @@ class IncomeList(QtWidgets.QMainWindow):
                 )
 
             self.ui.tableWidget_income.setItem(
-                row_no, 18,
+                row_no, 19,
                 QtWidgets.QTableWidgetItem(string_utils.xstr(subtotal))
             )
             self.ui.tableWidget_income.item(
-                row_no, 18).setTextAlignment(
+                row_no, 19).setTextAlignment(
                 QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
             )
 

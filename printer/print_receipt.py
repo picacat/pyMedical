@@ -2,6 +2,7 @@
 #coding: utf-8
 
 from libs import printer_utils
+from libs import number_utils
 
 
 # 列印掛號收據 2018.02.26
@@ -13,9 +14,9 @@ class PrintReceipt:
         self.system_settings = args[1]
         self.case_key = args[2]
         try:
-            self.printable = args[3]
+            self.print_option = args[3]
         except IndexError:
-            self.printable = None
+            self.print_option = None
 
         self.ui = None
 
@@ -40,31 +41,33 @@ class PrintReceipt:
         self._ready_to_print('preview')
 
     def _ready_to_print(self, print_type):
-        selected_item = printer_utils.get_receipt_items(self.database, self.case_key)
+        selected_item, selected_medicine_set = printer_utils.get_medicine_set_items(
+            self.database, self.case_key, '收據', self.print_option)
 
         if not selected_item:
             return
 
-        if type(selected_item) is list:
-            for item in selected_item:
-                if item == '健保醫療收據':
+        if selected_item == '全部收據':
+            for item in selected_medicine_set:
+                if item == '健保收據':
                     printer_utils.print_ins_receipt(
                         self, self.database, self.system_settings,
-                        self.case_key, print_type, self.printable
+                        self.case_key, print_type, self.print_option
                     )
                 else:
+                    medicine_set = number_utils.get_integer(item.split('自費收據')[1]) + 1
                     printer_utils.print_self_receipt(
                         self, self.database, self.system_settings,
-                        self.case_key, print_type, self.printable
+                        self.case_key, medicine_set, print_type, self.print_option
                     )
-        elif selected_item == '健保醫療收據':
+        elif selected_item == '健保收據':
             printer_utils.print_ins_receipt(
                 self, self.database, self.system_settings,
-                self.case_key, print_type, self.printable
+                self.case_key, print_type, self.print_option
             )
         else:
             printer_utils.print_self_receipt(
                 self, self.database, self.system_settings,
-                self.case_key, print_type, self.printable
+                self.case_key, selected_medicine_set, print_type, self.print_option
             )
 

@@ -7,6 +7,7 @@ from PyQt5.QtCore import Qt
 from libs import ui_utils
 from libs import system_utils
 from libs import string_utils
+from libs import db_utils
 from classes import table_widget
 
 
@@ -113,12 +114,20 @@ class DialogSymptom(QtWidgets.QDialog):
             )
 
     def add_symptom(self):
+        # selected_symptom = self.table_widget_symptom.field_value(1)
+        # self.text_edit.insertPlainText(selected_symptom)
+        # self.text_edit.document().setModified(True)
+
+        clinic_key = self.table_widget_symptom.field_value(0)
         selected_symptom = self.table_widget_symptom.field_value(1)
         symptom = self.text_edit.toPlainText()
         symptom += '，' + selected_symptom \
-            if str(symptom).strip()[-1:] not in ['，', ',', ':', '='] and len(str(symptom).strip()) > 0 \
+            if str(symptom).strip()[-1:] not in ['，', ',', ', ', ':', '='] and len(str(symptom).strip()) > 0 \
             else selected_symptom
         self.text_edit.setText(string_utils.get_str(symptom, 'utf8'))
+        db_utils.increment_hit_rate(self.database, 'clinic', 'ClinicKey', clinic_key)
+
+
         self.text_edit.document().setModified(True)
 
         self.parent.reset_query()

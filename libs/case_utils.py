@@ -227,6 +227,7 @@ def get_pres_days(database, case_key, medicine_set=1):
 
     return pres_days
 
+
 def get_packages(database, case_key, medicine_set=1):
     sql = '''
         SELECT Packages FROM dosage WHERE 

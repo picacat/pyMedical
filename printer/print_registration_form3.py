@@ -9,9 +9,9 @@ from libs import number_utils
 from libs import system_utils
 
 
-# 掛號收據格式2 11"中二刀空白掛號單
-# 2018.07.09
-class PrintRegistrationForm2:
+# 掛號收據格式3 3"空白掛號單
+# 2019.02.14
+class PrintRegistrationForm3:
     # 初始化
     def __init__(self, parent=None, *args):
         self.parent = parent
@@ -57,7 +57,7 @@ class PrintRegistrationForm2:
 
     def print_painter(self):
         self.current_print = self.print_painter
-        self.printer.setPaperSize(QtCore.QSizeF(241, 93), QPrinter.Millimeter)
+        self.printer.setPaperSize(QtCore.QSizeF(5, 3), QPrinter.Inch)
 
         painter = QtGui.QPainter()
         painter.setFont(self.font)
@@ -68,7 +68,7 @@ class PrintRegistrationForm2:
 
     def print_html(self, printing):
         self.current_print = self.print_html
-        self.printer.setPaperSize(QtCore.QSizeF(241, 93), QPrinter.Millimeter)
+        self.printer.setPaperSize(QtCore.QSizeF(5, 3), QPrinter.Inch)
 
         document = printer_utils.get_document(self.printer, self.font)
         document.setDocumentMargin(printer_utils.get_document_margin())
@@ -82,54 +82,63 @@ class PrintRegistrationForm2:
         card = string_utils.xstr(row['Card'])
         if number_utils.get_integer(row['Continuance']) >= 1:
             card += '-' + string_utils.xstr(row['Continuance'])
-        total_amount = (number_utils.get_integer(row['RegistFee']) +
-                        number_utils.get_integer(row['SDiagShareFee']) +
-                        number_utils.get_integer(row['DepositFee']))
+
+        if self.system_settings.field('列印院所名稱') == 'Y':
+            clinic_name = self.system_settings.field('院所名稱')
+        else:
+            clinic_name = ''
 
         html = '''
             <html>
             <body>
-                <p style="font-size:24px"><b>{0} 門診掛號單</b></p>
-                <table cellspacing=0 cellpadding=8 style="border-width:1px; border-style: solid; border-color: darkgrey">
+                <p style="font-size:20px"><b>{clinic_name}<br>
+                電話:{clinic_telephone}</b></p>
+                <br>
+                <table cellspacing=16 cellpadding=8>
                     <tr>
-                        <td>掛號時間</td><td>{1}</td>
-                        <td>病患姓名</td><td>{2:0>6}-{3}</td>
-                        <td>保險類別</td><td>{4}-{5}</td>
-                    </tr>
-                    <tr>
-                        <td>健保卡序</td><td>{6}</td>
-                        <td>掛號費</td><td style="text-align:right">{7}元</td>
-                        <td>門診負擔</td><td style="text-align:right">{8}元</td>
-                    </tr>
-                    <tr>
-                     <td>欠卡費</td><td style="text-align:right">{9}元</td>
-                     <td>實收金額</td><td style="text-align:right">{10}元</td>
-                     <td>經手人</td><td>{11}</td>
-                    </tr>
-                    <tr>
-                        <td>診療室</td><td><center style="font-size:28px"><b>{12}診</b></center></td>
-                        <td>就診號碼</td><td><center style="font-size:28px"><b>{13:0>3}號</b></center></td>
-                        <td>蓋章</td>
-                        
+                        <td width="30%" style="font-size: 16px; text-align: center">
+                            {patient_key}
+                        </td>
+                        <td width="40%" style="font-size: 16px; text-align: center" colspan="3">
+                            {patient_name}
+                        </td>
+                        <td width="30%" style="font-size: 16px; text-align: center">
+                            <b>{registration_no}</br>
+                        </td>
                     </tr>
                 </table>
-                本單據僅供看診叫號使用，不作報稅證明用途<br>
+                <br>
+                <table cellspacing=0 cellpadding=8>
+                    <tr>
+                        <td width="20%" style="text-align: center">{room}</td>
+                        <td width="10%">{ins_type}</td>
+                        <td width="20%" style="text-align:center">{regist_fee}</td>
+                        <td width="15%" style="text-align:right">{deposit_fee}</td>
+                        <td width="30%" style="text-align:center">{case_date}</td>
+                    </tr>
+                    <tr>
+                        <td width="20%"></td>
+                        <td width="40%" colspan="2">卡序:{card}</td>
+                        <td width="40%" colspan="2">部份負擔:{diag_share_fee}元</td>
+                    </tr>
+                </table>
+                本單據僅供看診叫號使用，不作報稅證明用途
             </body>
             </html>
         '''.format(
-            self.system_settings.field('院所名稱'),
-            row['CaseDate'],
-            row['PatientKey'],
-            row['Name'],
-            row['InsType'],
-            row['Share'], card,
-            row['RegistFee'],
-            row['SDiagShareFee'],
-            row['DepositFee'],
-            total_amount,
-            row['Register'],
-            row['Room'],
-            row['RegistNo'],
+            clinic_name=clinic_name,
+            clinic_telephone=self.system_settings.field('院所電話'),
+            patient_key=string_utils.xstr(row['PatientKey']),
+            patient_name=string_utils.xstr(row['Name']),
+            registration_no=string_utils.xstr(row['RegistNo']),
+            room=string_utils.xstr(row['Room']),
+            ins_type=string_utils.xstr(row['InsType']),
+            regist_fee=string_utils.xstr(row['RegistFee']),
+            deposit_fee=string_utils.xstr(row['DepositFee']),
+            case_date=string_utils.xstr(row['CaseDate'].date()),
+            share=string_utils.xstr(row['Share']),
+            card=card,
+            diag_share_fee=string_utils.xstr(row['SDiagShareFee']),
         )
 
         return html

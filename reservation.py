@@ -172,6 +172,9 @@ class Reservation(QtWidgets.QMainWindow):
                     continue
 
                 reserve_no = self.ui.tableWidget_reservation.item(row_no, col_no+1)
+                if reserve_no.text() == '':
+                    continue
+
                 reservation_date = '{0} {1}'.format(
                     self.ui.dateEdit_reservation_date.date().toString('yyyy-MM-dd'),
                     time.text()

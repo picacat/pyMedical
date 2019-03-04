@@ -9,9 +9,9 @@ from libs import string_utils
 from libs import number_utils
 
 
-# 健保處方箋格式1 241mm x 93mm
+# 自費收據格式2 8.5 x 2 inches
 # 2018.10.09
-class PrintPrescriptionInsForm2:
+class PrintReceiptSelfForm2:
     # 初始化
     def __init__(self, parent=None, *args):
         self.parent = parent
@@ -19,9 +19,8 @@ class PrintPrescriptionInsForm2:
         self.system_settings = args[1]
         self.case_key = args[2]
         self.ui = None
-        self.medicine_set = 1
 
-        self.printer = printer_utils.get_printer(self.system_settings, '健保處方箋印表機')
+        self.printer = printer_utils.get_printer(self.system_settings, '自費醫療收據印表機')
         self.preview_dialog = QtPrintSupport.QPrintPreviewDialog(self.printer)
 
         self.current_print = None
@@ -67,42 +66,42 @@ class PrintPrescriptionInsForm2:
             document.print(self.printer)
 
     def _html(self):
-        case_record = printer_utils.get_case_html_1(self.database, self.case_key, '健保')
-        symptom_record = printer_utils.get_symptom_html(self.database, self.case_key, colspan=5)
-        disease_record = printer_utils.get_disease(self.database, self.case_key)
-        prescript_record = printer_utils.get_prescript_html(
-            self.database, self.system_settings,
-            self.case_key, self.medicine_set,
-            print_alias=False, print_total_dosage=True, blocks=3)
-        instruction = printer_utils.get_instruction_html(
-            self.database, self.case_key, self.medicine_set
-        )
+        case_record = printer_utils.get_case_html_1(self.database, self.case_key, '自費')
+        fees_record = printer_utils.get_self_fees_html(self.database, self.case_key)
 
         html = '''
             <html>
               <body>
-                <table width="98%" cellspacing="0">
+                <table width="95%" cellspacing="0">
+                  <thead>
+                    <tr>
+                      <th style="text-align: left; font-size: 14px" colspan="5">{clinic_name}({clinic_id}) 醫療費用收據</th>
+                    </tr>
+                    <tr>
+                      <th align="left" colspan="5">電話:{clinic_telephone} 院址:{clinic_address}</th>
+                    </tr>
+                  </thead>
                   <tbody>
                     {case}
-                    {symptom}
                   </tbody>  
                 </table>
-                {disease}
                 <hr>
-                <table width="98%" cellspacing="0">
+                <table width="90%" cellspacing="0">
                   <tbody>
-                    {prescript}
+                    {fees}
                   </tbody>
-                </table>        
-                {instruction}
+                </table>
+                <hr>
+                * 本收據可為報稅之憑證, 請妥善保存, 遺失恕不補發
               </body>
             </html>
         '''.format(
+            clinic_name=self.system_settings.field('院所名稱'),
+            clinic_id=self.system_settings.field('院所代號'),
+            clinic_telephone=self.system_settings.field('院所電話'),
+            clinic_address=self.system_settings.field('院所地址'),
             case=case_record,
-            symptom=symptom_record,
-            disease=disease_record,
-            prescript=prescript_record,
-            instruction=instruction,
+            fees=fees_record,
         )
 
         return html

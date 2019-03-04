@@ -51,7 +51,7 @@ class Debt(QtWidgets.QMainWindow):
 
     # 設定欄位寬度
     def _set_table_width(self):
-        width = [80, 100, 40, 120, 120, 60, 80, 80, 180, 120, 120, 120, 400]
+        width = [80, 100, 40, 120, 100, 120, 60, 80, 80, 180, 120, 120, 120, 400]
         self.table_widget_income.set_table_heading_width(width)
 
     def read_debt(self):
@@ -74,6 +74,7 @@ class Debt(QtWidgets.QMainWindow):
             string_utils.xstr(case_key),
             string_utils.xstr(rec['CaseDate'].date()),
             string_utils.xstr(rec['Period']),
+            string_utils.xstr(rec['DebtType']),
             string_utils.xstr(rec['PatientKey']),
             string_utils.xstr(rec['Name']),
             string_utils.xstr(rec['Fee']),
@@ -88,7 +89,7 @@ class Debt(QtWidgets.QMainWindow):
                 rec_no, column,
                 QtWidgets.QTableWidgetItem(medical_record[column])
             )
-            if column in [4, 6]:
+            if column in [5, 7]:
                 self.ui.tableWidget_debt.item(
                     rec_no, column).setTextAlignment(
                     QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter

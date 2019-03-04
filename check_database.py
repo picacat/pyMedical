@@ -118,6 +118,7 @@ class CheckDatabase(QtWidgets.QDialog):
         process_list = [
             self.database.check_field_exists('medicine', 'add', 'Dosage', 'decimal(10,2) AFTER Unit'),
             self.database.check_field_exists('medicine', 'add', 'Charged', 'varchar(4) AFTER InPrice'),
+            self.database.check_field_exists('medicine', 'add', 'HitRate', 'int DEFAULT 0 AFTER Description'),
             self.database.check_field_exists('medicine', 'change', ['location', 'Location'], 'varchar(20)'),
         ]
         self._exec_process(process_list)
@@ -139,6 +140,7 @@ class CheckDatabase(QtWidgets.QDialog):
     def _check_icd10(self):
         process_list = [
             self.database.check_field_exists('icd10', 'add', 'Groups', 'varchar(100) AFTER SpecialCode'),
+            self.database.check_field_exists('icd10', 'add', 'HitRate', 'int DEFAULT 0 AFTER Groups'),
         ]
         self._exec_process(process_list)
 
@@ -166,8 +168,9 @@ class CheckDatabase(QtWidgets.QDialog):
     def _check_debt(self):
         process_list = [
             self.database.check_field_exists('debt', 'change', ['Name', 'Name'], 'varchar(100)'),
-            self.database.check_field_exists('debt', 'add', 'Cashier1', 'varchar(10) AFTER Casher1'),
+            self.database.check_field_exists('debt', 'add', 'DebtType', 'varchar(10) AFTER PatientKey'),
             self.database.check_field_exists('debt', 'add', 'Cashier2', 'varchar(10) AFTER Casher2'),
+            self.database.check_field_exists('debt', 'add', 'Cashier3', 'varchar(10) AFTER Casher3'),
             self.database.check_field_exists('debt', 'add', 'Cashier3', 'varchar(10) AFTER Casher3'),
         ]
         self._exec_process(process_list)
@@ -182,6 +185,7 @@ class CheckDatabase(QtWidgets.QDialog):
     def _check_clinic(self):
         process_list = [
             self.database.check_field_exists('clinic', 'change', ['groups', 'Groups'], 'varchar(40)'),
+            self.database.check_field_exists('clinic', 'add', 'HitRate', 'int DEFAULT 0 AFTER ClinicName'),
         ]
         self._exec_process(process_list)
 

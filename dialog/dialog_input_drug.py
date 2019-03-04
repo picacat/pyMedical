@@ -92,7 +92,10 @@ class DialogInputDrug(QtWidgets.QDialog):
         self.ui.lineEdit_sale_price.setText(string_utils.xstr(row['SalePrice']))
         self.ui.lineEdit_quantity.setText(string_utils.xstr(row['Quantity']))
         self.ui.lineEdit_safe_quantity.setText(string_utils.xstr(row['SafeQuantity']))
-        self.ui.textEdit_description.setPlainText(string_utils.get_str(row['Description'], 'utf8'))
+        try:
+            self.ui.textEdit_description.setPlainText(string_utils.get_str(row['Description'], 'utf8'))
+        except TypeError:
+            pass
 
     def accepted_button_clicked(self):
         if self.medicine_key is None:

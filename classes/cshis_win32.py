@@ -1,5 +1,5 @@
-
 # 讀卡機作業 2018.05.03
+
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QMessageBox, QPushButton
 
@@ -22,8 +22,8 @@ from libs import nhi_utils
 class CSHIS:
     def __init__(self, database, system_settings):
         self.database = database
-        self.com_port = number_utils.get_integer(system_settings.field('健保卡讀卡機連接埠')) - 1  # com1=0, com2=1, com3=2,...
-        self.cshis = ctypes.cdll.LoadLibrary('/nhi/lib/cshis50.so')
+        self.ic_com_port = number_utils.get_integer(system_settings.field('健保卡讀卡機連接埠')) - 1  # com1=0, com2=1, com3=2,...
+        self.cshis = ctypes.windll.LoadLibrary('cshis.dll')
         self.basic_data = cshis_utils.BASIC_DATA
         self.treat_data = cshis_utils.TREAT_DATA
 
@@ -32,7 +32,7 @@ class CSHIS:
             self._close_com()
 
     def _open_com(self):
-        com_port = ctypes.c_short(self.com_port)
+        com_port = ctypes.c_short(self.ic_com_port)
         self.cshis.csOpenCom(com_port)
 
     def _close_com(self):
@@ -237,7 +237,7 @@ class CSHIS:
         p_treat_after_check = ctypes.c_char_p(treat_after_check.encode('ascii'))
         buffer_size = 296
         buffer = ctypes.c_buffer(buffer_size)  # c: char *
-        buffer_len = ctypes.c_short(buffer_size)  # c: short *
+        buffer_len = ctypes.c_int(buffer_size)  # c: short *
         self._open_com()
         error_code = self.cshis.hisGetSeqNumber256(
             p_treat_item,
@@ -649,7 +649,6 @@ class CSHIS:
             return False
 
         self.xml_feedback_data = cshis_utils.decode_xml_data(buffer)
-
         return True
 
     # ic卡寫卡

@@ -9,17 +9,17 @@ from libs import string_utils
 from libs import number_utils
 
 
-# 健保處方箋格式1 241mm x 93mm
-# 2018.10.09
-class PrintPrescriptionInsForm2:
+# 健保處方箋格式3 5 x 3 inches
+# 2019.02.14
+class PrintPrescriptionSelfForm3:
     # 初始化
     def __init__(self, parent=None, *args):
         self.parent = parent
         self.database = args[0]
         self.system_settings = args[1]
         self.case_key = args[2]
+        self.medicine_set = args[3]
         self.ui = None
-        self.medicine_set = 1
 
         self.printer = printer_utils.get_printer(self.system_settings, '健保處方箋印表機')
         self.preview_dialog = QtPrintSupport.QPrintPreviewDialog(self.printer)
@@ -40,7 +40,7 @@ class PrintPrescriptionInsForm2:
     # 設定GUI
     def _set_ui(self):
         font = system_utils.get_font()
-        self.font = QtGui.QFont(font, 9, QtGui.QFont.PreferQuality)
+        self.font = QtGui.QFont(font, 8, QtGui.QFont.PreferQuality)
 
     def _set_signal(self):
         pass
@@ -58,7 +58,7 @@ class PrintPrescriptionInsForm2:
 
     def print_html(self, printing=None):
         self.current_print = self.print_html
-        self.printer.setPaperSize(QtCore.QSizeF(8.5, 2), QPrinter.Inch)
+        self.printer.setPaperSize(QtCore.QSizeF(4.5, 3), QPrinter.Inch)
 
         document = printer_utils.get_document(self.printer, self.font)
         document.setDocumentMargin(printer_utils.get_document_margin())
@@ -67,13 +67,11 @@ class PrintPrescriptionInsForm2:
             document.print(self.printer)
 
     def _html(self):
-        case_record = printer_utils.get_case_html_1(self.database, self.case_key, '健保')
-        symptom_record = printer_utils.get_symptom_html(self.database, self.case_key, colspan=5)
-        disease_record = printer_utils.get_disease(self.database, self.case_key)
+        case_record = printer_utils.get_case_html_2(self.database, self.case_key, '自費')
         prescript_record = printer_utils.get_prescript_html(
             self.database, self.system_settings,
             self.case_key, self.medicine_set,
-            print_alias=False, print_total_dosage=True, blocks=3)
+            print_alias=False, print_total_dosage=True, blocks=2)
         instruction = printer_utils.get_instruction_html(
             self.database, self.case_key, self.medicine_set
         )
@@ -84,10 +82,8 @@ class PrintPrescriptionInsForm2:
                 <table width="98%" cellspacing="0">
                   <tbody>
                     {case}
-                    {symptom}
                   </tbody>  
                 </table>
-                {disease}
                 <hr>
                 <table width="98%" cellspacing="0">
                   <tbody>
@@ -99,8 +95,6 @@ class PrintPrescriptionInsForm2:
             </html>
         '''.format(
             case=case_record,
-            symptom=symptom_record,
-            disease=disease_record,
             prescript=prescript_record,
             instruction=instruction,
         )

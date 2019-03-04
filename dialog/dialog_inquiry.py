@@ -120,14 +120,20 @@ class DialogInquiry(QtWidgets.QDialog):
         if dialog is None:
             return
 
+        order_type = '''
+            ORDER BY LENGTH(ClinicName), CAST(CONVERT(`ClinicName` using big5) AS BINARY)
+        '''
+        if self.system_settings.field('詞庫排序') == '點擊率':
+            order_type = 'ORDER BY HitRate DESC'
+
         sql = '''
             SELECT * FROM clinic
             WHERE
                 ClinicType = "{0}" AND
                 (InputCode LIKE "{1}%" OR ClinicName LIKE "%{1}%")
             GROUP BY ClinicName 
-            ORDER BY LENGTH(ClinicName), CAST(CONVERT(`ClinicName` using big5) AS BINARY)
-        '''.format(self.dialog_type, keyword)
+            {2}
+        '''.format(self.dialog_type, keyword, order_type)
         dialog[0].set_db_data(sql, dialog[1])
 
         self.ui.lineEdit_query.setFocus(True)

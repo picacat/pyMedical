@@ -12,7 +12,7 @@ from classes import table_widget
 from dialog import dialog_input_drug
 
 
-# 收費設定 2018.04.14
+# 處方詞庫 2019.02.25
 class DictDrug(QtWidgets.QMainWindow):
     # 初始化
     def __init__(self, parent=None, *args):
@@ -54,8 +54,10 @@ class DictDrug(QtWidgets.QMainWindow):
         self.ui.toolButton_add_drug.clicked.connect(self._add_drug)
         self.ui.toolButton_remove_drug.clicked.connect(self._remove_drug)
         self.ui.toolButton_edit_drug.clicked.connect(self._edit_drug)
+        self.ui.toolButton_copy_drug.clicked.connect(self._copy_drug)
         self.ui.tableWidget_dict_drug.doubleClicked.connect(self._edit_drug)
         self.ui.tableWidget_dict_drug.itemSelectionChanged.connect(self.dict_drug_changed)
+        self.ui.lineEdit_search_drug.textChanged.connect(self._search_drug)
 
     # 設定欄位寬度
     def _set_table_width(self):
@@ -88,10 +90,17 @@ class DictDrug(QtWidgets.QMainWindow):
         self._read_dict_drug(dict_groups_type)
         self.ui.tableWidget_dict_groups.setFocus(True)
 
-    def _read_dict_drug(self, dict_groups_type):
+    def _read_dict_drug(self, dict_groups_type, keyword=None):
         sql = '''
-            SELECT * FROM medicine WHERE MedicineType = "{0}" ORDER BY MedicineCode, MedicineName
+            SELECT * FROM medicine 
+            WHERE 
+                MedicineType = "{0}" 
         '''.format(dict_groups_type)
+        if keyword is not None:
+            sql += keyword
+
+        sql += ' ORDER BY MedicineCode, MedicineName'
+
         self.table_widget_dict_drug.set_db_data(sql, self._set_dict_drug_data)
         medicine_key = self.table_widget_dict_drug.field_value(0)
         self._read_drug_description(medicine_key)
@@ -128,7 +137,7 @@ class DictDrug(QtWidgets.QMainWindow):
                     QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
                 )
 
-    # 新增主訴類別
+    # 新增處方類別
     def _add_dict_groups(self):
         input_dialog = dialog_utils.get_dialog(
             '{0}類別'.format(self.dict_type), '請輸入{0}類別'.format(self.dict_type),
@@ -145,7 +154,7 @@ class DictDrug(QtWidgets.QMainWindow):
         self.database.insert_record('dict_groups', field, data)
         self._read_dict_groups()
 
-    # 移除主訴類別
+    # 移除處方類別
     def _remove_dict_groups(self):
         msg_box = dialog_utils.get_message_box(
             '刪除{0}類別資料'.format(self.dict_type), QMessageBox.Warning,
@@ -161,7 +170,7 @@ class DictDrug(QtWidgets.QMainWindow):
         self.database.delete_record('dict_groups', 'DictGroupsKey', key)
         self.ui.tableWidget_dict_groups.removeRow(self.ui.tableWidget_dict_groups.currentRow())
 
-    # 更改主訴類別
+    # 更改處方類別
     def _edit_dict_groups(self):
         old_groups = self.table_widget_dict_groups.field_value(1)
         input_dialog = dialog_utils.get_dialog(
@@ -188,7 +197,7 @@ class DictDrug(QtWidgets.QMainWindow):
                                     self.table_widget_dict_groups.field_value(0), data)
         self.ui.tableWidget_dict_groups.item(self.ui.tableWidget_dict_groups.currentRow(), 1).setText(dict_groups_name)
 
-    # 新增主訴
+    # 新增處方
     def _add_drug(self):
         dialog = dialog_input_drug.DialogInputDrug(self, self.database, self.system_settings)
         if dialog.exec_():
@@ -224,7 +233,7 @@ class DictDrug(QtWidgets.QMainWindow):
         dialog.close_all()
         dialog.deleteLater()
 
-    # 移除主訴
+    # 移除處方
     def _remove_drug(self):
         msg_box = dialog_utils.get_message_box(
             '刪除{0}資料'.format(self.dict_type), QMessageBox.Warning,
@@ -240,7 +249,7 @@ class DictDrug(QtWidgets.QMainWindow):
         self.database.delete_record('medicine', 'MedicineKey', key)
         self.ui.tableWidget_dict_drug.removeRow(self.ui.tableWidget_dict_drug.currentRow())
 
-    # 更改主訴
+    # 更改處方
     def _edit_drug(self):
         key = self.table_widget_dict_drug.field_value(0)
         dialog = dialog_input_drug.DialogInputDrug(self, self.database, self.system_settings, key)
@@ -252,6 +261,69 @@ class DictDrug(QtWidgets.QMainWindow):
         row_data = self.database.select_record(sql)[0]
         self._set_dict_drug_data(self.ui.tableWidget_dict_drug.currentRow(), row_data)
         self.dict_drug_changed()
+
+    # 拷貝處方
+    def _copy_drug(self):
+        sql = '''
+            SELECT * FROM dict_groups 
+            WHERE 
+                DictGroupsType = "{0}類別" 
+            ORDER BY DictGroupsKey
+        '''.format(self.dict_type)
+
+        rows = self.database.select_record(sql)
+        items = ()
+        for row in rows:
+            items += (string_utils.xstr(row['DictGroupsName']), )
+
+        item, ok = QInputDialog.getItem(
+            self, "拷貝處方詞庫", "請選擇拷貝到何處", items, 0, False
+        )
+
+        if not ok:
+            return
+
+        medicine_key = self.table_widget_dict_drug.field_value(0)
+        sql = '''
+            SELECT * FROM medicine
+            WHERE
+                MedicineKey = {medicine_key}
+        '''.format(
+            medicine_key=medicine_key,
+        )
+        rows = self.database.select_record(sql)
+        if len(rows) <= 0:
+            return
+
+        row = rows[0]
+        fields = [
+            'MedicineType', 'MedicineMode', 'MedicineCode', 'InputCode', 'InsCode',
+            'MedicineName', 'MedicineAlias', 'Unit', 'Dosage', 'Location',
+            'SalePrice', 'InPrice', 'Charged', 'SafeQuantity', 'Description',
+        ]
+        data = [
+            item,
+            string_utils.xstr(row['MedicineMode']),
+            string_utils.xstr(row['MedicineCode']),
+            string_utils.xstr(row['InputCode']),
+            string_utils.xstr(row['InsCode']),
+            string_utils.xstr(row['MedicineName']),
+            string_utils.xstr(row['MedicineAlias']),
+            string_utils.xstr(row['Unit']),
+            string_utils.xstr(row['Dosage']),
+            string_utils.xstr(row['Location']),
+            string_utils.xstr(row['SalePrice']),
+            string_utils.xstr(row['InPrice']),
+            string_utils.xstr(row['Charged']),
+            string_utils.xstr(row['SafeQuantity']),
+            string_utils.get_str(row['Description'], 'utf8'),
+        ]
+        self.database.insert_record('medicine', fields, data)
+
+        dict_groups_type = self.table_widget_dict_groups.field_value(1)
+        if dict_groups_type == item:
+            self._read_dict_drug(dict_groups_type)
+
 
     def dict_drug_changed(self):
         medicine_key = self.table_widget_dict_drug.field_value(0)
@@ -281,3 +353,20 @@ class DictDrug(QtWidgets.QMainWindow):
     def close_charge_settings(self):
         self.close_all()
         self.close_tab()
+
+    def _search_drug(self):
+        dict_groups_type = self.table_widget_dict_groups.field_value(1)
+        keyword = self.ui.lineEdit_search_drug.text()
+
+        if keyword == '':
+            self._read_dict_drug(dict_groups_type)
+        else:
+            script = '''
+                AND 
+                (InputCode LIKE "{0}%" OR MedicineName LIKE "%{0}%")
+            '''.format(keyword)
+            self._read_dict_drug(dict_groups_type, script)
+
+        self.ui.lineEdit_search_drug.setFocus(True)
+        self.ui.lineEdit_search_drug.setCursorPosition(len(keyword))
+

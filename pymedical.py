@@ -25,6 +25,10 @@ import login
 import login_statistics
 import backup
 
+if sys.platform == 'win32':
+    from classes import cshis_win32 as cshis
+else:
+    from classes import cshis
 
 # 主畫面
 class PyMedical(QtWidgets.QMainWindow):
@@ -83,6 +87,9 @@ class PyMedical(QtWidgets.QMainWindow):
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_PY_MEDICAL, self)
         self.ui.tabWidget_window.setTabsClosable(True)
+
+        # self.ui.setWindowFlags(Qt.FramelessWindowHint)  # 無視窗邊框
+
         self._set_button_enabled()
         self.ui.setWindowTitle('{0} 醫療資訊管理系統'.format(self.system_settings.field('院所名稱')))
         self._set_style()
@@ -325,7 +332,7 @@ class PyMedical(QtWidgets.QMainWindow):
                     current_tab.refresh_patient_record()
                 elif tab_name == '櫃台購藥':
                     current_tab.ui.tableWidget_purchase_list.setFocus(True)
-                    current_tab.read_purchase_today()
+                    # current_tab.read_purchase_today()
                 elif tab_name == '門診掛號':
                     current_tab.read_wait()
 
@@ -334,7 +341,7 @@ class PyMedical(QtWidgets.QMainWindow):
     # 開啟病歷資料
     def open_medical_record(self, case_key, call_from=None):
         script = '''
-            SELECT CaseKey, PatientKey, Name 
+            SELECT CaseKey, CaseDate, PatientKey, Name 
             FROM cases 
             WHERE CaseKey = {0}
         '''.format(case_key)
@@ -362,7 +369,11 @@ class PyMedical(QtWidgets.QMainWindow):
             )
             return
 
-        tab_name = '{0}-{1}-病歷資料'.format(str(row['PatientKey']), str(row['Name']))
+        tab_name = '{0}-{1}-病歷資料-{2}'.format(
+            str(row['PatientKey']),
+            str(row['Name']),
+            str(row['CaseDate'].date()),
+        )
         self._add_tab(tab_name, self.database, self.system_settings, row['CaseKey'], call_from)
 
     # 開啟病患資料
@@ -522,6 +533,13 @@ class PyMedical(QtWidgets.QMainWindow):
         else:
             self.ui.frameSidebar.hide()
 
+    def check_ic_card(self):
+        if self.system_settings.field('使用讀卡機') == 'N':
+            return
+
+        ic_card = cshis.CSHIS(self.database, self.system_settings)
+        # ic_card.verify_sam()
+
 
 # 主程式
 def main():
@@ -551,6 +569,7 @@ def main():
     py_medical.refresh_status_bar()
     py_medical.set_root_permission()
     py_medical.showMaximized()
+    py_medical.check_ic_card()
     sys.exit(app.exec_())
 
 

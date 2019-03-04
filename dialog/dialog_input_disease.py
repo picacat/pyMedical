@@ -80,7 +80,6 @@ class DialogInputDisease(QtWidgets.QDialog):
 
     def _read_icd10(self, icd10):
         sql = 'SELECT * FROM icd10 WHERE ICDCode like "{0}%"'.format(icd10)
-        rows = self.database.select_record(sql)
         self.table_widget_disease.set_db_data(sql, self._set_disease)
 
     def _set_disease(self, rec_no, rec):

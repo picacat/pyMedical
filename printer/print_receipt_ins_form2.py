@@ -9,9 +9,9 @@ from libs import string_utils
 from libs import number_utils
 
 
-# 健保處方箋格式1 241mm x 93mm
+# 健保處方箋格式2 8.5 x 2 inches
 # 2018.10.09
-class PrintPrescriptionInsForm2:
+class PrintReceiptInsForm2:
     # 初始化
     def __init__(self, parent=None, *args):
         self.parent = parent
@@ -21,7 +21,7 @@ class PrintPrescriptionInsForm2:
         self.ui = None
         self.medicine_set = 1
 
-        self.printer = printer_utils.get_printer(self.system_settings, '健保處方箋印表機')
+        self.printer = printer_utils.get_printer(self.system_settings, '健保醫療收據印表機')
         self.preview_dialog = QtPrintSupport.QPrintPreviewDialog(self.printer)
 
         self.current_print = None
@@ -77,32 +77,70 @@ class PrintPrescriptionInsForm2:
         instruction = printer_utils.get_instruction_html(
             self.database, self.case_key, self.medicine_set
         )
+        fees_record = printer_utils.get_ins_fees_html(self.database, self.case_key)
 
         html = '''
             <html>
               <body>
-                <table width="98%" cellspacing="0">
+                <table width="95%" cellspacing="0">
+                  <thead>
+                    <tr>
+                      <th style="text-align: left; font-size: 14px" colspan="5">
+                        {clinic_name}({clinic_id}) 醫療費用收據
+                      </th>
+                    </tr>
+                    <tr>
+                      <th align="left" colspan="5">電話:{clinic_telephone} 院址:{clinic_address}</th>
+                    </tr>
+                  </thead>
                   <tbody>
                     {case}
-                    {symptom}
                   </tbody>  
                 </table>
                 {disease}
                 <hr>
-                <table width="98%" cellspacing="0">
+                <table cellspacing="0">
+                  <thead>
+                    <tr>
+                      <th align="left">處方名稱</th>
+                      <th align="right">劑量</th>
+                      <th align="right">總量</th>
+                      <th></th>
+                      <th align="left">處方名稱</th>
+                      <th align="right">劑量</th>
+                      <th align="right">總量</th>
+                      <th></th>
+                      <th align="left">處方名稱</th>
+                      <th align="right">劑量</th>
+                      <th align="right">總量</th>
+                    </tr>
+                  </thead>
                   <tbody>
                     {prescript}
                   </tbody>
-                </table>        
+                </table>
                 {instruction}
+                <hr>
+                <table width="90%" cellspacing="0">
+                  <tbody>
+                    {fees}
+                  </tbody>
+                </table>
+                <hr>
+                * 本收據可為報稅之憑證, 請妥善保存, 遺失恕不補發 (健保申報為健保總額支付點數, 非一點一元)
               </body>
             </html>
         '''.format(
+            clinic_name=self.system_settings.field('院所名稱'),
+            clinic_id=self.system_settings.field('院所代號'),
+            clinic_telephone=self.system_settings.field('院所電話'),
+            clinic_address=self.system_settings.field('院所地址'),
             case=case_record,
             symptom=symptom_record,
             disease=disease_record,
             prescript=prescript_record,
             instruction=instruction,
+            fees=fees_record,
         )
 
         return html

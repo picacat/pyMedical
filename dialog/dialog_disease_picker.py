@@ -60,6 +60,7 @@ class DialogDiseasePicker(QtWidgets.QDialog):
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).animateClick()
 
     def accepted_button_clicked(self):
+        self.icd10_key = self.table_widget_disease.field_value(0)
         self.icd_code = self.table_widget_disease.field_value(1)
         self.special_code = self.table_widget_disease.field_value(2)
         self.chinese_name = self.table_widget_disease.field_value(3)

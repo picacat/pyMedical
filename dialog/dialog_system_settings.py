@@ -196,6 +196,10 @@ class DialogSettings(QtWidgets.QDialog):
                                 self.ui.radioButton_order_medicine_type],
                                ['開藥順序', '處方類別'],
                                '處方排序')
+        self._set_radio_button([self.ui.radioButton_by_dict_name,
+                                self.ui.radioButton_by_hit_rate],
+                               ['詞庫名稱', '點擊率'],
+                               '詞庫排序')
 
     def _read_printer_settings(self):
         self.ui.comboBox_regist_print_mode.setCurrentText(self.system_settings.field('列印門診掛號單'))
@@ -231,11 +235,18 @@ class DialogSettings(QtWidgets.QDialog):
         self._set_check_box(self.ui.checkBox_print_total_dosage, '列印藥品總量')
         self._set_check_box(self.ui.checkBox_print_location, '列印藥品存放位置')
         self._set_check_box(self.ui.checkBox_print_remark, '列印病歷備註')
+        self._set_check_box(self.ui.checkBox_print_alias, '列印處方別名')
+        self._set_check_box(self.ui.checkBox_print_clinic_name, '列印院所名稱')
         self._set_check_box(self.ui.checkBox_print_massager, '列印推拿師父')
 
     def _read_reader_settings(self):
         self._set_check_box(self.ui.checkBox_use_reader, '使用讀卡機')
-        self.ui.spinBox_reader_port.setValue(number_utils.get_integer(self.system_settings.field('讀卡機連接埠')))
+        self.ui.spinBox_ic_reader_port.setValue(
+            number_utils.get_integer(self.system_settings.field('健保卡讀卡機連接埠'))
+        )
+        self.ui.spinBox_hpc_reader_port.setValue(
+            number_utils.get_integer(self.system_settings.field('醫事卡讀卡機連接埠'))
+        )
         self._set_radio_button([self.ui.radioButton_hc3000,
                                 self.ui.radioButton_teco,
                                 self.ui.radioButton_cr0310],
@@ -248,8 +259,9 @@ class DialogSettings(QtWidgets.QDialog):
                                ['掛號', '診療'],
                                '產生安全簽章位置')
         self._set_radio_button([self.ui.radioButton_doctor_write,
-                                self.ui.radioButton_regist_write],
-                               ['診療', '掛號'],
+                                self.ui.radioButton_regist_write,
+                                self.ui.radioButton_charge_write],
+                               ['診療', '掛號', '批價'],
                                '產生醫令簽章位置')
 
     def _read_misc(self):
@@ -342,6 +354,10 @@ class DialogSettings(QtWidgets.QDialog):
                                  self.ui.radioButton_order_medicine_type],
                                 ['開藥順序', '處方類別'],
                                 '處方排序')
+        self._save_radio_button([self.ui.radioButton_by_dict_name,
+                                 self.ui.radioButton_by_hit_rate],
+                                ['詞庫名稱', '點擊率'],
+                                '詞庫排序')
 
     def _save_printer_settings(self):
         self.system_settings.post('列印門診掛號單', self.ui.comboBox_regist_print_mode.currentText())
@@ -377,11 +393,14 @@ class DialogSettings(QtWidgets.QDialog):
         self._save_check_box(self.ui.checkBox_print_total_dosage, '列印藥品總量')
         self._save_check_box(self.ui.checkBox_print_location, '列印藥品存放位置')
         self._save_check_box(self.ui.checkBox_print_remark, '列印病歷備註')
+        self._save_check_box(self.ui.checkBox_print_alias, '列印處方別名')
+        self._save_check_box(self.ui.checkBox_print_clinic_name, '列印院所名稱')
         self._save_check_box(self.ui.checkBox_print_massager, '列印推拿師父')
 
     def _save_reader_settings(self):
         self._save_check_box( self.ui.checkBox_use_reader, '使用讀卡機')
-        self.system_settings.post('讀卡機連接埠', self.ui.spinBox_reader_port.value())
+        self.system_settings.post('健保卡讀卡機連接埠', self.ui.spinBox_ic_reader_port.value())
+        self.system_settings.post('醫事卡讀卡機連接埠', self.ui.spinBox_hpc_reader_port.value())
         self._save_radio_button([self.ui.radioButton_hc3000,
                                  self.ui.radioButton_teco,
                                  self.ui.radioButton_cr0310],
@@ -395,8 +414,9 @@ class DialogSettings(QtWidgets.QDialog):
                                 '產生安全簽章位置')
 
         self._save_radio_button([self.ui.radioButton_doctor_write,
-                                 self.ui.radioButton_regist_write],
-                                ['診療', '掛號'],
+                                 self.ui.radioButton_regist_write,
+                                 self.ui.radioButton_charge_write],
+                                ['診療', '掛號', '批價'],
                                 '產生醫令簽章位置')
 
     def _save_misc(self):

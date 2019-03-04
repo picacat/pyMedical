@@ -1,14 +1,16 @@
 # 2018.01.23C
 
 import datetime
+import os
 from libs import number_utils
 from libs import string_utils
 from libs import case_utils
 from libs import personnel_utils
 from libs import charge_utils
 
-XML_OUT_PATH = './nhi_upload'
-EMR_OUT_PATH = './emr'
+XML_OUT_PATH = '{0}/nhi_upload'.format(os.getcwd())
+EMR_OUT_PATH = '{0}/emr'.format(os.getcwd())
+
 MAX_DIAG_DAYS = 26  # 合理門診量最大日期
 APPLY_TYPE_CODE = {
     '申報': '1',
@@ -28,7 +30,7 @@ TREAT_ALL_CODE = [   # 所有針傷處置代碼
     'B90', 'B91', 'B92', 'B93', 'B94',
 ]
 
-MAX_COMPLICATED_TREAT = 30
+MAX_COMPLICATED_TREAT = 60
 COMPLICATED_TREAT_CODE = [
     'B55', 'B56', 'B57',
     'B82', 'B83', 'B84', 'B87', 'B88', 'B89',

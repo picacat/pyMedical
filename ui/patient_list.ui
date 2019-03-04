@@ -165,7 +165,7 @@
    <addaction name="action_open_record"/>
    <addaction name="action_delete_record"/>
    <addaction name="separator"/>
-   <addaction name="action_print_prescript"/>
+   <addaction name="action_print_patient_list"/>
    <addaction name="separator"/>
    <addaction name="action_close"/>
   </widget>
@@ -190,7 +190,7 @@
     <string>資料刪除</string>
    </property>
   </action>
-  <action name="action_print_prescript">
+  <action name="action_print_patient_list">
    <property name="icon">
     <iconset>
      <normaloff>../icons/document-print.svg</normaloff>../icons/document-print.svg</iconset>

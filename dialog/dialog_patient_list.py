@@ -54,37 +54,44 @@ class DialogPatientList(QtWidgets.QDialog):
         sql = 'SELECT * FROM patient '
         start = string_utils.xstr(self.ui.lineEdit_start.text())
         end = string_utils.xstr(self.ui.lineEdit_end.text())
+        condition = None
 
-        if self.ui.radioButton_all.isChecked():
-            sql = 'SELECT * FROM patient '
-            if self.ui.radioButton_range.isChecked():
-                sql += '''
-                    WHERE (PatientKey BETWEEN {0} AND {1})
-                '''.format(start, end)
-        elif self.ui.radioButton_keyword.isChecked():
+        if self.ui.radioButton_range.isChecked() and start != '' and end != '':
+            sql += '''
+                WHERE (PatientKey BETWEEN {0} AND {1})
+            '''.format(start, end)
+            condition = True
+
+        if self.ui.radioButton_keyword.isChecked():
             keyword = string_utils.xstr(self.ui.lineEdit_keyword.text())
             if keyword.isnumeric():
                 if len(keyword) >= 7:
-                    sql = '''
-                        SELECT * FROM patient WHERE Telephone like "%{0}%" or Cellphone like "%{0}%"
+                    if not condition:
+                        sql += 'WHERE '
+                    else:
+                        sql += 'AND '
+
+                    sql += '''
+                        (Telephone LIKE "%{0}%" OR Cellphone LIKE "%{0}%)"
                     '''.format(keyword)
                 else:
                     sql = 'SELECT * FROM patient WHERE PatientKey = {0}'.format(keyword)
             else:
-                sql = '''
-                    SELECT * FROM patient WHERE 
-                        (Name LIKE "%{0}%") OR
-                        (ID LIKE "{0}%") OR
-                        (Birthday = "{0}") OR
-                        (Address LIKE "%{0}%") OR
-                        (EMail LIKE "%{0}%")
+                if not condition:
+                    sql += 'WHERE '
+                else:
+                    sql += 'AND '
+
+                sql += '''
+                        ((Name LIKE "%{0}%") OR
+                         (ID LIKE "{0}%") OR
+                         (Birthday = "{0}") OR
+                         (Address LIKE "%{0}%") OR
+                         (EMail LIKE "%{0}%"))
                 '''.format(keyword)
-                if self.ui.radioButton_range.isChecked():
-                    sql += '''
-                        AND (PatientKey BETWEEN {0} AND {1})
-                    '''.format(start, end)
 
         sql += ' ORDER BY PatientKey'
+        print(sql)
 
         return sql
 

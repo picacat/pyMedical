@@ -139,7 +139,9 @@ class DialogMedicine(QtWidgets.QDialog):
                 SELECT * FROM dict_groups 
                 WHERE 
                     DictGroupsType = "{0}類別" OR
-                    DictGroupsType = "成方類別"
+                    DictGroupsType = "成方類別" OR
+                    (DictGroupsType = "藥品類別" AND 
+                     DictGroupsName NOT IN ("單方", "複方", "水藥", "外用", "高貴"))
                 ORDER BY DictGroupsKey
             '''.format(self.dict_type)
 
@@ -164,16 +166,21 @@ class DialogMedicine(QtWidgets.QDialog):
 
     def _read_medicine(self, dict_groups_type, input_code=None):
         input_code_str = ''
+        order_type = '''
+            ORDER BY LENGTH(MedicineName), CAST(CONVERT(`MedicineName` using big5) AS BINARY)
+        '''
         if input_code is not None:
             input_code_str = 'AND ((MedicineName LIKE "%{0}%") OR (InputCode LIKE "{0}%")) '.format(input_code)
+            if self.system_settings.field('詞庫排序') == '點擊率':
+                order_type = 'ORDER BY HitRate DESC'
 
         sql = '''
             SELECT * FROM medicine 
             WHERE 
                 (MedicineType = "{0}")
                 {1}
-            ORDER BY LENGTH(MedicineName), CAST(CONVERT(`MedicineName` using big5) AS BINARY)
-        '''.format(dict_groups_type, input_code_str)
+                {2}
+        '''.format(dict_groups_type, input_code_str, order_type)
 
         self.table_widget_medicine.set_db_data(sql, self._set_medicine_data)
 

@@ -66,7 +66,7 @@ class PrintReceiptSelfForm1:
             document.print(self.printer)
 
     def _html(self):
-        case_record = printer_utils.get_case_html_1(self.database, self.case_key)
+        case_record = printer_utils.get_case_html_1(self.database, self.case_key, '自費')
         fees_record = printer_utils.get_self_fees_html(self.database, self.case_key)
 
         html = '''

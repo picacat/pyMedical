@@ -2,8 +2,10 @@
 #coding: utf-8
 
 from PyQt5 import QtWidgets, QtCore, QtGui
+from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QMessageBox, QPushButton
 import sip
+import sys
 
 from classes import udp_socket_client
 from libs import ui_utils
@@ -13,6 +15,7 @@ from libs import date_utils
 from libs import cshis_utils
 from libs import nhi_utils
 from libs import system_utils
+from libs import db_utils
 
 from printer import print_prescription
 
@@ -24,6 +27,7 @@ import medical_record_fees
 import medical_record_registration
 import medical_record_check
 
+from dialog import dialog_diagnostic_picker
 from dialog import dialog_disease_picker
 from dialog import dialog_inquiry
 from dialog import dialog_diagnosis
@@ -31,6 +35,10 @@ from dialog import dialog_disease
 from dialog import dialog_medicine
 from dialog import dialog_medical_record_past_history
 
+if sys.platform == 'win32':
+    from classes import cshis_win32 as cshis
+else:
+    from classes import cshis
 
 # 病歷資料 2018.01.31
 class MedicalRecord(QtWidgets.QMainWindow):
@@ -47,6 +55,7 @@ class MedicalRecord(QtWidgets.QMainWindow):
         self.record_saved = False
         self.first_record = None
         self.last_record = None
+        self.input_code = ''
         self.ui = None
         self._init_tab()
 
@@ -65,7 +74,7 @@ class MedicalRecord(QtWidgets.QMainWindow):
             self._read_fees()
             self._read_recently_history()
 
-        if self.system_settings.field('自動顯示過去病歷') == 'Y':
+        if self.system_settings.field('自動顯示過去病歷') == 'Y' and self.call_from == '醫師看診作業':
             self._open_past_history()
 
     def _init_tab(self):
@@ -153,6 +162,11 @@ class MedicalRecord(QtWidgets.QMainWindow):
         self.ui.toolButton_cure.clicked.connect(self._tool_button_dictionary_clicked)
 
         self.ui.tabWidget_prescript.tabCloseRequested.connect(self.close_prescript_tab)                  # 關閉分頁
+
+        self.ui.textEdit_symptom.keyPressEvent = self._text_edit_key_press
+        self.ui.textEdit_tongue.keyPressEvent = self._text_edit_key_press
+        self.ui.textEdit_pulse.keyPressEvent = self._text_edit_key_press
+        self.ui.textEdit_remark.keyPressEvent = self._text_edit_key_press
 
     def close_prescript_tab(self, current_index):
         current_tab = self.ui.tabWidget_prescript.widget(current_index)
@@ -266,15 +280,18 @@ class MedicalRecord(QtWidgets.QMainWindow):
                 ORDER BY icd10.ICDCode
             '''.format(icd_code)
         else:
+            order_type = 'ORDER BY ICDCode'
+            if self.system_settings.field('詞庫排序') == '點擊率':
+                order_type = 'ORDER BY HitRate DESC'
+
             sql = '''
                 SELECT * FROM icd10
                 WHERE
                     ICDCode LIKE "{0}%" OR
                     InputCode LIKE "%{0}%" OR
-                    ChineseName LIKE "%{0}%" OR
-                    EnglishName LIKE "%{0}%"
-                ORDER BY ICDCode
+                    ChineseName LIKE "%{0}%"
             '''.format(icd_code)
+            sql += order_type
 
         rows = self.database.select_record(sql)
         if len(rows) <= 0:
@@ -310,6 +327,7 @@ class MedicalRecord(QtWidgets.QMainWindow):
         )
 
         if dialog.exec_():
+            icd10_key = dialog.icd10_key
             icd_code = dialog.icd_code
             disease_name = dialog.chinese_name
             special_code = dialog.special_code
@@ -322,6 +340,7 @@ class MedicalRecord(QtWidgets.QMainWindow):
                 self.tab_registration.ui.lineEdit_special_code.setText(
                     string_utils.xstr(special_code)
                 )
+            db_utils.increment_hit_rate(self.database, 'icd10', 'ICD10Key', icd10_key)
 
         dialog.close_all()
         dialog.deleteLater()
@@ -716,17 +735,15 @@ class MedicalRecord(QtWidgets.QMainWindow):
                 (card not in nhi_utils.ABNORMAL_CARD) and
                 (xcard not in nhi_utils.ABNORMAL_CARD) and
                 (card != '欠卡')):
-            cshis_utils.write_ic_medical_record(
-                self.database, self.system_settings,
-                self.case_key, cshis_utils.NORMAL_CARD
-            )
+            ic_card = cshis.CSHIS(self.database, self.system_settings)
+            ic_card.write_ic_medical_record(self.case_key, cshis_utils.NORMAL_CARD)
 
         self.close_all()
         self.close_tab()
 
     def _print(self):
         print_prescript = print_prescription.PrintPrescription(
-            self, self.database, self.system_settings, self.case_key, '列印')
+            self, self.database, self.system_settings, self.case_key, '系統設定')
         print_prescript.print()
 
         del print_prescript
@@ -919,3 +936,100 @@ class MedicalRecord(QtWidgets.QMainWindow):
         dialog.exec_()
         dialog.deleteLater()
 
+    def _text_edit_key_press(self, event):
+        if self.ui.textEdit_symptom.hasFocus():
+            diagnostic_type = '主訴'
+            sender = self.ui.textEdit_symptom
+        elif self.ui.textEdit_tongue.hasFocus():
+            diagnostic_type = '舌診'
+            sender = self.ui.textEdit_tongue
+        elif self.ui.textEdit_pulse.hasFocus():
+            diagnostic_type = '脈象'
+            sender = self.ui.textEdit_pulse
+        elif self.ui.textEdit_remark.hasFocus():
+            diagnostic_type = '備註'
+            sender = self.ui.textEdit_remark
+        else:
+            diagnostic_type = '主訴'
+            sender = self.ui.textEdit_symptom
+
+
+        key = event.key()
+        char = event.text()
+        self.input_code += char
+
+        if key in [
+            Qt.Key_Enter, Qt.Key_Return,
+            Qt.Key_Escape,
+            Qt.Key_Space, Qt.Key_Comma,
+            Qt.Key_Up, Qt.Key_Down, Qt.Key_Left, Qt.Key_Right]:
+            if key in [Qt.Key_Enter, Qt.Key_Return]:
+                self.input_code = self.input_code[:-1]
+                if self.input_code != '':
+                    self._query_diagnostic_dict(event, sender, self.input_code, diagnostic_type)
+                else:
+                    return QtWidgets.QTextEdit.keyPressEvent(sender, event)
+
+            self.input_code = ''
+        elif key in [Qt.Key_Backspace]:
+            if len(self.input_code) > 1:
+                self.input_code = self.input_code[:-2]
+            else:
+                self.input_code = ''
+
+        if key not in [Qt.Key_Enter, Qt.Key_Return]:
+            return QtWidgets.QTextEdit.keyPressEvent(sender, event)
+
+    def _query_diagnostic_dict(self, event, sender, input_code, diagnostic_type):
+        order_type = '''
+            ORDER BY LENGTH(ClinicName), CAST(CONVERT(`ClinicName` using big5) AS BINARY)
+        '''
+        if self.system_settings.field('詞庫排序') == '點擊率':
+            order_type = 'ORDER BY HitRate DESC'
+
+        sql = '''
+            SELECT * FROM clinic
+            WHERE
+                ClinicType = "{clinic_type}" AND
+                InputCode LIKE "{input_code}%"
+            GROUP BY ClinicName 
+            {order_type}
+        '''.format(
+            clinic_type=diagnostic_type,
+            input_code=input_code,
+            order_type=order_type,
+        )
+
+        rows = self.database.select_record(sql)
+        row_count = len(rows)
+
+        clinic_key = None
+        if row_count <= 0:
+            return QtWidgets.QTextEdit.keyPressEvent(sender, event)
+        elif row_count == 1:
+            clinic_key = string_utils.xstr(rows[0]['ClinicKey'])
+            self._insert_text(sender, string_utils.xstr(rows[0]['ClinicName']), input_code)
+        else:
+            dialog = dialog_diagnostic_picker.DialogDiagnosticPicker(
+                self, self.database, self.system_settings, sql
+            )
+
+            if dialog.exec_():
+                clinic_key = dialog.clinic_key
+                clinic_name = dialog.clinic_name
+                self._insert_text(sender, clinic_name, input_code)
+
+            dialog.close_all()
+            dialog.deleteLater()
+
+        if clinic_key is not None:
+            db_utils.increment_hit_rate(self.database, 'clinic', 'ClinicKey', clinic_key)
+
+    def _insert_text(self, sender, text, input_code):
+        cursor = sender.textCursor()
+        cursor.movePosition(QtGui.QTextCursor.Left, QtGui.QTextCursor.MoveAnchor, len(input_code))
+        sender.setTextCursor(cursor)
+        sender.insertPlainText(text)
+
+        cursor.movePosition(QtGui.QTextCursor.Right, QtGui.QTextCursor.KeepAnchor, len(input_code))
+        cursor.removeSelectedText()

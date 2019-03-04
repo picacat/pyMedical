@@ -198,7 +198,9 @@ class Purchase(QtWidgets.QMainWindow):
                     QtWidgets.QTableWidgetItem(string_utils.xstr(rows[rec_no]['MedicineKey']))
                 )
 
+        self.ui.tableWidget_medicine.resizeRowsToContents()
         self.ui.tableWidget_medicine.setCurrentCell(0, 0)
+
 
     def _set_prescript(self):
         current_row = self.ui.tableWidget_medicine.currentRow()

@@ -9,7 +9,9 @@ from libs import system_utils
 import sys
 
 if sys.platform == 'win32':
-    from classes import cshis as iccard
+    from classes import cshis_win32 as cshis
+else:
+    from classes import cshis
 
 
 # 主視窗
@@ -22,7 +24,7 @@ class DialogICCard(QtWidgets.QDialog):
         self.system_settings = args[1]
         self.ui = None
         try:
-            self.ic_card = iccard.CSHIS(self.system_settings)
+            self.ic_card = cshis.CSHIS(self.database, self.system_settings)
         except NameError:
             self.ic_card = None
 
@@ -97,8 +99,7 @@ class DialogICCard(QtWidgets.QDialog):
 
     # 讀取健保卡基本資料
     def ic_card_info(self):
-        ic_card = iccard.CSHIS(self.system_settings)
-        if not ic_card.read_register_basic_data():
+        if not self.ic_card.read_register_basic_data():
             return
 
         msg_box = QMessageBox()
@@ -122,16 +123,16 @@ class DialogICCard(QtWidgets.QDialog):
               <b>可用次數</b>: {9}<br>
             </font> 
         '''.format(
-                ic_card.basic_data['card_no'],
-                ic_card.basic_data['name'],
-                ic_card.basic_data['patient_id'],
-                ic_card.basic_data['birthday'],
-                ic_card.basic_data['gender'],
-                ic_card.basic_data['card_date'],
-                ic_card.basic_data['cancel_mark'],
-                ic_card.basic_data['insured_mark'],
-                ic_card.basic_data['card_valid_date'],
-                ic_card.basic_data['card_available_count'],
+                self.ic_card.basic_data['card_no'],
+                self.ic_card.basic_data['name'],
+                self.ic_card.basic_data['patient_id'],
+                self.ic_card.basic_data['birthday'],
+                self.ic_card.basic_data['gender'],
+                self.ic_card.basic_data['card_date'],
+                self.ic_card.basic_data['cancel_mark'],
+                self.ic_card.basic_data['insured_mark'],
+                self.ic_card.basic_data['card_valid_date'],
+                self.ic_card.basic_data['card_available_count'],
             )
         )
         msg_box.setInformativeText('健保IC卡卡片內容讀取完成')

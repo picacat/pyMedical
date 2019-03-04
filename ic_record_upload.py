@@ -6,6 +6,8 @@ from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtWidgets import QMessageBox, QPushButton
 from lxml import etree as ET
 
+import sys
+
 from classes import table_widget
 from libs import ui_utils
 from libs import string_utils
@@ -13,12 +15,17 @@ from libs import number_utils
 from libs import date_utils
 from libs import case_utils
 from libs import personnel_utils
-from libs import cshis_utils
 from libs import nhi_utils
 from libs import system_utils
 from libs import xml_utils
+from libs import cshis_utils
 
 from dialog import dialog_ic_record_upload
+
+if sys.platform == 'win32':
+    from classes import cshis_win32 as cshis
+else:
+    from classes import cshis
 
 
 # 主視窗
@@ -257,8 +264,8 @@ class ICRecordUpload(QtWidgets.QMainWindow):
         self.create_xml_file(xml_file_name)
         record_count = self.get_upload_record_count()
 
-        ic_card = cshis_utils.upload_data(self.system_settings, xml_file_name, record_count)
-        if ic_card is not None:
+        ic_card = cshis.CSHIS(self.database, self.system_settings)
+        if ic_card.upload_data(xml_file_name, record_count):
             system_utils.show_message_box(
                 QMessageBox.Information,
                 '上傳成功',
@@ -341,11 +348,9 @@ class ICRecordUpload(QtWidgets.QMainWindow):
         patient_record = self.database.select_record(sql)[0]
 
         if upload_type in ['1', '3']:
-            clinic_id = case_utils.extract_xml(self.database, case_key, 'clinic_id')
-            card = case_utils.extract_xml(self.database, case_key, 'seq_number')
-            registered_date = date_utils.west_datetime_to_nhi_datetime(
-                case_utils.extract_xml(self.database, case_key, 'registered_date')
-            )
+            clinic_id = case_utils.extract_security_xml(medical_record['Security'], '院所代號')
+            card = case_utils.extract_security_xml(medical_record['Security'], '健保卡序')
+            registered_date = case_utils.extract_security_xml(medical_record['Security'], '寫卡時間')
         else:
             clinic_id = self.system_settings.field('院所代號')
             card = string_utils.xstr(medical_record['Card'])

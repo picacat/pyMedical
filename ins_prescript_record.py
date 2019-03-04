@@ -8,11 +8,12 @@ from libs import string_utils
 from libs import nhi_utils
 from libs import number_utils
 from libs import prescript_utils
-from libs import case_utils
+from libs import db_utils
 
 from classes import table_widget
 from dialog import dialog_input_medicine
 from dialog import dialog_electric_acupuncture
+from dialog import dialog_rich_text
 
 
 # 輸入健保處方 2018.04.14
@@ -76,6 +77,7 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
         self.ui.toolButton_remove_treat.clicked.connect(self.remove_treat)
         self.ui.toolButton_dictionary.clicked.connect(self._open_dictionary)
         self.ui.toolButton_treat_dictionary.clicked.connect(self._open_treat_dictionary)
+        self.ui.toolButton_show_costs.clicked.connect(self._show_costs)
         self.ui.tableWidget_prescript.keyPressEvent = self._table_widget_prescript_key_press
         self.ui.tableWidget_treat.keyPressEvent = self._table_widget_treat_key_press
         self.ui.comboBox_pres_days.currentTextChanged.connect(self.pres_days_changed)
@@ -149,7 +151,7 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
         if item.text() == previous_medicine_name:
             return
 
-        medicine_type = 'AND (MedicineType IN ("單方", "複方", "成方"))'
+        medicine_type = 'AND (MedicineType NOT IN ("水藥", "外用", "高貴", "穴道", "處置", "檢驗"))'
         sql = '''
             SELECT * FROM medicine WHERE 
             (MedicineName like "{0}%" OR InputCode LIKE "{0}%" OR MedicineCode = "{0}" OR InsCode = "{0}") 
@@ -176,6 +178,7 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
 
     def _table_widget_treat_key_press(self, event):
         key = event.key()
+
         current_row = self.ui.tableWidget_treat.currentRow()
 
         if key == QtCore.Qt.Key_Delete:
@@ -283,6 +286,8 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
         if self.medicine_set == 1:  # 健保預設給藥日份
             self.set_default_pres_days()
 
+        db_utils.increment_hit_rate(self.database, 'medicine', 'MedicineKey', medicine_key)
+
     def set_prescript(self, row):
         medicine_type = row[prescript_utils.INS_PRESCRIPT_COL_NO['MedicineType']][1]
         if medicine_type == '成方':
@@ -290,7 +295,6 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
                 self.database, row,
                 self.ui.tableWidget_prescript, self.ui.tableWidget_treat,
             )
-
             return
 
         row_no = self.ui.tableWidget_prescript.currentRow()
@@ -306,13 +310,17 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
         ins_code = row[prescript_utils.INS_PRESCRIPT_COL_NO['InsCode']][1]
         if ins_code == '':
             for column in range(self.ui.tableWidget_prescript.columnCount()):
-                self.ui.tableWidget_prescript.item(row_no, column).setForeground(
-                    QtGui.QColor('blue')
-                )
+                item = self.ui.tableWidget_prescript.item(row_no, column)
+                if item is not None:
+                    item.setForeground(QtGui.QColor('blue'))
+
+        medicine_key = row[prescript_utils.INS_PRESCRIPT_COL_NO['MedicineKey']][1]
+        description = prescript_utils.get_medicine_description(self.database, medicine_key)
+        self._add_prescript_info_button(row_no, description)
 
     def append_treat(self, row):
-        medicine_key = string_utils.xstr(row['MedicineKey'])
         medicine_type = string_utils.xstr(row['MedicineType'])
+        medicine_key = string_utils.xstr(row['MedicineKey'])
         if prescript_utils.check_prescript_duplicates(
                 self.ui.tableWidget_treat,
                 medicine_type,
@@ -344,7 +352,7 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
         medicine_width = [
             70,
             100, 100, 100, 100, 100, 100, 100, 100, 100,
-            215, 55, 50, 50,
+            190, 50, 50, 50, 20,
         ]
         treat_width = [
             70,
@@ -368,6 +376,7 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
         self._read_medicine()
         self._read_treat()
         self._calculate_total_dosage()
+        self._calculate_total_costs()
 
         if self.parent.call_from == '醫師看診作業':
             self.append_null_medicine()
@@ -390,15 +399,18 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
     def _read_medicine(self):
         medicine_groups = nhi_utils.get_medicine_type(self.database, '藥品類別')
         sql = """ 
-            SELECT * FROM prescript WHERE 
-            (CaseKey = {0}) AND (MedicineSet = {1}) AND
-            (MedicineType in {2})
+            SELECT * FROM prescript 
+            WHERE 
+                (CaseKey = {0}) AND (MedicineSet = {1}) AND
+                (MedicineType in {2})
             ORDER BY PrescriptNo, PrescriptKey
         """.format(self.case_key, self.medicine_set, tuple(medicine_groups))
         self.table_widget_prescript.set_db_data(sql, self._set_medicine_data)
 
     def _set_medicine_data(self, row_no, row):
+        medicine_key = row['MedicineKey']
         dosage = string_utils.xstr(row['Dosage'])
+
         if dosage != '':
             if self.system_settings.field('劑量模式') in ['日劑量', '總量']:
                 dosage = '{0:.1f}'.format(row['Dosage'])
@@ -412,7 +424,7 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
             string_utils.xstr(row['CaseDate']),
             string_utils.xstr(row['MedicineSet']),
             string_utils.xstr(row['MedicineType']),
-            string_utils.xstr(row['MedicineKey']),
+            string_utils.xstr(medicine_key),
             string_utils.xstr(row['InsCode']),
             string_utils.xstr(row['DosageMode']),
             string_utils.xstr(row['MedicineName']),
@@ -443,6 +455,30 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
                     row_no, column).setForeground(
                     QtGui.QColor('blue')
                 )
+
+        description = prescript_utils.get_medicine_description(self.database, medicine_key)
+        self._add_prescript_info_button(row_no, description)
+
+
+    def _add_prescript_info_button(self, row_no, description):
+        button = QtWidgets.QPushButton(self.ui.tableWidget_prescript)
+        button.setIcon(QtGui.QIcon('./icons/gtk-info.svg'))
+        button.setFlat(True)
+        if description is None:
+            button.setEnabled(False)
+
+        button.clicked.connect(lambda : self._show_medicine_description(description))
+        self.ui.tableWidget_prescript.setCellWidget(
+            row_no, prescript_utils.INS_PRESCRIPT_COL_NO['Info'], button)
+
+    def _show_medicine_description(self, description):
+        dialog = dialog_rich_text.DialogRichText(
+            self, self.database, self.system_settings,
+            'rich_text', description
+        )
+        dialog.exec_()
+        dialog.close_all()
+        dialog.deleteLater()
 
     def _read_treat(self):
         self.combo_box_treatment.setCurrentText('')
@@ -559,6 +595,7 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
             self.append_null_medicine()
 
         self._calculate_total_dosage()
+        self._calculate_total_costs()
 
     # 刪除處置
     def remove_treat(self):
@@ -909,12 +946,21 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
         self.parent.open_dictionary(self.medicine_set, '健保處置')
 
     def _prescript_item_changed(self, item):
+        if self.ui.tableWidget_prescript.rowCount() <= 0:
+            enabled = False
+        else:
+            enabled = True
+
+        self.ui.toolButton_remove_medicine.setEnabled(enabled)
+        self.ui.toolButton_show_costs.setEnabled(enabled)
+
         if item is None:
             return
 
         col_no = item.column()
         if col_no == prescript_utils.INS_PRESCRIPT_COL_NO['Dosage']:
             self._calculate_total_dosage()
+            self._calculate_total_costs()
 
     def _calculate_total_dosage(self):
         total_dosage = 0.0
@@ -928,4 +974,44 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
             total_dosage += dosage
 
         self.ui.label_total_dosage.setText('總量: {0}'.format(total_dosage))
+
+    def _calculate_total_costs(self):
+        total_costs = 0.0
+        for row_no in range(self.ui.tableWidget_prescript.rowCount()):
+            dosage_item = self.ui.tableWidget_prescript.item(
+                row_no, prescript_utils.INS_PRESCRIPT_COL_NO['Dosage'])
+            if dosage_item is None:
+                continue
+
+            medicine_key_item = self.ui.tableWidget_prescript.item(
+                row_no, prescript_utils.INS_PRESCRIPT_COL_NO['MedicineKey'])
+            if medicine_key_item is None:
+                continue
+
+            medicine_key = medicine_key_item.text()
+            if medicine_key == '':
+                continue
+
+            sql = 'SELECT InPrice FROM medicine WHERE MedicineKey = {0}'.format(medicine_key)
+            rows = self.database.select_record(sql)
+            if len(rows) <= 0:
+                continue
+
+            cost = number_utils.get_float(rows[0]['InPrice'])
+            dosage = number_utils.get_float(dosage_item.text())
+            total_costs += dosage * cost
+
+        self.ui.label_total_costs.setText('成本: {0:.1f}'.format(total_costs))
+
+    def _show_costs(self):
+        html = prescript_utils.get_costs_html(
+            self.database, self.ui.tableWidget_prescript, prescript_utils.INS_PRESCRIPT_COL_NO
+        )
+        dialog = dialog_rich_text.DialogRichText(
+            self, self.database, self.system_settings,
+            'html', html
+        )
+        dialog.exec_()
+        dialog.close_all()
+        dialog.deleteLater()
 

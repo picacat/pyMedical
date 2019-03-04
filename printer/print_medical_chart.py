@@ -113,7 +113,8 @@ class PrintMedicalChart:
         init_date = patient_utils.get_init_date(self.database, self.patient_key)
         prescript_record = printer_utils.get_prescript_html(
             self.database, self.system_settings,
-            case_row['CaseKey'], medicine_set=1, blocks=3, print_total_dosage=False)
+            case_row['CaseKey'], medicine_set=1,
+            print_alias=False, print_total_dosage=False, blocks=3)
         instruction = printer_utils.get_instruction_html(
             self.database, case_row['CaseKey'], medicine_set=1
         )
