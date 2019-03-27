@@ -60,6 +60,7 @@ class Cashier(QtWidgets.QMainWindow):
     def _set_signal(self):
         self.ui.action_close.triggered.connect(self.close_cashier)
         self.ui.action_save.triggered.connect(self._apply_charge)
+        self.ui.action_save_without_print.triggered.connect(self._apply_charge)
         self.ui.action_print_prescription.triggered.connect(self._print_prescription)
         self.ui.action_print_receipt.triggered.connect(self._print_receipt)
         self.ui.action_open_medical_record.triggered.connect(self._open_medical_record)
@@ -196,6 +197,7 @@ class Cashier(QtWidgets.QMainWindow):
             self._clear_charge_item()
 
         self.ui.action_save.setEnabled(enabled)
+        self.ui.action_save_without_print.setEnabled(enabled)
         self._show_medical_record()
 
     def _clear_charge_item(self):
@@ -237,6 +239,9 @@ class Cashier(QtWidgets.QMainWindow):
         self._calculate_receipt_fee()
 
     def _apply_charge(self):
+        sender_name = self.sender().objectName()
+
+
         debt = ''
         if number_utils.get_integer(self.ui.lineEdit_debt.text()) > 0:
             debt = '<br><font color="red"><b>此人有欠款{0}元</b></font>'.format(
@@ -258,7 +263,9 @@ class Cashier(QtWidgets.QMainWindow):
             return
 
         self._save_records()
-        self._print_receipt()
+        if sender_name == 'action_save':
+            self._print_receipt()
+
         self._write_ic_card()
 
         self.read_wait()

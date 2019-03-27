@@ -20,6 +20,8 @@ from dialog import dialog_system_settings
 from dialog import dialog_ic_card
 from dialog import dialog_export_emr_xml
 
+import system_update
+
 import check_database
 import login
 import login_statistics
@@ -117,6 +119,7 @@ class PyMedical(QtWidgets.QMainWindow):
         self.socket_server.update_signal.connect(self._refresh_waiting_data)
 
         self.ui.pushButton_registration.clicked.connect(self._open_subroutine)           # 掛號作業
+        self.ui.pushButton_reservation.clicked.connect(self.open_reservation)            # 預約掛號
         self.ui.pushButton_cashier.clicked.connect(self._open_subroutine)                # 批價作業
         self.ui.pushButton_return_card.clicked.connect(self._open_subroutine)            # 健保卡欠還卡
         self.ui.pushButton_debt.clicked.connect(self._open_subroutine)                   # 欠還款作業
@@ -151,6 +154,7 @@ class PyMedical(QtWidgets.QMainWindow):
         self.ui.action_checkout.triggered.connect(self._open_subroutine)
         self.ui.action_patient_list.triggered.connect(self._open_subroutine)
         self.ui.action_ins_record_upload.triggered.connect(self._open_subroutine)
+        self.ui.action_update.triggered.connect(self._update_files)
 
         self.ui.action_waiting_list.triggered.connect(self._open_subroutine)
         self.ui.action_medical_record_list.triggered.connect(self._open_subroutine)
@@ -158,10 +162,12 @@ class PyMedical(QtWidgets.QMainWindow):
 
         self.ui.action_settings.triggered.connect(self.open_settings)
         self.ui.action_charge.triggered.connect(self._open_subroutine)
+        self.ui.action_doctor_schedule.triggered.connect(self._open_subroutine)
         self.ui.action_doctor_nurse_table.triggered.connect(self._open_subroutine)
         self.ui.action_users.triggered.connect(self._open_subroutine)
         self.ui.action_diagnostic.triggered.connect(self._open_subroutine)
         self.ui.action_medicine.triggered.connect(self._open_subroutine)
+        self.ui.action_ins_drug.triggered.connect(self._open_subroutine)
         self.ui.action_ic_card.triggered.connect(self.open_ic_card)
         self.ui.action_show_side_bar.triggered.connect(self.switch_side_bar)
 
@@ -539,6 +545,10 @@ class PyMedical(QtWidgets.QMainWindow):
 
         ic_card = cshis.CSHIS(self.database, self.system_settings)
         # ic_card.verify_sam()
+    def _update_files(self):
+        dialog = system_update.SystemUpdate(self.ui, self.database, self.system_settings)
+        dialog.exec_()
+        dialog.deleteLater()
 
 
 # 主程式

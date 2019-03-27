@@ -101,9 +101,9 @@ class DialogInputMedicine(QtWidgets.QDialog):
             medicine_type = 'AND (MedicineType in ("單方", "複方", "水藥", "外用", "高貴", "成方"))'
         elif self.dict_type == '健保處置':
             if self.parent.combo_box_treatment.currentText() in nhi_utils.ACUPUNCTURE_TREAT:
-                medicine_type = 'AND (MedicineType in ("穴道", "成方"))'
+                medicine_type = 'AND (MedicineType in ("穴道"))'
             elif self.parent.combo_box_treatment.currentText() in nhi_utils.MASSAGE_TREAT:
-                medicine_type = 'AND (MedicineType in ("處置", "成方"))'
+                medicine_type = 'AND (MedicineType in ("處置"))'
             else:
                 medicine_type = 'AND (MedicineType in ("穴道", "處置", "成方"))'
         else:

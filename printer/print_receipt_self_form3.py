@@ -74,7 +74,32 @@ class PrintReceiptSelfForm3:
             print_alias=False, print_total_dosage=True, blocks=2)
         fees_record = printer_utils.get_self_fees_html(self.database, self.case_key)
         remark = '<hr>* 本收據可為報稅之憑證, 請妥善保存, 遺失恕不補發'
-        if self.medicine_set >= 3:
+
+        prescript_html = '''
+            <table cellspacing="0">
+              <thead>
+                <tr>
+                  <th align="left">處方名稱</th>
+                  <th align="right">劑量</th>
+                  <th align="right">總量</th>
+                  <th></th>
+                  <th align="left">處方名稱</th>
+                  <th align="right">劑量</th>
+                  <th align="right">總量</th>
+                </tr>
+              </thead>
+              <tbody>
+                {prescript}
+              </tbody>
+            </table>
+        '''.format(
+            prescript=prescript_record,
+        )
+
+        if self.medicine_set is None:
+            prescript_html = '無處方'
+
+        if self.medicine_set is None or self.medicine_set >= 3:
             fees_record = ''
             remark = ''
 
@@ -99,22 +124,7 @@ class PrintReceiptSelfForm3:
                   </tbody>  
                 </table>
                 <hr>
-                <table cellspacing="0">
-                  <thead>
-                    <tr>
-                      <th align="left">處方名稱</th>
-                      <th align="right">劑量</th>
-                      <th align="right">總量</th>
-                      <th></th>
-                      <th align="left">處方名稱</th>
-                      <th align="right">劑量</th>
-                      <th align="right">總量</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {prescript}
-                  </tbody>
-                </table>
+                {prescript_html}
                 <table width="100%" cellspacing="0">
                   <tbody>
                     {fees}
@@ -129,7 +139,7 @@ class PrintReceiptSelfForm3:
             clinic_telephone=self.system_settings.field('院所電話'),
             clinic_address=self.system_settings.field('院所地址'),
             case=case_record,
-            prescript=prescript_record,
+            prescript_html=prescript_html,
             fees=fees_record,
             remark=remark,
         )

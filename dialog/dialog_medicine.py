@@ -28,7 +28,6 @@ class DialogMedicine(QtWidgets.QDialog):
 
         self._set_ui()
         self._set_signal()
-        self._set_table_width()
         self._read_data()
         self.lineEdit_input_code.setFocus(True)
 
@@ -57,7 +56,11 @@ class DialogMedicine(QtWidgets.QDialog):
         self.table_widget_dict_groups = table_widget.TableWidget(self.ui.tableWidget_dict_groups, self.database)
         self.table_widget_medicine = table_widget.TableWidget(self.ui.tableWidget_medicine, self.database)
 
+        self.table_widget_dict_groups.set_column_hidden([0])
+        self.table_widget_medicine.set_column_hidden([0, 1])
+
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Close).setText('關閉')
+        self._set_table_width()
 
     # 設定信號
     def _set_signal(self):
@@ -106,12 +109,10 @@ class DialogMedicine(QtWidgets.QDialog):
 
     # 設定欄位寬度
     def _set_table_width(self):
-        dict_groups_width = [100, 80]
+        dict_groups_width = [100, 100]
         medicine_width = [100, 100, 200, 90, 50, 80]
         self.table_widget_dict_groups.set_table_heading_width(dict_groups_width)
         self.table_widget_medicine.set_table_heading_width(medicine_width)
-        self.table_widget_dict_groups.set_column_hidden([0])
-        self.table_widget_medicine.set_column_hidden([0, 1])
 
     def accepted_button_clicked(self):
         self.close()
@@ -132,7 +133,7 @@ class DialogMedicine(QtWidgets.QDialog):
                 WHERE 
                     DictGroupsType = "藥品類別" OR
                     DictGroupsType = "處置類別"
-                ORDER BY DictGroupsKey
+                ORDER BY DictOrderNo, DictGroupsKey
             '''
         else:
             sql = '''
@@ -142,7 +143,7 @@ class DialogMedicine(QtWidgets.QDialog):
                     DictGroupsType = "成方類別" OR
                     (DictGroupsType = "藥品類別" AND 
                      DictGroupsName NOT IN ("單方", "複方", "水藥", "外用", "高貴"))
-                ORDER BY DictGroupsKey
+                ORDER BY DictOrderNo, DictGroupsKey
             '''.format(self.dict_type)
 
         self.table_widget_dict_groups.set_db_data(sql, self._set_dict_groups_data)

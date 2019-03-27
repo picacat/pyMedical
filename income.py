@@ -2,18 +2,15 @@
 # 掛號櫃台結帳 2018.11.15
 #coding: utf-8
 
-from PyQt5 import QtWidgets, QtCore, QtGui
+from PyQt5 import QtWidgets, QtPrintSupport
 
-from classes import table_widget
 from libs import ui_utils
-from libs import string_utils
-from libs import number_utils
-from libs import case_utils
-from libs import nhi_utils
 
 from dialog import dialog_income
 import income_cash_flow
 import income_list
+
+from printer import print_income
 
 
 # 掛號櫃台結帳
@@ -56,6 +53,8 @@ class Income(QtWidgets.QMainWindow):
     def _set_signal(self):
         self.ui.action_close.triggered.connect(self.close_income)
         self.ui.action_requery.triggered.connect(self.open_dialog)
+        self.ui.action_print.triggered.connect(self._print_income)
+        self.ui.action_print_pdf.triggered.connect(self._print_income)
 
     # 讀取病歷
     def open_dialog(self):
@@ -76,6 +75,51 @@ class Income(QtWidgets.QMainWindow):
             self.ui.tabWidget_income.addTab(self.tab_incom_cash_flow, '現金收入分析')
             self.ui.tabWidget_income.addTab(self.tab_incom_list, '交帳明細一覽')
 
+            self.income_date = dialog.start_date[:10]
+            self.period = dialog.period
+
+            self.tab_incom_cash_flow.label_income_date.setText(self.income_date)
+            self.tab_incom_cash_flow.label_income_period.setText(self.period)
+        else:
+            self.income_date = None
+            self.period = None
+
         dialog.close_all()
         dialog.deleteLater()
+
+    def _print_income(self):
+        sender_name = self.sender().objectName()
+        print_type = None
+
+        if self.system_settings.field('列印報表') == '不印':
+            return
+        elif self.system_settings.field('列印報表') == '詢問':
+            dialog = QtPrintSupport.QPrintDialog()
+            if dialog.exec() == QtWidgets.QDialog.Rejected:
+                return
+        elif self.system_settings.field('列印報表') == '預覽':
+            print_type = 'preview'
+        elif self.system_settings.field('列印報表') == '列印':
+            print_type = 'print'
+
+        if sender_name == 'action_print_pdf':
+            print_type = 'pdf'
+
+        dialog = print_income.PrintIncome(
+            self, self.database, self.system_settings,
+            self.tab_incom_cash_flow.label_income_date.text(),
+            self.tab_incom_cash_flow.label_income_period.text(),
+            self.tab_incom_list.ui.tableWidget_income,
+            self.tab_incom_cash_flow.ui.tableWidget_total,
+        )
+
+        if print_type == 'print':
+            dialog.print()
+        elif print_type == 'preview':
+            dialog.preview()
+        elif print_type == 'pdf':
+            dialog.save_to_pdf()
+
+        del dialog
+
 

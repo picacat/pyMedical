@@ -12,6 +12,7 @@ from libs import nhi_utils
 from libs import date_utils
 from libs import validator_utils
 from libs import patient_utils
+from dialog import dialog_address
 
 
 # 樣板 2018.01.31
@@ -28,6 +29,7 @@ class Patient(QtWidgets.QMainWindow):
         self.patient = None
         self.ui = None
         self.name_warning = False
+        self.quit_save = False
 
         self._set_ui()
         self._set_validator()
@@ -61,9 +63,12 @@ class Patient(QtWidgets.QMainWindow):
     def _set_signal(self):
         self.ui.action_save.triggered.connect(self._save_patient)
         self.ui.action_close.triggered.connect(self.close_patient)
+        self.ui.toolButton_address.clicked.connect(self._open_address_dict)
         self.ui.lineEdit_birthday.editingFinished.connect(self._validate_birthday)
         self.ui.lineEdit_name.editingFinished.connect(self._validate_name)
         self.ui.lineEdit_id.editingFinished.connect(self._validate_id)
+        self.ui.lineEdit_telephone.textChanged.connect(self._phone_changed)
+        self.ui.lineEdit_cellphone.textChanged.connect(self._phone_changed)
 
     def _set_combobox(self):
         ui_utils.set_combo_box(self.ui.comboBox_gender, nhi_utils.GENDER, None)
@@ -94,35 +99,38 @@ class Patient(QtWidgets.QMainWindow):
 
         sql = 'SELECT * FROM patient WHERE Name = "{0}"'.format(name)
         rows = self.database.select_record(sql)
-        if len(rows) > 0:
-            if self.name_warning:
-                return
+        if len(rows) <= 0:
+            return
 
-            self.name_warning = True
-            msg_box = QMessageBox()
-            msg_box.setIcon(QMessageBox.Warning)
-            msg_box.setWindowTitle('相同姓名病患已存在')
-            msg_box.setText(
-                '''
-                <font size='4' color='red'>
-                <b>相同姓名的病患已存在！以下是相同病患的資料:'<br>
-                </font>
-                <font size='4' color='blue'>
-                   病歷號碼: {0}<br>
-                   病患姓名: {1}<br>
-                   出生日期: {2}<br>
-                   身分證號: {3}
-                </b>
-                </font>
-                ''' .format(rows[0]['PatientKey'], rows[0]['Name'], rows[0]['Birthday'], rows[0]['ID']))
-            msg_box.setInformativeText("如果確定不同人，請繼續編輯病患資料.")
-            msg_box.addButton(QPushButton("不同病患, 繼續編輯"), QMessageBox.NoRole)  # 0
-            msg_box.addButton(QPushButton("此人為相同病患, 確定離開編輯"), QMessageBox.AcceptRole)  # 1
-            quit_patient = msg_box.exec_()
-            if quit_patient:
-                self.close_patient()
-            else:
-                self.ui.lineEdit_birthday.setFocus()
+        if self.name_warning:
+            return
+
+        self.name_warning = True
+        msg_box = QMessageBox()
+        msg_box.setIcon(QMessageBox.Warning)
+        msg_box.setWindowTitle('相同姓名病患已存在')
+        msg_box.setText(
+            '''
+            <font size='4' color='red'>
+            <b>相同姓名的病患已存在！以下是相同病患的資料:'<br>
+            </font>
+            <font size='4' color='blue'>
+               病歷號碼: {0}<br>
+               病患姓名: {1}<br>
+               出生日期: {2}<br>
+               身分證號: {3}
+            </b>
+            </font>
+            ''' .format(rows[0]['PatientKey'], rows[0]['Name'], rows[0]['Birthday'], rows[0]['ID']))
+        msg_box.setInformativeText("如果確定不同人，請繼續編輯病患資料.")
+        msg_box.addButton(QPushButton("不同病患, 繼續編輯"), QMessageBox.NoRole)  # 0
+        msg_box.addButton(QPushButton("此人為相同病患, 確定離開編輯"), QMessageBox.AcceptRole)  # 1
+        quit_patient = msg_box.exec_()
+        if quit_patient:
+            self.quit_save = True
+            self.close_patient()
+        else:
+            self.ui.lineEdit_birthday.setFocus()
 
     def _validate_id(self):
         if self.ic_card:
@@ -205,6 +213,11 @@ class Patient(QtWidgets.QMainWindow):
             pass
 
     def _save_patient(self):
+        self.ui.lineEdit_patient_key.setFocus(True)
+
+        if self.quit_save:
+            return
+
         fields = ['CardNo', 'Name', 'ID', 'Birthday', 'InitDate', 'Telephone', 'Cellphone', 'Email',
                   'Address', 'FamilyPatientKey', 'Reference', 'Gender', 'InsType', 'Nationality', 'Marriage',
                   'Education', 'Occupation', 'DiscountType', 'Allergy', 'History', 'Remark', 'Description']
@@ -248,15 +261,40 @@ class Patient(QtWidgets.QMainWindow):
         self.close_all()
         self.close_tab()
 
+    def _open_address_dict(self):
+        dialog = dialog_address.DialogAddress(
+            self, self.database, self.system_settings,
+            self.ui.lineEdit_address,
+        )
+        dialog.exec_()
+        dialog.close_all()
+        dialog.deleteLater()
 
-# 主程式
-def main():
-    app = QtWidgets.QApplication(sys.argv)
-    widget = Patient()
-    widget.show()
-    sys.exit(app.exec_())
+    def _phone_changed(self):
+        if self.ui.lineEdit_address.text().strip() != '':
+            return
 
+        sender_name = self.sender().objectName()
+        if sender_name == 'lineEdit_telephone':
+            line_edit_phone = self.ui.lineEdit_telephone
+        else:
+            line_edit_phone = self.ui.lineEdit_cellphone
 
-# 程式開始
-if __name__ == '__main__':
-    main()
+        phone_no = line_edit_phone.text()
+        if phone_no == '':
+            return
+
+        sql = '''
+            SELECT Address FROM patient
+            WHERE
+                (Telephone = "{phone_no}" OR
+                 Cellphone = "{phone_no}")
+            LIMIT 1
+        '''.format(
+            phone_no=phone_no,
+        )
+        rows = self.database.select_record(sql)
+
+        if len(rows) > 0:
+            self.ui.lineEdit_address.setText(string_utils.xstr(rows[0]['Address']))
+

@@ -8,6 +8,7 @@ from PyQt5.QtWidgets import QMessageBox, QPushButton
 from libs import ui_utils
 from libs import string_utils
 from libs import charge_utils
+from libs import number_utils
 from classes import table_widget
 from dialog import dialog_input_regist, dialog_input_discount
 
@@ -53,6 +54,9 @@ class ChargeSettingsRegist(QtWidgets.QMainWindow):
         self.ui.toolButton_discount_delete.clicked.connect(self._discount_delete)
         self.ui.toolButton_discount_edit.clicked.connect(self._discount_edit)
         self.ui.tableWidget_discount.doubleClicked.connect(self._discount_edit)
+
+        self.ui.checkBox_old_man.clicked.connect(self._set_old_man_discount)
+        self.ui.spinBox_old_man_age.valueChanged.connect(self._spin_box_value_changed)
 
     # 設定欄位寬度
     def _set_table_width(self):
@@ -137,6 +141,22 @@ class ChargeSettingsRegist(QtWidgets.QMainWindow):
         if row_count <= 0:
             charge_utils.set_regist_fee_basic_data(self.database)
             self._read_regist_fee()
+
+        self._set_old_man_regist_fee()
+
+    def _set_old_man_regist_fee(self):
+        if self.system_settings.field('老人優待') == 'Y':
+            enabled = True
+        else:
+            enabled = False
+
+        self.ui.checkBox_old_man.setChecked(enabled)
+
+        old_man_age = self.system_settings.field('老人優待年齡')
+        if old_man_age is None:
+            old_man_age = 65
+
+        self.ui.spinBox_old_man_age.setValue(number_utils.get_integer(old_man_age))
 
     def _set_regist_fee_data(self, rec_no, rec):
         regist_fee_rec = [
@@ -238,3 +258,17 @@ class ChargeSettingsRegist(QtWidgets.QMainWindow):
         sql = 'SELECT * FROM charge_settings WHERE ChargeSettingsKey = {0}'.format(key)
         row_data = self.database.select_record(sql)[0]
         self._set_discount_data(self.ui.tableWidget_discount.currentRow(), row_data)
+
+    def _set_old_man_discount(self):
+        if self.ui.checkBox_old_man.isChecked():
+            self.system_settings.post('老人優待', 'Y')
+        else:
+            self.system_settings.post('老人優待', 'N')
+
+    def _spin_box_value_changed(self):
+        age = self.ui.spinBox_old_man_age.value()
+        old_man_age = number_utils.get_integer(self.system_settings.field('老人優待年齡'))
+
+        if age != old_man_age:  # 資料被修改過才寫檔
+            print(age)
+            self.system_settings.post('老人優待年齡', age)

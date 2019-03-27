@@ -94,9 +94,9 @@
           <port value="3306" />
           <database value="yiler" />
           <os-authentication value="false" />
-          <empty-password value="false" />
+          <empty-authentication value="false" />
           <user value="root" />
-          <password value="NjIwMjEw" />
+          <deprecated-pwd value="" />
         </database>
         <properties>
           <auto-commit value="true" />
@@ -106,7 +106,7 @@
           <proxy-host value="" />
           <proxy-port value="22" />
           <proxy-user value="" />
-          <proxy-password value="" />
+          <deprecated-proxy-pwd value="" />
           <auth-type value="PASSWORD" />
           <key-file value="" />
           <key-passphrase value="" />
@@ -128,7 +128,7 @@
           <environment-type value="development" />
           <idle-time-to-disconnect value="30" />
           <idle-time-to-disconnect-pool value="5" />
-          <password-expiry-time value="10" />
+          <credential-expiry-time value="10" />
           <max-connection-pool-size value="7" />
           <alternative-statement-delimiter value="" />
         </details>

@@ -252,7 +252,7 @@
            <item>
             <layout class="QHBoxLayout" name="horizontalLayout_5">
              <item>
-              <widget class="QCheckBox" name="checkBox">
+              <widget class="QCheckBox" name="checkBox_old_man">
                <property name="text">
                 <string>年長病患掛號費自動優待</string>
                </property>
@@ -279,7 +279,7 @@
               </widget>
              </item>
              <item>
-              <widget class="QSpinBox" name="spinBox">
+              <widget class="QSpinBox" name="spinBox_old_man_age">
                <property name="minimum">
                 <number>60</number>
                </property>

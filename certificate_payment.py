@@ -71,7 +71,7 @@ class CertificatePayment(QtWidgets.QMainWindow):
 
     # 設定欄位寬度
     def _set_table_width(self):
-        width = [100, 100, 120, 80, 100, 80, 120, 120, 85, 65]
+        width = [100, 100, 120, 80, 90, 50, 90, 120, 120, 65, 65]
         self.table_widget_certificate_list.set_table_heading_width(width)
 
     def _read_certificate(self, sql=None):
@@ -101,6 +101,7 @@ class CertificatePayment(QtWidgets.QMainWindow):
             string_utils.xstr(row['PatientKey']),
             string_utils.xstr(row['Name']),
             string_utils.xstr(row['InsType']),
+            string_utils.xstr(row['Doctor']),
             string_utils.xstr(row['StartDate']),
             string_utils.xstr(row['EndDate']),
             string_utils.xstr(row['CertificateFee']),
@@ -112,12 +113,12 @@ class CertificatePayment(QtWidgets.QMainWindow):
                 row_no, column,
                 QtWidgets.QTableWidgetItem(certificate_record[column])
             )
-            if column in [3, 8]:
+            if column in [3, 9]:
                 self.ui.tableWidget_certificate_list.item(
                     row_no, column).setTextAlignment(
                     QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
                 )
-            elif column in [5, 9]:
+            elif column in [5, 10]:
                 self.ui.tableWidget_certificate_list.item(
                     row_no, column).setTextAlignment(
                     QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
@@ -128,7 +129,13 @@ class CertificatePayment(QtWidgets.QMainWindow):
         if certificate_key is None:
             return
 
-        sql = 'SELECT * FROM certificate_items WHERE CertificateKey = {0} ORDER BY CaseDate'.format(certificate_key)
+        sql = '''
+            SELECT certificate_items.*, cases.Doctor FROM certificate_items 
+                LEFT JOIN cases ON certificate_items.CaseKey = cases.CaseKey
+            WHERE 
+                CertificateKey = {0} 
+            ORDER BY CaseDate
+        '''.format(certificate_key)
         self.table_widget_certificate_items.set_db_data(sql, self._set_certificate_items_data, set_focus=False)
         self._calculate_items_total()
 
@@ -142,7 +149,7 @@ class CertificatePayment(QtWidgets.QMainWindow):
 
         certificate_items_record = [
             string_utils.xstr(row['CaseKey']),
-            string_utils.xstr(row['CaseDate']),
+            string_utils.xstr(row['CaseDate'].date()),
             string_utils.xstr(row['InsType']),
             string_utils.xstr(number_utils.get_integer(row['RegistFee'])),
             string_utils.xstr(number_utils.get_integer(row['SDiagShareFee'])),
@@ -150,7 +157,8 @@ class CertificatePayment(QtWidgets.QMainWindow):
             string_utils.xstr(cash_total),
             string_utils.xstr(number_utils.get_integer(row['InsApplyFee'])),
             string_utils.xstr(number_utils.get_integer(row['TotalFee'])),
-            string_utils.xstr(payment)
+            string_utils.xstr(payment),
+            string_utils.xstr(row['Doctor']),
         ]
 
         for col_no in range(len(certificate_items_record)):
@@ -158,7 +166,7 @@ class CertificatePayment(QtWidgets.QMainWindow):
                 row_no, col_no,
                 QtWidgets.QTableWidgetItem(certificate_items_record[col_no])
             )
-            if col_no >= 3:
+            if col_no in range(3, 10):
                 self.ui.tableWidget_certificate_items.item(
                     row_no, col_no).setTextAlignment(
                     QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter

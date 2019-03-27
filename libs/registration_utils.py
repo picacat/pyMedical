@@ -29,71 +29,6 @@ def get_period(system_settings):
     return period
 
 
-# 診號模式
-def get_reg_no_by_mode(database, system_settings, period, room, reg_no):
-    if system_settings.field('現場掛號給號模式') == '雙號':
-        if reg_no % 2 == 1:
-            reg_no += 1
-        else:
-            reg_no += 2
-    elif system_settings.field('現場掛號給號模式') == '單號':
-        if reg_no % 2 == 0:
-            reg_no += 1
-        else:
-            reg_no += 2
-    elif system_settings.field('現場掛號給號模式') == '預約班表':
-        period_condition = ''
-        if period is not None:
-            period_condition = 'AND Period = "{0}"'.format(period)
-
-        reg_no += 1
-        sql = '''
-            SELECT * FROM reservation_table
-            WHERE
-                ReserveNo >= {0} AND
-                Room = {1}
-                {2}
-            ORDER BY ReserveNo
-        '''.format(reg_no, room, period_condition)
-        rows = database.select_record(sql)
-        for row in rows:
-            if reg_no != row['ReserveNo']:
-                break
-
-            reg_no += 1
-    else:
-        reg_no += 1
-
-    return reg_no
-
-
-# 取得診號
-def get_reg_no(database, system_settings, room, period=None, reserve_key=None):
-    if reserve_key is not None:
-        sql = '''
-            SELECT * FROM reserve
-            WHERE
-                ReserveKey = {0}
-        '''.format(reserve_key)
-        rows = database.select_record(sql)
-        if len(rows) > 0:
-            return number_utils.get_integer(rows[0]['ReserveNo'])
-
-    start_date = datetime.datetime.now().strftime('%Y-%m-%d 00:00:00')
-    end_date = datetime.datetime.now().strftime('%Y-%m-%d 23:59:59')
-    if period is None:
-        period = get_period(system_settings)
-
-    last_reg_no = get_last_reg_no(
-        database, system_settings, start_date, end_date,
-        period, room
-    )
-
-    reg_no = get_reg_no_by_mode(database, system_settings, period, room, last_reg_no)
-
-    return int(reg_no)
-
-
 # 取得今日最後的診號
 def get_last_reg_no(database, system_settings, start_date, end_date, period, room):
     sql = '''
@@ -137,6 +72,117 @@ def get_last_reg_no(database, system_settings, start_date, end_date, period, roo
             return 0
 
     return last_reg_no
+
+
+# 取得診號
+def get_reg_no(database, system_settings, room, doctor, period=None, reserve_key=None):
+    if reserve_key is not None:
+        sql = '''
+            SELECT * FROM reserve
+            WHERE
+                ReserveKey = {0}
+        '''.format(reserve_key)
+        rows = database.select_record(sql)
+        if len(rows) > 0:
+            return number_utils.get_integer(rows[0]['ReserveNo'])
+
+    start_date = datetime.datetime.now().strftime('%Y-%m-%d 00:00:00')
+    end_date = datetime.datetime.now().strftime('%Y-%m-%d 23:59:59')
+    if period is None:
+        period = get_period(system_settings)
+
+    last_reg_no = get_last_reg_no(
+        database, system_settings, start_date, end_date,
+        period, room
+    )
+
+    reg_no = get_reg_no_by_mode(database, system_settings, period, room, doctor, last_reg_no)
+
+    return int(reg_no)
+
+
+# 診號模式
+def get_reg_no_by_mode(database, system_settings, period, room, doctor, reg_no):
+    if system_settings.field('現場掛號給號模式') == '雙號':
+        if reg_no % 2 == 1:
+            reg_no += 1
+        else:
+            reg_no += 2
+    elif system_settings.field('現場掛號給號模式') == '單號':
+        if reg_no % 2 == 0:
+            reg_no += 1
+        else:
+            reg_no += 2
+    elif system_settings.field('現場掛號給號模式') == '預約班表':
+        period_condition = ''
+        doctor_condition = ''
+        if period is not None:
+            period_condition = 'AND Period = "{0}"'.format(period)
+        if doctor is not None:
+            doctor_condition = 'AND Doctor = "{0}"'.format(doctor)
+
+        reg_no += 1
+        sql = '''
+            SELECT * FROM reservation_table
+            WHERE
+                ReserveNo >= {reg_no} AND
+                Room = {room}
+                {period_condition}
+                {doctor_condition}
+            ORDER BY ReserveNo 
+        '''.format(
+            reg_no=reg_no,
+            room=room,
+            period_condition=period_condition,
+            doctor_condition=doctor_condition,
+        )
+        rows = database.select_record(sql)
+        for row in rows:
+            if reg_no != row['ReserveNo']:
+                break
+
+            if system_settings.field('釋出預約號') == 'Y':
+                if check_release_reserve_no(database, room, period, doctor, reg_no):  # 可以釋出預約號, 不再繼續往下檢查
+                    break
+
+            reg_no += 1
+    else:
+        reg_no += 1
+
+    return reg_no
+
+
+# 2019.03.12 檢查是否可以釋出預約號碼 (只檢查今日，其他日期不可佔用)
+def check_release_reserve_no(database, room, period, doctor, reg_no):
+    release_reserve_no = False
+
+    start_date = datetime.datetime.now().strftime('%Y-%m-%d 00:00:00')
+    end_date = datetime.datetime.now().strftime('%Y-%m-%d 23:59:59')
+
+    sql = '''
+        SELECT * FROM reserve 
+        WHERE
+            ReserveDate BETWEEN "{start_date}" AND "{end_date}" AND
+            Room = {room} AND
+            Period = "{period}" AND
+            Doctor = "{doctor}" AND
+            ReserveNo = {reg_no}
+    '''.format(
+        start_date=start_date,
+        end_date=end_date,
+        room=room,
+        period=period,
+        doctor=doctor,
+        reg_no=reg_no,
+    )
+
+    rows = database.select_record(sql)
+
+    if len(rows) <= 0:  # 無人佔用, 可以釋出
+        release_reserve_no = True
+
+    return release_reserve_no
+
 
 
 # 檢查重複就診

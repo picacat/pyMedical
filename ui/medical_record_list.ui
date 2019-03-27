@@ -128,17 +128,17 @@
         </column>
         <column>
          <property name="text">
-          <string>給藥</string>
-         </property>
-        </column>
-        <column>
-         <property name="text">
           <string>主治醫師</string>
          </property>
         </column>
         <column>
          <property name="text">
           <string>主診斷病名</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>給藥</string>
          </property>
         </column>
         <column>

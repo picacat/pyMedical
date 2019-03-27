@@ -111,15 +111,18 @@ class PrintRegistrationForm3:
                 <table cellspacing=0 cellpadding=8>
                     <tr>
                         <td width="20%" style="text-align: center">{room}</td>
-                        <td width="10%">{ins_type}</td>
+                        <td width="15%">{ins_type}</td>
                         <td width="20%" style="text-align:center">{regist_fee}</td>
                         <td width="15%" style="text-align:right">{deposit_fee}</td>
-                        <td width="30%" style="text-align:center">{case_date}</td>
+                        <td width="25%" style="text-align:center">{case_date}</td>
                     </tr>
+                </table>
+                <table cellspacing=0 cellpadding=8>
                     <tr>
                         <td width="20%"></td>
-                        <td width="40%" colspan="2">卡序:{card}</td>
-                        <td width="40%" colspan="2">部份負擔:{diag_share_fee}元</td>
+                        <td width="30%">卡序:{card}</td>
+                        <td width="30%">部份負擔:{diag_share_fee}元</td>
+                        <td width="20%">班別:{period}</td>
                     </tr>
                 </table>
                 本單據僅供看診叫號使用，不作報稅證明用途
@@ -137,6 +140,7 @@ class PrintRegistrationForm3:
             deposit_fee=string_utils.xstr(row['DepositFee']),
             case_date=string_utils.xstr(row['CaseDate'].date()),
             share=string_utils.xstr(row['Share']),
+            period=string_utils.xstr(row['Period']),
             card=card,
             diag_share_fee=string_utils.xstr(row['SDiagShareFee']),
         )

@@ -1612,3 +1612,320 @@ def cvt_pymedical_other_groups(source_db):
     sql = 'UPDATE clinic SET ClinicType = "治則" WHERE ClinicType = "傷治"'
     source_db.exec_sql(sql)
 
+def cvt_disease_treat(database):
+    sql = 'DELETE FROM dict_groups WHERE DictGroupsType IN ("傷骨科病名類別", "傷骨科病名")'
+    database.exec_sql(sql)
+
+    fields = [
+        'DictGroupsType', 'DictGroupsTopLevel', 'DictGroupsName'
+    ]
+
+    disease_type = '01頭部'
+    data = ['傷骨科病名類別', None, disease_type]
+    database.insert_record('dict_groups', fields, data)
+
+    data = ['傷骨科病名', disease_type, '01頭部']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '02頭皮']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '03臉頰']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '04臉部']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '05眼瞼']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '06眼眶']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '07鼻']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '08耳']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '09唇']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '10顱骨']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '11顱內']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '12腦']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '13頷骨']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '14鼻骨']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '15鼻中膈']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '16下頷']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '17關節及韌帶']
+    database.insert_record('dict_groups', fields, data)
+
+
+    disease_type = '02腦神經'
+    data = ['傷骨科病名類別', None, disease_type]
+    database.insert_record('dict_groups', fields, data)
+
+    data = ['傷骨科病名', disease_type, '01眼視神經']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '02動眼神經']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '03滑車神經']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '04三叉神經']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '05外展神經']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '06顏面神經']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '07聽神經']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '08副神經']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '09腦神經']
+    database.insert_record('dict_groups', fields, data)
+
+    disease_type = '03頸部'
+    data = ['傷骨科病名類別', None, disease_type]
+    database.insert_record('dict_groups', fields, data)
+
+    data = ['傷骨科病名', disease_type, '01頸部']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '02頸椎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '03咽喉']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '04韌帶']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '05甲狀腺']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '06頸部關節']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '07頸部其他']
+    database.insert_record('dict_groups', fields, data)
+
+    disease_type = '04胸部'
+    data = ['傷骨科病名類別', None, disease_type]
+    database.insert_record('dict_groups', fields, data)
+
+    data = ['傷骨科病名', disease_type, '01胸部']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '02乳房']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '03胸壁']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '04胸椎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '05胸骨']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '06肋骨']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '07連枷胸']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '08胸腔']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '09心臟']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '10胸部關節']
+    database.insert_record('dict_groups', fields, data)
+
+    disease_type = '05腹部'
+    data = ['傷骨科病名類別', None, disease_type]
+    database.insert_record('dict_groups', fields, data)
+
+    data = ['傷骨科病名', disease_type, '01腹部']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '02腹壁']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '03骨盆']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '04生殖器']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '05肛門']
+    database.insert_record('dict_groups', fields, data)
+
+    disease_type = '06背部'
+    data = ['傷骨科病名類別', None, disease_type]
+    database.insert_record('dict_groups', fields, data)
+
+    data = ['傷骨科病名', disease_type, '01背部']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '02下背']
+    database.insert_record('dict_groups', fields, data)
+
+    disease_type = '07腰及骨盆'
+    data = ['傷骨科病名類別', None, disease_type]
+    database.insert_record('dict_groups', fields, data)
+
+    data = ['傷骨科病名', disease_type, '01腰']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '02腰(部)']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '03腰椎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '04尾骨']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '05恥骨']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '06坐骨']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '07髖臼']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '08脊椎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '09薦椎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '10骼骨']
+    database.insert_record('dict_groups', fields, data)
+
+    disease_type = '08肩部'
+    data = ['傷骨科病名類別', None, disease_type]
+    database.insert_record('dict_groups', fields, data)
+
+    data = ['傷骨科病名', disease_type, '01肩部']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '02肩膀']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '03上臂']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '04肩及上臂']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '05鎖骨']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '06肩胛骨']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '07肱骨']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '08肩帶']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '09旋轉肌']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '10二頭肌']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '11三頭肌']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '12肩關節']
+    database.insert_record('dict_groups', fields, data)
+
+    disease_type = '09手肘'
+    data = ['傷骨科病名類別', None, disease_type]
+    database.insert_record('dict_groups', fields, data)
+
+    data = ['傷骨科病名', disease_type, '01手肘']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '02前臂']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '03尺骨']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '04橈骨']
+    database.insert_record('dict_groups', fields, data)
+
+    disease_type = '10腕及手部'
+    data = ['傷骨科病名類別', None, disease_type]
+    database.insert_record('dict_groups', fields, data)
+
+    data = ['傷骨科病名', disease_type, '01腕部']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '02手部']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '03腕及手']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '04腕關節']
+    database.insert_record('dict_groups', fields, data)
+
+    disease_type = '11手指'
+    data = ['傷骨科病名類別', None, disease_type]
+    database.insert_record('dict_groups', fields, data)
+
+    data = ['傷骨科病名', disease_type, '01手指']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '02拇指']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '03食指']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '04中指']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '05無名指']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '06小指']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '07指甲']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '08指骨間關節']
+    database.insert_record('dict_groups', fields, data)
+
+    disease_type = '12髖及大腿'
+    data = ['傷骨科病名類別', None, disease_type]
+    database.insert_record('dict_groups', fields, data)
+
+    data = ['傷骨科病名', disease_type, '01髖部']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '02股骨']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '03大腿']
+    database.insert_record('dict_groups', fields, data)
+
+    disease_type = '13膝及小腿'
+    data = ['傷骨科病名類別', None, disease_type]
+    database.insert_record('dict_groups', fields, data)
+
+    data = ['傷骨科病名', disease_type, '01膝部']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '02小腿']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '03髕股']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '04脛骨']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '05腓骨']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '06半月板']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '07膝關節']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '08脛腓關節']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '09副韌帶']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '10十字韌帶']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '11阿基里斯跟腱']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '12腓神經']
+    database.insert_record('dict_groups', fields, data)
+
+    disease_type = '14踝及足部'
+    data = ['傷骨科病名類別', None, disease_type]
+    database.insert_record('dict_groups', fields, data)
+
+    data = ['傷骨科病名', disease_type, '01踝部']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '02內踝']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '03外踝']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '04足部']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '05跟骨']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '06距骨']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '07跗骨']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '08蹠骨']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '09踝關節']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '10蹠神經']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '11足部其他關節']
+    database.insert_record('dict_groups', fields, data)
+
+    disease_type = '15腳趾'
+    data = ['傷骨科病名類別', None, disease_type]
+    database.insert_record('dict_groups', fields, data)
+
+    data = ['傷骨科病名', disease_type, '01腳趾']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '02趾骨']
+    database.insert_record('dict_groups', fields, data)
+    data = ['傷骨科病名', disease_type, '03趾指間關節']
+    database.insert_record('dict_groups', fields, data)

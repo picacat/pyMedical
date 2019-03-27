@@ -60,6 +60,7 @@ class DictCompound(QtWidgets.QMainWindow):
         self.ui.toolButton_add_dict_medicine.clicked.connect(self._add_dict_medicine)
         self.ui.toolButton_remove_dict_medicine.clicked.connect(self._remove_dict_medicine)
         self.ui.toolButton_save_dosage.clicked.connect(self._save_dosage)
+        self.ui.lineEdit_search_compound.textChanged.connect(self._search_compound)
 
     # 設定欄位寬度
     def _set_table_width(self):
@@ -71,14 +72,19 @@ class DictCompound(QtWidgets.QMainWindow):
     def _read_medicine(self):
         self._read_dict_compound()
 
-    def _read_dict_compound(self):
+    def _read_dict_compound(self, keyword=None):
         sql = '''
             SELECT * FROM medicine 
             WHERE 
                 MedicineType = "{0}" 
-            ORDER BY LENGTH(MedicineName), CAST(CONVERT(`MedicineName` using big5) AS BINARY)
         '''.format(self.dict_type)
+        if keyword is not None:
+            sql += keyword
+
+        sql += ' ORDER BY LENGTH(MedicineName), CAST(CONVERT(`MedicineName` using big5) AS BINARY)'
+
         self.table_widget_dict_compound.set_db_data(sql, self._set_dict_compound_data)
+        self.dict_compound_changed()
 
     def _set_dict_compound_data(self, rec_no, rec):
         dict_compound_rec = [
@@ -298,3 +304,18 @@ class DictCompound(QtWidgets.QMainWindow):
             '<h3>劑量已全部存檔完成</h3>',
             '資料正確.'
         )
+    def _search_compound(self):
+        keyword = self.ui.lineEdit_search_compound.text()
+
+        if keyword == '':
+            self._read_dict_compound()
+        else:
+            script = '''
+                AND 
+                (InputCode LIKE "{0}%" OR MedicineName LIKE "%{0}%")
+            '''.format(keyword)
+            self._read_dict_compound(script)
+
+        self.ui.lineEdit_search_compound.setFocus(True)
+        self.ui.lineEdit_search_compound.setCursorPosition(len(keyword))
+

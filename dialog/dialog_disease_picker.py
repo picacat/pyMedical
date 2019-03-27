@@ -2,7 +2,7 @@
 # 病歷查詢 2014.09.22
 #coding: utf-8
 
-from PyQt5 import QtWidgets, QtCore
+from PyQt5 import QtWidgets, QtGui
 
 from classes import table_widget
 from libs import ui_utils
@@ -18,7 +18,7 @@ class DialogDiseasePicker(QtWidgets.QDialog):
         self.parent = parent
         self.database = args[0]
         self.system_settings = args[1]
-        self.sql = args[2]
+        self.icd_code = args[2]
 
         self.ui = None
 
@@ -55,6 +55,8 @@ class DialogDiseasePicker(QtWidgets.QDialog):
     def _set_signal(self):
         self.ui.buttonBox.accepted.connect(self.accepted_button_clicked)
         self.ui.tableWidget_disease.doubleClicked.connect(self._table_double_clicked)
+        self.ui.radioButton_all.clicked.connect(self._read_data)
+        self.ui.radioButton_chronic.clicked.connect(self._read_data)
 
     def _table_double_clicked(self):
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).animateClick()
@@ -66,8 +68,45 @@ class DialogDiseasePicker(QtWidgets.QDialog):
         self.chinese_name = self.table_widget_disease.field_value(3)
         self.close()
 
+    def _get_sql_script(self):
+        chronic_script = ''
+        if self.ui.radioButton_chronic.isChecked():
+            chronic_script = ' AND SpecialCode IS NOT NULL '
+
+        if self.icd_code.isdigit():
+            sql = '''
+                SELECT
+                    icd10.ICD10Key,
+                    icd10.ICDCode,
+                    icd10.ChineseName,
+                    icd10.EnglishName,
+                    icd10.SpecialCode
+                FROM icdmap
+                    LEFT JOIN icd10 ON icdmap.ICD10Code = icd10.ICDCode
+                WHERE
+                    ICD9Code LIKE "{0}%"
+                    {1}
+                ORDER BY icd10.ICDCode
+            '''.format(self.icd_code, chronic_script)
+        else:
+            order_type = 'ORDER BY ICDCode'
+            if self.system_settings.field('詞庫排序') == '點擊率':
+                order_type = 'ORDER BY HitRate DESC'
+            sql = '''
+                SELECT * FROM icd10
+                WHERE
+                    (ICDCode LIKE "{0}%" OR
+                     InputCode LIKE "%{0}%" OR
+                     ChineseName LIKE "%{0}%")
+                    {1}
+            '''.format(self.icd_code, chronic_script)
+            sql += order_type
+
+        return sql
+
     def _read_data(self):
-        self.table_widget_disease.set_db_data(self.sql, self._set_table_data)
+        sql = self._get_sql_script()
+        self.table_widget_disease.set_db_data(sql, self._set_table_data)
 
     def _set_table_data(self, row_no, row):
         icd_code_row = [
@@ -83,3 +122,8 @@ class DialogDiseasePicker(QtWidgets.QDialog):
                 row_no, column,
                 QtWidgets.QTableWidgetItem(icd_code_row[column])
             )
+            if icd_code_row[2] != '':
+                self.ui.tableWidget_disease.item(
+                    row_no, column).setForeground(
+                    QtGui.QColor('red')
+                )

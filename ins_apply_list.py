@@ -31,6 +31,7 @@ class InsApplyList(QtWidgets.QMainWindow):
         self.clinic_id = args[6]
         self.case_type = args[7]
         self.ui = None
+        self.error_count = 0
 
         self.apply_date = nhi_utils.get_apply_date(self.apply_year, self.apply_month)
         self.apply_type_code = nhi_utils.APPLY_TYPE_CODE[self.apply_type]
@@ -66,6 +67,7 @@ class InsApplyList(QtWidgets.QMainWindow):
     def _set_signal(self):
         self.ui.tableWidget_ins_apply_list.doubleClicked.connect(self.open_medical_record)
         self.ui.toolButton_jump.clicked.connect(self._jump_sequence)
+        self.ui.toolButton_find_error.clicked.connect(self._find_error)
         self.ui.toolButton_bookmark.clicked.connect(self._set_bookmark)
         self.ui.toolButton_open_medical_record.clicked.connect(self.open_medical_record)
         self.ui.toolButton_print_order.clicked.connect(self._print_order)
@@ -206,6 +208,14 @@ class InsApplyList(QtWidgets.QMainWindow):
                     QtGui.QColor('blue')
                 )
 
+        if string_utils.xstr(row['Message']) != '':
+            self.error_count += 1
+            self._set_row_color(row_no, 'red')
+
+    def _set_row_color(self, row_no, color):
+        for column_no in range(self.ui.tableWidget_ins_apply_list.columnCount()):
+            self.ui.tableWidget_ins_apply_list.item(row_no, column_no).setForeground(QtGui.QColor(color))
+
     # 註記
     def _set_bookmark(self):
         if self.table_widget_ins_apply_list.field_value(1) == '*':
@@ -292,5 +302,6 @@ class InsApplyList(QtWidgets.QMainWindow):
         self.ui.tableWidget_ins_apply_list.setCurrentCell(sequence-1, 1)
         self.ui.tableWidget_ins_apply_list.setFocus(True)
 
-
+    def _find_error(self):
+        self.table_widget_ins_apply_list.find_error(41)
 

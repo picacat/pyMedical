@@ -35,6 +35,7 @@ class InsApplyTab(QtWidgets.QMainWindow):
 
         self.apply_date = nhi_utils.get_apply_date(self.apply_year, self.apply_month)
         self.apply_type_code = nhi_utils.APPLY_TYPE_CODE[self.apply_type]
+        self.show_warning = False
 
         self._set_ui()
         self._set_signal()
@@ -87,6 +88,31 @@ class InsApplyTab(QtWidgets.QMainWindow):
                 ),
                 '案件分類-{0}'.format(case_type)
             )
+
+        self._set_tab_icon()
+
+        if self.show_warning:
+            msg_box = QMessageBox()
+            msg_box.setIcon(QMessageBox.Warning)
+            msg_box.setWindowTitle('申報檔有誤')
+            msg_box.setText("<font size='4' color='red'><b>申報檔有錯誤, 請至申報預檢完成錯誤檢查流程.</b></font>")
+            msg_box.setInformativeText("錯誤未全部更正前, 請勿申報上傳, 以免遭到退件.")
+            msg_box.addButton(QPushButton("確定"), QMessageBox.YesRole)
+            msg_box.exec_()
+
+    def _set_tab_icon(self):
+        tab_icon_list = [ui_utils.ICON_OK for i in range(self.ui.tabWidget_ins_apply.count())]
+
+        for i in range(self.ui.tabWidget_ins_apply.count()):
+            tab = self.ui.tabWidget_ins_apply.widget(i)
+
+            if tab.error_count > 0:
+                tab_icon_list[i] = ui_utils.ICON_NO
+                self.show_warning = True
+
+        for i, icon in zip(range(len(tab_icon_list)), tab_icon_list):
+            self.ui.tabWidget_ins_apply.setTabIcon(i, icon)
+
 
     def open_medical_record(self, case_key):
         self.parent.open_medical_record(case_key)

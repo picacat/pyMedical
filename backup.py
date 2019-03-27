@@ -53,6 +53,7 @@ class Backup(QtWidgets.QDialog):
             ['patient.sql', '"PatientKey IN (SELECT PatientKey FROM cases WHERE CaseDate BETWEEN \'{0}\' AND \'{1}\')"'.format(start_date, end_date)],
             ['cases.sql', '"CaseDate BETWEEN \'{0}\' AND \'{1}\'"'.format(start_date, end_date)],
             ['prescript.sql', '"CaseKey IN (SELECT CaseKey FROM cases WHERE CaseDate BETWEEN \'{0}\' AND \'{1}\')"'.format(start_date, end_date)],
+            ['dosage.sql', '"CaseKey IN (SELECT CaseKey FROM cases WHERE CaseDate BETWEEN \'{0}\' AND \'{1}\')"'.format(start_date, end_date)],
             ['deposit.sql', '"CaseKey IN (SELECT CaseKey FROM cases WHERE CaseDate BETWEEN \'{0}\' AND \'{1}\')"'.format(start_date, end_date)],
             ['debt.sql', '"CaseKey IN (SELECT CaseKey FROM cases WHERE CaseDate BETWEEN \'{0}\' AND \'{1}\')"'.format(start_date, end_date)],
         ]

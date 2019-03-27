@@ -59,7 +59,7 @@ class CheckCourse(QtWidgets.QMainWindow):
         self.table_widget_errors = table_widget.TableWidget(self.ui.tableWidget_errors, self.database)
         self.table_widget_errors.set_column_hidden([0])
         width = [
-            100, 120, 60, 80, 80, 100, 70, 30, 100, 180, 100,
+            100, 120, 60, 80, 80, 100, 70, 30, 100, 450, 100,
             80, 80, 250,
         ]
         self.table_widget_errors.set_table_heading_width(width)
@@ -126,6 +126,8 @@ class CheckCourse(QtWidgets.QMainWindow):
         else:
             self.ui.toolButton_find_error.setEnabled(True)
 
+        self.ui.tableWidget_errors.resizeRowsToContents()
+
     def _check_course(self):
         self.parent.ui.progressBar.setMaximum(self.ui.tableWidget_errors.rowCount()-1)
         self.parent.ui.progressBar.setValue(0)
@@ -162,22 +164,23 @@ class CheckCourse(QtWidgets.QMainWindow):
                             row_no, 13,
                             QtWidgets.QTableWidgetItem('療程未滿6次')
                         )
-                        self._set_row_color(QtGui.QColor('red'), row_no)
+                        self._set_row_color(row_no, 'red')
                         self.errors += 1
                 else:
                     if next_course == course:
-                        self.ui.tableWidget_errors.setItem(
-                            row_no+1, 13,
-                            QtWidgets.QTableWidgetItem('療程重複')
-                        )
-                        self._set_row_color(QtGui.QColor('red'), row_no+1)
-                        self.errors += 1
-                    elif next_course - course != 1:
+                        if course >= 2:
+                            self.ui.tableWidget_errors.setItem(
+                                row_no+1, 13,
+                                QtWidgets.QTableWidgetItem('療程重複')
+                            )
+                            self._set_row_color(row_no+1, 'red')
+                            self.errors += 1
+                    elif course < 6 and next_course != 1 and next_course - course != 1:
                         self.ui.tableWidget_errors.setItem(
                             row_no+1, 13,
                             QtWidgets.QTableWidgetItem('療程不連續')
                         )
-                        self._set_row_color(QtGui.QColor('red'), row_no+1)
+                        self._set_row_color(row_no+1, 'red')
                         self.errors += 1
 
 
@@ -185,9 +188,9 @@ class CheckCourse(QtWidgets.QMainWindow):
                 self.parent.ui.progressBar.value() + 1
             )
 
-    def _set_row_color(self, color, row_no):
+    def _set_row_color(self, row_no, color):
         for column_no in range(self.ui.tableWidget_errors.columnCount()):
-            self.ui.tableWidget_errors.item(row_no, column_no).setForeground(color)
+            self.ui.tableWidget_errors.item(row_no, column_no).setForeground(QtGui.QColor(color))
 
     def error_count(self):
         return self.errors

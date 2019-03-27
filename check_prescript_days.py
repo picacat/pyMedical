@@ -66,7 +66,7 @@ class CheckPrescriptDays(QtWidgets.QMainWindow):
             self.ui.tableWidget_medical_record, self.database)
         self.table_widget_medical_record.set_column_hidden([0])
         width = [
-            100, 120, 60, 80, 80, 100, 70, 30, 50, 100, 180, 100,
+            100, 120, 60, 80, 80, 100, 70, 30, 50, 100, 400, 100,
             80, 80, 250,
         ]
         self.table_widget_medical_record.set_table_heading_width(width)
@@ -127,6 +127,7 @@ class CheckPrescriptDays(QtWidgets.QMainWindow):
             self.ui.toolButton_find_error.setEnabled(True)
 
         self.parent.ui.label_progress.setText('檢查進度: 檢查完成')
+        self.ui.tableWidget_medical_record.resizeRowsToContents()
 
     def _check_duplicated_days(self, row_no, row):
         error_message = []

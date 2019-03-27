@@ -65,7 +65,7 @@ class DialogCertificatePayment(QtWidgets.QDialog):
         self.ui.comboBox_treat_type.currentTextChanged.connect(self._read_medical_record)
 
     def _set_table_width(self):
-        width = [100, 10, 120, 60, 100, 90, 90, 90, 90, 90]
+        width = [100, 10, 120, 60, 100, 90, 90, 90, 90, 90, 90]
         self.table_widget_medical_record.set_table_heading_width(width)
 
     def _set_group_box(self, enabled):
@@ -175,7 +175,7 @@ class DialogCertificatePayment(QtWidgets.QDialog):
 
         sql = '''
             SELECT 
-                CaseKey, CaseDate, InsType, TreatType, RegistFee, SDiagShareFee, SDrugShareFee,
+                CaseKey, CaseDate, InsType, TreatType, Doctor, RegistFee, SDiagShareFee, SDrugShareFee,
                 InsApplyFee, TotalFee
             FROM cases
             WHERE
@@ -191,6 +191,25 @@ class DialogCertificatePayment(QtWidgets.QDialog):
         else:
             self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setEnabled(False)
 
+        self._set_doctor()
+
+    def _set_doctor(self):
+        doctor_list = []
+        for row_no in range(self.ui.tableWidget_medical_record.rowCount()):
+            doctor_item = self.ui.tableWidget_medical_record.item(row_no, 10)
+            if doctor_item is None:
+                continue
+
+            doctor = doctor_item.text()
+            if doctor == '':
+                continue
+
+            if doctor not in doctor_list:
+                doctor_list.append(doctor)
+
+        ui_utils.set_combo_box(self.ui.comboBox_doctor, doctor_list)
+
+
 
     def _set_table_data(self, row_no, row):
         medical_record = [
@@ -204,6 +223,7 @@ class DialogCertificatePayment(QtWidgets.QDialog):
             string_utils.xstr(number_utils.get_integer(row['SDrugShareFee'])),
             string_utils.xstr(number_utils.get_integer(row['InsApplyFee'])),
             string_utils.xstr(number_utils.get_integer(row['TotalFee'])),
+            string_utils.xstr(row['Doctor']),
         ]
 
         for column in range(len(medical_record)):
@@ -239,7 +259,7 @@ class DialogCertificatePayment(QtWidgets.QDialog):
     def _write_certificate(self, case_key):
         fields = [
             'CaseKey', 'PatientKey', 'Name', 'CertificateDate', 'CertificateType',
-            'InsType', 'StartDate', 'EndDate', 'CertificateFee',
+            'InsType', 'Doctor', 'StartDate', 'EndDate', 'CertificateFee',
         ]
 
         data = [
@@ -249,6 +269,7 @@ class DialogCertificatePayment(QtWidgets.QDialog):
             datetime.datetime.now().strftime('%Y-%m-%d'),
             '收費證明',
             self.ui.comboBox_ins_type.currentText(),
+            self.ui.comboBox_doctor.currentText(),
             self.ui.dateEdit_start_date.date().toString('yyyy-MM-dd'),
             self.ui.dateEdit_end_date.date().toString('yyyy-MM-dd'),
             self.ui.spinBox_certificate_fee.value(),

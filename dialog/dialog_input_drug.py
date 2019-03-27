@@ -45,6 +45,7 @@ class DialogInputDrug(QtWidgets.QDialog):
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Cancel).setText('取消')
         self._set_combo_box()
         self.ui.lineEdit_medicine_name.setFocus()
+        self.ui.lineEdit_medicine_code.setMaxLength(15)
 
     # 設定信號
     def _set_signal(self):

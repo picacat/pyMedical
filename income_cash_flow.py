@@ -63,7 +63,7 @@ class IncomeCashFlow(QtWidgets.QMainWindow):
 
     # 設定欄位寬度
     def _set_table_width(self):
-        width = [100, 120, 50, 80, 100, 60, 80, 100, 90, 90, 90, 90, 90, 90, 90, 90, 100]
+        width = [100, 120, 50, 80, 100, 60, 80, 100, 80, 90, 90, 90, 90, 90, 90, 90, 100]
         self.table_widget_registration.set_table_heading_width(width)
         width = [100, 120, 50, 80, 100, 60, 80, 100, 90, 50, 100, 90, 90, 90, 90, 90, 100]
         self.table_widget_charge.set_table_heading_width(width)
@@ -129,6 +129,7 @@ class IncomeCashFlow(QtWidgets.QMainWindow):
         regist_fee = number_utils.get_integer(row['RegistFee'])
         diag_share_fee = number_utils.get_integer(row['SDiagShareFee'])
         deposit_fee = number_utils.get_integer(row['DepositFee'])
+
         if string_utils.xstr(row['DebtType']) == '掛號欠款':
             debt_fee = -number_utils.get_integer(row['Fee'])
         else:
@@ -150,9 +151,9 @@ class IncomeCashFlow(QtWidgets.QMainWindow):
             string_utils.xstr(regist_fee),
             string_utils.xstr(diag_share_fee),
             string_utils.xstr(deposit_fee),
-            None,
+            '0',
             string_utils.xstr(debt_fee),
-            None,
+            '0',
             string_utils.xstr(subtotal),
             string_utils.xstr(row['Register']),
         ]
@@ -223,11 +224,12 @@ class IncomeCashFlow(QtWidgets.QMainWindow):
             string_utils.xstr(row['Share']),
             string_utils.xstr(row['TreatType']),
             card,
-            None,
-            None,
-            None,
+            '0',
+            '0',
+            '0',
             string_utils.xstr(return_fee),
-            None,
+            '0',
+            '0',
             string_utils.xstr(subtotal),
             string_utils.xstr(row['Refunder']),
         ]
@@ -237,7 +239,7 @@ class IncomeCashFlow(QtWidgets.QMainWindow):
                 row_no, col_no,
                 QtWidgets.QTableWidgetItem(medical_record[col_no])
             )
-            if col_no in [3, 12, 14]:
+            if col_no in [3, 9, 10, 11, 12, 13, 14, 15]:
                 self.ui.tableWidget_registration.item(
                     row_no, col_no).setTextAlignment(
                     QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
@@ -299,10 +301,11 @@ class IncomeCashFlow(QtWidgets.QMainWindow):
             string_utils.xstr(row['Share']),
             string_utils.xstr(row['TreatType']),
             card,
-            None,
-            None,
-            None,
-            None,
+            '0',
+            '0',
+            '0',
+            '0',
+            '0',
             string_utils.xstr(repayment),
             string_utils.xstr(subtotal),
             string_utils.xstr(row['Cashier1']),
@@ -377,7 +380,7 @@ class IncomeCashFlow(QtWidgets.QMainWindow):
             SELECT cases.*, debt.DebtType, debt.Fee FROM cases
                 LEFT JOIN debt ON cases.CaseKey = debt.CaseKey
             WHERE 
-                cases.CaseDate BETWEEN "{0}" AND "{1}" AND 
+                cases.ChargeDate BETWEEN "{0}" AND "{1}" AND 
                 ChargeDone = "True"
         '''.format(
             self.start_date, self.end_date
@@ -519,7 +522,7 @@ class IncomeCashFlow(QtWidgets.QMainWindow):
             ['自費還款', self.ui.tableWidget_registration.item(self.ui.tableWidget_registration.rowCount()-1, 14).text()],
             ['自費應收', self.ui.tableWidget_charge.item(self.ui.tableWidget_charge.rowCount()-1, 12).text()],
             ['自費實收', self.ui.tableWidget_charge.item(self.ui.tableWidget_charge.rowCount()-1, 13).text()],
-            ['掛號欠款', self.ui.tableWidget_registration.item(self.ui.tableWidget_charge.rowCount()-1, 13).text()],
+            ['掛號欠款', self.ui.tableWidget_registration.item(self.ui.tableWidget_registration.rowCount()-1, 13).text()],
             ['批價欠款', self.ui.tableWidget_charge.item(self.ui.tableWidget_charge.rowCount()-1, 14).text()],
             ['實收現金', string_utils.xstr(total_fee)],
         ]

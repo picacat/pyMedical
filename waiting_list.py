@@ -15,6 +15,8 @@ from libs import string_utils
 from libs import nhi_utils
 from libs import case_utils
 from libs import statistics_utils
+from printer import print_prescription
+from printer import print_receipt
 
 
 
@@ -72,6 +74,8 @@ class WaitingList(QtWidgets.QMainWindow):
         self.ui.action_medical_record.triggered.connect(self.open_medical_record)
         self.ui.action_close.triggered.connect(self.close_waiting_list)
         self.ui.tableWidget_reservation_list.itemSelectionChanged.connect(self._show_last_medical_record)
+        self.ui.toolButton_print_prescript.clicked.connect(self._print_prescript)
+        self.ui.toolButton_print_receipt.clicked.connect(self._print_receipt)
 
     def _set_table_width(self):
         width = [70, 70,
@@ -79,12 +83,26 @@ class WaitingList(QtWidgets.QMainWindow):
                  80, 80, 80, 60, 80, 40, 80, 220]
         self.table_widget_waiting_list.set_table_heading_width(width)
 
+    def _get_room_script(self, table_name):
+        if self.system_settings.field('候診名單顯示診別') == '指定診別':
+            room = 'AND {table_name}.Room = {value}'.format(
+                table_name=table_name,
+                value=self.system_settings.field('診療室'),
+            )
+        elif self.system_settings.field('候診名單顯示診別') == '醫師診別':
+            room = 'AND {table_name}.Doctor = "{value}"'.format(
+                table_name=table_name,
+                value=self.system_settings.field('使用者'),
+            )
+        else:
+            room = ''  # 預設顯示診別為全部
+
+        return room
+
     def read_wait(self):
-        room = ''  # 預設顯示診別為全部
         sort = 'ORDER BY FIELD(Period, {0}), RegistNo'.format(str(nhi_utils.PERIOD)[1:-1])  # 預設為診號排序
 
-        if self.system_settings.field('候診名單顯示診別') == '指定診別':
-            room = 'AND Room = {0}'.format(self.system_settings.field('診療室'))
+        room = self._get_room_script('wait')
 
         if self.system_settings.field('看診排序') == '時間排序':
             sort = 'ORDER BY CaseDate'
@@ -93,7 +111,8 @@ class WaitingList(QtWidgets.QMainWindow):
             SELECT wait.*, patient.Gender, patient.Birthday FROM wait 
                 LEFT JOIN patient ON wait.PatientKey = patient.PatientKey 
             WHERE 
-                DoctorDone = "False" {0}
+                DoctorDone = "False" 
+                {0}
                 {1}
         '''.format(room, sort)
 
@@ -184,9 +203,7 @@ class WaitingList(QtWidgets.QMainWindow):
         start_date = datetime.datetime.now().strftime('%Y-%m-%d 00:00:00')
         end_date = datetime.datetime.now().strftime('%Y-%m-%d 23:59:59')
 
-        room = ''  # 預設顯示診別為全部
-        if self.system_settings.field('候診名單顯示診別') == '指定診別':
-            room = 'AND Room = {0}'.format(self.system_settings.field('診療室'))
+        room = self._get_room_script('reserve')
 
         sql = '''
             SELECT * FROM reserve
@@ -279,11 +296,9 @@ class WaitingList(QtWidgets.QMainWindow):
             self._read_wait_completed()
 
     def _read_wait_completed(self):
-        room = ''  # 預設顯示診別為全部
         sort = 'ORDER BY FIELD(cases.Period, {0}), cases.RegistNo'.format(str(nhi_utils.PERIOD)[1:-1])  # 預設為診號排序
 
-        if self.system_settings.field('候診名單顯示診別') == '指定診別':
-            room = 'AND cases.Room = {0}'.format(self.system_settings.field('診療室'))
+        room = self._get_room_script('cases')
 
         if self.system_settings.field('看診排序') == '時間排序':
             sort = 'ORDER BY cases.CaseDate'
@@ -443,3 +458,18 @@ class WaitingList(QtWidgets.QMainWindow):
 
         self.ui.verticalLayout_chart.addWidget(self.chartView)
 
+    def _print_prescript(self):
+        case_key = self.table_widget_wait_completed.field_value(1)
+        print_prescript = print_prescription.PrintPrescription(
+            self, self.database, self.system_settings, case_key, '選擇列印')
+        print_prescript.print()
+
+        del print_prescript
+
+    def _print_receipt(self):
+        case_key = self.table_widget_wait_completed.field_value(1)
+        print_charge = print_receipt.PrintReceipt(
+            self, self.database, self.system_settings, case_key, '選擇列印')
+        print_charge.print()
+
+        del print_charge

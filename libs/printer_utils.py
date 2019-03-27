@@ -458,7 +458,6 @@ def get_prescript_html(database, system_setting, case_key, medicine_set,
 def get_ins_fees_html(database, case_key):
     sql = '''
         SELECT * FROM cases 
-            LEFT JOIN patient on patient.PatientKey = cases.PatientKey
         WHERE 
             CaseKey = {0}
     '''.format(case_key)
@@ -517,7 +516,6 @@ def get_ins_fees_html(database, case_key):
 def get_self_fees_html(database, case_key):
     sql = '''
         SELECT * FROM cases 
-            LEFT JOIN patient on patient.PatientKey = cases.PatientKey
         WHERE 
             CaseKey = {0}
     '''.format(case_key)
@@ -528,7 +526,8 @@ def get_self_fees_html(database, case_key):
 
     row = rows[0]
     regist_fee = number_utils.get_integer(row['RegistFee'])
-    if row['InsType'] == '健保':
+    ins_type = string_utils.xstr(row['InsType'])
+    if ins_type == '健保':
         regist_fee = 0
 
     html = '''
@@ -567,6 +566,7 @@ def get_self_fees_html(database, case_key):
     )
 
     return html
+
 
 def get_medicine_detail(rows, row_no, pres_days, print_alias=False):
     try:

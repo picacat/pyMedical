@@ -4,10 +4,14 @@ from xml.dom.minidom import Document
 from libs import string_utils
 from libs import number_utils
 from libs import nhi_utils
+from libs import prescript_utils
 
 
-MAX_MEDICINE_SET = 100
-
+INJURY_LIST = [
+    '扭傷', '拉傷', '挫傷', '壓傷', '壓砸傷','鈍傷', '損傷', '擦傷', '脫臼',
+    '脫位', '疼痛', '關節炎', '關節痛', '撕裂傷', '骨折', '叮咬', '咬傷', '攣縮',
+    '破裂', '壓迫',
+]
 
 def get_security_xml_dict(root):
     security_xml_dict = {
@@ -314,116 +318,121 @@ def get_medical_record_html(database, system_settings, case_key):
                 <meta charset="UTF-8">
             </head>
             <body>
-                {0}
-                {1}
+                {medical_record}
+                {prescript_record}
             </body>
         </html>
     '''.format(
-        medical_record,
-        prescript_record,
+        medical_record=medical_record,
+        prescript_record=prescript_record,
     )
 
     return html
 
 
 def get_prescript_record(database, system_settings, case_key):
-    sql = '''
-        SELECT Treatment FROM cases
-        WHERE
-            CaseKey = {0}
-    '''.format(case_key)
-    rows = database.select_record(sql)
-    treatment = rows[0]['Treatment']
-
     sql = 'SELECT * FROM prescript WHERE CaseKey = {0}'.format(case_key)
     rows = database.select_record(sql)
     if len(rows) <= 0:
         return '<br><br><br><center>無開立處方</center><br>'
 
-    all_prescript = ''
-    for i in range(1, MAX_MEDICINE_SET):
-        sql = '''
-            SELECT * FROM prescript WHERE CaseKey = {0} AND
-            MedicineSet = {1}
-            ORDER BY PrescriptNo, PrescriptKey
-        '''.format(case_key, i)
-        rows = database.select_record(sql)
-        if i == 1 and treatment in nhi_utils.INS_TREAT:
-            if treatment in nhi_utils.ACUPUNCTURE_TREAT:
-                medicine_type = '穴道'
+    html = get_prescript_medicine_record(database, system_settings, case_key, 1)
+    html += get_ins_prescript_treat_record(database, system_settings, case_key)
+    html += get_self_prescript_medicine_record(database, system_settings, case_key)
+
+    return html
+
+
+def get_prescript_html_data(database, system_settings, case_key, medicine_set, treatment=None):
+    prescript_data = ''
+    total_dosage = 0
+
+    treatment_script = ''
+    if medicine_set == 1:  # 健保才過濾處方或處置
+        if treatment is None:
+            treatment_script = ' AND MedicineTYPE NOT IN ("穴道", "處置", "檢驗") '
+        else:
+            treatment_script = ' AND MedicineTYPE IN ("穴道", "處置", "檢驗") '
+
+    sql = '''
+        SELECT * FROM prescript 
+        WHERE 
+            CaseKey = {case_key} AND
+            MedicineSet = {medicine_set}
+            {treatment_script}
+        ORDER BY PrescriptNo, PrescriptKey
+    '''.format(
+        case_key=case_key,
+        medicine_set=medicine_set,
+        treatment_script=treatment_script
+    )
+    rows = database.select_record(sql)
+    if len(rows) <= 0:
+        return prescript_data, total_dosage
+
+    sequence = 0
+    for row in rows:
+        if string_utils.xstr(row['MedicineName']) == '':
+            continue
+
+        sequence += 1
+
+        if row['Dosage'] is None or row['Dosage'] == 0.00:
+            dosage = ''
+        else:
+            if system_settings.field('劑量模式') in ['日劑量', '總量']:
+                dosage = '{0:.1f}'.format(row['Dosage'])
+            elif system_settings.field('劑量模式') in ['次劑量']:
+                dosage = '{0:.2f}'.format(row['Dosage'])
             else:
-                medicine_type = '處置'
+                dosage = string_utils.xstr(row['Dosage'])
 
-            rows.insert(
-                0,
-                {
-                    'MedicineName': treatment,
-                    'MedicineType': medicine_type,
-                    'Dosage': 1,
-                    'Unit': '次',
-                    'Instruction': '',
-                }
-            )
+            total_dosage += row['Dosage']
 
-        if len(rows) <= 0:
-            if i == 1:
-                continue
-            else:
-                break
+        unit = string_utils.xstr(row['Unit'])
+        instruction = string_utils.xstr(row['Instruction'])
 
-        prescript_data = ''
-        sequence = 0
-        total_dosage = 0
-        for row in rows:
-            if string_utils.xstr(row['MedicineName']) == '':
-                continue
+        if medicine_set >= 2:
+            font_color = 'color: navy'
+        else:
+            font_color = ''
 
-            sequence += 1
+        prescript_data += '''
+            <tr>
+                <td align="center" style="padding-right: 8px; {font_color}">{sequence}</td>
+                <td style="padding-left: 8px; {font_color}">{medicine_set}</td>
+                <td align="right" style="padding-right: 8px; {font_color}">{dosage} {unit}</td>
+                <td style="padding-left: 8px; {font_color}">{instruction}</td>
+            </tr>
+        '''.format(
+            font_color=font_color,
+            sequence=string_utils.xstr(sequence),
+            medicine_set=string_utils.xstr(row['MedicineName']),
+            dosage=dosage,
+            unit=unit,
+            instruction=instruction,
+        )
 
-            if row['Dosage'] is None or row['Dosage'] == 0.00:
-                dosage = ''
-            else:
-                if system_settings.field('劑量模式') in ['日劑量', '總量']:
-                    dosage = '{0:.1f}'.format(row['Dosage'])
-                elif system_settings.field('劑量模式') in ['次劑量']:
-                    dosage = '{0:.2f}'.format(row['Dosage'])
-                else:
-                    dosage = string_utils.xstr(row['Dosage'])
+    return prescript_data, total_dosage
 
-                total_dosage += row['Dosage']
 
-            unit = string_utils.xstr(row['Unit'])
-            instruction = string_utils.xstr(row['Instruction'])
+def get_dosage_html(database, case_key, medicine_set, total_dosage):
+    dosage_data = ''
 
-            prescript_data += '''
-                <tr>
-                    <td align="center" style="padding-right: 8px;">{0}</td>
-                    <td style="padding-left: 8px;">{1}</td>
-                    <td align="right" style="padding-right: 8px">{2} {3}</td>
-                    <td style="padding-left: 8px;">{4}</td>
-                </tr>
-            '''.format(
-                string_utils.xstr(sequence),
-                string_utils.xstr(row['MedicineName']),
-                dosage,
-                unit,
-                instruction,
-            )
+    sql = '''
+        SELECT * FROM dosage 
+        WHERE
+            CaseKey = {0} AND MedicineSet = {1} 
+    '''.format(case_key, medicine_set)
+    rows = database.select_record(sql)
+    dosage_row = rows[0] if len(rows) > 0 else None
+    if dosage_row is not None:
+        packages = number_utils.get_integer(dosage_row['Packages'])
+        pres_days = number_utils.get_integer(dosage_row['Days'])
+        instruction = string_utils.xstr(dosage_row['Instruction'])
 
-        sql = '''
-                SELECT * FROM dosage 
-                WHERE
-                    CaseKey = {0} AND MedicineSet = {1}
-                
-            '''.format(case_key, i)
-        rows = database.select_record(sql)
-        dosage_row = rows[0] if len(rows) > 0 else None
-        if dosage_row is not None:
-            packages = number_utils.get_integer(dosage_row['Packages'])
-            pres_days = number_utils.get_integer(dosage_row['Days'])
-            instruction = string_utils.xstr(dosage_row['Instruction'])
-
-            prescript_data += '''
+        if packages > 0 and pres_days > 0:
+            dosage_data = '''
                 <tr>
                     <td style="text-align: left; padding-left: 30px;" colspan="4">
                         用法: {0}包 {1}日份 {2}服用 總量: {3}
@@ -433,43 +442,116 @@ def get_prescript_record(database, system_settings, case_key):
                 packages, pres_days, instruction, total_dosage
             )
 
-        if i == 1:
-            medicine_title = '健保處方'
-        else:
-            medicine_title = '自費處方{0}'.format(i-1)
+    return dosage_data
 
-        prescript_data = '''
-            <table align=center cellpadding="2" cellspacing="0" width="98%" style="border-width: 1px; border-style: solid;">
-                <thead>
-                    <tr bgcolor="LightGray">
-                        <th style="text-align: center; padding-left: 8px" width="10%">序</th>
-                        <th style="padding-left: 8px" width="50%" align="left">{0}</th>
-                        <th style="padding-right: 8px" align="right" width="25%">劑量</th>
-                        <th style="padding-left: 8px" align="left" width="15%">指示</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {1}
-                </tbody>
-            </table>
-            <br>
-        '''.format(medicine_title, prescript_data)
-        all_prescript += prescript_data
 
-    return all_prescript
+def get_prescript_medicine_record(database, system_settings, case_key, medicine_set):
+    prescript_data, total_dosage = get_prescript_html_data(database, system_settings, case_key, medicine_set)
+    if prescript_data == '':
+        return ''
+
+    prescript_data += get_dosage_html(database, case_key, medicine_set, total_dosage)
+    if medicine_set == 1:
+        prescript_heading = '健保處方'
+    else:
+        prescript_heading = '自費處方{0}'.format(medicine_set-1)
+
+    prescript_html = '''
+        <table align=center cellpadding="2" cellspacing="0" width="98%" style="border-width: 1px; border-style: solid;">
+            <thead>
+                <tr bgcolor="LightGray">
+                    <th style="text-align: center; padding-left: 8px" width="10%">序</th>
+                    <th style="padding-left: 8px" width="50%" align="left">{prescript_heading}</th>
+                    <th style="padding-right: 8px" align="right" width="25%">劑量</th>
+                    <th style="padding-left: 8px" align="left" width="15%">指示</th>
+                </tr>
+            </thead>
+            <tbody>
+                {prescript_data}
+            </tbody>
+        </table>
+        <br>
+    '''.format(
+        prescript_heading=prescript_heading,
+        prescript_data=prescript_data,
+    )
+
+    return prescript_html
+
+
+def get_ins_prescript_treat_record(database, system_settings, case_key):
+    prescript_html = ''
+    sql = '''
+        SELECT Treatment FROM cases
+        WHERE
+            CaseKey = {0}
+    '''.format(case_key)
+    rows = database.select_record(sql)
+    treatment = string_utils.xstr(rows[0]['Treatment'])
+
+    if treatment == '':
+        return prescript_html
+
+    treatment_data = '''
+        <tr>
+            <td align="center" style="padding-right: 8px;">*</td>
+            <td style="padding-left: 8px;">{treatment}</td>
+            <td align="right" style="padding-right: 8px">1 次</td>
+            <td style="padding-left: 8px;"></td>
+        </tr>
+    '''.format(
+        treatment=treatment,
+    )
+    prescript_data, _ = get_prescript_html_data(database, system_settings, case_key, 1, True)
+
+    prescript_html = '''
+        <table align=center cellpadding="2" cellspacing="0" width="98%" style="border-width: 1px; border-style: solid;">
+            <thead>
+                <tr bgcolor="LightGray">
+                    <th style="text-align: center; padding-left: 8px" width="10%">序</th>
+                    <th style="padding-left: 8px" width="50%" align="left">健保處置</th>
+                    <th style="padding-right: 8px" align="right" width="25%">次數</th>
+                    <th style="padding-left: 8px" align="left" width="15%">備註</th>
+                </tr>
+            </thead>
+            <tbody>
+                {treatment_data}
+                {prescript_data}
+            </tbody>
+        </table>
+        <br>
+    '''.format(
+        treatment_data=treatment_data,
+        prescript_data=prescript_data,
+    )
+
+    return prescript_html
+
+
+def get_self_prescript_medicine_record(database, system_settings, case_key):
+    prescript_html = ''
+
+    max_medicine_set = prescript_utils.get_max_medicine_set(database, case_key)
+    if max_medicine_set is None:
+        return prescript_html
+
+    for medicine_set in range(2, max_medicine_set+1):
+        prescript_html += get_prescript_medicine_record(database, system_settings, case_key, medicine_set)
+
+    return prescript_html
 
 
 # 拷貝過去病歷
 def copy_past_medical_record(
-        database, widget, case_key, copy_diagnostic, copy_remark, copy_disease,
-        copy_ins_prescript, copy_self_prescript):
+        database, medical_record, case_key, copy_diagnostic, copy_remark, copy_disease,
+        copy_ins_prescript, copy_ins_prescript_to, copy_ins_treat, copy_self_prescript):
     sql = 'SELECT * FROM cases WHERE CaseKey = {0}'.format(case_key)
     rows = database.select_record(sql)
     if len(rows) <= 0:
         return
 
     row = rows[0]
-    ui = widget.ui
+    ui = medical_record.ui
     if copy_diagnostic:
         ui.textEdit_symptom.setText(string_utils.get_str(row['Symptom'], 'utf8'))
         ui.textEdit_tongue.setText(string_utils.get_str(row['Tongue'], 'utf8'))
@@ -495,13 +577,24 @@ def copy_past_medical_record(
             line_edit_disease[i][0].setText(disease_code)
             line_edit_disease[i][1].setText(disease_name)
 
+    medical_record.close_all_self_prescript_tabs()
     if copy_ins_prescript:
-        if widget.tab_list[0] is not None:
-            widget.tab_list[0].copy_past_prescript(case_key, '病歷拷貝')
+        if copy_ins_prescript_to == '健保處方':
+            if medical_record.tab_list[0] is not None:
+                medical_record.tab_list[0].copy_past_prescript(case_key, '病歷拷貝')
+        else:
+            if medical_record.tab_list[1] is None:
+                medical_record.add_prescript_tab(2)
+
+            medical_record.tab_list[1].copy_past_prescript(case_key, 1)
+
+    if copy_ins_treat:
+        if medical_record.tab_list[0] is not None:
+            medical_record.tab_list[0].copy_past_treat(case_key, '病歷拷貝')
 
     if copy_self_prescript:
         sql = '''
-            SELECT * FROM prescript 
+            SELECT MedicineSet FROM prescript 
             WHERE 
                 CaseKey = {0} AND
                 MedicineSet >= 2
@@ -509,24 +602,21 @@ def copy_past_medical_record(
         '''.format(case_key)
         rows = database.select_record(sql)
 
-        widget.close_all_self_prescript_tabs()
         for row in rows:
             medicine_set = row['MedicineSet']
+
             if medicine_set == 11:
                 continue
 
             tab_index = medicine_set - 1
-            if widget.tab_list[tab_index] is None:
-                widget.add_prescript_tab(medicine_set)
+            if medical_record.tab_list[tab_index] is None:
+                medical_record.add_prescript_tab(medicine_set)
+            else:
+                if medical_record.tab_list[tab_index].tableWidget_prescript.rowCount() > 0:  # 原本的自費處方已被拷貝佔用
+                    medical_record.add_prescript_tab(medicine_set+1)
+                    tab_index += 1
 
-            pres_days = get_pres_days(database, case_key, medicine_set)
-            packages = get_packages(database, case_key, medicine_set)
-            instruction = get_instruction(database, case_key, medicine_set)
-
-            widget.tab_list[tab_index].copy_past_prescript(case_key)
-            widget.tab_list[tab_index].ui.comboBox_pres_days.setCurrentText(string_utils.xstr(pres_days))
-            widget.tab_list[tab_index].ui.comboBox_package.setCurrentText(string_utils.xstr(packages))
-            widget.tab_list[tab_index].ui.comboBox_instruction.setCurrentText(instruction)
+            medical_record.tab_list[tab_index].copy_past_prescript(case_key, medicine_set)
 
 
 def icd9_to_icd10(database, icd9_code):
@@ -607,13 +697,7 @@ def get_drug_name(database, ins_code):
 
 
 def get_disease_name_html(in_disease_name):
-    injury_list = [
-        '損傷', '挫傷', '扭傷', '擦傷', '叮咬', '鈍傷', '水泡', '燒傷', '脫臼', '脫位',
-        '拉傷', '壓砸傷', '壓傷', '砸傷', '攣縮', '咬傷', '凍傷', '腐蝕傷', '燙傷', '撕裂傷', '裂傷',
-        '破裂', '壓迫', '異常物', '疼痛', '關節炎', '關節痛',
-    ]
-
-    for word in injury_list:
+    for word in INJURY_LIST:
         new_word = '<font color="red">{0}</font>'.format(word)
         in_disease_name = in_disease_name.replace(word, new_word)
 

@@ -169,11 +169,66 @@ class MedicalRecordRecentlyHistory(QtWidgets.QMainWindow):
 
     # 讀取最近病歷
     def _set_past_record(self, case_key):
+        sql = '''
+            SELECT CaseKey, InsType, Treatment FROM cases
+            WHERE
+                CaseKey = {0}
+        '''.format(case_key)
+        row = self.database.select_record(sql)[0]
+        ins_type = string_utils.xstr(row['InsType'])
+        treatment = string_utils.xstr(row['Treatment'])
+
         html = case_utils.get_medical_record_html(self.database, self.system_settings, case_key)
         self.ui.textEdit_past.setHtml(html)
 
+        self.ui.checkBox_ins_prescript.setChecked(False)  # 健保療程2-6次預設不拷貝藥品
+        self.ui.checkBox_ins_prescript.setEnabled(False)  # 健保療程2-6次預設不拷貝藥品
+
+        self.ui.checkBox_copy_to_self.setEnabled(False)
+
+        self.ui.checkBox_ins_treat.setChecked(False)
+        self.ui.checkBox_ins_treat.setEnabled(False)
+
+        if ins_type == '健保':
+            if treatment != '':
+                self.ui.checkBox_ins_treat.setEnabled(True)
+                self.ui.checkBox_ins_treat.setChecked(True)
+            sql = '''
+                SELECT PrescriptKey FROM prescript 
+                WHERE 
+                    CaseKey = {case_key} AND 
+                    MedicineSet = 1 AND
+                    MedicineType IN ("單方", "複方") 
+            '''.format(
+                case_key=case_key,
+            )
+            rows = self.database.select_record(sql)
+            if len(rows) > 0:
+                self.ui.checkBox_ins_prescript.setEnabled(True)
+                self.ui.checkBox_copy_to_self.setEnabled(True)
+                if treatment == '':
+                    self.ui.checkBox_ins_prescript.setChecked(True)  # 預設非療程才拷貝藥品
+
+        sql = 'SELECT MedicineSet FROM prescript WHERE CaseKey = {0} AND MedicineSet >= 2'.format(case_key)
+        rows = self.database.select_record(sql)
+        if len(rows) > 0:
+            copy_self_prescript = True
+        else:
+            copy_self_prescript = False
+
+        self.ui.checkBox_self_prescript.setEnabled(copy_self_prescript)
+        self.ui.checkBox_self_prescript.setChecked(copy_self_prescript)
+        if copy_self_prescript:
+            self.ui.checkBox_self_prescript.setChecked(False)  # 預設不要拷貝
+
+
     # 拷貝病歷
     def copy_past_medical_record_button_clicked(self):
+        if self.ui.checkBox_copy_to_self.isChecked():
+            copy_to = '自費處方'
+        else:
+            copy_to = '健保處方'
+
         case_key = self._get_past_history_case_key()
 
         case_utils.copy_past_medical_record(
@@ -182,13 +237,22 @@ class MedicalRecordRecentlyHistory(QtWidgets.QMainWindow):
             self.ui.checkBox_remark.isChecked(),
             self.ui.checkBox_disease.isChecked(),
             self.ui.checkBox_ins_prescript.isChecked(),
+            copy_to,
+            self.ui.checkBox_ins_treat.isChecked(),
             self.ui.checkBox_self_prescript.isChecked(),
         )
 
     # 設定核取方塊
     def set_check_box(self):
-        self.ui.checkBox_diagnostic.setChecked(not self.ui.checkBox_diagnostic.isChecked())
-        self.ui.checkBox_disease.setChecked(not self.ui.checkBox_disease.isChecked())
-        self.ui.checkBox_remark.setChecked(not self.ui.checkBox_remark.isChecked())
-        self.ui.checkBox_ins_prescript.setChecked(not self.ui.checkBox_ins_prescript.isChecked())
+        enabled = not self.ui.checkBox_diagnostic.isChecked()
+
+        self.ui.checkBox_diagnostic.setChecked(enabled)
+        self.ui.checkBox_disease.setChecked(enabled)
+        self.ui.checkBox_remark.setChecked(enabled)
+        if self.ui.checkBox_ins_prescript.isEnabled():
+            self.ui.checkBox_ins_prescript.setChecked(enabled)
+        if self.ui.checkBox_ins_treat.isEnabled():
+            self.ui.checkBox_ins_treat.setChecked(enabled)
+        if self.ui.checkBox_self_prescript.isEnabled():
+            self.ui.checkBox_self_prescript.setChecked(enabled)
 

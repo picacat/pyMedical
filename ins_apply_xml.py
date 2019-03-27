@@ -191,8 +191,11 @@ class InsApplyXML(QtWidgets.QMainWindow):
         d10 = ET.SubElement(dbody, 'd10')
         d10.text = date_utils.west_date_to_nhi_date(row['StopDate'])
 
-        d11 = ET.SubElement(dbody, 'd11')
-        d11.text = date_utils.west_date_to_nhi_date(row['Birthday'])
+        birthday = row['Birthday']
+        if birthday is not None:
+            d11 = ET.SubElement(dbody, 'd11')
+            d11.text = date_utils.west_date_to_nhi_date(birthday)
+
         d14 = ET.SubElement(dbody, 'd14')
         d14.text = string_utils.xstr(row['Injury'])
         d15 = ET.SubElement(dbody, 'd15')

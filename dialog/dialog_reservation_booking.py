@@ -14,6 +14,7 @@ from libs import validator_utils
 from libs import patient_utils
 from libs import string_utils
 from libs import date_utils
+from libs import number_utils
 
 
 # 主視窗
@@ -26,8 +27,9 @@ class DialogReservationBooking(QtWidgets.QDialog):
         self.system_settings = args[1]
         self.reservation_date = args[2]
         self.period = args[3]
-        self.room = args[4]
-        self.reserve_no = args[5]
+        self.doctor = args[4]
+        self.room = args[5]
+        self.reserve_no = args[6]
         self.ui = None
 
         self._set_ui()
@@ -51,6 +53,7 @@ class DialogReservationBooking(QtWidgets.QDialog):
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Cancel).setText('取消')
         self.ui.lineEdit_reservation_date.setText(self.reservation_date)
         self.ui.lineEdit_period.setText(self.period)
+        self.ui.lineEdit_doctor.setText(self.doctor)
         self.ui.lineEdit_room.setText(self.room)
         self.ui.lineEdit_reserve_no.setText(self.reserve_no)
         ui_utils.set_completer(
@@ -73,7 +76,7 @@ class DialogReservationBooking(QtWidgets.QDialog):
     def accepted_button_clicked(self):
         fields = [
             'PatientKey', 'Name', 'ReserveDate', 'Period',
-            'Room', 'ReserveNo'
+            'Doctor', 'Room', 'ReserveNo', 'Source'
         ]
 
         data = [
@@ -81,8 +84,10 @@ class DialogReservationBooking(QtWidgets.QDialog):
             self.ui.lineEdit_name.text(),
             self.ui.lineEdit_reservation_date.text(),
             self.ui.lineEdit_period.text(),
+            self.ui.lineEdit_doctor.text(),
             self.ui.lineEdit_room.text(),
             self.ui.lineEdit_reserve_no.text(),
+            '現場預約',
         ]
         self.database.insert_record('reserve', fields, data)
 
@@ -124,8 +129,23 @@ class DialogReservationBooking(QtWidgets.QDialog):
         self.ui.lineEdit_birthday.setText(string_utils.xstr(row['Birthday']))
         self.ui.lineEdit_id.setText(string_utils.xstr(row['ID']))
 
-        start_date = datetime.datetime.now().strftime('%Y-%m-%d 00:00:00')
-        end_date = datetime.datetime.now().strftime('%Y-%m-%d 23:59:59')
+        self._check_reservation_status(patient_key)
+
+    def _check_reservation_status(self, patient_key):
+        if not self._check_reservation_duplicated(patient_key):
+            return
+        if not self._check_reservation_limit(patient_key):
+            return
+        if not self._check_reservation_missing_appointment(patient_key):
+            return
+
+        self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setEnabled(True)
+
+    # 檢查重複預約
+    def _check_reservation_duplicated(self, patient_key):
+        is_ok = True
+        start_date = '{0} 00:00:00'.format(self.reservation_date[:10])
+        end_date = '{0} 23:59:59'.format(self.reservation_date[:10])
         sql = '''
             SELECT * FROM reserve
             WHERE
@@ -137,10 +157,12 @@ class DialogReservationBooking(QtWidgets.QDialog):
 
         rows = self.database.select_record(sql)
         if len(rows) > 0:
+            is_ok = False
+
             msg_box = QMessageBox()
             msg_box.setIcon(QMessageBox.Critical)
             msg_box.setWindowTitle('已有預約')
-            msg_box.setText("此人今日已有預約, 無法再次預約掛號.")
+            msg_box.setText("此人該日已有預約, 無法再次預約掛號.")
             msg_box.setInformativeText("無法重複預約掛號.")
             msg_box.addButton(QPushButton("確定"), QMessageBox.YesRole)
             msg_box.exec_()
@@ -148,6 +170,90 @@ class DialogReservationBooking(QtWidgets.QDialog):
             self.ui.lineEdit_name.setText(None)
             self.ui.lineEdit_birthday.setText(None)
             self.ui.lineEdit_id.setText(None)
-            return
 
-        self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setEnabled(True)
+        return is_ok
+
+    # 檢查預約次數限制
+    def _check_reservation_limit(self, patient_key):
+        is_ok = True
+        reservation_limit = number_utils.get_integer(self.system_settings.field('預約次數限制'))
+        start_date = datetime.datetime.now().strftime('%Y-%m-%d 00:00:00')
+        sql = '''
+            SELECT * FROM reserve
+            WHERE
+                ReserveDate >= "{0}" AND
+                Arrival = "False" AND
+                PatientKey = {1}
+        '''.format(
+            start_date, patient_key
+        )
+        rows = self.database.select_record(sql)
+        if len(rows) >= reservation_limit:
+            is_ok = False
+
+            msg_box = QMessageBox()
+            msg_box.setIcon(QMessageBox.Critical)
+            msg_box.setWindowTitle('已有預約')
+            msg_box.setText("此人預約已超過系統設定內, 預約次數{0}次的限制, 無法再次預約掛號.".format(reservation_limit))
+            msg_box.setInformativeText("超過次數, 無法預約掛號.")
+            msg_box.addButton(QPushButton("確定"), QMessageBox.YesRole)
+            msg_box.exec_()
+            self.ui.lineEdit_patient_key.setText(None)
+            self.ui.lineEdit_name.setText(None)
+            self.ui.lineEdit_birthday.setText(None)
+            self.ui.lineEdit_id.setText(None)
+
+        return is_ok
+
+    # 檢查爽約次數
+    def _check_reservation_missing_appointment(self, patient_key):
+        is_ok = True
+        reservation_period = number_utils.get_integer(self.system_settings.field('爽約期間'))
+        reservation_missing_appointment = number_utils.get_integer(self.system_settings.field('爽約次數'))
+
+        sql = '''
+            SELECT * FROM reserve
+            WHERE
+                ReserveDate >= "{0}" AND
+                Arrival = "False" AND
+                PatientKey = {1}
+        '''.format(
+            datetime.datetime.now().strftime('%Y-%m-%d 00:00:00'),
+            patient_key
+        )
+        rows = self.database.select_record(sql)
+        reservation_count = len(rows)
+
+        reservation_date = date_utils.str_to_date(self.reservation_date[:10])
+        start_date = reservation_date - datetime.timedelta(days=reservation_period)
+        sql = '''
+            SELECT * FROM reserve
+            WHERE
+                ReserveDate >= "{0}" AND
+                Arrival = "False" AND
+                PatientKey = {1}
+        '''.format(
+            start_date, patient_key
+        )
+        rows = self.database.select_record(sql)
+        total_absent = len(rows)
+        absent = total_absent - reservation_count
+
+        if absent > reservation_missing_appointment:
+            is_ok = False
+
+            msg_box = QMessageBox()
+            msg_box.setIcon(QMessageBox.Critical)
+            msg_box.setWindowTitle('預約警告')
+            msg_box.setText("此人預約已超過系統設定內, {0}天內預約超過{0}次的限制, 無法再次預約掛號.".format(
+                reservation_period, reservation_missing_appointment))
+            msg_box.setInformativeText("超過次數, 無法預約掛號.")
+            msg_box.addButton(QPushButton("確定"), QMessageBox.YesRole)
+            msg_box.exec_()
+            self.ui.lineEdit_patient_key.setText(None)
+            self.ui.lineEdit_name.setText(None)
+            self.ui.lineEdit_birthday.setText(None)
+            self.ui.lineEdit_id.setText(None)
+
+        return is_ok
+

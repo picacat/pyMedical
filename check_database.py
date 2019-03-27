@@ -48,7 +48,7 @@ class CheckDatabase(QtWidgets.QDialog):
             self.database.check_table_exists(table_name)
 
     def _alter_table(self):
-        max_progress = 38
+        max_progress = 61
         self.progress = 0
         self.progress_dialog = QtWidgets.QProgressDialog(
             '正在檢查資料庫中, 請稍後...', '取消', 0, max_progress, self
@@ -67,6 +67,8 @@ class CheckDatabase(QtWidgets.QDialog):
         self._check_debt()
         self._check_ins_apply()
         self._check_clinic()
+        self._check_certificate()
+        self._check_others()
 
         self.progress_dialog.deleteLater()
 
@@ -120,6 +122,8 @@ class CheckDatabase(QtWidgets.QDialog):
             self.database.check_field_exists('medicine', 'add', 'Charged', 'varchar(4) AFTER InPrice'),
             self.database.check_field_exists('medicine', 'add', 'HitRate', 'int DEFAULT 0 AFTER Description'),
             self.database.check_field_exists('medicine', 'change', ['location', 'Location'], 'varchar(20)'),
+            self.database.check_field_exists('drug', 'change', ['Supplier', 'Supplier'], 'varchar(50)'),
+            self.database.check_field_exists('drug', 'add', 'MedicineType', 'varchar(10) AFTER DrugName'),
         ]
         self._exec_process(process_list)
 
@@ -148,7 +152,9 @@ class CheckDatabase(QtWidgets.QDialog):
         process_list = [
             self.database.check_field_exists('reserve', 'change', ['Name', 'Name'], 'varchar(100)'),
             self.database.check_field_exists('reserve', 'add', 'ReserveNo', 'int AFTER Sequence'),
+            self.database.check_field_exists('reserve', 'add', 'Source', 'varchar(10) AFTER Doctor'),
             self.database.check_field_exists('reserve', 'add', 'Arrival', 'enum("False", "True") not null AFTER Doctor'),
+            self.database.check_field_exists('reservation_table', 'add', 'Doctor', 'varchar(10) AFTER Period'),
         ]
         self._exec_process(process_list)
 
@@ -156,6 +162,7 @@ class CheckDatabase(QtWidgets.QDialog):
         process_list = [
             self.database.check_field_exists('wait', 'change', ['Name', 'Name'], 'varchar(100)'),
             self.database.check_field_exists('wait', 'add', 'TreatType', 'varchar(10) AFTER RegistType'),
+            self.database.check_field_exists('wait', 'change', ['Remark', 'Remark'], 'varchar(100)'),
         ]
         self._exec_process(process_list)
 
@@ -188,4 +195,18 @@ class CheckDatabase(QtWidgets.QDialog):
             self.database.check_field_exists('clinic', 'add', 'HitRate', 'int DEFAULT 0 AFTER ClinicName'),
         ]
         self._exec_process(process_list)
+
+    def _check_certificate(self):
+        process_list = [
+            self.database.check_field_exists('certificate', 'add', 'Doctor', 'varchar(20) AFTER Name'),
+        ]
+        self._exec_process(process_list)
+
+    def _check_others(self):
+        process_list = [
+            self.database.check_field_exists('dict_groups', 'add', 'DictOrderNo', 'varchar(10) AFTER DictGroupsKey'),
+            self.database.check_field_exists('person', 'add', 'Title', 'varchar(20) AFTER Code'),
+        ]
+        self._exec_process(process_list)
+
 

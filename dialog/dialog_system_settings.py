@@ -161,6 +161,16 @@ class DialogSettings(QtWidgets.QDialog):
                                 self.ui.radioButton_reservation_table],
                                ['連續號', '單號', '雙號', '預約班表'],
                                '現場掛號給號模式')
+        self._set_check_box(self.ui.checkBox_release_reserve_no, '釋出預約號')
+        self.ui.spinBox_reservation_limit.setValue(
+            number_utils.get_integer(self.system_settings.field('預約次數限制'))
+        )
+        self.ui.spinBox_absent.setValue(
+            number_utils.get_integer(self.system_settings.field('爽約次數'))
+        )
+        self.ui.spinBox_reservation_period.setValue(
+            number_utils.get_integer(self.system_settings.field('爽約期間'))
+        )
 
     # 讀取掛號設定
     def _read_registration_settings(self):
@@ -185,8 +195,9 @@ class DialogSettings(QtWidgets.QDialog):
                                ['日劑量', '次劑量', '總量'],
                                '劑量模式')
         self._set_radio_button([self.ui.radioButton_self_room,
+                                self.ui.radioButton_doctor_room,
                                 self.ui.radioButton_all_room],
-                               ['指定診別', '所有診別'],
+                               ['指定診別', '醫師診別', '所有診別'],
                                '候診名單顯示診別')
         self._set_radio_button([self.ui.radioButton_order_no,
                                 self.ui.radioButton_order_time],
@@ -200,6 +211,10 @@ class DialogSettings(QtWidgets.QDialog):
                                 self.ui.radioButton_by_hit_rate],
                                ['詞庫名稱', '點擊率'],
                                '詞庫排序')
+        self._set_radio_button([self.ui.radioButton_by_diag_name,
+                                self.ui.radioButton_by_diag_hit_rate],
+                               ['詞庫名稱', '點擊率'],
+                               '診察詞庫排序')
 
     def _read_printer_settings(self):
         self.ui.comboBox_regist_print_mode.setCurrentText(self.system_settings.field('列印門診掛號單'))
@@ -320,6 +335,10 @@ class DialogSettings(QtWidgets.QDialog):
             ['連續號', '單號', '雙號', '預約班表'],
             '現場掛號給號模式'
         )
+        self._save_check_box(self.ui.checkBox_release_reserve_no, '釋出預約號')
+        self.system_settings.post('預約次數限制', self.ui.spinBox_reservation_limit.value())
+        self.system_settings.post('爽約次數', self.ui.spinBox_absent.value())
+        self.system_settings.post('爽約期間', self.ui.spinBox_reservation_period.value())
 
     # 寫入掛號設定
     def _save_registration_settings(self):
@@ -343,8 +362,9 @@ class DialogSettings(QtWidgets.QDialog):
                                 ['日劑量', '次劑量', '總量'],
                                 '劑量模式')
         self._save_radio_button([self.ui.radioButton_self_room,
+                                 self.ui.radioButton_doctor_room,
                                  self.ui.radioButton_all_room],
-                                ['指定診別', '所有診別'],
+                                ['指定診別', '醫師診別', '所有診別'],
                                 '候診名單顯示診別')
         self._save_radio_button([self.ui.radioButton_order_no,
                                  self.ui.radioButton_order_time],
@@ -358,6 +378,10 @@ class DialogSettings(QtWidgets.QDialog):
                                  self.ui.radioButton_by_hit_rate],
                                 ['詞庫名稱', '點擊率'],
                                 '詞庫排序')
+        self._save_radio_button([self.ui.radioButton_by_diag_name,
+                                 self.ui.radioButton_by_diag_hit_rate],
+                                ['詞庫名稱', '點擊率'],
+                                '診察詞庫排序')
 
     def _save_printer_settings(self):
         self.system_settings.post('列印門診掛號單', self.ui.comboBox_regist_print_mode.currentText())

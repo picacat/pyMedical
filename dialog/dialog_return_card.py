@@ -12,6 +12,13 @@ from libs import registration_utils
 from libs import date_utils
 from libs import case_utils
 
+import sys
+if sys.platform == 'win32':
+    from classes import cshis_win32 as cshis
+else:
+    from classes import cshis
+
+
 
 # 主視窗
 class DialogReturnCard(QtWidgets.QDialog):
@@ -96,14 +103,13 @@ class DialogReturnCard(QtWidgets.QDialog):
 
     # 還卡
     def accepted_button_clicked(self):
-        ic_card = None
         if self.ui.comboBox_card.currentText() == '自動產生':
             ic_card = self._write_ic_card(cshis_utils.RETURN_CARD)
+            if ic_card is None:
+                return
+
             self.update_cases_by_ic_card(ic_card)
-            cshis_utils.write_ic_medical_record(
-                self.database, self.system_settings,
-                self.case_key, cshis_utils.RETURN_CARD,
-            )
+            ic_card.write_ic_medical_record(self.case_key, cshis_utils.RETURN_CARD)
             self.update_wait_by_ic_card(ic_card)
         else:
             self.update_cases_by_abnormal_card()
@@ -113,14 +119,15 @@ class DialogReturnCard(QtWidgets.QDialog):
         self.update_medical_record()
 
     def _write_ic_card(self, treat_after_check):
-        ic_card = cshis_utils.write_ic_card(
+        ic_card = cshis.CSHIS(self.database, self.system_settings)
+        ic_card_ok = ic_card.write_ic_card(
             '掛號寫卡',
-            self.database,
-            self.system_settings, self.ui.lineEdit_patient_key.text(),
+            self.ui.lineEdit_patient_key.text(),
             self.ui.comboBox_continuance.currentText(),
             treat_after_check
         )
-        if not ic_card:
+
+        if not ic_card_ok:
             return None
 
         return ic_card

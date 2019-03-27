@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>1234</width>
-    <height>889</height>
+    <height>924</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -125,6 +125,13 @@
                </property>
                <property name="flat">
                 <bool>false</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="pushButton_reservation">
+               <property name="text">
+                <string>預約掛號</string>
                </property>
               </widget>
              </item>
@@ -499,6 +506,7 @@
        <attribute name="title">
         <string>首頁</string>
        </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_9"/>
       </widget>
      </widget>
     </item>
@@ -510,7 +518,7 @@
      <x>0</x>
      <y>0</y>
      <width>1234</width>
-     <height>26</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu">
@@ -541,6 +549,7 @@
     </property>
     <addaction name="action_convert"/>
     <addaction name="action_export_emr_xml"/>
+    <addaction name="action_update"/>
    </widget>
    <widget class="QMenu" name="menu_5">
     <property name="title">
@@ -557,12 +566,14 @@
     </property>
     <addaction name="action_settings"/>
     <addaction name="action_charge"/>
+    <addaction name="action_doctor_schedule"/>
     <addaction name="action_doctor_nurse_table"/>
     <addaction name="separator"/>
     <addaction name="action_users"/>
     <addaction name="separator"/>
     <addaction name="action_diagnostic"/>
     <addaction name="action_medicine"/>
+    <addaction name="action_ins_drug"/>
     <addaction name="separator"/>
     <addaction name="action_ic_card"/>
     <addaction name="separator"/>
@@ -828,6 +839,33 @@
    </property>
    <property name="text">
     <string>醫療費用證明書</string>
+   </property>
+  </action>
+  <action name="action_update">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/emblem-synchronizing.png</normaloff>../icons/emblem-synchronizing.png</iconset>
+   </property>
+   <property name="text">
+    <string>醫療軟體更新</string>
+   </property>
+  </action>
+  <action name="action_doctor_schedule">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/gtk-select-all.svg</normaloff>../icons/gtk-select-all.svg</iconset>
+   </property>
+   <property name="text">
+    <string>醫師班表</string>
+   </property>
+  </action>
+  <action name="action_ins_drug">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/emblem-synchronizing.png</normaloff>../icons/emblem-synchronizing.png</iconset>
+   </property>
+   <property name="text">
+    <string>健保藥品</string>
    </property>
   </action>
  </widget>

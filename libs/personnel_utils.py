@@ -7,7 +7,7 @@ def get_personnel(database, personnel_type):
     if personnel_type == '全部':
         position = ''
     elif personnel_type == '醫師':
-        position = 'WHERE (Position = "醫師" OR Position = "支援醫師")'
+        position = 'WHERE (Position IN("醫師", "支援醫師"))'
     else:
         position = 'WHERE Position = "{0}"'.format(personnel_type)
     sql = '''

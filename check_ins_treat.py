@@ -125,6 +125,7 @@ class CheckInsTreat(QtWidgets.QMainWindow):
             self.ui.toolButton_find_error.setEnabled(True)
 
         self.parent.ui.label_progress.setText('檢查進度: 檢查完成')
+        self.ui.tableWidget_prescript.resizeRowsToContents()
 
     def _check_treats(self, row_no, row):
         error_message = []

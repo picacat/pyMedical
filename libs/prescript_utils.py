@@ -215,6 +215,7 @@ def get_medicine_description(database, medicine_key):
             MedicineKey = {medicine_key}
     '''.format(medicine_key=medicine_key)
     medicine_row = database.select_record(sql)
+
     if len(medicine_row) <= 0:
         return None
 
@@ -229,10 +230,10 @@ def get_medicine_description(database, medicine_key):
     return description
 
 
-def get_costs_html(database, table_widget, prescript_col_dict):
+def get_costs_html(database, table_widget, pres_days, prescript_col_dict):
     prescript_record = ''
     sequence = 0
-    total_costs = 0
+    day_cost, total_costs = 0, 0
     for row_no in range(table_widget.rowCount()):
         item = table_widget.item(row_no, prescript_col_dict['MedicineName']
         )
@@ -288,17 +289,28 @@ def get_costs_html(database, table_widget, prescript_col_dict):
             dosage * cost,
             )
 
-        total_costs += dosage * cost
+        day_cost += dosage * cost
 
     prescript_record += '''
             <tr>
                 <td align="center" style="padding-right: 8px;"></td>
-                <td style="padding-left: 8px;">合計成本</td>
+                <td style="padding-left: 8px;">單日成本</td>
                 <td align="right" style="padding-right: 8px"></td>
                 <td align="right" style="padding-right: 8px"></td>
-                <td align="right" style="padding-right: 8px">{0:.1f}</td>
+                <td align="right" style="padding-right: 8px">{day_cost:.1f}</td>
             </tr>
-        '''.format(total_costs)
+            <tr>
+                <td align="center" style="padding-right: 8px;"></td>
+                <td style="padding-left: 8px;">{pres_days}日藥總成本</td>
+                <td align="right" style="padding-right: 8px"></td>
+                <td align="right" style="padding-right: 8px"></td>
+                <td align="right" style="padding-right: 8px">{total_costs:.1f}</td>
+            </tr>
+        '''.format(
+        day_cost=day_cost,
+        pres_days=pres_days,
+        total_costs=pres_days * day_cost
+    )
 
     prescript_data = '''
             <table align=center cellpadding="2" cellspacing="0" width="98%" style="border-width: 1px; border-style: solid;">
@@ -333,4 +345,23 @@ def get_costs_html(database, table_widget, prescript_col_dict):
     )
 
     return html
+
+
+def get_max_medicine_set(database, case_key):
+    max_medicine_set = None
+
+    sql = '''
+        SELECT MedicineSet FROM prescript 
+        WHERE 
+            CaseKey = {0} AND
+            MedicineSet >= 2
+        GROUP BY MedicineSet
+        ORDER BY MedicineSet DESC LIMIT 1
+    '''.format(case_key)
+    rows = database.select_record(sql)
+    if len(rows) > 0:
+        max_medicine_set = number_utils.get_integer(rows[0]['MedicineSet'])
+
+    return max_medicine_set
+
 

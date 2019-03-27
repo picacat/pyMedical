@@ -70,7 +70,7 @@ class DialogCertificateDiagnosis(QtWidgets.QDialog):
         self.ui.textEdit_doctor_comment.textChanged.connect(self._check_diagnosis_completed)
 
     def _set_table_width(self):
-        width = [100, 120, 60, 240]
+        width = [100, 120, 60, 240, 120]
         self.table_widget_medical_record.set_table_heading_width(width)
 
     def _set_group_box(self, enabled):
@@ -179,7 +179,7 @@ class DialogCertificateDiagnosis(QtWidgets.QDialog):
             condition += ' AND TreatType IN {0} '.format(tuple(treat_type_dict[treat_type]))
 
         sql = '''
-            SELECT CaseKey, CaseDate, InsType, DiseaseName1 FROM cases
+            SELECT CaseKey, CaseDate, InsType, Doctor, DiseaseName1 FROM cases
             WHERE
                 CaseDate BETWEEN "{0}" AND "{1}" AND
                 PatientKey = {2}
@@ -188,6 +188,24 @@ class DialogCertificateDiagnosis(QtWidgets.QDialog):
         '''.format(start_date, end_date, patient_key, condition)
         self.table_widget_medical_record.set_db_data(sql, self._set_table_data, set_focus=False)
         self.ui.label_record_count.setText('門診次數: {0}次'.format(self.table_widget_medical_record.row_count()))
+        self._set_doctor()
+
+    def _set_doctor(self):
+        doctor_list = []
+        for row_no in range(self.ui.tableWidget_medical_record.rowCount()):
+            doctor_item = self.ui.tableWidget_medical_record.item(row_no, 4)
+            if doctor_item is None:
+                continue
+
+            doctor = doctor_item.text()
+            if doctor == '':
+                continue
+
+            if doctor not in doctor_list:
+                doctor_list.append(doctor)
+
+        ui_utils.set_combo_box(self.ui.comboBox_doctor, doctor_list)
+
 
     def _set_table_data(self, row_no, row):
         medical_record = [
@@ -195,6 +213,7 @@ class DialogCertificateDiagnosis(QtWidgets.QDialog):
             string_utils.xstr(row['CaseDate'].date()),
             string_utils.xstr(row['InsType']),
             string_utils.xstr(row['DiseaseName1']),
+            string_utils.xstr(row['Doctor']),
         ]
 
         for column in range(len(medical_record)):
@@ -206,7 +225,7 @@ class DialogCertificateDiagnosis(QtWidgets.QDialog):
     def _import_diagnosis(self):
         case_key = self.table_widget_medical_record.field_value(0)
         sql = '''
-            SELECT cases.DiseaseCode1, cases.DiseaseName1, icd10.EnglishName FROM cases 
+            SELECT cases.Symptom, cases.DiseaseCode1, cases.DiseaseName1, icd10.EnglishName FROM cases 
                 LEFT JOIN icd10 ON cases.DiseaseCode1 = icd10.ICDCode
             WHERE 
                 CaseKey = "{0}"
@@ -256,7 +275,7 @@ class DialogCertificateDiagnosis(QtWidgets.QDialog):
 
         fields = [
             'CaseKey', 'PatientKey', 'Name', 'CertificateDate', 'CertificateType',
-            'InsType', 'StartDate', 'EndDate', 'Diagnosis', 'DoctorComment', 'CertificateFee',
+            'InsType', 'StartDate', 'EndDate', 'Doctor', 'Diagnosis', 'DoctorComment', 'CertificateFee',
         ]
 
         data = [
@@ -268,6 +287,7 @@ class DialogCertificateDiagnosis(QtWidgets.QDialog):
             self.ui.comboBox_ins_type.currentText(),
             self.ui.dateEdit_start_date.date().toString('yyyy-MM-dd'),
             self.ui.dateEdit_end_date.date().toString('yyyy-MM-dd'),
+            self.ui.comboBox_doctor.currentText(),
             self.ui.textEdit_diagnosis.toPlainText(),
             self.ui.textEdit_doctor_comment.toPlainText(),
             self.ui.spinBox_certificate_fee.value(),

@@ -293,24 +293,30 @@
           <item>
            <layout class="QHBoxLayout" name="horizontalLayout_2">
             <item>
-             <widget class="QPushButton" name="pushButton">
+             <widget class="QToolButton" name="toolButton_print_prescript">
               <property name="text">
                <string>補印處方箋</string>
               </property>
               <property name="icon">
                <iconset>
-                <normaloff>../icons/printer-printing.png</normaloff>../icons/printer-printing.png</iconset>
+                <normaloff>../icons/document-print.svg</normaloff>../icons/document-print.svg</iconset>
+              </property>
+              <property name="toolButtonStyle">
+               <enum>Qt::ToolButtonTextBesideIcon</enum>
               </property>
              </widget>
             </item>
             <item>
-             <widget class="QPushButton" name="pushButton_2">
+             <widget class="QToolButton" name="toolButton_print_receipt">
               <property name="text">
                <string>補印費用收據</string>
               </property>
               <property name="icon">
                <iconset>
-                <normaloff>../icons/printer.png</normaloff>../icons/printer.png</iconset>
+                <normaloff>../icons/document-print.png</normaloff>../icons/document-print.png</iconset>
+              </property>
+              <property name="toolButtonStyle">
+               <enum>Qt::ToolButtonTextBesideIcon</enum>
               </property>
              </widget>
             </item>

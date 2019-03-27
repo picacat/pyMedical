@@ -207,9 +207,13 @@
                 <widget class="QLineEdit" name="lineEdit_address"/>
                </item>
                <item>
-                <widget class="QToolButton" name="toolButton">
+                <widget class="QToolButton" name="toolButton_address">
                  <property name="text">
                   <string>...</string>
+                 </property>
+                 <property name="icon">
+                  <iconset>
+                   <normaloff>../icons/accessories-dictionary.png</normaloff>../icons/accessories-dictionary.png</iconset>
                  </property>
                 </widget>
                </item>
@@ -436,7 +440,7 @@
   <tabstop>lineEdit_cellphone</tabstop>
   <tabstop>lineEdit_email</tabstop>
   <tabstop>lineEdit_address</tabstop>
-  <tabstop>toolButton</tabstop>
+  <tabstop>toolButton_address</tabstop>
   <tabstop>comboBox_marriage</tabstop>
   <tabstop>comboBox_education</tabstop>
   <tabstop>comboBox_occupation</tabstop>

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>935</width>
-    <height>963</height>
+    <width>982</width>
+    <height>814</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -25,7 +25,7 @@
      <item>
       <widget class="QTabWidget" name="tabWidget_settings">
        <property name="currentIndex">
-        <number>4</number>
+        <number>3</number>
        </property>
        <widget class="QWidget" name="tab_4">
         <attribute name="icon">
@@ -364,7 +364,7 @@
           <normaloff>../icons/network-transmit.png</normaloff>../icons/network-transmit.png</iconset>
         </attribute>
         <attribute name="title">
-         <string>診號控制</string>
+         <string>診號及預約</string>
         </attribute>
         <layout class="QVBoxLayout" name="verticalLayout_4">
          <item>
@@ -377,88 +377,84 @@
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_17">
             <item>
-             <layout class="QVBoxLayout" name="verticalLayout_16">
+             <widget class="QCheckBox" name="checkBox_period_reset">
+              <property name="text">
+               <string>分班 (早午晚班診號歸零，重新跳號)</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="checkBox_room_reset">
+              <property name="text">
+               <string>分診 (每一診個別診號跳號)</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_12">
               <item>
-               <widget class="QCheckBox" name="checkBox_period_reset">
+               <widget class="QLabel" name="label">
                 <property name="text">
-                 <string>分班 (早午晚班診號歸零，重新跳號)</string>
+                 <string>早班起始號</string>
                 </property>
                </widget>
               </item>
               <item>
-               <widget class="QCheckBox" name="checkBox_room_reset">
-                <property name="text">
-                 <string>分診 (每一診個別診號跳號)</string>
+               <widget class="QSpinBox" name="spinBox_start_no1">
+                <property name="minimum">
+                 <number>1</number>
+                </property>
+                <property name="maximum">
+                 <number>999</number>
                 </property>
                </widget>
               </item>
               <item>
-               <layout class="QHBoxLayout" name="horizontalLayout_5">
-                <item>
-                 <widget class="QLabel" name="label">
-                  <property name="text">
-                   <string>早班起始號</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QSpinBox" name="spinBox_start_no1">
-                  <property name="minimum">
-                   <number>1</number>
-                  </property>
-                  <property name="maximum">
-                   <number>999</number>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QLabel" name="label_2">
-                  <property name="text">
-                   <string>午班起始號</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QSpinBox" name="spinBox_start_no2">
-                  <property name="minimum">
-                   <number>1</number>
-                  </property>
-                  <property name="maximum">
-                   <number>999</number>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QLabel" name="label_3">
-                  <property name="text">
-                   <string>晚班起始號</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QSpinBox" name="spinBox_start_no3">
-                  <property name="minimum">
-                   <number>1</number>
-                  </property>
-                  <property name="maximum">
-                   <number>999</number>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <spacer name="horizontalSpacer_2">
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
-                  </property>
-                  <property name="sizeHint" stdset="0">
-                   <size>
-                    <width>40</width>
-                    <height>20</height>
-                   </size>
-                  </property>
-                 </spacer>
-                </item>
-               </layout>
+               <widget class="QLabel" name="label_2">
+                <property name="text">
+                 <string>午班起始號</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QSpinBox" name="spinBox_start_no2">
+                <property name="minimum">
+                 <number>1</number>
+                </property>
+                <property name="maximum">
+                 <number>999</number>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="label_3">
+                <property name="text">
+                 <string>晚班起始號</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QSpinBox" name="spinBox_start_no3">
+                <property name="minimum">
+                 <number>1</number>
+                </property>
+                <property name="maximum">
+                 <number>999</number>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <spacer name="horizontalSpacer_2">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
               </item>
              </layout>
             </item>
@@ -475,37 +471,118 @@
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_19">
             <item>
-             <layout class="QVBoxLayout" name="verticalLayout_18">
+             <widget class="QRadioButton" name="radioButton_consecutive">
+              <property name="text">
+               <string>連續號</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QRadioButton" name="radioButton_odd">
+              <property name="text">
+               <string>單號 (若現場掛號為單號，預約掛號則為雙號)</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QRadioButton" name="radioButton_even">
+              <property name="text">
+               <string>雙號 (若現場掛號為雙號，預約掛號則為單號)</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QRadioButton" name="radioButton_reservation_table">
+              <property name="text">
+               <string>預約班表</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="QGroupBox" name="groupBox_36">
+           <property name="title">
+            <string>預約班表其他設定</string>
+           </property>
+           <property name="flat">
+            <bool>true</bool>
+           </property>
+           <layout class="QVBoxLayout" name="verticalLayout_44">
+            <item>
+             <widget class="QCheckBox" name="checkBox_release_reserve_no">
+              <property name="text">
+               <string>預約班表當班若無人預約，釋出預約號碼給現場掛號使用</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_5">
               <item>
-               <widget class="QRadioButton" name="radioButton_consecutive">
+               <widget class="QLabel" name="label_63">
                 <property name="text">
-                 <string>連續號</string>
-                </property>
-                <property name="checked">
-                 <bool>true</bool>
+                 <string>每人最多可預約</string>
                 </property>
                </widget>
               </item>
               <item>
-               <widget class="QRadioButton" name="radioButton_odd">
-                <property name="text">
-                 <string>單號 (若現場掛號為單號，預約掛號則為雙號)</string>
+               <widget class="QSpinBox" name="spinBox_reservation_limit">
+                <property name="minimum">
+                 <number>1</number>
                 </property>
                </widget>
               </item>
               <item>
-               <widget class="QRadioButton" name="radioButton_even">
+               <widget class="QLabel" name="label_64">
                 <property name="text">
-                 <string>雙號 (若現場掛號為雙號，預約掛號則為單號)</string>
+                 <string>次, </string>
                 </property>
                </widget>
               </item>
               <item>
-               <widget class="QRadioButton" name="radioButton_reservation_table">
-                <property name="text">
-                 <string>預約班表</string>
+               <widget class="QSpinBox" name="spinBox_reservation_period">
+                <property name="minimum">
+                 <number>60</number>
                 </property>
                </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="label_67">
+                <property name="text">
+                 <string>天內爽約超過</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QSpinBox" name="spinBox_absent">
+                <property name="minimum">
+                 <number>1</number>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="label_65">
+                <property name="text">
+                 <string>次, 不能預約</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <spacer name="horizontalSpacer_13">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
               </item>
              </layout>
             </item>
@@ -665,7 +742,7 @@
        <widget class="QWidget" name="tab_2">
         <attribute name="icon">
          <iconset>
-          <normaloff>../icons/computer.png</normaloff>../icons/computer.png</iconset>
+          <normaloff>../icons/preferences-desktop-remote-desktop.png</normaloff>../icons/preferences-desktop-remote-desktop.png</iconset>
         </attribute>
         <attribute name="title">
          <string>看診設定</string>
@@ -841,7 +918,7 @@
            <item>
             <widget class="QGroupBox" name="groupBox_31">
              <property name="title">
-              <string>候診名單顯示診別</string>
+              <string>候診名單顯示方式</string>
              </property>
              <property name="flat">
               <bool>true</bool>
@@ -854,6 +931,13 @@
                 </property>
                 <property name="checked">
                  <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QRadioButton" name="radioButton_doctor_room">
+                <property name="text">
+                 <string>只顯示相同的醫師姓名</string>
                 </property>
                </widget>
               </item>
@@ -998,6 +1082,35 @@
              </layout>
             </widget>
            </item>
+           <item>
+            <widget class="QGroupBox" name="groupBox_35">
+             <property name="title">
+              <string>診察詞庫排序方式</string>
+             </property>
+             <property name="flat">
+              <bool>true</bool>
+             </property>
+             <layout class="QVBoxLayout" name="verticalLayout_43">
+              <item>
+               <widget class="QRadioButton" name="radioButton_by_diag_name">
+                <property name="text">
+                 <string>依照詞庫名稱</string>
+                </property>
+                <property name="checked">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QRadioButton" name="radioButton_by_diag_hit_rate">
+                <property name="text">
+                 <string>依照點擊率</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
           </layout>
          </item>
          <item>
@@ -1018,7 +1131,7 @@
        <widget class="QWidget" name="tab_5">
         <attribute name="icon">
          <iconset>
-          <normaloff>../icons/computer.png</normaloff>../icons/computer.png</iconset>
+          <normaloff>../icons/preferences-desktop-remote-desktop.png</normaloff>../icons/preferences-desktop-remote-desktop.png</iconset>
         </attribute>
         <attribute name="title">
          <string>印表機</string>
@@ -1481,6 +1594,30 @@
           </layout>
          </item>
          <item>
+          <spacer name="verticalSpacer_5">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>40</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
+       </widget>
+       <widget class="QWidget" name="tab_8">
+        <attribute name="icon">
+         <iconset>
+          <normaloff>../icons/preferences-desktop-remote-desktop.png</normaloff>../icons/preferences-desktop-remote-desktop.png</iconset>
+        </attribute>
+        <attribute name="title">
+         <string>印表機其他</string>
+        </attribute>
+        <layout class="QVBoxLayout" name="verticalLayout_16">
+         <item>
           <widget class="QGroupBox" name="groupBox_21">
            <property name="title">
             <string>其他設定</string>
@@ -1494,21 +1631,41 @@
             </property>
             <item>
              <layout class="QGridLayout" name="gridLayout_18">
+              <item row="5" column="0">
+               <widget class="QCheckBox" name="checkBox_print_alias">
+                <property name="text">
+                 <string>收費收據列印處方別名</string>
+                </property>
+               </widget>
+              </item>
               <item row="0" column="0">
+               <widget class="QCheckBox" name="checkBox_print_clinic_name">
+                <property name="text">
+                 <string>掛號收據列印院所名稱</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0">
                <widget class="QCheckBox" name="checkBox_print_total_dosage">
                 <property name="text">
                  <string>處方箋列印藥品總量</string>
                 </property>
                </widget>
               </item>
-              <item row="1" column="0">
-               <widget class="QCheckBox" name="checkBox_print_location">
-                <property name="text">
-                 <string>處方箋列印藥品存放位置</string>
+              <item row="6" column="0">
+               <spacer name="verticalSpacer_10">
+                <property name="orientation">
+                 <enum>Qt::Vertical</enum>
                 </property>
-               </widget>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>20</width>
+                  <height>40</height>
+                 </size>
+                </property>
+               </spacer>
               </item>
-              <item row="2" column="0">
+              <item row="4" column="0">
                <widget class="QCheckBox" name="checkBox_print_remark">
                 <property name="text">
                  <string>處方箋列印病歷備註</string>
@@ -1516,9 +1673,16 @@
                </widget>
               </item>
               <item row="3" column="0">
-               <widget class="QCheckBox" name="checkBox_print_alias">
+               <widget class="QCheckBox" name="checkBox_print_location">
                 <property name="text">
-                 <string>收費收據列印處方別名</string>
+                 <string>處方箋列印藥品存放位置</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QCheckBox" name="checkBox_print_massager">
+                <property name="text">
+                 <string>掛號收據列印推拿師父姓名</string>
                 </property>
                </widget>
               </item>
@@ -1526,13 +1690,6 @@
             </item>
             <item>
              <layout class="QGridLayout" name="gridLayout_21">
-              <item row="0" column="0" colspan="2">
-               <widget class="QCheckBox" name="checkBox_print_clinic_name">
-                <property name="text">
-                 <string>掛號收據列印院所名稱</string>
-                </property>
-               </widget>
-              </item>
               <item row="3" column="0">
                <widget class="QLabel" name="label_59">
                 <property name="text">
@@ -1585,20 +1742,13 @@
               <item row="3" column="1">
                <widget class="QComboBox" name="comboBox_report_printer"/>
               </item>
-              <item row="1" column="0" colspan="2">
-               <widget class="QCheckBox" name="checkBox_print_massager">
-                <property name="text">
-                 <string>掛號收據列印推拿師父姓名</string>
-                </property>
-               </widget>
-              </item>
              </layout>
             </item>
            </layout>
           </widget>
          </item>
          <item>
-          <spacer name="verticalSpacer_5">
+          <spacer name="verticalSpacer_11">
            <property name="orientation">
             <enum>Qt::Vertical</enum>
            </property>
@@ -1615,7 +1765,7 @@
        <widget class="QWidget" name="tab_6">
         <attribute name="icon">
          <iconset>
-          <normaloff>../icons/computer.png</normaloff>../icons/computer.png</iconset>
+          <normaloff>../icons/preferences-desktop-remote-desktop.png</normaloff>../icons/preferences-desktop-remote-desktop.png</iconset>
         </attribute>
         <attribute name="title">
          <string>健保讀卡機</string>
@@ -1835,7 +1985,7 @@
        <widget class="QWidget" name="tab_7">
         <attribute name="icon">
          <iconset>
-          <normaloff>../icons/computer.png</normaloff>../icons/computer.png</iconset>
+          <normaloff>../icons/preferences-desktop-display.png</normaloff>../icons/preferences-desktop-display.png</iconset>
         </attribute>
         <attribute name="title">
          <string>其他</string>
@@ -2072,15 +2222,6 @@
   <tabstop>checkBox_init_fee</tabstop>
   <tabstop>checkBox_acupuncture_cert</tabstop>
   <tabstop>dateEdit_acupuncture_date</tabstop>
-  <tabstop>tabWidget_settings</tabstop>
-  <tabstop>checkBox_period_reset</tabstop>
-  <tabstop>checkBox_room_reset</tabstop>
-  <tabstop>spinBox_start_no1</tabstop>
-  <tabstop>spinBox_start_no2</tabstop>
-  <tabstop>spinBox_start_no3</tabstop>
-  <tabstop>radioButton_consecutive</tabstop>
-  <tabstop>radioButton_odd</tabstop>
-  <tabstop>radioButton_even</tabstop>
   <tabstop>radioButton_ins</tabstop>
   <tabstop>radioButton_self</tabstop>
   <tabstop>spinBox_diag_count</tabstop>

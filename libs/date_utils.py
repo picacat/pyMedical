@@ -112,9 +112,27 @@ def west_date_to_nhi_date(in_date):
     return nhi_date
 
 
+def get_weekday_name(weekday):
+    weekday_name = [
+        '星期一',
+        '星期二',
+        '星期三',
+        '星期四',
+        '星期五',
+        '星期六',
+        '星期日',
+    ]
+
+    return weekday_name[weekday]
+
+
 # 取得現在時間
 def now_to_str():
     return datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+
+def str_to_date(in_date):
+    return datetime.datetime.strptime(in_date, "%Y-%m-%d").date()
 
 
 # 取得現在日期

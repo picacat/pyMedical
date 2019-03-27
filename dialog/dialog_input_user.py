@@ -65,6 +65,7 @@ class DialogInputUser(QtWidgets.QDialog):
         row = self.database.select_record(sql)[0]
         self.ui.lineEdit_code.setText(string_utils.xstr(row['Code']))
         self.ui.lineEdit_name.setText(string_utils.xstr(row['Name']))
+        self.ui.lineEdit_title.setText(string_utils.xstr(row['Title']))
         self.ui.comboBox_gender.setCurrentText(string_utils.xstr(row['Gender']))
         self.ui.lineEdit_birthday.setText(string_utils.xstr(row['Birthday']))
         self.ui.lineEdit_id.setText(string_utils.xstr(row['ID']))
@@ -93,13 +94,14 @@ class DialogInputUser(QtWidgets.QDialog):
 
     def save_user(self):
         fields = [
-            'Code', 'Name', 'Gender', 'Birthday', 'ID', 'Position',
+            'Code', 'Name', 'Title', 'Gender', 'Birthday', 'ID', 'Position',
             'FullTime', 'Certificate', 'CertCardNo', 'Password', 'Telephone', 'Cellphone', 'Address', 'Email',
             'Department', 'InputDate', 'InitDate', 'QuitDate', 'Remark',
         ]
         data = [
             self.ui.lineEdit_code.text(),
             self.ui.lineEdit_name.text(),
+            self.ui.lineEdit_title.text(),
             self.ui.comboBox_gender.currentText(),
             self.ui.lineEdit_birthday.text(),
             self.ui.lineEdit_id.text(),

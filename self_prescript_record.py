@@ -8,10 +8,13 @@ from dialog import dialog_input_medicine
 from dialog import dialog_rich_text
 
 from libs import ui_utils
+from libs import db_utils
 from libs import string_utils
 from libs import nhi_utils
 from libs import number_utils
 from libs import prescript_utils
+from libs import system_utils
+from libs import case_utils
 
 
 # 輸入健保處方 2018.04.14
@@ -63,6 +66,8 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
         ui_utils.set_combo_box(self.ui.comboBox_instruction, nhi_utils.INSTRUCTION, None)
 
     def _table_widget_prescript_key_press(self, event):
+        system_utils.set_keyboard_layout('英文')
+
         key = event.key()
         current_row = self.ui.tableWidget_prescript.currentRow()
 
@@ -195,6 +200,7 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
         ]
 
         self.set_prescript(prescript_row)
+        db_utils.increment_hit_rate(self.database, 'medicine', 'MedicineKey', medicine_key)
 
     def set_prescript(self, row):
         row_no = self.ui.tableWidget_prescript.currentRow()
@@ -217,8 +223,7 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
                     item.setFlags(QtCore.Qt.ItemIsEnabled)
 
         medicine_key = row[prescript_utils.SELF_PRESCRIPT_COL_NO['MedicineKey']][1]
-        description = prescript_utils.get_medicine_description(self.database, medicine_key)
-        self._add_prescript_info_button(row_no, description)
+        self._add_prescript_info_button(row_no, medicine_key)
 
     def _set_table_width(self):
         medicine_width = [
@@ -311,10 +316,11 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
                 if item is not None:
                     item.setFlags(QtCore.Qt.ItemIsEnabled)
 
-        description = prescript_utils.get_medicine_description(self.database, medicine_key)
-        self._add_prescript_info_button(row_no, description)
+        self._add_prescript_info_button(row_no, medicine_key)
 
-    def _add_prescript_info_button(self, row_no, description):
+    def _add_prescript_info_button(self, row_no, medicine_key):
+        description = prescript_utils.get_medicine_description(self.database, medicine_key)
+
         button = QtWidgets.QPushButton(self.ui.tableWidget_prescript)
         button.setIcon(QtGui.QIcon('./icons/gtk-info.svg'))
         button.setFlat(True)
@@ -373,14 +379,33 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
         self._calculate_total_costs()
 
     def save_prescript(self):
-        self._save_dosage()
-        self._save_medicine()
+        medicine_set = self.medicine_set
+        if medicine_set >= 3:  # 有第三帖藥, 檢查前面的藥帖是否空白
+            for i in range(medicine_set, 1, -1):
+                medicine_set = i
+                sql = '''
+                    SELECT MedicineSet FROM prescript
+                    WHERE
+                        CaseKey = {case_key} AND
+                        MedicineSet = {medicine_set}
+                    LIMIT 1
+                '''.format(
+                    case_key=self.case_key,
+                    medicine_set=medicine_set-1,
+                )
 
-    def _save_dosage(self):
+                rows = self.database.select_record(sql)
+                if len(rows) > 0:
+                    break
+
+        self._save_dosage(medicine_set)
+        self._save_medicine(medicine_set)
+
+    def _save_dosage(self, medicine_set):
         fields = ['CaseKey', 'MedicineSet', 'Packages', 'Days', 'Instruction',]
         data = [
-            str(self.case_key),
-            str(self.medicine_set),
+            string_utils.xstr(self.case_key),
+            string_utils.xstr(medicine_set),
             self.ui.comboBox_package.currentText(),
             self.ui.comboBox_pres_days.currentText(),
             self.ui.comboBox_instruction.currentText(),
@@ -396,17 +421,17 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
         else:
             self.database.insert_record('dosage', fields, data)
 
-    def _save_medicine(self):
+    def _save_medicine(self, medicine_set):
         prescript_data_set = []
         for i in range(self.ui.tableWidget_prescript.rowCount()):
-            prescript_rec = []
+            prescript_row = []
             for j in range(self.ui.tableWidget_prescript.columnCount()):
                 try:
-                    prescript_rec.append(self.ui.tableWidget_prescript.item(i, j).text())
+                    prescript_row.append(self.ui.tableWidget_prescript.item(i, j).text())
                 except AttributeError:
-                    prescript_rec.append(None)
+                    prescript_row.append(None)
 
-            prescript_data_set.append(prescript_rec)
+            prescript_data_set.append(prescript_row)
 
         self.delete_not_exists_prescript(prescript_data_set, '藥品類別')
 
@@ -422,9 +447,9 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
             items[prescript_utils.SELF_PRESCRIPT_COL_NO['PrescriptNo']] = str(prescript_no)
 
             if items[prescript_utils.SELF_PRESCRIPT_COL_NO['PrescriptKey']] == '-1':
-                self.insert_prescript(items)
+                self.insert_prescript(items, medicine_set)
             else:
-                self.update_prescript(items)
+                self.update_prescript(items, medicine_set)
 
     # 刪除不在tableWidget內的處方
     def delete_not_exists_prescript(self, prescript_data_set, medicine_type):
@@ -444,7 +469,10 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
                 self.database.exec_sql('DELETE FROM prescript where PrescriptKey = {0}'.format(row['PrescriptKey']))
 
     # 插入處方資料至資料庫內
-    def insert_prescript(self, items):
+    def insert_prescript(self, items, medicine_set=None):
+        if medicine_set is None:
+            medicine_set = items[prescript_utils.SELF_PRESCRIPT_COL_NO['MedicineSet']]
+
         fields = [
             'PrescriptNo', 'CaseKey', 'CaseDate',
             'MedicineSet', 'MedicineType', 'MedicineKey', 'InsCode', 'DosageMode',
@@ -456,7 +484,7 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
             items[prescript_utils.SELF_PRESCRIPT_COL_NO['PrescriptNo']],
             items[prescript_utils.SELF_PRESCRIPT_COL_NO['CaseKey']],
             items[prescript_utils.SELF_PRESCRIPT_COL_NO['CaseDate']],
-            items[prescript_utils.SELF_PRESCRIPT_COL_NO['MedicineSet']],
+            medicine_set,
             items[prescript_utils.SELF_PRESCRIPT_COL_NO['MedicineType']],
             items[prescript_utils.SELF_PRESCRIPT_COL_NO['MedicineKey']],
             items[prescript_utils.SELF_PRESCRIPT_COL_NO['InsCode']],
@@ -472,7 +500,10 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
         self.database.insert_record('prescript', fields, data)
 
     # 更新處方資料至資料庫內
-    def update_prescript(self, items):
+    def update_prescript(self, items, medicine_set=None):
+        if medicine_set is None:
+            medicine_set = items[prescript_utils.SELF_PRESCRIPT_COL_NO['MedicineSet']]
+
         if items[prescript_utils.SELF_PRESCRIPT_COL_NO['MedicineKey']] == '':
             items[prescript_utils.SELF_PRESCRIPT_COL_NO['MedicineKey']] = None
 
@@ -486,7 +517,7 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
             items[prescript_utils.SELF_PRESCRIPT_COL_NO['PrescriptNo']],
             items[prescript_utils.SELF_PRESCRIPT_COL_NO['CaseKey']],
             items[prescript_utils.SELF_PRESCRIPT_COL_NO['CaseDate']],
-            items[prescript_utils.SELF_PRESCRIPT_COL_NO['MedicineSet']],
+            medicine_set,
             items[prescript_utils.SELF_PRESCRIPT_COL_NO['MedicineType']],
             items[prescript_utils.SELF_PRESCRIPT_COL_NO['MedicineKey']],
             items[prescript_utils.SELF_PRESCRIPT_COL_NO['InsCode']],
@@ -503,12 +534,31 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
             'prescript', fields, 'PrescriptKey', items[0], data)
 
     # 拷貝過去病歷的處方
-    def copy_past_prescript(self, case_key):
+    def copy_past_prescript(self, case_key, medicine_set=None):
         self.ui.tableWidget_prescript.clearContents()
         self.ui.tableWidget_prescript.setRowCount(0)
+        if medicine_set is None:
+            medicine_set = self.medicine_set
+
+        pres_days = case_utils.get_pres_days(self.database, case_key, medicine_set)
+        packages = case_utils.get_packages(self.database, case_key, medicine_set)
+        instruction = case_utils.get_instruction(self.database, case_key, medicine_set)
+
+        medicine_type_script = ''
+        if medicine_set == 1:
+            medicine_type_script = ' AND MedicineType IN ("單方", "複方") '  # 拷貝健保至自費, 只讀取健保藥
         sql = '''
-            SELECT * FROM prescript WHERE CaseKey = {0} AND 
-                MedicineSet = {1} ORDER BY PrescriptKey'''.format(case_key, self.medicine_set)
+            SELECT * FROM prescript 
+            WHERE 
+                CaseKey = {case_key} AND 
+                MedicineSet = {medicine_set} 
+                {medicine_type_script}
+            ORDER BY PrescriptKey
+        '''.format(
+            case_key=case_key,
+            medicine_set=medicine_set,
+            medicine_type_script=medicine_type_script,
+        )
         rows = self.database.select_record(sql)
         for row_no, row in zip(range(len(rows)), rows):
             if row['MedicineName'] is None:
@@ -519,6 +569,10 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
             self._set_dosage_format(row_no, prescript_utils.SELF_PRESCRIPT_COL_NO['Dosage'])
             self._set_dosage_format(row_no, prescript_utils.SELF_PRESCRIPT_COL_NO['Price'])
             self._set_dosage_format(row_no, prescript_utils.SELF_PRESCRIPT_COL_NO['Amount'])
+
+        self.ui.comboBox_pres_days.setCurrentText(string_utils.xstr(pres_days))
+        self.ui.comboBox_package.setCurrentText(string_utils.xstr(packages))
+        self.ui.comboBox_instruction.setCurrentText(instruction)
 
         self.ui.tableWidget_prescript.resizeRowsToContents()
 
@@ -541,19 +595,31 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
             self ._calculate_total_costs()
 
     def _calculate_total_price(self, row_no, item):
-        sale_price = self.ui.tableWidget_prescript.item(row_no, prescript_utils.SELF_PRESCRIPT_COL_NO['Price'])
-        if sale_price is None:
+        sale_price_item = self.ui.tableWidget_prescript.item(row_no, prescript_utils.SELF_PRESCRIPT_COL_NO['Price'])
+        if sale_price_item is None:
             return
 
         dosage = item.text()
         if dosage == '':
             dosage = 0
 
-        sale_price = sale_price.text()
+        try:
+            dosage = number_utils.get_float(dosage)
+        except ValueError:
+            item.setText(None)
+            dosage = 0
+
+        sale_price = sale_price_item.text()
         if sale_price == '':
             sale_price = 0
 
-        subtotal = float(dosage) * float(sale_price)
+        try:
+            sale_price = number_utils.get_float(sale_price)
+        except ValueError:
+            sale_price_item.setText(None)
+            sale_price = 0
+
+        subtotal = dosage * sale_price
 
         self.ui.tableWidget_prescript.setItem(
             row_no, prescript_utils.SELF_PRESCRIPT_COL_NO['Amount'],
@@ -582,7 +648,7 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
             dosage = number_utils.get_float(item.text())
             total_dosage += dosage
 
-        self.ui.label_total_dosage.setText('總量: {0}'.format(total_dosage))
+        self.ui.label_total_dosage.setText('總量: {0:.1f}'.format(total_dosage))
 
     def _calculate_total_costs(self):
         total_costs = 0.0
@@ -610,14 +676,19 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
             dosage = number_utils.get_float(dosage_item.text())
             total_costs += dosage * cost
 
-        self.ui.label_total_costs.setText('成本: {0:.1f}'.format(total_costs))
+        self.ui.label_total_costs.setText('({0:.1f})'.format(total_costs))
 
     def _open_dictionary(self):
         self.parent.open_dictionary(self.medicine_set, '自費處方')
 
     def _show_costs(self):
+        pres_days = number_utils.get_integer(self.ui.comboBox_pres_days.currentText())
+        if pres_days <= 0:
+            pres_days = 1
+
         html = prescript_utils.get_costs_html(
-            self.database, self.ui.tableWidget_prescript, prescript_utils.SELF_PRESCRIPT_COL_NO
+            self.database, self.ui.tableWidget_prescript, pres_days,
+            prescript_utils.SELF_PRESCRIPT_COL_NO
         )
         dialog = dialog_rich_text.DialogRichText(
             self, self.database, self.system_settings,

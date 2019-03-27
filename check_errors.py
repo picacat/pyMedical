@@ -17,7 +17,6 @@ from libs import validator_utils
 from libs import personnel_utils
 from libs import nhi_utils
 from libs import charge_utils
-from libs import system_utils
 from libs import case_utils
 
 
@@ -64,7 +63,7 @@ class CheckErrors(QtWidgets.QMainWindow):
         self.table_widget_errors.set_column_hidden([0])
         width = [
             100, 120, 60, 80, 80, 120, 120, 100, 80, 100,
-            80, 60, 60, 60, 60, 60, 60, 60, 240,
+            80, 60, 60, 60, 60, 60, 60, 60, 280,
         ]
         self.table_widget_errors.set_table_heading_width(width)
 
@@ -112,6 +111,7 @@ class CheckErrors(QtWidgets.QMainWindow):
             error_messages = []
             error_messages += self._check_patient(row)
             error_messages += self._check_medical_record(row)
+            error_messages += self._check_prescript(row)
             error_messages += self._check_charge(row)
 
             if len(error_messages) > 0:
@@ -129,6 +129,7 @@ class CheckErrors(QtWidgets.QMainWindow):
             self.ui.toolButton_calculate_ins_fee.setEnabled(True)
 
         self.parent.ui.label_progress.setText('檢查進度: 檢查完成')
+        self.ui.tableWidget_errors.resizeRowsToContents()
 
     def error_count(self):
         return self.ui.tableWidget_errors.rowCount()
@@ -202,8 +203,9 @@ class CheckErrors(QtWidgets.QMainWindow):
 
         if string_utils.xstr(row['ID']) == '':
             error_messages.append('身分證空白')
-        if not validator_utils.verify_id(string_utils.xstr(row['ID'])):
-            error_messages.append('身份證錯誤')
+        elif not validator_utils.verify_id(string_utils.xstr(row['ID'])):
+            error_messages.append('身份證編碼錯誤')
+
         if string_utils.xstr(row['InsType']) == '':
             error_messages.append('保險類別空白')
 
@@ -250,6 +252,45 @@ class CheckErrors(QtWidgets.QMainWindow):
 
         if string_utils.get_str(row['Symptom'], 'utf-8') == '':
             error_messages.append('無主訴')
+
+        return error_messages
+
+    def _check_prescript(self, row):
+        error_messages = []
+
+        case_key = row['CaseKey']
+        sql = '''
+            SELECT * FROM prescript
+            WHERE
+                CaseKey = {case_key} AND
+                MedicineSet = 1
+        '''.format(
+            case_key=case_key,
+        )
+
+        prescript_rows = self.database.select_record(sql)
+
+        acupuncture_treat = 0
+        massage_treat = 0
+
+        for prescript_row in prescript_rows:
+            if string_utils.xstr(prescript_row['MedicineType']) == '穴道':
+                acupuncture_treat += 1
+            elif string_utils.xstr(prescript_row['MedicineType']) == '處置':
+                massage_treat += 1
+
+            if string_utils.xstr(prescript_row['MedicineType']) in ['單方', '複方']:
+                if prescript_row['Dosage'] is None or string_utils.xstr(prescript_row['Dosage']) == '':
+                    error_messages.append('{0}劑量空白'.format(
+                        string_utils.xstr(prescript_row['MedicineName'])
+                    ))
+                if prescript_row['MedicineName'] is None or string_utils.xstr(prescript_row['MedicineName']) == '':
+                    error_messages.append('處方名稱空白')
+
+        if string_utils.xstr(row['Treatment']) in nhi_utils.ACUPUNCTURE_TREAT and acupuncture_treat <= 0:
+            error_messages.append('針灸治療無穴位記錄')
+        elif string_utils.xstr(row['Treatment']) in nhi_utils.MASSAGE_TREAT and massage_treat <= 0:
+            error_messages.append('傷科治療無治療手法記錄')
 
         return error_messages
 

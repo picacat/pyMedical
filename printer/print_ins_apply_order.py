@@ -182,6 +182,17 @@ class PrintInsApplyOrder:
         except:
             stop_date = ''
 
+        birthday = row['Birthday']
+        if birthday is not None:
+            birthday = string_utils.xstr(
+                '{0:0>3}年{1:0>2}月{2:0>2}日'.format(
+                    birthday.year-1911,
+                    birthday.month,
+                    birthday.day,
+                )
+            )
+        else:
+            birthday = ''
 
         html = '''
             <table align=center cellpadding="1" cellspacing="0" width="95%" style="border-width: 1px; border-style: dotted;">
@@ -314,13 +325,7 @@ class PrintInsApplyOrder:
             ),
             clinic_class= nhi_utils.INS_CLASS,
             pres_days=string_utils.xstr(row['PresDays']),
-            birthday=string_utils.xstr(
-                '{0:0>3}年{1:0>2}月{2:0>2}日'.format(
-                    row['Birthday'].year-1911,
-                    row['Birthday'].month,
-                    row['Birthday'].day,
-                    )
-            ),
+            birthday=birthday,
             id=string_utils.xstr(row['ID']),
             card=string_utils.xstr(row['Card']),
             injury=string_utils.xstr(row['Injury']),

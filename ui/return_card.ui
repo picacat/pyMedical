@@ -139,6 +139,7 @@
    </attribute>
    <addaction name="action_return_card"/>
    <addaction name="action_open_medical_record"/>
+   <addaction name="action_undo"/>
    <addaction name="separator"/>
    <addaction name="action_close"/>
   </widget>
@@ -186,6 +187,15 @@
    </property>
    <property name="text">
     <string>調閱病歷</string>
+   </property>
+  </action>
+  <action name="action_undo">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/edit-undo.svg</normaloff>../icons/edit-undo.svg</iconset>
+   </property>
+   <property name="text">
+    <string>還原成欠卡</string>
    </property>
   </action>
  </widget>

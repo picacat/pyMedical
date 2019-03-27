@@ -19,7 +19,8 @@ class DialogDiagnosticPicker(QtWidgets.QDialog):
         self.parent = parent
         self.database = args[0]
         self.system_settings = args[1]
-        self.sql = args[2]
+        self.clinic_type = args[2]
+        self.input_code = args[3]
 
         self.settings = QSettings('__settings.ini', QSettings.IniFormat)
         self.ui = None
@@ -53,30 +54,81 @@ class DialogDiagnosticPicker(QtWidgets.QDialog):
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Cancel).setText('取消')
         self.table_widget_diagnostic = table_widget.TableWidget(
             self.ui.tableWidget_diagnostic, self.database)
-        self.ui.tableWidget_diagnostic.resizeRowsToContents()
         self._set_table_width()
-        self.table_widget_diagnostic.set_column_hidden([0])
-        self.ui.tableWidget_diagnostic.setFocus()
 
     def _set_table_width(self):
-        width = [1000, 400]
+        width = [200, 200, 200, 200, 200]
         self.table_widget_diagnostic.set_table_heading_width(width)
 
     # 設定信號
     def _set_signal(self):
         self.ui.buttonBox.accepted.connect(self.accepted_button_clicked)
-        self.ui.tableWidget_diagnostic.doubleClicked.connect(self._table_double_clicked)
+        self.ui.tableWidget_diagnostic.clicked.connect(self._table_item_clicked)
 
-    def _table_double_clicked(self):
+    def _table_item_clicked(self):
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).animateClick()
 
     def accepted_button_clicked(self):
-        self.clinic_key = self.table_widget_diagnostic.field_value(0)
-        self.clinic_name = self.table_widget_diagnostic.field_value(1)
+        item = self.ui.tableWidget_diagnostic.item(
+            self.ui.tableWidget_diagnostic.currentRow(),
+            self.ui.tableWidget_diagnostic.currentColumn(),
+        )
+
+        if item is not None:
+            self.clinic_name = item.text()
+        else:
+            self.clinic_name = ''
+
+        self.clinic_key = self._get_clinic_key()
+
         self.close()
 
     def _read_data(self):
-        self.table_widget_diagnostic.set_db_data(self.sql, self._set_table_data)
+        # self.table_widget_diagnostic.set_db_data(self.sql, self._set_wait_data)
+        order_type = '''
+            ORDER BY LENGTH(ClinicName), CAST(CONVERT(`ClinicName` using big5) AS BINARY)
+        '''
+        if self.system_settings.field('診察詞庫排序') == '點擊率':
+            order_type = 'ORDER BY HitRate DESC'
+
+        sql = '''
+            SELECT * FROM clinic 
+            WHERE 
+                ClinicType = "{clinic_type}" AND
+                InputCode LIKE "{input_code}%" 
+            GROUP BY ClinicName 
+            {order_type}
+        '''.format(
+            clinic_type=self.clinic_type,
+            input_code=self.input_code,
+            order_type=order_type,
+        )
+        self.rows = self.database.select_record(sql)
+
+        row_count = len(self.rows)
+        self.ui.tableWidget_diagnostic.setRowCount(0)
+
+        column_count = self.ui.tableWidget_diagnostic.columnCount()
+        total_row = int(row_count / column_count)
+        if row_count % column_count > 0:
+            total_row += 1
+
+        for row_no in range(0, total_row):
+            self.ui.tableWidget_diagnostic.setRowCount(
+                self.ui.tableWidget_diagnostic.rowCount() + 1
+            )
+            for col_no in range(0, column_count):
+                index = (row_no * column_count) + col_no
+                if index >= row_count:
+                    break
+
+                self.ui.tableWidget_diagnostic.setItem(
+                    row_no, col_no, QtWidgets.QTableWidgetItem(self.rows[index]['ClinicName'])
+                )
+
+        self.ui.tableWidget_diagnostic.resizeRowsToContents()
+        self.ui.tableWidget_diagnostic.setCurrentCell(0, 0)
+        self.ui.tableWidget_diagnostic.setFocus(True)
 
     def _set_table_data(self, row_no, row):
         diagnostic_row = [
@@ -89,3 +141,14 @@ class DialogDiagnosticPicker(QtWidgets.QDialog):
                 row_no, column,
                 QtWidgets.QTableWidgetItem(diagnostic_row[column])
             )
+
+    def _get_clinic_key(self):
+        row_no = self.ui.tableWidget_diagnostic.currentRow()
+        col_no = self.ui.tableWidget_diagnostic.currentColumn()
+        column_count = self.ui.tableWidget_diagnostic.columnCount()
+
+        index = (row_no * column_count) + col_no
+        if index >= len(self.rows):
+            return None
+
+        return self.rows[index]['ClinicKey']

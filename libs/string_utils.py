@@ -1,6 +1,9 @@
 # 字串 2018.01.29
 #coding: utf-8
 
+import re
+
+
 phonetic_table = {
     'ㄅ': '1', 'ㄆ': 'q', 'ㄇ': 'a', 'ㄈ': 'z',
     'ㄉ': '2', 'ㄊ': 'w', 'ㄋ': 's', 'ㄌ': 'x',
@@ -14,6 +17,20 @@ phonetic_table = {
     'ㄢ': '0', 'ㄣ': 'p', 'ㄤ': ';', 'ㄥ': '/',
     'ㄦ': '-',
 }
+
+
+# 清除不必要的字元
+def strip_string(in_string):
+    try:
+        in_string = re.sub(r'\([^)]*\)', '', in_string)  # 把 in_string(xxx) 中的 (xxx) 去除
+    except TypeError:
+        return
+
+    remap = [chr(i) for i in range(32, 127)]  # 去除非中文字元
+    for char in remap:
+        in_string = in_string.replace(char, '')
+
+    return in_string
 
 
 # 整數轉字串(零不顯示)

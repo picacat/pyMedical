@@ -4,6 +4,7 @@
 
 from PyQt5 import QtWidgets
 import re
+import calendar
 
 from classes import table_widget
 from libs import ui_utils
@@ -11,6 +12,7 @@ from libs import system_utils
 from libs import string_utils
 from libs import date_utils
 from libs import validator_utils
+from libs import number_utils
 
 
 # 選擇病患  2018.12.25
@@ -21,12 +23,16 @@ class DialogSelectPatient(QtWidgets.QDialog):
         self.parent = parent
         self.database = args[0]
         self.system_settings = args[1]
+        self.keyword = args[2]
 
         self.patient_key = None
         self.ui = None
 
         self._set_ui()
         self._set_signal()
+
+        if self.keyword != '':
+            self.ui.lineEdit_query.setText(self.keyword)
 
     # 設定GUI
     def _set_ui(self):
@@ -72,32 +78,98 @@ class DialogSelectPatient(QtWidgets.QDialog):
         self.ui.lineEdit_query.setCursorPosition(len(query_str))
 
     def _read_patient(self, query_str):
-        pattern = re.compile(validator_utils.DATE_REGEXP)
-        if pattern.match(query_str):
+        if query_str.isdigit():
+            sql = '''
+                SELECT * FROM patient 
+                WHERE 
+                    PatientKey = "{0}"
+                ORDER BY PatientKey 
+            '''.format(query_str)
+        elif re.compile(validator_utils.DATE_REGEXP).match(query_str):
             query_str = date_utils.date_to_west_date(query_str)
             sql = '''
                 SELECT * FROM patient 
                 WHERE 
                     Birthday = "{0}"
-                ORDER BY PatientKey 
+                ORDER BY PatientKey
             '''.format(query_str)
-        elif query_str.isnumeric():
-            if len(query_str) >= 7:
-                sql = '''
-                    SELECT * FROM patient 
-                    WHERE 
-                        Telephone LIKE "%{0}%" OR 
-                        Cellphone LIKE "%{0}%"
-                '''.format(query_str)
+        elif re.compile('^[0-9]{1,4}[-/.][0-9]{1,2}').match(query_str):
+            date_separator = date_utils._get_date_separator(query_str)
+            if date_separator == '':
+                return
+
+            try:
+                year, month = query_str.split(date_separator)
+            except ValueError:
+                return
+
+            year = number_utils.get_integer(year)
+            if year < 1000:
+                year += 1911
+
+            month = number_utils.get_integer(month)
+            if month <= 0:
+                return
+
+            last_day = calendar.monthrange(year, month)[1]
+
+            start_date = '{year}{separator}{month}{separator}01'.format(
+                year=year,
+                month=month,
+                separator=date_separator,
+            )
+            end_date = '{year}{separator}{month}{separator}{last_day}'.format(
+                year=year,
+                month=month,
+                last_day=last_day,
+                separator=date_separator,
+            )
+
+            sql = '''
+                SELECT * FROM patient 
+                WHERE 
+                    Birthday BETWEEN "{0}" AND "{1}"
+                ORDER BY Birthday 
+            '''.format(start_date, end_date)
+        elif re.compile('^[0-9]{1,4}[-/.]').match(query_str):
+            if '-' in query_str:
+                separator = '-'
+            elif '/' in query_str:
+                separator = '/'
+            elif '.' in query_str:
+                separator = '.'
             else:
-                sql = 'SELECT * FROM patient WHERE PatientKey = {0}'.format(query_str)
+                return
+
+            year, _ = query_str.split(separator)
+            year = number_utils.get_integer(year)
+            if year < 1000:
+                year += 1911
+
+            start_date = '{year}{separator}01{separator}01'.format(
+                year=year,
+                separator=separator,
+            )
+            end_date = '{year}{separator}12{separator}31'.format(
+                year=year,
+                separator=separator,
+            )
+            sql = '''
+                SELECT * FROM patient 
+                WHERE 
+                    Birthday BETWEEN "{0}" AND "{1}"
+                ORDER BY Birthday 
+            '''.format(start_date, end_date)
         else:
             sql = '''
                 SELECT * FROM patient 
                 WHERE 
-                    (Name like "%{0}%") or 
-                    (ID like "{0}%") or 
-                    (Birthday = "{0}")
+                    (Name LIKE "%{0}%") OR 
+                    (ID LIKE "{0}%") OR 
+                    (Birthday = "{0}") OR
+                    (Telephone LIKE "%{0}%") OR 
+                    (Cellphone LIKE "{0}%") OR
+                    (Address LIKE "%{0}%")
                 ORDER BY PatientKey
             '''.format(query_str)
 

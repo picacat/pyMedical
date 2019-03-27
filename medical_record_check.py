@@ -3,12 +3,13 @@
 
 
 from PyQt5 import QtWidgets
-from PyQt5.QtWidgets import QMessageBox
+from PyQt5.QtWidgets import QMessageBox, QPushButton
 import datetime
 
 from libs import string_utils
 from libs import system_utils
 from libs import date_utils
+from libs import prescript_utils
 
 
 # 系統設定 2018.03.19
@@ -22,11 +23,13 @@ class MedicalRecordCheck(QtWidgets.QDialog):
         self.patient_record = args[3]
         self.treat_type = args[4]
         self.disease_code1 = args[5]
-        self.treatment = args[6]
-        self.pres_days = args[7]
-        self.table_widget_ins_prescript = args[8]
-        self.table_widget_ins_treat = args[9]
-        self.table_widget_ins_care = args[10]
+        self.disease_code2 = args[6]
+        self.disease_code3 = args[7]
+        self.treatment = args[8]
+        self.pres_days = args[9]
+        self.table_widget_ins_prescript = args[10]
+        self.table_widget_ins_treat = args[11]
+        self.table_widget_ins_care = args[12]
         self.parent = parent
 
         self._set_ui()
@@ -381,7 +384,21 @@ class MedicalRecordCheck(QtWidgets.QDialog):
         return check_ok
 
     def _check_general(self):
+        check_ok = self._check_empty_disease()
+        if not check_ok:
+            return check_ok
+
+        check_ok = self._check_empty_prescript()
+        if not check_ok:
+            return check_ok
+
+        check_ok = self._check_empty_treat()
+        if not check_ok:
+            return check_ok
+
         check_ok = self._check_dosage()
+        if not check_ok:
+            return check_ok
 
         return check_ok
 
@@ -395,12 +412,15 @@ class MedicalRecordCheck(QtWidgets.QDialog):
             return check_ok
 
         for row_no in range(row_count):
-            self.table_widget_ins_prescript.setCurrentCell(row_no, 10)
-            medicine_name = self.table_widget_ins_prescript.item(row_no, 9)
+            self.table_widget_ins_prescript.setCurrentCell(
+                row_no, prescript_utils.INS_PRESCRIPT_COL_NO['Dosage'])
+            medicine_name = self.table_widget_ins_prescript.item(
+                row_no, prescript_utils.INS_PRESCRIPT_COL_NO['MedicineName'])
             if medicine_name is None or medicine_name.text() == '':  # 無效的處方, 不需檢查
                 continue
 
-            dosage = self.table_widget_ins_prescript.item(row_no, 10)
+            dosage = self.table_widget_ins_prescript.item(
+                row_no, prescript_utils.INS_PRESCRIPT_COL_NO['Dosage'])
             if dosage is None or dosage.text() == '':
                 error_message.append('{0} 無劑量'.format(medicine_name.text()))
                 break
@@ -421,5 +441,108 @@ class MedicalRecordCheck(QtWidgets.QDialog):
                 '請更正上述的錯誤，以利健保申報.'
             )
             check_ok = False
+
+        return check_ok
+
+    def _check_empty_disease(self):
+        check_ok = True
+        error_message = []
+
+        if self.disease_code1 == '' and self.disease_code2 == '' and self.disease_code3 == '':
+            error_message.append('所有診斷碼均為空白, 請確定是否遺漏輸入.')
+
+        if len(error_message) > 0:
+            system_utils.show_message_box(
+                QMessageBox.Critical,
+                '診斷碼檢查錯誤',
+                '''
+                    <font size="4" color="red">
+                      <b>
+                        診斷碼檢查錯誤如下:<br>
+                        <br>
+                        {0}
+                      </b>
+                    </font>
+                '''.format('<br>'.join(error_message)),
+                '請更正上述的錯誤，以利健保申報.'
+            )
+            check_ok = False
+
+        return check_ok
+
+    def _check_empty_prescript(self):
+        check_ok = True
+        error_message = []
+
+        medicine_name = self.table_widget_ins_prescript.item(
+            0, prescript_utils.INS_PRESCRIPT_COL_NO['MedicineName'])
+        treat_name = self.table_widget_ins_treat.item(
+            0, prescript_utils.INS_TREAT_COL_NO['MedicineName'])
+
+        if (medicine_name is None and
+            self.treatment == '' and treat_name is None):
+            error_message.append('所有處方均為空白, 請確定是否遺漏輸入.')
+
+        if len(error_message) > 0:
+            msg_box = QMessageBox()
+            msg_box.setIcon(QMessageBox.Warning)
+            msg_box.setWindowTitle('處方空白')
+            msg_box.setText(
+                '''
+                    <font size="4" color="red">
+                      <b>
+                        處方檢查錯誤如下:<br>
+                        <br>
+                        {0}
+                      </b>
+                    </font>
+                '''.format('<br>'.join(error_message)),
+            )
+            msg_box.setInformativeText("請確定是否為問診或遺漏輸入處方.")
+            msg_box.addButton(QPushButton("繼續存檔"), QMessageBox.YesRole)
+            msg_box.addButton(QPushButton("取消"), QMessageBox.NoRole)
+            save_file = msg_box.exec_()
+            if save_file == QMessageBox.RejectRole:
+                check_ok = False
+
+        return check_ok
+
+    def _check_empty_treat(self):
+        check_ok = True
+        error_message = []
+
+        treat_exists = False
+        for row_no in range(self.table_widget_ins_treat.rowCount()):
+            treat_name = self.table_widget_ins_treat.item(
+                row_no, prescript_utils.INS_TREAT_COL_NO['MedicineName'])
+
+            if treat_name is not None:
+                treat_exists = True
+                break
+
+        if self.treatment != '' and not treat_exists:
+            error_message.append('有執行針傷處置但無針灸穴道或處置手法, 請確定是否遺漏輸入.')
+
+        if len(error_message) > 0:
+            msg_box = QMessageBox()
+            msg_box.setIcon(QMessageBox.Warning)
+            msg_box.setWindowTitle('處置空白')
+            msg_box.setText(
+                '''
+                    <font size="4" color="red">
+                      <b>
+                        處置檢查錯誤如下:<br>
+                        <br>
+                        {0}
+                      </b>
+                    </font>
+                '''.format('<br>'.join(error_message)),
+            )
+            msg_box.setInformativeText("請確定是否遺漏輸入處置.")
+            msg_box.addButton(QPushButton("繼續存檔"), QMessageBox.YesRole)
+            msg_box.addButton(QPushButton("取消"), QMessageBox.NoRole)
+            save_file = msg_box.exec_()
+            if save_file == QMessageBox.RejectRole:
+                check_ok = False
 
         return check_ok

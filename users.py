@@ -58,8 +58,8 @@ class Users(QtWidgets.QMainWindow):
     def _set_table_width(self):
         width = [
             100,
-            80, 100, 50, 120, 120, 100, 50, 200, 180, 80,
-            120, 120, 400, 250, 100, 120, 120, 120, 300,
+            80, 100, 100, 50, 120, 120, 100, 50, 180, 150, 80,
+            130, 130, 400, 250, 100, 120, 120, 120, 300,
         ]
         self.table_widget_users.set_table_heading_width(width)
         self.table_widget_users.set_column_hidden([0])
@@ -68,15 +68,20 @@ class Users(QtWidgets.QMainWindow):
         sql = '''
             SELECT * FROM person 
             ORDER BY FIELD(
-                Position, "院長", "主任", "醫師", "支援醫師", "藥師", "護士", "職員", "理療師", NULL), 
+                Position, "醫師", "支援醫師", "藥師", "護士", "職員", "理療師", NULL), 
                 Code, PersonKey
         '''
         self.table_widget_users.set_db_data(sql, self._set_user_data)
 
     def _set_user_data(self, row_no, row):
+        password = string_utils.xstr(row['Password'])
+        if self.system_settings.field('使用者') != '超級使用者':
+            password = '********'
+
         users_rec = [
             string_utils.xstr(row['PersonKey']),
             string_utils.xstr(row['Code']),
+            string_utils.xstr(row['Title']),
             string_utils.xstr(row['Name']),
             string_utils.xstr(row['Gender']),
             string_utils.xstr(row['Birthday']),
@@ -85,7 +90,7 @@ class Users(QtWidgets.QMainWindow):
             string_utils.xstr(row['FullTime']),
             string_utils.xstr(row['Certificate']),
             string_utils.xstr(row['CertCardNo']),
-            '******',  # password
+            password,
             string_utils.xstr(row['Telephone']),
             string_utils.xstr(row['Cellphone']),
             string_utils.xstr(row['Address']),
@@ -103,7 +108,7 @@ class Users(QtWidgets.QMainWindow):
                 QtWidgets.QTableWidgetItem(users_rec[column])
             )
 
-            if column in [3]:
+            if column in [4]:
                 self.ui.tableWidget_users.item(row_no, column).setTextAlignment(
                     QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
                 )

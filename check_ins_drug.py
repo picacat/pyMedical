@@ -132,7 +132,7 @@ class CheckInsDrug(QtWidgets.QMainWindow):
                 continue
 
             error_messages += self._check_valid_date(row, drug_rows)
-            error_messages += self._check_drug_name(row, drug_rows)
+            # error_messages += self._check_drug_name(row, drug_rows)
 
             self._insert_error_record(row_no, row, drug_rows, error_messages)
 
@@ -147,6 +147,7 @@ class CheckInsDrug(QtWidgets.QMainWindow):
             self.ui.toolButton_find_error.setEnabled(True)
 
         self.parent.ui.label_progress.setText('檢查進度: 檢查完成')
+        self.ui.tableWidget_prescript.resizeRowsToContents()
 
     def _check_valid_date(self, row, drug_rows):
         error_message = []

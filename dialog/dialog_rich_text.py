@@ -43,12 +43,17 @@ class DialogRichText(QtWidgets.QDialog):
         self._set_text()
 
     def _set_text(self):
-        if self.text_format == 'rich_text':
-            self.ui.textEdit_rich_text.setText(self.text)
-        elif self.text_format == 'plain_text':
-            self.ui.textEdit_rich_text.setPlainText(self.text)
-        elif self.text_format == 'html':
-            self.ui.textEdit_rich_text.setHtml(self.text)
+        text = self.text
+
+        try:
+            if self.text_format == 'rich_text':
+                self.ui.textEdit_rich_text.setText(text)
+            elif self.text_format == 'plain_text':
+                self.ui.textEdit_rich_text.setPlainText(text)
+            elif self.text_format == 'html':
+                self.ui.textEdit_rich_text.setHtml(text)
+        except TypeError:
+            self.ui.textEdit_rich_text.setText('內有亂碼, 無法顯示')
 
     # 設定信號
     def _set_signal(self):

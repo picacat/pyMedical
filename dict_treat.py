@@ -56,6 +56,7 @@ class DictTreat(QtWidgets.QMainWindow):
         self.ui.toolButton_edit_treat.clicked.connect(self._edit_treat)
         self.ui.tableWidget_dict_treat.doubleClicked.connect(self._edit_treat)
         self.ui.tableWidget_dict_treat.itemSelectionChanged.connect(self.dict_treat_changed)
+        self.ui.lineEdit_search_treat.textChanged.connect(self._search_treat)
 
     # 設定欄位寬度
     def _set_table_width(self):
@@ -88,10 +89,16 @@ class DictTreat(QtWidgets.QMainWindow):
         self._read_dict_treat(dict_groups_type)
         self.ui.tableWidget_dict_groups.setFocus(True)
 
-    def _read_dict_treat(self, dict_groups_type):
+    def _read_dict_treat(self, dict_groups_type, keyword=None):
         sql = '''
-            SELECT * FROM medicine WHERE MedicineType = "{0}" ORDER BY MedicineCode, MedicineName
+            SELECT * FROM medicine 
+            WHERE 
+                MedicineType = "{0}" 
         '''.format(dict_groups_type)
+        if keyword is not None:
+            sql += keyword
+
+        sql += ' ORDER BY MedicineCode, MedicineName'
         self.table_widget_dict_treat.set_db_data(sql, self._set_dict_treat_data)
         medicine_key = self.table_widget_dict_treat.field_value(0)
         self._read_treat_description(medicine_key)
@@ -277,3 +284,20 @@ class DictTreat(QtWidgets.QMainWindow):
     def close_charge_settings(self):
         self.close_all()
         self.close_tab()
+
+    def _search_treat(self):
+        dict_groups_type = self.table_widget_dict_groups.field_value(1)
+        keyword = self.ui.lineEdit_search_treat.text()
+
+        if keyword == '':
+            self._read_dict_treat(dict_groups_type)
+        else:
+            script = '''
+                AND 
+                (InputCode LIKE "{0}%" OR MedicineName LIKE "%{0}%")
+            '''.format(keyword)
+            self._read_dict_treat(dict_groups_type, script)
+
+        self.ui.lineEdit_search_treat.setFocus(True)
+        self.ui.lineEdit_search_treat.setCursorPosition(len(keyword))
+

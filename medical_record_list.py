@@ -153,9 +153,9 @@ class MedicalRecordList(QtWidgets.QMainWindow):
             string_utils.xstr(row['TreatType']),
             string_utils.xstr(row['Card']),
             string_utils.int_to_str(row['Continuance']).strip('0'),
-            string_utils.int_to_str(pres_days),
             string_utils.xstr(row['Doctor']),
             string_utils.xstr(row['DiseaseName1']),
+            string_utils.int_to_str(pres_days),
             string_utils.xstr(row['Massager']),
             string_utils.int_to_str(row['RegistFee']),
             string_utils.int_to_str(row['SDiagShareFee']),
@@ -168,7 +168,7 @@ class MedicalRecordList(QtWidgets.QMainWindow):
                 row_no, column,
                 QtWidgets.QTableWidgetItem(medical_record[column])
             )
-            if column in [5, 6, 7, 15, 16, 20, 21, 22, 23]:
+            if column in [5, 6, 7, 15, 18, 20, 21, 22, 23]:
                 self.ui.tableWidget_medical_record_list.item(
                     row_no, column).setTextAlignment(
                     QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter

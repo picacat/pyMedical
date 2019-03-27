@@ -317,7 +317,7 @@ class PrintCertificatePayment:
         return html
 
     def _get_html_summary(self, row):
-        physician = self._get_physician(row)
+        physician = string_utils.xstr(row['Doctor'])
         pyysician_cert_no = personnel_utils.get_personnel_field_value(
             self.database, physician, 'Certificate')
         president = self.system_settings.field('負責醫師')
@@ -379,29 +379,4 @@ class PrintCertificatePayment:
 
         return html
 
-    def _get_physician(self, row):
-        start_date = '{0}-{1}-{2} 00:00:00'.format(
-            row['StartDate'].year,
-            row['StartDate'].month,
-            row['StartDate'].day
-        )
-        end_date = '{0}-{1}-{2} 23:59:59'.format(
-            row['EndDate'].year,
-            row['EndDate'].month,
-            row['EndDate'].day
-        )
-        sql = '''
-            SELECT * FROM cases
-            WHERE
-                (CaseDate BETWEEN "{0}" AND "{1}") AND
-                (PatientKey = {2})
-            ORDER BY CaseDate
-        '''.format(start_date, end_date, row['PatientKey'])
-        rows = self.database.select_record(sql)
-        if len(rows) <= 0:
-            return None
-
-        physician = string_utils.xstr(rows[0]['Doctor'])
-
-        return physician
 

@@ -46,6 +46,8 @@ class CvtUtec():
     def _convert_medical(self):
         if self.parent.ui.checkBox_groups.isChecked():
             self._cvt_groups()
+        if self.parent.ui.checkBox_disease_treat.isChecked():
+            self._cvt_disease_treat()
         if self.parent.ui.checkBox_dosage.isChecked():
             self._cvt_medical_dosage()
         if self.parent.ui.checkBox_patient.isChecked():
@@ -347,3 +349,10 @@ class CvtUtec():
             ]
 
             self.database.insert_record('certificate', fields, data)
+
+    def _cvt_disease_treat(self):
+        self.progress_bar.setMaximum(100)
+        self.progress_bar.setValue(0)
+        self.parent.ui.label_progress.setText('病名詞庫傷骨科類別轉檔')
+        cvt_groups.cvt_disease_treat(self.database)
+        self.progress_bar.setValue(100)

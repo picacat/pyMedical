@@ -8,6 +8,7 @@ from PyQt5.QtWidgets import QInputDialog, QMessageBox, QPushButton
 from libs import ui_utils
 from libs import string_utils
 from libs import dialog_utils
+from libs import number_utils
 from classes import table_widget
 from dialog import dialog_input_drug
 
@@ -39,7 +40,7 @@ class DictDrug(QtWidgets.QMainWindow):
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_DICT_DRUG, self)
         self.table_widget_dict_groups = table_widget.TableWidget(self.ui.tableWidget_dict_groups, self.database)
-        self.table_widget_dict_groups.set_column_hidden([0])
+        self.table_widget_dict_groups.set_column_hidden([0, 1])
         self.table_widget_dict_drug = table_widget.TableWidget(self.ui.tableWidget_dict_drug, self.database)
         self.table_widget_dict_drug.set_column_hidden([0])
         self._set_table_width()
@@ -58,24 +59,57 @@ class DictDrug(QtWidgets.QMainWindow):
         self.ui.tableWidget_dict_drug.doubleClicked.connect(self._edit_drug)
         self.ui.tableWidget_dict_drug.itemSelectionChanged.connect(self.dict_drug_changed)
         self.ui.lineEdit_search_drug.textChanged.connect(self._search_drug)
+        self.ui.toolButton_up.clicked.connect(self._groups_order_up)
+        self.ui.toolButton_down.clicked.connect(self._groups_order_down)
 
     # 設定欄位寬度
     def _set_table_width(self):
-        dict_groups_width = [100, 180]
-        dict_drug_width = [100, 180, 100, 200, 100, 50, 80, 100, 130, 80, 100, 100, 80, 80]
+        dict_groups_width = [100, 50, 150]
+        dict_drug_width = [100, 150, 100, 250, 100, 50, 80, 80, 150, 80, 100, 100, 80, 80]
         self.table_widget_dict_groups.set_table_heading_width(dict_groups_width)
         self.table_widget_dict_drug.set_table_heading_width(dict_drug_width)
 
     def _read_drug(self):
         self._read_dict_groups()
+        self._check_dict_groups_order_no()
+
+    def _check_dict_groups_order_no(self):
+        index = 0
+        for row_no in range(self.ui.tableWidget_dict_groups.rowCount()):
+            order_no = self.ui.tableWidget_dict_groups.item(row_no, 1)
+            if order_no is not None and order_no.text() != '':
+                continue
+
+            index += 1
+
+            dict_groups_key = self.ui.tableWidget_dict_groups.item(row_no, 0).text()
+            sql = '''
+                UPDATE dict_groups
+                SET
+                    DictOrderNo = "{dict_order_no:0>4}"
+                WHERE
+                    DictGroupsKey = {dict_groups_key}
+            '''.format(
+                dict_order_no=index,
+                dict_groups_key=dict_groups_key,
+            )
+            self.database.exec_sql(sql)
+
+        self._read_dict_groups()
 
     def _read_dict_groups(self):
-        sql = 'SELECT * FROM dict_groups WHERE DictGroupsType = "{0}類別" ORDER BY DictGroupsKey'.format(self.dict_type)
+        sql = '''
+            SELECT * FROM dict_groups 
+            WHERE 
+                DictGroupsType = "{0}類別" 
+            ORDER BY DictOrderNo, DictGroupsKey
+        '''.format(self.dict_type)
         self.table_widget_dict_groups.set_db_data(sql, self._set_dict_groups_data)
 
     def _set_dict_groups_data(self, rec_no, rec):
         dict_groups_rec = [
             string_utils.xstr(rec['DictGroupsKey']),
+            string_utils.xstr(rec['DictOrderNo']),
             string_utils.xstr(rec['DictGroupsName']),
         ]
 
@@ -86,7 +120,7 @@ class DictDrug(QtWidgets.QMainWindow):
             )
 
     def dict_groups_changed(self):
-        dict_groups_type = self.table_widget_dict_groups.field_value(1)
+        dict_groups_type = self.table_widget_dict_groups.field_value(2)
         self._read_dict_drug(dict_groups_type)
         self.ui.tableWidget_dict_groups.setFocus(True)
 
@@ -142,14 +176,28 @@ class DictDrug(QtWidgets.QMainWindow):
         input_dialog = dialog_utils.get_dialog(
             '{0}類別'.format(self.dict_type), '請輸入{0}類別'.format(self.dict_type),
             None, QInputDialog.TextInput, 320, 200)
-        ok = input_dialog.exec_()
-        if not ok:
+        if not input_dialog.exec_():
             return
 
         dict_groups = input_dialog.textValue()
-        field = ['DictGroupsType', 'DictGroupsName']
+
+        sql = '''
+            SELECT * FROM dict_groups
+            WHERE
+                DictGroupsType = "{0}類別" 
+            ORDER BY DictOrderNo DESC LIMIT 1
+        '''.format(self.dict_type)
+        rows = self.database.select_record(sql)
+        last_dict_order_no = number_utils.get_integer(rows[0]['DictOrderNo'])
+
+        field = [
+            'DictGroupsType', 'DictOrderNo', 'DictGroupsName'
+        ]
+
         data = [
-            '{0}類別'.format(self.dict_type), dict_groups,
+            '{0}類別'.format(self.dict_type),
+            last_dict_order_no+1,
+            dict_groups,
         ]
         self.database.insert_record('dict_groups', field, data)
         self._read_dict_groups()
@@ -159,7 +207,7 @@ class DictDrug(QtWidgets.QMainWindow):
         msg_box = dialog_utils.get_message_box(
             '刪除{0}類別資料'.format(self.dict_type), QMessageBox.Warning,
             '<font size="4" color="red"><b>確定刪除 [{0}] {1}類別?</b></font>'.format(
-                self.table_widget_dict_groups.field_value(1), self.dict_type),
+                self.table_widget_dict_groups.field_value(2), self.dict_type),
             '注意！資料刪除後, 將無法回復!'
         )
         remove_record = msg_box.exec_()
@@ -172,7 +220,7 @@ class DictDrug(QtWidgets.QMainWindow):
 
     # 更改處方類別
     def _edit_dict_groups(self):
-        old_groups = self.table_widget_dict_groups.field_value(1)
+        old_groups = self.table_widget_dict_groups.field_value(2)
         input_dialog = dialog_utils.get_dialog(
             '{0}類別'.format(self.dict_type), '請輸入{0}類別'.format(self.dict_type),
             old_groups,
@@ -203,7 +251,7 @@ class DictDrug(QtWidgets.QMainWindow):
         if dialog.exec_():
             current_row = self.ui.tableWidget_dict_drug.rowCount()
             self.ui.tableWidget_dict_drug.insertRow(current_row)
-            dict_groups_type = self.table_widget_dict_groups.field_value(1)
+            dict_groups_type = self.table_widget_dict_groups.field_value(2)
             fields = [
                 'MedicineType', 'MedicineCode', 'InputCode', 'MedicineName', 'Unit', 'MedicineMode', 'InsCode',
                 'Dosage', 'MedicineAlias', 'Location', 'InPrice', 'SalePrice', 'Quantity', 'SafeQuantity',
@@ -355,7 +403,7 @@ class DictDrug(QtWidgets.QMainWindow):
         self.close_tab()
 
     def _search_drug(self):
-        dict_groups_type = self.table_widget_dict_groups.field_value(1)
+        dict_groups_type = self.table_widget_dict_groups.field_value(2)
         keyword = self.ui.lineEdit_search_drug.text()
 
         if keyword == '':
@@ -369,4 +417,66 @@ class DictDrug(QtWidgets.QMainWindow):
 
         self.ui.lineEdit_search_drug.setFocus(True)
         self.ui.lineEdit_search_drug.setCursorPosition(len(keyword))
+
+    def _groups_order_up(self):
+        current_row = self.ui.tableWidget_dict_groups.currentRow()
+        if current_row == 0:
+            return
+
+        prior_dict_row = [
+            self.ui.tableWidget_dict_groups.item(current_row-1, 0).text(),
+            self.ui.tableWidget_dict_groups.item(current_row, 1).text(),
+            self.ui.tableWidget_dict_groups.item(current_row-1, 2).text(),
+        ]
+
+        current_dict_row = [
+            self.ui.tableWidget_dict_groups.item(current_row, 0).text(),
+            self.ui.tableWidget_dict_groups.item(current_row-1, 1).text(),
+            self.ui.tableWidget_dict_groups.item(current_row, 2).text(),
+        ]
+
+        self._update_dict_groups(prior_dict_row)
+        self._update_dict_groups(current_dict_row)
+        self._refresh_dict_groups_row(current_row-1, current_dict_row)
+        self._refresh_dict_groups_row(current_row, prior_dict_row)
+
+        self.ui.tableWidget_dict_groups.setCurrentCell(current_row-1, 1)
+
+    def _groups_order_down(self):
+        current_row = self.ui.tableWidget_dict_groups.currentRow()
+        if current_row >= self.ui.tableWidget_dict_groups.rowCount() - 1:
+            return
+
+        next_dict_row = [
+            self.ui.tableWidget_dict_groups.item(current_row+1, 0).text(),
+            self.ui.tableWidget_dict_groups.item(current_row, 1).text(),
+            self.ui.tableWidget_dict_groups.item(current_row+1, 2).text(),
+        ]
+
+        current_dict_row = [
+            self.ui.tableWidget_dict_groups.item(current_row, 0).text(),
+            self.ui.tableWidget_dict_groups.item(current_row+1, 1).text(),
+            self.ui.tableWidget_dict_groups.item(current_row, 2).text(),
+        ]
+
+        self._update_dict_groups(next_dict_row)
+        self._update_dict_groups(current_dict_row)
+        self._refresh_dict_groups_row(current_row+1, current_dict_row)
+        self._refresh_dict_groups_row(current_row, next_dict_row)
+
+        self.ui.tableWidget_dict_groups.setCurrentCell(current_row+1, 1)
+
+    def _update_dict_groups(self, dict_groups_row):
+        self.database.exec_sql(
+            'UPDATE dict_groups SET DictOrderNo = "{dict_order_no}" WHERE DictGroupsKey = {dict_groups_key}'.format(
+                dict_order_no=dict_groups_row[1],
+                dict_groups_key=dict_groups_row[0],
+            )
+        )
+
+    def _refresh_dict_groups_row(self, row_no, dict_groups_row):
+        for col_no in range(len(dict_groups_row)):
+            self.ui.tableWidget_dict_groups.setItem(
+                row_no, col_no, QtWidgets.QTableWidgetItem(dict_groups_row[col_no]),
+            )
 

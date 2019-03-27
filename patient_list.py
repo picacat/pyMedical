@@ -56,16 +56,15 @@ class PatientList(QtWidgets.QMainWindow):
 
     # 讀取病歷
     def _get_sql(self):
+        sql = None
         dialog = dialog_patient_list.DialogPatientList(self.ui, self.database, self.system_settings)
-        result = dialog.exec_()
-        sql = dialog.get_sql()
+        if dialog.exec_():
+            sql = dialog.get_sql()
+
         dialog.close_all()
         dialog.deleteLater()
 
-        if result == 0:
-            return None
-        else:
-            return sql
+        return sql
 
     def open_dialog(self):
         sql = self._get_sql()

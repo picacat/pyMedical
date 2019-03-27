@@ -188,14 +188,14 @@ class PrintMedicalRecords:
                 color = None
 
             case_record = printer_utils.get_case_html_1(
-                self.database, case_key,
+                self.database, case_key, '健保',
                 background_color=color
             )
             symptom_record = printer_utils.get_symptom_html(self.database, case_key, colspan=5)
             disease_record = printer_utils.get_disease(self.database, case_key)
             prescript_record = printer_utils.get_prescript_html(
                 self.database, self.system_settings,
-                case_key, medicine_set, print_alias=Fase,
+                case_key, medicine_set, print_alias=False,
                 print_total_dosage=True, blocks=3)
             instruction = printer_utils.get_instruction_html(
                 self.database, case_key, medicine_set

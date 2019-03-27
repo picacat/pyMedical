@@ -205,6 +205,7 @@ class CheckMedicalRecordCount(QtWidgets.QMainWindow):
 
         self.table_widget_medical_record_treat.set_db_data(
             sql, self._set_medical_record_treat_data)
+
         self._set_medical_record_treat_color()
         self.ui.tableWidget_medical_record_treat.setCurrentCell(0, 1)
         self.ui.tableWidget_patient_treat.setFocus(True)

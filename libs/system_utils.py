@@ -5,6 +5,12 @@ from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QMessageBox, QPushButton
 import sys
 import os
+import subprocess
+
+if sys.platform == 'win32':
+    from win32con import WM_INPUTLANGCHANGEREQUEST
+    import win32api
+    import win32gui
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname("__file__")))
 CSS_PATH = "css"
@@ -61,3 +67,30 @@ def show_message_box(message_icon, title, text, informative):
     msg_box.setInformativeText(informative)
     msg_box.addButton(QPushButton("確定"), QMessageBox.YesRole)
     msg_box.exec_()
+
+def set_keyboard_layout(lang):
+    if sys.platform != 'win32':
+        return
+
+    chinese = 0x0404
+    english = 0x0409
+
+    if lang == '中文':
+        keyboard = chinese
+    else:
+        keyboard = english
+
+    hwnd = win32gui.GetForegroundWindow()
+
+    win32api.SendMessage(
+        hwnd,
+        WM_INPUTLANGCHANGEREQUEST,
+        0,
+        keyboard
+    )
+
+def unzip_file(zip_file, output_directory):
+    cmd = ['7z', 'x', zip_file, '-o{output_directory}'.format(output_directory=output_directory)]
+    sp = subprocess.Popen(cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
+    sp.communicate()
+

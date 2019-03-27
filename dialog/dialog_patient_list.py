@@ -1,14 +1,20 @@
 #!/usr/bin/env python3
-# 病歷查詢 2014.09.22
+# 病患查詢 2019.03.18
 #coding: utf-8
 
 from PyQt5 import QtWidgets
+import re
+import calendar
+
+from libs import date_utils
+from libs import validator_utils
 from libs import system_utils
 from libs import ui_utils
 from libs import string_utils
+from libs import number_utils
 
 
-# 主視窗
+# 病患查詢
 class DialogPatientList(QtWidgets.QDialog):
     # 初始化
     def __init__(self, parent=None, *args):
@@ -64,7 +70,7 @@ class DialogPatientList(QtWidgets.QDialog):
 
         if self.ui.radioButton_keyword.isChecked():
             keyword = string_utils.xstr(self.ui.lineEdit_keyword.text())
-            if keyword.isnumeric():
+            if keyword.isdigit():
                 if len(keyword) >= 7:
                     if not condition:
                         sql += 'WHERE '
@@ -72,7 +78,8 @@ class DialogPatientList(QtWidgets.QDialog):
                         sql += 'AND '
 
                     sql += '''
-                        (Telephone LIKE "%{0}%" OR Cellphone LIKE "%{0}%)"
+                        (Telephone LIKE "%{0}%" OR Cellphone LIKE "%{0}%")
+                        ORDER BY PatientKey
                     '''.format(keyword)
                 else:
                     sql = 'SELECT * FROM patient WHERE PatientKey = {0}'.format(keyword)
@@ -82,16 +89,84 @@ class DialogPatientList(QtWidgets.QDialog):
                 else:
                     sql += 'AND '
 
-                sql += '''
+                if re.compile(validator_utils.DATE_REGEXP).match(keyword):
+                    query_str = date_utils.date_to_west_date(keyword)
+                    sql += '''
+                        Birthday = "{0}"
+                        ORDER BY PatientKey
+                    '''.format(query_str)
+                elif re.compile('^[0-9]{1,4}[-/.][0-9]{1,2}').match(keyword):
+                    date_separator = date_utils._get_date_separator(keyword)
+                    if date_separator == '':
+                        return
+
+                    try:
+                        year, month = keyword.split(date_separator)
+                    except ValueError:
+                        return
+
+                    year = number_utils.get_integer(year)
+                    month = number_utils.get_integer(month)
+                    if month <= 0:
+                        return
+
+                    if year < 1000:
+                        year += 1911
+
+                    last_day = calendar.monthrange(year, month)[1]
+
+                    start_date = '{year}{separator}{month}{separator}01'.format(
+                        year=year,
+                        month=month,
+                        separator=date_separator,
+                    )
+                    end_date = '{year}{separator}{month}{separator}{last_day}'.format(
+                        year=year,
+                        month=month,
+                        last_day=last_day,
+                        separator=date_separator,
+                    )
+
+                    sql += '''
+                        Birthday BETWEEN "{0}" AND "{1}"
+                        ORDER BY Birthday 
+                    '''.format(start_date, end_date)
+                elif re.compile('^[0-9]{1,4}[-/.]').match(keyword):
+                    if '-' in keyword:
+                        separator = '-'
+                    elif '/' in keyword:
+                        separator = '/'
+                    elif '.' in keyword:
+                        separator = '.'
+                    else:
+                        return
+
+                    year, _ = keyword.split(separator)
+                    year = number_utils.get_integer(year)
+                    if year < 1000:
+                        year += 1911
+
+                    start_date = '{year}{separator}01{separator}01'.format(
+                        year=year,
+                        separator=separator,
+                    )
+                    end_date = '{year}{separator}12{separator}31'.format(
+                        year=year,
+                        separator=separator,
+                    )
+
+                    sql += '''
+                        Birthday BETWEEN "{0}" AND "{1}"
+                        ORDER BY Birthday 
+                    '''.format(start_date, end_date)
+                else:
+                    sql += '''
                         ((Name LIKE "%{0}%") OR
                          (ID LIKE "{0}%") OR
-                         (Birthday = "{0}") OR
                          (Address LIKE "%{0}%") OR
                          (EMail LIKE "%{0}%"))
-                '''.format(keyword)
-
-        sql += ' ORDER BY PatientKey'
-        print(sql)
+                         ORDER BY PatientKey
+                    '''.format(keyword)
 
         return sql
 

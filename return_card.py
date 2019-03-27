@@ -4,7 +4,7 @@
 import sys
 
 from PyQt5 import QtWidgets, QtCore
-from PyQt5.QtWidgets import QMessageBox
+from PyQt5.QtWidgets import QMessageBox, QPushButton
 
 import datetime
 from libs import ui_utils
@@ -56,11 +56,13 @@ class ReturnCard(QtWidgets.QMainWindow):
         self.ui.action_close.triggered.connect(self.close_return_card)
         self.ui.action_return_card.triggered.connect(self.return_card)
         self.ui.action_open_medical_record.triggered.connect(self.open_medical_record)
+        self.ui.action_undo.triggered.connect(self._undo_return_card)
         self.ui.tableWidget_return_card.doubleClicked.connect(self.open_medical_record)
+        self.ui.tableWidget_return_card.itemSelectionChanged.connect(self._return_card_item_changed)
 
     # 設定欄位寬度
     def _set_table_width(self):
-        width = [80, 80, 80, 80, 120, 130, 150, 180, 180, 60, 80, 40, 100, 100, 80, 70]
+        width = [80, 80, 80, 80, 130, 130, 150, 200, 200, 60, 80, 40, 100, 100, 80, 70]
         self.table_widget_return_card.set_table_heading_width(width)
 
     # 讀取欠卡資料
@@ -80,30 +82,43 @@ class ReturnCard(QtWidgets.QMainWindow):
             WHERE DepositDate >= "{0}"
             ORDER BY DepositDate DESC
         '''.format(return_date)
-        self.table_widget_return_card.set_db_data(sql, self._set_table_data)
+        self.table_widget_return_card.set_db_data(sql, self._set_deposit_data)
+        self._set_tool_buttons()
+        self._return_card_item_changed()
 
-    def _set_table_data(self, row_no, row_data):
-        if string_utils.xstr(row_data['DoctorDone']) == 'True':
+    def _set_tool_buttons(self):
+
+        if self.ui.tableWidget_return_card.rowCount() <= 0:
+            enabled = False
+        else:
+            enabled = True
+
+        self.ui.action_open_medical_record.setEnabled(enabled)
+        self.ui.action_return_card.setEnabled(enabled)
+        self.ui.action_undo.setEnabled(enabled)
+
+    def _set_deposit_data(self, row_no, row):
+        if string_utils.xstr(row['DoctorDone']) == 'True':
             doctor_done = '是'
         else:
             doctor_done = '否'
 
         return_card_data = [
-            string_utils.xstr(row_data['DepositKey']),
-            string_utils.xstr(row_data['CaseKey']),
-            string_utils.xstr(row_data['PatientKey']),
-            string_utils.xstr(row_data['Name']),
-            string_utils.xstr(row_data['Birthday']),
-            string_utils.xstr(row_data['ID']),
-            string_utils.xstr(row_data['CardNo']),
-            string_utils.xstr(row_data['DepositDate']),
-            string_utils.xstr(row_data['ReturnDate']),
-            string_utils.xstr(row_data['Period']),
-            string_utils.xstr(row_data['Card']),
-            string_utils.xstr(row_data['Continuance']),
-            string_utils.xstr(row_data['Register']),
-            string_utils.xstr(row_data['Refunder']),
-            string_utils.xstr(row_data['Fee']),
+            string_utils.xstr(row['DepositKey']),
+            string_utils.xstr(row['CaseKey']),
+            string_utils.xstr(row['PatientKey']),
+            string_utils.xstr(row['Name']),
+            string_utils.xstr(row['Birthday']),
+            string_utils.xstr(row['ID']),
+            string_utils.xstr(row['CardNo']),
+            string_utils.xstr(row['DepositDate']),
+            string_utils.xstr(row['ReturnDate']),
+            string_utils.xstr(row['Period']),
+            string_utils.xstr(row['Card']),
+            string_utils.xstr(row['Continuance']),
+            string_utils.xstr(row['Register']),
+            string_utils.xstr(row['Refunder']),
+            string_utils.xstr(row['Fee']),
             doctor_done,
         ]
 
@@ -136,7 +151,9 @@ class ReturnCard(QtWidgets.QMainWindow):
         '''.format(self.table_widget_return_card.field_value(0))
         row = self.database.select_record(sql)
         if len(row) > 0:
-            self._set_table_data(self.ui.tableWidget_return_card.currentRow(), row[0])
+            self._set_deposit_data(self.ui.tableWidget_return_card.currentRow(), row[0])
+
+        self._return_card_item_changed()
 
     # 還卡
     def return_card(self):
@@ -172,3 +189,53 @@ class ReturnCard(QtWidgets.QMainWindow):
     def open_medical_record(self):
         case_key = self.table_widget_return_card.field_value(1)
         self.parent.open_medical_record(case_key, '欠還卡作業')
+
+    def _undo_return_card(self):
+        msg_box = QMessageBox()
+        msg_box.setIcon(QMessageBox.Question)
+        msg_box.setWindowTitle('還原成欠卡')
+        msg_box.setText(
+            '''
+            <font size="4" color="red">
+              <b>將已還卡資料還原成欠卡狀態?<br>
+            </font>
+            '''
+        )
+        msg_box.setInformativeText("若已經執行IC卡還卡，則會產生新的健保卡序!")
+        msg_box.addButton(QPushButton("還原"), QMessageBox.YesRole)
+        msg_box.addButton(QPushButton("取消"), QMessageBox.NoRole)
+        cancel = msg_box.exec_()
+        if cancel:
+            return
+
+        self.refresh_record()
+        deposit_key = self.table_widget_return_card.field_value(0)
+        case_key = self.table_widget_return_card.field_value(1)
+
+        sql = '''
+            UPDATE deposit
+            SET
+                ReturnDate = NULL, Period = NULL, Refunder = NULL
+            WHERE
+                DepositKey = {deposit_key}
+        '''.format(
+            deposit_key=deposit_key,
+        )
+        self.database.exec_sql(sql)
+
+        sql = 'UPDATE cases SET Card = "欠卡" WHERE CaseKey = {0}'.format(case_key)
+        self.database.exec_sql(sql)
+
+        self.refresh_record()
+
+    def _return_card_item_changed(self):
+        return_date = self.table_widget_return_card.field_value(8)
+
+        if return_date == '':
+            enabled = False
+        else:
+            enabled = True
+
+        self.ui.action_return_card.setEnabled(not enabled)
+        self.ui.action_undo.setEnabled(enabled)
+

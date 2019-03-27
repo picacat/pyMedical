@@ -15,9 +15,11 @@ from medical_record import *
 
 from charge_settings import *
 from users import *
+from doctor_schedule import *
 from doctor_nurse_table import *
 from dict_diagnostic import *
 from dict_medicine import *
+from dict_ins_drug import *
 
 from medical_record_list import *
 from patient import *
@@ -48,10 +50,12 @@ module_dict = {
     '病歷統計': Template,
 
     '收費設定': ChargeSettings,
+    '醫師班表': DoctorSchedule,
     '護士跟診表': DoctorNurseTable,
     '使用者管理': Users,
     '診察資料': DictDiagnostic,
     '處方資料': DictMedicine,
+    '健保藥品': DictInsDrug,
 
     '病歷查詢': MedicalRecordList,
     '病患資料': Patient,

@@ -243,7 +243,7 @@ class InsCheckApplyFee(QtWidgets.QMainWindow):
             if (total_fee - share_fee) != apply_fee:
                 error_message.append('申報金額不平衡: 自身加總有誤')
             if apply_fee <= 0:
-                error_message.append('無申報申報金額')
+                error_message.append('無申報金額')
 
             result = self._parse_pdata(ddata)
             if result['diag_fee'] != diag_fee:

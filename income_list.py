@@ -55,8 +55,7 @@ class IncomeList(QtWidgets.QMainWindow):
 
     # 設定信號
     def _set_signal(self):
-        pass
-        #self.ui.tableWidget_income.doubleClicked.connect(self.open_medical_record)
+        self.ui.tableWidget_income.doubleClicked.connect(self.open_medical_record)
 
     # 設定欄位寬度
     def _set_table_width(self):
@@ -78,11 +77,13 @@ class IncomeList(QtWidgets.QMainWindow):
         self._merge_table_charge()
         self._calculate_total_income()
 
-    def _table_widget_income_patient_key_exists(self, patient_key):
+    def _table_widget_income_patient_key_exists(self, patient_key, ins_type):
         row_no_exists = None
         for row_no in range(self.ui.tableWidget_income.rowCount()):
             patient_key_item = self.ui.tableWidget_income.item(row_no, 3)
-            if patient_key_item is not None and patient_key_item.text() == patient_key:
+            ins_type_item = self.ui.tableWidget_income.item(row_no, 5)
+            if (patient_key_item is not None and patient_key_item.text() == patient_key and
+                    ins_type_item is not None and ins_type_item.text() == ins_type):
                 row_no_exists = row_no
                 break
 
@@ -91,11 +92,12 @@ class IncomeList(QtWidgets.QMainWindow):
     def _merge_table_registration(self):
         for row_no in range(self.tableWidget_registration.rowCount()):
             patient_key = self.tableWidget_registration.item(row_no, 3).text()
+            ins_type = self.tableWidget_registration.item(row_no, 5).text()
             if patient_key == '':  # at end
                 break
 
-            row_no_exists = self._table_widget_income_patient_key_exists(patient_key)
-            if row_no_exists is None:
+            row_no_exists = self._table_widget_income_patient_key_exists(patient_key, ins_type)
+            if row_no_exists is None:  # 不存在
                 self._append_registration_item(row_no)
             else:
                 self._insert_registration_item(row_no_exists, row_no)
@@ -118,8 +120,8 @@ class IncomeList(QtWidgets.QMainWindow):
             [14, self.tableWidget_registration.item(registration_row_no, 12)], # 還卡費
             [15, self.tableWidget_registration.item(registration_row_no, 14)], # 自費還款
             [18, self.tableWidget_registration.item(registration_row_no, 13)], # 掛號欠款
-            # [19, self.tableWidget_registration.item(registration_row_no, 15)],
 
+            [20, self.tableWidget_registration.item(registration_row_no, 16)], # 掛號者
         ]
 
         row_no = self.ui.tableWidget_income.rowCount()
@@ -147,12 +149,14 @@ class IncomeList(QtWidgets.QMainWindow):
             [13, self.tableWidget_registration.item(registration_row_no, 11)], # 欠卡費
             [14, self.tableWidget_registration.item(registration_row_no, 12)], # 還卡費
             [15, self.tableWidget_registration.item(registration_row_no, 14)], # 自費還款
-            [18, self.tableWidget_registration.item(registration_row_no, 13)], # 自費還款
+            [18, self.tableWidget_registration.item(registration_row_no, 13)], # 掛號欠款
+
+            [20, self.tableWidget_registration.item(registration_row_no, 16)], # 掛號者
 
         ]
 
         for cell in cell_data:
-            if self.ui.tableWidget_income.item(income_row_no, cell[0]).text() != '':
+            if self.ui.tableWidget_income.item(income_row_no, cell[0]).text() != '0':
                 continue
 
             self.ui.tableWidget_income.setItem(
@@ -163,10 +167,11 @@ class IncomeList(QtWidgets.QMainWindow):
     def _merge_table_charge(self):
         for row_no in range(self.tableWidget_charge.rowCount()):
             patient_key = self.tableWidget_charge.item(row_no, 3).text()
+            ins_type = self.tableWidget_charge.item(row_no, 5).text()
             if patient_key == '':  # at end
                 break
 
-            row_no_exists = self._table_widget_income_patient_key_exists(patient_key)
+            row_no_exists = self._table_widget_income_patient_key_exists(patient_key, ins_type)
             if row_no_exists is None:
                 self._append_charge_item(row_no)
             else:
@@ -185,12 +190,12 @@ class IncomeList(QtWidgets.QMainWindow):
             [8, self.tableWidget_charge.item(charge_row_no, 8)],
             [9, self.tableWidget_charge.item(charge_row_no, 9)],
 
-            [12, self.tableWidget_charge.item(charge_row_no, 11)],
-            [16, self.tableWidget_charge.item(charge_row_no, 12)],
-            [17, self.tableWidget_charge.item(charge_row_no, 13)],
-            #
-            # [19, self.tableWidget_charge.item(charge_row_no, 15)],
+            [12, self.tableWidget_charge.item(charge_row_no, 11)],  # 藥品負擔
+            [16, self.tableWidget_charge.item(charge_row_no, 12)],  # 自費應收
+            [17, self.tableWidget_charge.item(charge_row_no, 14)],  # 自費欠款
+            [19, self.tableWidget_charge.item(charge_row_no, 15)],  # 實收現金
 
+            [21, self.tableWidget_charge.item(charge_row_no, 16)],  # 批價員
         ]
 
         row_no = self.ui.tableWidget_income.rowCount()
@@ -214,12 +219,12 @@ class IncomeList(QtWidgets.QMainWindow):
             [8, self.tableWidget_charge.item(charge_row_no, 8)],
             [9, self.tableWidget_charge.item(charge_row_no, 9)],
 
-            [12, self.tableWidget_charge.item(charge_row_no, 11)],
-            [16, self.tableWidget_charge.item(charge_row_no, 12)],
-            [17, self.tableWidget_charge.item(charge_row_no, 13)],
-            #
-            # [20, self.tableWidget_charge.item(charge_row_no, 15)],
+            [12, self.tableWidget_charge.item(charge_row_no, 11)],  # 藥品負擔
+            [16, self.tableWidget_charge.item(charge_row_no, 12)],  # 自費應收
+            [17, self.tableWidget_charge.item(charge_row_no, 14)],  # 自費欠款
+            [19, self.tableWidget_charge.item(charge_row_no, 15)],  # 實收現金
 
+            [21, self.tableWidget_charge.item(charge_row_no, 16)],  # 批價員
         ]
 
         for cell in cell_data:
@@ -268,7 +273,7 @@ class IncomeList(QtWidgets.QMainWindow):
     def _calculate_total(self):
         row_count = self.ui.tableWidget_income.rowCount()
         regist_fee, diag_share_fee, drug_share_fee, deposit_fee, refund_fee = 0, 0, 0, 0, 0
-        repayment, total_fee, debt_fee, subtotal = 0, 0, 0, 0
+        repayment, total_fee, debt_fee, regist_debt, subtotal = 0, 0, 0, 0, 0
 
         for row_no in range(row_count):
             regist_fee += number_utils.get_integer(self.ui.tableWidget_income.item(row_no, 10).text())
@@ -279,7 +284,8 @@ class IncomeList(QtWidgets.QMainWindow):
             repayment += number_utils.get_integer(self.ui.tableWidget_income.item(row_no, 15).text())
             total_fee += number_utils.get_integer(self.ui.tableWidget_income.item(row_no, 16).text())
             debt_fee += number_utils.get_integer(self.ui.tableWidget_income.item(row_no, 17).text())
-            subtotal += number_utils.get_integer(self.ui.tableWidget_income.item(row_no, 18).text())
+            regist_debt += number_utils.get_integer(self.ui.tableWidget_income.item(row_no, 18).text())
+            subtotal += number_utils.get_integer(self.ui.tableWidget_income.item(row_no, 19).text())
 
         total_record = [
             None, None, None, None,
@@ -293,6 +299,7 @@ class IncomeList(QtWidgets.QMainWindow):
             string_utils.xstr(repayment),
             string_utils.xstr(total_fee),
             string_utils.xstr(debt_fee),
+            string_utils.xstr(regist_debt),
             string_utils.xstr(subtotal),
         ]
 
@@ -305,7 +312,7 @@ class IncomeList(QtWidgets.QMainWindow):
                 row_count, col_no,
                 QtWidgets.QTableWidgetItem(total_record[col_no])
             )
-            if col_no in [10, 11, 12, 13, 14, 15, 16, 17, 18]:
+            if col_no in [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]:
                 self.ui.tableWidget_income.item(
                     row_count, col_no).setTextAlignment(
                     QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter

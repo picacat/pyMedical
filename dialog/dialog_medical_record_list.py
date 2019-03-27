@@ -4,6 +4,8 @@
 
 from PyQt5 import QtWidgets
 import datetime
+import re
+
 from libs import ui_utils
 from libs import system_utils
 from libs import nhi_utils
@@ -48,9 +50,13 @@ class DialogMedicalRecordList(QtWidgets.QDialog):
     # 設定信號
     def _set_signal(self):
         self.ui.buttonBox.accepted.connect(self.accepted_button_clicked)
-        self.ui.radioButton_1.clicked.connect(self._set_patient)
-        self.ui.radioButton_2.clicked.connect(self._set_patient)
-        self.ui.toolButton_select_patient.clicked.connect(self._select_patient)
+        self.ui.toolButton_select_patient.clicked.connect(lambda: self._select_patient(None))
+
+        self.ui.radioButton_range_date.clicked.connect(self._set_date)
+        self.ui.radioButton_all_date.clicked.connect(self._set_date)
+
+        self.ui.radioButton_all_patient.clicked.connect(self._set_patient)
+        self.ui.radioButton_assigned_patient.clicked.connect(self._set_patient)
 
     # 設定comboBox
     def _set_combo_box(self):
@@ -69,7 +75,7 @@ class DialogMedicalRecordList(QtWidgets.QDialog):
         ui_utils.set_combo_box(self.ui.comboBox_room, nhi_utils.ROOM, '全部')
 
     def _set_patient(self):
-        if self.ui.radioButton_1.isChecked():
+        if self.ui.radioButton_all_patient.isChecked():
             self.ui.lineEdit_patient_key.setText('')
             enabled = False
         else:
@@ -79,11 +85,30 @@ class DialogMedicalRecordList(QtWidgets.QDialog):
         self.ui.lineEdit_patient_key.setEnabled(enabled)
         self.ui.toolButton_select_patient.setEnabled(enabled)
 
+    def _set_date(self):
+        if self.ui.radioButton_all_date.isChecked():
+            enabled = False
+            self.ui.radioButton_assigned_patient.setChecked(True)
+            self._set_patient()
+            self.ui.lineEdit_patient_key.setFocus()
+        else:
+            enabled = True
+            self.ui.radioButton_all_patient.setChecked(True)
+            self._set_patient()
+
+        self.ui.label_date.setEnabled(enabled)
+        self.ui.label_between.setEnabled(enabled)
+        self.ui.label_period.setEnabled(enabled)
+        self.ui.dateEdit_start_date.setEnabled(enabled)
+        self.ui.dateEdit_end_date.setEnabled(enabled)
+        self.ui.comboBox_period.setEnabled(enabled)
+
     # 設定 mysql script
     def get_sql(self):
         start_date = self.ui.dateEdit_start_date.date().toString('yyyy-MM-dd 00:00:00')
         end_date = self.ui.dateEdit_end_date.date().toString('yyyy-MM-dd 23:59:59')
 
+        condition = []
         script = '''
             SELECT 
                 CaseKey, DATE_FORMAT(CaseDate, '%Y-%m-%d %H:%i') AS CaseDate, DoctorDate, ChargeDate, 
@@ -95,42 +120,68 @@ class DialogMedicalRecordList(QtWidgets.QDialog):
                 TotalFee, patient.Gender, patient.Birthday
             FROM cases
                 LEFT JOIN patient ON patient.PatientKey = cases.PatientKey
-            WHERE
-                (CaseDate BETWEEN "{0}" AND "{1}")
-            '''.format(start_date, end_date)
+        '''
+
+        if self.ui.radioButton_range_date.isChecked():
+            condition.append('(CaseDate BETWEEN "{0}" AND "{1}")'.format(start_date, end_date))
 
         ins_type = self.ui.comboBox_ins_type.currentText()
         if ins_type != '全部':
-            script += " AND cases.InsType = '{0}'".format(ins_type)
+            condition.append('cases.InsType = "{0}"'.format(ins_type))
 
         apply_type = self.ui.comboBox_apply_type.currentText()
         if apply_type != '全部':
-            script += " AND ApplyType = '{0}'".format(apply_type)
+            condition.append('ApplyType = "{0}"'.format(apply_type))
 
         treat_type = self.ui.comboBox_treat_type.currentText()
         if treat_type != '全部':
-            script += " AND TreatType = '{0}'".format(treat_type)
+            condition.append('TreatType = "{0}"'.format(treat_type))
 
         share_type = self.ui.comboBox_share_type.currentText()
         if share_type != '全部':
-            script += " AND Share = '{0}'".format(share_type)
+            condition.append('Share = "{0}"'.format(share_type))
 
         period = self.ui.comboBox_period.currentText()
         if period != '全部':
-            script += " AND Period = '{0}'".format(period)
+            condition.append('Period = "{0}"'.format(period))
 
         room = self.ui.comboBox_room.currentText()
         if room != '全部':
-            script += " AND Room = {0}".format(room)
+            condition.append('Room = {0}'.format(room))
 
         doctor = self.ui.comboBox_doctor.currentText()
         if doctor != '全部':
-            script += " AND Doctor = '{0}'".format(doctor)
+            condition.append('Doctor = "{0}"'.format(doctor))
 
-        patient_key = self.ui.lineEdit_patient_key.text()
+        keyword = self.ui.lineEdit_patient_key.text()
+        if keyword != '':
+            if keyword.isdigit() and len(keyword) < 7:
+                condition.append('cases.PatientKey = {0}'.format(keyword))
+            else:
+                sql = '''
+                    SELECT PatientKey FROM patient
+                    WHERE
+                        Birthday = "{0}" OR
+                        Name LIKE "%{0}%" OR
+                        ID LIKE "{0}%" OR
+                        Telephone LIKE "%{0}%" OR
+                        Cellphone LIKE "{0}%" OR
+                        Address LIKE "%{0}%"
+                '''.format(keyword)
+                rows = self.database.select_record(sql)
+                if len(rows) == 1:
+                    patient_key = rows[0]['PatientKey']
+                else:
+                    self._select_patient(keyword)
+                    patient_key = self.ui.lineEdit_patient_key.text()
 
-        if patient_key != '':
-            script += " AND cases.PatientKey = {0}".format(patient_key)
+                if patient_key != '':
+                    condition.append('cases.PatientKey = {0}'.format(patient_key))
+
+        if len(condition) > 0:
+            script += 'WHERE {condition}'.format(
+                condition=' AND '.join(condition),
+            )
 
         script += " ORDER BY CaseDate, cases.Room, cases.RegistNo"
 
@@ -139,12 +190,14 @@ class DialogMedicalRecordList(QtWidgets.QDialog):
     def accepted_button_clicked(self):
         pass
 
-    def _select_patient(self):
+    def _select_patient(self, keyword=None):
         patient_key = ''
-        dialog = dialog_select_patient.DialogSelectPatient(self, self.database, self.system_settings)
+
+        dialog = dialog_select_patient.DialogSelectPatient(self, self.database, self.system_settings, keyword)
         if dialog.exec_():
             patient_key = dialog.get_patient_key()
 
         self.ui.lineEdit_patient_key.setText(patient_key)
 
         dialog.deleteLater()
+

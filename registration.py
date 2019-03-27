@@ -115,6 +115,7 @@ class Registration(QtWidgets.QMainWindow):
         self.ui.comboBox_treat_type.currentIndexChanged.connect(self._selection_changed)
         self.ui.comboBox_card.currentTextChanged.connect(self._selection_changed)
         self.ui.comboBox_course.currentIndexChanged.connect(self._selection_changed)
+        self.ui.comboBox_doctor.currentIndexChanged.connect(self._selection_changed)
         self.ui.comboBox_massager.currentIndexChanged.connect(self._selection_changed)
         self.ui.comboBox_period.currentIndexChanged.connect(self._selection_changed)
         self.ui.comboBox_room.currentIndexChanged.connect(self._selection_changed)
@@ -232,11 +233,11 @@ class Registration(QtWidgets.QMainWindow):
         self.parent.open_patient_record(patient_key, '門診掛號')
 
     def _set_table_width(self):
-        width = [100, 100, 70, 90, 45, 50, 80, 80, 80, 65, 80, 45, 30, 50, 80]
+        width = [100, 100, 70, 90, 50, 45, 50, 80, 80, 80, 65, 80, 45, 30, 80, 80]
         self.table_widget_wait.set_table_heading_width(width)
         width = [
             100, 100, 70, 90, 45, 50, 80, 80, 65, 80, 45, 30, 50, 60,
-            80, 80, 80, 80
+            80, 80, 80, 80, 200,
         ]
         self.table_widget_wait_completed.set_table_heading_width(width)
 
@@ -248,7 +249,7 @@ class Registration(QtWidgets.QMainWindow):
             DoctorDone = "False"
             ORDER BY RegistNo
         '''
-        self.table_widget_wait.set_db_data(sql, self._set_table_data)
+        self.table_widget_wait.set_db_data(sql, self._set_wait_data)
         row_count = self.table_widget_wait.row_count()
 
         if row_count > 0:
@@ -256,44 +257,45 @@ class Registration(QtWidgets.QMainWindow):
         else:
             self._set_wait_tool_button(False)
 
-    def _set_table_data(self, rec_no, rec):
-        wait_rec = [
-            string_utils.xstr(rec['WaitKey']),
-            string_utils.xstr(rec['CaseKey']),
-            string_utils.xstr(rec['PatientKey']),
-            string_utils.xstr(rec['Name']),
-            string_utils.xstr(rec['Gender']),
-            string_utils.xstr(rec['InsType']),
-            string_utils.xstr(rec['RegistType']),
-            string_utils.xstr(rec['Share']),
-            string_utils.xstr(rec['TreatType']),
-            string_utils.xstr(rec['Visit']),
-            string_utils.xstr(rec['Card']),
-            string_utils.int_to_str(rec['Continuance']).strip('0'),
-            string_utils.xstr(rec['Room']),
-            string_utils.xstr(rec['RegistNo']),
-            string_utils.xstr(rec['Massager']),
+    def _set_wait_data(self, row_no, row):
+        wait_row = [
+            string_utils.xstr(row['WaitKey']),
+            string_utils.xstr(row['CaseKey']),
+            string_utils.xstr(row['PatientKey']),
+            string_utils.xstr(row['Name']),
+            string_utils.xstr(row['RegistNo']),
+            string_utils.xstr(row['Gender']),
+            string_utils.xstr(row['InsType']),
+            string_utils.xstr(row['RegistType']),
+            string_utils.xstr(row['Share']),
+            string_utils.xstr(row['TreatType']),
+            string_utils.xstr(row['Visit']),
+            string_utils.xstr(row['Card']),
+            string_utils.int_to_str(row['Continuance']).strip('0'),
+            string_utils.xstr(row['Room']),
+            string_utils.xstr(row['Doctor']),
+            string_utils.xstr(row['Massager']),
         ]
 
-        for column in range(len(wait_rec)):
+        for column in range(len(wait_row)):
             self.ui.tableWidget_wait.setItem(
-                rec_no, column,
-                QtWidgets.QTableWidgetItem(wait_rec[column])
+                row_no, column,
+                QtWidgets.QTableWidgetItem(wait_row[column])
             )
-            if column in [2, 11, 12, 13]:
+            if column in [2, 4, 12, 13]:
                 self.ui.tableWidget_wait.item(
-                    rec_no, column).setTextAlignment(
+                    row_no, column).setTextAlignment(
                     QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
                 )
-            elif column in [4, 9]:
+            elif column in [4, 5, 10]:
                 self.ui.tableWidget_wait.item(
-                    rec_no, column).setTextAlignment(
+                    row_no, column).setTextAlignment(
                     QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
                 )
 
-            if rec['InsType'] == '自費':
+            if row['InsType'] == '自費':
                 self.ui.tableWidget_wait.item(
-                    rec_no, column).setForeground(
+                    row_no, column).setForeground(
                     QtGui.QColor('blue')
                 )
 
@@ -327,6 +329,9 @@ class Registration(QtWidgets.QMainWindow):
             self.ui.groupBox_patient.setTitle('病患資料')
 
         self.ui.action_ic_card.setEnabled(enabled)
+        if self.system_settings.field('使用讀卡機') == 'N':
+            self.ui.action_ic_card.setEnabled(False)
+
         self.ui.action_new_patient.setEnabled(enabled)
         self.ui.action_reservation.setEnabled(enabled)
         self.ui.action_cancel.setEnabled(not enabled)
@@ -367,7 +372,9 @@ class Registration(QtWidgets.QMainWindow):
         self.ui.comboBox_treat_type.setCurrentIndex(0)
         self.ui.comboBox_card.setCurrentIndex(0)
         self.ui.comboBox_course.setCurrentIndex(0)
+        self.ui.comboBox_doctor.setCurrentIndex(0)
         self.ui.comboBox_massager.setCurrentIndex(0)
+        self.ui.spinBox_reg_no.setValue(0)
         self.ui.comboBox_room.setCurrentIndex(0)
         self.ui.lineEdit_regist_fee.clear()
         self.ui.lineEdit_diag_share_fee.clear()
@@ -393,6 +400,9 @@ class Registration(QtWidgets.QMainWindow):
         ui_utils.set_combo_box(self.ui.comboBox_period, nhi_utils.PERIOD)
         ui_utils.set_combo_box(self.ui.comboBox_room, nhi_utils.ROOM)
         ui_utils.set_combo_box(self.ui.comboBox_gender, nhi_utils.GENDER, None)
+        ui_utils.set_combo_box(
+            self.ui.comboBox_doctor,
+            personnel_utils.get_personnel(self.database, '醫師'), None)
         ui_utils.set_combo_box(
             self.ui.comboBox_massager,
             personnel_utils.get_personnel(self.database, '推拿師父'), None)
@@ -443,14 +453,16 @@ class Registration(QtWidgets.QMainWindow):
                 self.ui.comboBox_card_abnormal.setEnabled(False)
         elif sender_name == 'comboBox_massager':
             self._set_charge()
-        elif ((sender_name == 'comboBox_period' or sender_name == 'comboBox_room') and
-              (self.ui.action_save.text() == '掛號存檔')):
+        elif (sender_name in ['comboBox_period', 'comboBox_room'] and
+              self.ui.action_save.text() == '掛號存檔'):
             period = self.ui.comboBox_period.currentText()
             room = self.ui.comboBox_room.currentText()
-            reg_no = registration_utils.get_reg_no(
-                self.database, self.system_settings, room, period, self.reserve_key,
-            )  # 取得診號
-            self.ui.spinBox_reg_no.setValue(int(reg_no))
+            doctor = self.ui.comboBox_doctor.currentText()
+            if self.ui.spinBox_reg_no.value() == 0:
+                reg_no = registration_utils.get_reg_no(
+                    self.database, self.system_settings, room, doctor, period, self.reserve_key,
+                )  # 取得診號
+                self.ui.spinBox_reg_no.setValue(int(reg_no))
         elif sender_name == 'lineEdit_regist_fee':
             self._set_total_amount()
         elif sender_name == 'lineEdit_diag_share_fee':
@@ -535,6 +547,18 @@ class Registration(QtWidgets.QMainWindow):
         if self.ui.comboBox_ins_type.currentText() == '健保':  # 健保才自動連續療程
             self._completion_course(patient_key)
 
+            card = string_utils.xstr(self.ui.comboBox_card.currentText()).split(' ')[0]
+            course = self.ui.comboBox_course.currentText()
+            message = registration_utils.check_course_complete_in_two_weeks(
+                self.database, patient_key, card, course)
+            if message is not None:
+                system_utils.show_message_box(
+                    QMessageBox.Warning,
+                    '療程超過14日未完成',
+                    '<font size="4" color="red"><b>{0}</b></font>'.format(message),
+                    '請確定是否繼續此療程.'
+                )
+
         self._set_charge()
         self._show_past_history(patient_key)
 
@@ -552,6 +576,7 @@ class Registration(QtWidgets.QMainWindow):
             SELECT * FROM reserve
             WHERE
                 ReserveDate BETWEEN "{0}" AND "{1}" AND
+                Arrival = "False" AND
                 PatientKey = {2}
         '''.format(
             start_date, end_date, patient_key
@@ -586,7 +611,7 @@ class Registration(QtWidgets.QMainWindow):
         today = datetime.date.today()
         last_treat_date = (today - datetime.timedelta(days=30)).strftime('%Y-%m-%d 00:00:00')
         sql = '''
-            SELECT Card, Continuance, XCard FROM cases WHERE
+            SELECT TreatType, Card, Continuance, XCard FROM cases WHERE
             (CaseDate >= "{0}") AND
             (PatientKey = {1}) AND
             (InsType = "健保") AND
@@ -604,6 +629,8 @@ class Registration(QtWidgets.QMainWindow):
         course = str(row['Continuance'] + 1)  # 療程自動續1次
         self.ui.comboBox_card.setCurrentText(row['Card'])
         self.ui.comboBox_course.setCurrentText(course)
+
+        self.ui.comboBox_treat_type.setCurrentText(string_utils.xstr(row['TreatType']))
 
         # xcard = string_utils.xstr(row['XCard'])
         # if xcard in nhi_utils.ABNORMAL_CARD:
@@ -731,9 +758,12 @@ class Registration(QtWidgets.QMainWindow):
             share_type = self.ui.comboBox_patient_share.currentText()
             room = self.system_settings.field('診療室')  # 取得預設診療室
             period = registration_utils.get_period(self.system_settings)
-            reg_no = registration_utils.get_reg_no(
-                self.database, self.system_settings, room, period, self.reserve_key,
-            )  # 取得診號
+            doctor = self._get_doctor_schedule(room, period)  # 醫師要先取得，以便確定是否佔用預約號
+            if self.ui.spinBox_reg_no.value() == 0:
+                reg_no = registration_utils.get_reg_no(
+                    self.database, self.system_settings, room, doctor, period, self.reserve_key,
+                )  # 取得診號  (已在room, doctor, period on changed時取得, 不需要重複再取)
+                self.ui.spinBox_reg_no.setValue(reg_no)
             massager = None
             remark = None
         else:  # 掛號修正
@@ -744,10 +774,14 @@ class Registration(QtWidgets.QMainWindow):
             ins_type = medical_record['InsType']
             share_type = medical_record['Share']
             room = str(medical_record['Room'])
+
             reg_no = medical_record['RegistNo']
+            self.ui.spinBox_reg_no.setValue(reg_no)
+
             period = medical_record['Period']
             card = medical_record['Card']
             course = str(medical_record['Continuance'])
+            doctor = self.table_widget_wait.field_value(14)
             massager = medical_record['Massager']
             remark = string_utils.get_str(medical_record['Remark'], 'utf8')
 
@@ -759,17 +793,48 @@ class Registration(QtWidgets.QMainWindow):
         self.ui.comboBox_course.setCurrentText(course)
         self.ui.comboBox_ins_type.setCurrentText(ins_type)
         self.ui.comboBox_share_type.setCurrentText(share_type)
+        self.ui.comboBox_doctor.setCurrentText(doctor)
         self.ui.comboBox_room.setCurrentText(room)
-        self.ui.spinBox_reg_no.setValue(reg_no)
         self.ui.comboBox_period.setCurrentText(period)
         self.ui.comboBox_massager.setCurrentText(massager)
         self.ui.comboBox_remark.setCurrentText(remark)
+
+    # Monday=0, Tuesday=1...Sunday=6
+    def _get_doctor_schedule(self, room, period):
+        sql = '''
+            SELECT * FROM doctor_schedule
+            WHERE
+                Room = {room} AND
+                Period = "{period}" 
+        '''.format(
+            room=room,
+            period=period,
+        )
+        rows = self.database.select_record(sql)
+        if len(rows) <= 0:
+            return None
+
+        row = rows[0]
+        doctor_list = [
+            string_utils.xstr(row['Monday']),
+            string_utils.xstr(row['Tuesday']),
+            string_utils.xstr(row['Wednesday']),
+            string_utils.xstr(row['Thursday']),
+            string_utils.xstr(row['Friday']),
+            string_utils.xstr(row['Saturday']),
+            string_utils.xstr(row['Sunday']),
+        ]
+
+        today = datetime.datetime.now().weekday()
+
+        return doctor_list[today]
 
     # 設定收費資料
     def _set_charge(self, medical_record=None):
         if medical_record is None:
             regist_fee = charge_utils.get_regist_fee(
-                self.database,
+                self.database, self.system_settings,
+                self.ui.lineEdit_birthday.text(),
                 self.ui.comboBox_patient_discount.currentText(),
                 self.ui.comboBox_ins_type.currentText(),
                 self.ui.comboBox_share_type.currentText(),
@@ -951,6 +1016,15 @@ class Registration(QtWidgets.QMainWindow):
 
     # 掛號存檔/修正存檔
     def _save_files(self):
+        if self.ui.comboBox_doctor.currentText() in [None, '']:
+            system_utils.show_message_box(
+                QMessageBox.Critical,
+                '醫師欄位空白',
+                '<font size="4" color="red"><b>尚未選擇門診醫師, 請選擇門診醫師後再存檔.</b></font>',
+                '請確定醫師班表是否設定.'
+            )
+            return
+
         card = string_utils.xstr(self.ui.comboBox_card.currentText()).split(' ')[0]
 
         if not self._verify_registration_data(card):
@@ -961,7 +1035,6 @@ class Registration(QtWidgets.QMainWindow):
             pass
         elif not ic_card:  # 取得安全簽章失敗
             return
-
 
         self._save_patient()
         case_key = self._save_medical_record(ic_card)
@@ -1218,7 +1291,7 @@ class Registration(QtWidgets.QMainWindow):
     def insert_wait(self, case_key):
         fields = ['CaseKey', 'CaseDate', 'PatientKey', 'Name', 'Visit', 'RegistType',
                   'TreatType', 'Share', 'InsType', 'Card', 'Continuance', 'Period',
-                  'Room', 'RegistNo', 'Massager', 'Remark']
+                  'Room', 'RegistNo', 'Doctor', 'Massager', 'Remark']
         data = [
             case_key,
             string_utils.xstr(datetime.datetime.now()),
@@ -1234,6 +1307,7 @@ class Registration(QtWidgets.QMainWindow):
             self.ui.comboBox_period.currentText(),
             self.ui.comboBox_room.currentText(),
             self.ui.spinBox_reg_no.value(),
+            self.ui.comboBox_doctor.currentText(),
             self.ui.comboBox_massager.currentText(),
             self.ui.comboBox_remark.currentText(),
         ]
@@ -1296,11 +1370,14 @@ class Registration(QtWidgets.QMainWindow):
 
     # 修正病歷
     def _update_medical_record(self):
-        fields = ['Name', 'Visit', 'RegistType', 'Injury',
-                  'TreatType', 'Share', 'InsType', 'Card', 'Continuance', 'Period', 'XCard',
-                  'Room', 'RegistNo', 'Massager', 'Register',
-                  'ApplyType', 'PharmacyType',
-                  'RegistFee', 'DiagShareFee', 'SDiagShareFee', 'DepositFee', 'SMassageFee', 'Remark']
+        fields = [
+            'Name', 'Visit', 'RegistType', 'Injury',
+            'TreatType', 'Share', 'InsType', 'Card', 'Continuance', 'XCard', 'Period',
+            'Room', 'RegistNo', 'Massager', 'Register',
+            'ApplyType', 'PharmacyType',
+            'RegistFee', 'DiagShareFee', 'SDiagShareFee', 'DepositFee', 'SMassageFee', 'Remark'
+        ]
+
         diag_share_fee = charge_utils.get_diag_share_fee(
             self.database,
             self.ui.comboBox_share_type.currentText(),
@@ -1308,6 +1385,7 @@ class Registration(QtWidgets.QMainWindow):
             self.ui.comboBox_course.currentText())
         card = string_utils.xstr(self.ui.comboBox_card.currentText()).split(' ')[0]
         card_abnormal = string_utils.xstr(self.ui.comboBox_card_abnormal.currentText()).split(' ')[0]
+
         data = [
             self.ui.lineEdit_name.text(),
             self.ui.comboBox_visit.currentText(),
@@ -1333,6 +1411,7 @@ class Registration(QtWidgets.QMainWindow):
             self.ui.lineEdit_traditional_health_care_fee.text(),
             self.ui.comboBox_remark.currentText(),
         ]
+
         tab_name = self.ui.tabWidget_list.tabText(
             self.ui.tabWidget_list.currentIndex()
         )
@@ -1349,7 +1428,7 @@ class Registration(QtWidgets.QMainWindow):
     def update_wait(self, wait_key):
         fields = ['Name', 'Visit', 'RegistType',
                   'TreatType', 'Share', 'InsType', 'Card', 'Continuance', 'Period',
-                  'Room', 'RegistNo', 'Massager', 'Remark']
+                  'Room', 'RegistNo', 'Doctor', 'Massager', 'Remark']
 
         card = string_utils.xstr(self.ui.comboBox_card.currentText()).split(' ')[0]
         data = [
@@ -1364,6 +1443,7 @@ class Registration(QtWidgets.QMainWindow):
             self.ui.comboBox_period.currentText(),
             self.ui.comboBox_room.currentText(),
             self.ui.spinBox_reg_no.value(),
+            self.ui.comboBox_doctor.currentText(),
             self.ui.comboBox_massager.currentText(),
             self.ui.comboBox_remark.currentText()[:100],
         ]
@@ -1419,14 +1499,17 @@ class Registration(QtWidgets.QMainWindow):
             self._read_wait_completed()
 
     def _read_wait_completed(self):
+        sort = 'ORDER BY FIELD(cases.Period, "晚班", "午班", "早班"), cases.RegistNo DESC'
+
         sql = '''
-            SELECT wait.*, cases.*, patient.Gender FROM wait
+            SELECT wait.WaitKey, cases.*, patient.Gender FROM wait
             LEFT JOIN patient ON wait.PatientKey = patient.PatientKey
             LEFT JOIN cases ON wait.CaseKey = cases.CaseKey
             WHERE 
             cases.DoctorDone = "True"
-            ORDER BY cases.RegistNo DESC
         '''
+        sql += sort
+
         self.table_widget_wait_completed.set_db_data(sql, self._set_wait_completed_data)
         row_count = self.table_widget_wait_completed.row_count()
 
@@ -1466,6 +1549,7 @@ class Registration(QtWidgets.QMainWindow):
             string_utils.xstr(row['SDiagShareFee']),
             string_utils.xstr(row['DrugShareFee']),
             string_utils.xstr(row['TotalFee']),
+            string_utils.get_str(row['Remark'], 'utf8'),
         ]
 
         for column in range(len(wait_rec)):

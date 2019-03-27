@@ -231,6 +231,12 @@ class InsApplyGenerateFile(QtWidgets.QMainWindow):
         if case_type == 'B6':
             card = nhi_utils.OCCUPATIONAL_INJURY_CARD
 
+        message = []
+        if row['Birthday'] is None:
+            message.append('生日空白')
+        if row['ID'] is None:
+            message.append('身份證空白')
+
         fields = [
             'ClinicID', 'ApplyDate', 'ApplyPeriod', 'ApplyType', 'CaseType', 'Sequence',
             'SpecialCode1', 'SpecialCode2', 'SpecialCode3', 'SpecialCode4',
@@ -246,6 +252,7 @@ class InsApplyGenerateFile(QtWidgets.QMainWindow):
             'CaseKey4', 'TreatCode4', 'TreatFee4', 'Percent4',
             'CaseKey5', 'TreatCode5', 'TreatFee5', 'Percent5',
             'CaseKey6', 'TreatCode6', 'TreatFee6', 'Percent6',
+            'Message'
         ]
 
         data = [
@@ -318,6 +325,7 @@ class InsApplyGenerateFile(QtWidgets.QMainWindow):
             treat_records[5]['TreatCode'],
             treat_records[5]['TreatFee'],
             treat_records[5]['Percent'],
+            ', '.join(message),
         ]
 
         self.database.insert_record('insapply', fields, data)

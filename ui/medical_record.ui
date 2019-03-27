@@ -52,6 +52,9 @@
               </item>
               <item>
                <widget class="QToolButton" name="toolButton_symptom">
+                <property name="toolTip">
+                 <string>開啟主訴詞庫</string>
+                </property>
                 <property name="text">
                  <string>...</string>
                 </property>
@@ -78,6 +81,9 @@
             </item>
             <item>
              <widget class="QTextEdit" name="textEdit_symptom">
+              <property name="focusPolicy">
+               <enum>Qt::StrongFocus</enum>
+              </property>
               <property name="autoFillBackground">
                <bool>false</bool>
               </property>
@@ -94,6 +100,9 @@
               </item>
               <item>
                <widget class="QToolButton" name="toolButton_tongue">
+                <property name="toolTip">
+                 <string>開啟舌診詞庫</string>
+                </property>
                 <property name="text">
                  <string>...</string>
                 </property>
@@ -139,6 +148,9 @@
               </item>
               <item>
                <widget class="QToolButton" name="toolButton_pulse">
+                <property name="toolTip">
+                 <string>開啟脈象詞庫</string>
+                </property>
                 <property name="text">
                  <string>...</string>
                 </property>
@@ -184,6 +196,9 @@
               </item>
               <item>
                <widget class="QToolButton" name="toolButton_remark">
+                <property name="toolTip">
+                 <string>開啟備註詞庫</string>
+                </property>
                 <property name="text">
                  <string>...</string>
                 </property>
@@ -252,6 +267,9 @@
                </item>
                <item row="2" column="3">
                 <widget class="QToolButton" name="toolButton_disease3">
+                 <property name="toolTip">
+                  <string>開啟病名詞庫</string>
+                 </property>
                  <property name="text">
                   <string>...</string>
                  </property>
@@ -331,6 +349,9 @@
                </item>
                <item row="1" column="3">
                 <widget class="QToolButton" name="toolButton_disease2">
+                 <property name="toolTip">
+                  <string>開啟病名詞庫</string>
+                 </property>
                  <property name="text">
                   <string>...</string>
                  </property>
@@ -384,6 +405,9 @@
                </item>
                <item row="4" column="3">
                 <widget class="QToolButton" name="toolButton_cure">
+                 <property name="toolTip">
+                  <string>開啟治則詞庫</string>
+                 </property>
                  <property name="text">
                   <string>...</string>
                  </property>
@@ -412,6 +436,9 @@
                </item>
                <item row="0" column="3">
                 <widget class="QToolButton" name="toolButton_disease1">
+                 <property name="toolTip">
+                  <string>開啟病名詞庫</string>
+                 </property>
                  <property name="text">
                   <string>...</string>
                  </property>
@@ -433,6 +460,9 @@
                </item>
                <item row="3" column="3">
                 <widget class="QToolButton" name="toolButton_distincts">
+                 <property name="toolTip">
+                  <string>開啟辨證詞庫</string>
+                 </property>
                  <property name="text">
                   <string>...</string>
                  </property>
@@ -702,6 +732,9 @@
    <property name="windowTitle">
     <string>toolBar</string>
    </property>
+   <property name="toolTip">
+    <string/>
+   </property>
    <property name="toolButtonStyle">
     <enum>Qt::ToolButtonTextUnderIcon</enum>
    </property>
@@ -727,7 +760,7 @@
      <x>0</x>
      <y>0</y>
      <width>1243</width>
-     <height>26</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu">
@@ -746,7 +779,7 @@
     <string>存檔列印</string>
    </property>
    <property name="toolTip">
-    <string>存檔後列印各項單據</string>
+    <string>存檔後列印處方箋</string>
    </property>
    <property name="shortcut">
     <string>F11</string>
@@ -809,7 +842,7 @@
     <string>存檔不印</string>
    </property>
    <property name="toolTip">
-    <string>存檔後不列印單據</string>
+    <string>僅存檔, 不印任何的單據</string>
    </property>
    <property name="shortcut">
     <string>F10</string>

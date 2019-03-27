@@ -24,6 +24,9 @@ UI_MEDICAL_RECORD_RECENTLY_HISTORY = "medical_record_recently_history.ui"
 UI_MEDICAL_RECORD_REGISTRATION = "medical_record_registration.ui"
 UI_MEDICAL_RECORD_FEES = "medical_record_fees.ui"
 UI_MEDICAL_RECORD_LIST = "medical_record_list.ui"
+UI_MEDICAL_RECORD_FAMILY = "medical_record_family.ui"
+
+UI_SYSTEM_UPDATE = "system_update.ui"
 
 UI_PATIENT_LIST = "patient_list.ui"
 UI_PATIENT = "patient.ui"
@@ -54,6 +57,8 @@ UI_INS_APPLY_TOTAL_FEE = "ins_apply_total_fee.ui"
 UI_INS_CHECK_APPLY_FEE = "ins_check_apply_fee.ui"
 UI_INS_APPLY_SCHEDULE_TABLE = "ins_apply_schedule_table.ui"
 
+
+UI_DOCTOR_SCHEDULE = "doctor_schedule.ui"
 UI_DOCTOR_NURSE_TABLE = "doctor_nurse_table.ui"
 
 UI_CHECK_ERRORS = "check_errors.ui"
@@ -101,6 +106,7 @@ UI_DIALOG_PATIENT = "dialog_patient.ui"
 UI_DIALOG_PATIENT_LIST = "dialog_patient_list.ui"
 UI_DIALOG_SELECT_PATIENT = "dialog_select_patient.ui"
 
+UI_DIALOG_ADDRESS = "dialog_address.ui"
 UI_DIALOG_SETTINGS = "dialog_settings.ui"
 UI_DIALOG_SYMPTOM = "dialog_symptom.ui"
 UI_DIALOG_TONGUE = "dialog_tongue.ui"
@@ -121,6 +127,7 @@ UI_DIALOG_INS_CHECK = "dialog_ins_check.ui"
 UI_DIALOG_INS_APPLY = "dialog_ins_apply.ui"
 UI_DIALOG_INS_JUDGE = "dialog_ins_judge.ui"
 UI_DIALOG_INS_CARE = "dialog_ins_care.ui"
+UI_DIALOG_DOCTOR_SCHEDULE = "dialog_doctor_schedule.ui"
 UI_DIALOG_NURSE_SCHEDULE = "dialog_nurse_schedule.ui"
 UI_DIALOG_COURSE_LIST = "dialog_course_list.ui"
 
@@ -136,6 +143,8 @@ UI_DICT_MEDICINE = "dict_medicine.ui"
 UI_DICT_DRUG = "dict_drug.ui"
 UI_DICT_TREAT = "dict_treat.ui"
 UI_DICT_COMPOUND = "dict_compound.ui"
+
+UI_DICT_INS_DRUG = "dict_ins_drug.ui"
 
 UI_USERS = "users.ui"
 UI_CONVERT = "convert.ui"

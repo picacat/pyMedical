@@ -1,11 +1,15 @@
 # 取得各項費用金額
 
 from PyQt5.QtWidgets import QMessageBox, QPushButton
+
+import datetime
+
 from libs import number_utils
 from libs import string_utils
 from libs import nhi_utils
 from libs import case_utils
 from libs import prescript_utils
+from libs import date_utils
 
 
 # 基本掛號費
@@ -78,7 +82,8 @@ def _get_regist_discount_fee(database, discount_type):
 
 
 # 取得掛號費
-def get_regist_fee(database, discount_type, ins_type, share_type, treat_type, course=None):
+def get_regist_fee(database, system_settings,
+                   birthday, discount_type, ins_type, share_type, treat_type, course=None):
     if string_utils.xstr(discount_type) != '':  # 掛號費優待優先取得
         regist_fee = _get_regist_discount_fee(database, discount_type)
         return regist_fee
@@ -98,7 +103,44 @@ def get_regist_fee(database, discount_type, ins_type, share_type, treat_type, co
     if len(row) > 0:
         regist_fee = number_utils.get_integer(row['Amount'])
 
+    if regist_fee > 0:  # 最後檢查是否符合老人優待, 已經優待者就不檢查
+        old_man_regist_fee = get_old_man_regist_fee(database, system_settings, birthday)
+        if old_man_regist_fee != None:
+            regist_fee = old_man_regist_fee
+
     return regist_fee
+
+
+def get_old_man_regist_fee(database, system_settings, birthday):
+    old_man_regist_fee = None
+    if system_settings.field('老人優待') != 'Y':
+        return old_man_regist_fee
+
+    if birthday == '':
+        return old_man_regist_fee
+
+    try:
+        birthday = date_utils.str_to_date(birthday)
+    except:
+        return old_man_regist_fee
+
+    age_year, _ = date_utils.get_age(birthday, datetime.datetime.now())
+
+    old_man_age = number_utils.get_integer(system_settings.field('老人優待年齡'))
+    if age_year >= old_man_age:
+        sql = '''
+            SELECT * FROM charge_settings
+            WHERE
+                ChargeType = "掛號費優待" AND
+                ItemName = "年長病患"
+        '''
+        rows = database.select_record(sql)
+        if len(rows) <= 0:
+            old_man_regist_fee = None
+        else:
+            old_man_regist_fee = number_utils.get_integer(rows[0]['Amount'])
+
+    return old_man_regist_fee
 
 
 # 取得欠卡費

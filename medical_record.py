@@ -3,7 +3,7 @@
 
 from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QMessageBox, QPushButton
+from PyQt5.QtWidgets import QMessageBox
 import sip
 import sys
 
@@ -25,6 +25,7 @@ import self_prescript_record
 import medical_record_recently_history
 import medical_record_fees
 import medical_record_registration
+import medical_record_family
 import medical_record_check
 
 from dialog import dialog_diagnostic_picker
@@ -121,9 +122,15 @@ class MedicalRecord(QtWidgets.QMainWindow):
         self.add_tab_button = QtWidgets.QToolButton()
         self.add_tab_button.setIcon(QtGui.QIcon('./icons/document-new.svg'))
         self.ui.tabWidget_prescript.setCornerWidget(self.add_tab_button, QtCore.Qt.TopLeftCorner)
+
         self.tab_registration = medical_record_registration.MedicalRecordRegistration(
             self, self.database, self.system_settings, self.case_key, self.call_from)
         self.ui.tabWidget_medical.addTab(self.tab_registration, '門診資料')
+
+        self.tab_family = medical_record_family.MedicalRecordFamily(
+            self, self.database, self.system_settings, self.case_key)
+        self.ui.tabWidget_medical.addTab(self.tab_family, '家族病歷')
+
         self.disease_code_changed()
         self.tab_registration.set_special_code()
 
@@ -280,10 +287,6 @@ class MedicalRecord(QtWidgets.QMainWindow):
                 ORDER BY icd10.ICDCode
             '''.format(icd_code)
         else:
-            order_type = 'ORDER BY ICDCode'
-            if self.system_settings.field('詞庫排序') == '點擊率':
-                order_type = 'ORDER BY HitRate DESC'
-
             sql = '''
                 SELECT * FROM icd10
                 WHERE
@@ -291,7 +294,6 @@ class MedicalRecord(QtWidgets.QMainWindow):
                     InputCode LIKE "%{0}%" OR
                     ChineseName LIKE "%{0}%"
             '''.format(icd_code)
-            sql += order_type
 
         rows = self.database.select_record(sql)
         if len(rows) <= 0:
@@ -314,16 +316,16 @@ class MedicalRecord(QtWidgets.QMainWindow):
                     string_utils.xstr(rows[0]['SpecialCode'])
                 )
         elif len(rows) >= 2:
-            self._open_disease_dialog(sql, self.sender(), line_edit_disease_name)
+            self._open_disease_dialog(icd_code, self.sender(), line_edit_disease_name)
 
         if line_edit_disease_name == self.ui.lineEdit_disease_name1:
             self.ui.lineEdit_disease_code2.setFocus(True)
         elif line_edit_disease_name == self.ui.lineEdit_disease_name2:
             self.ui.lineEdit_disease_code3.setFocus(True)
 
-    def _open_disease_dialog(self, sql, line_edit_disease_code, line_edit_disease_name):
+    def _open_disease_dialog(self, icd_code, line_edit_disease_code, line_edit_disease_name):
         dialog = dialog_disease_picker.DialogDiseasePicker(
-            self, self.database, self.system_settings, sql
+            self, self.database, self.system_settings, icd_code
         )
 
         if dialog.exec_():
@@ -545,7 +547,7 @@ class MedicalRecord(QtWidgets.QMainWindow):
 
             dialog = dialog_disease.DialogDisease(
                 self, self.database, self.system_settings,
-                text_edit[dialog_type], line_edit, line_special_code)
+                text_edit[dialog_type], line_edit, line_special_code, '所有病名')
         elif dialog_type in ['健保處方', '自費處方'] and medicine_set is not None:
             if dialog_type == '健保處方':
                 dict_type = '健保藥品'
@@ -686,9 +688,12 @@ class MedicalRecord(QtWidgets.QMainWindow):
 
     # 病歷存檔
     def save_medical_record(self):
-        if self.medical_record['InsType'] == '健保':
+        if (self.medical_record['InsType'] == '健保' and
+                self.tab_registration.comboBox_ins_type.currentText() == '健保'):
             treat_type = self.tab_registration.ui.comboBox_treat_type.currentText()
             disease_code1 = string_utils.xstr(self.ui.lineEdit_disease_code1.text())
+            disease_code2 = string_utils.xstr(self.ui.lineEdit_disease_code2.text())
+            disease_code3 = string_utils.xstr(self.ui.lineEdit_disease_code3.text())
             treatment = string_utils.xstr(self.tab_list[0].combo_box_treatment.currentText())
             pres_days = number_utils.get_integer(self.tab_list[0].ui.comboBox_pres_days.currentText())
 
@@ -703,7 +708,9 @@ class MedicalRecord(QtWidgets.QMainWindow):
             record_check = medical_record_check.MedicalRecordCheck(
                 self, self.database, self.system_settings,
                 self.medical_record, self.patient_record,
-                treat_type, disease_code1, treatment, pres_days,
+                treat_type,
+                disease_code1, disease_code2, disease_code3,
+                treatment, pres_days,
                 table_widget_prescript,
                 table_widget_treat,
                 table_widget_ins_care,
@@ -895,6 +902,8 @@ class MedicalRecord(QtWidgets.QMainWindow):
                     tab_prescript.save_prescript()
                 except RuntimeError:  # 關閉處方頁, 刪除整個處方
                     self.remove_prescript(medicine_set)
+            else:
+                self.remove_prescript(medicine_set)
 
     def remove_prescript(self, medicine_set):
         sql = '''
@@ -1011,12 +1020,12 @@ class MedicalRecord(QtWidgets.QMainWindow):
             self._insert_text(sender, string_utils.xstr(rows[0]['ClinicName']), input_code)
         else:
             dialog = dialog_diagnostic_picker.DialogDiagnosticPicker(
-                self, self.database, self.system_settings, sql
+                self, self.database, self.system_settings, diagnostic_type, input_code,
             )
 
             if dialog.exec_():
                 clinic_key = dialog.clinic_key
-                clinic_name = dialog.clinic_name
+                clinic_name = dialog.clinic_name + ' '
                 self._insert_text(sender, clinic_name, input_code)
 
             dialog.close_all()
@@ -1033,3 +1042,4 @@ class MedicalRecord(QtWidgets.QMainWindow):
 
         cursor.movePosition(QtGui.QTextCursor.Right, QtGui.QTextCursor.KeepAnchor, len(input_code))
         cursor.removeSelectedText()
+
