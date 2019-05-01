@@ -7,7 +7,7 @@ from PyQt5 import QtWidgets
 from libs import ui_utils
 
 
-# 樣板 2018.01.31
+# 樣板 2018.01.31 update 2019.04.29
 class Template(QtWidgets.QMainWindow):
     # 初始化
     def __init__(self, parent=None, *args):

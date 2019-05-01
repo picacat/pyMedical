@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
 #coding: utf-8
 
-import sys
 
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QMessageBox, QPushButton
 import os.path
+import webbrowser
+import subprocess
 
 from libs import ui_utils
 from libs import string_utils
 from libs import nhi_utils
 from libs import number_utils
+from libs import system_utils
 from dialog import dialog_ins_apply
 
 import ins_apply_generate_file
@@ -72,6 +74,8 @@ class InsApply(QtWidgets.QMainWindow):
     # 設定信號
     def _set_signal(self):
         self.ui.action_reapply.triggered.connect(self.open_dialog)
+        self.ui.action_open_nhi_vpn.triggered.connect(self._open_nhi_vpn)
+        self.ui.action_upload.triggered.connect(self._upload_data)
         self.ui.action_close.triggered.connect(self.close_app)
 
     def open_medical_record(self, case_key):
@@ -258,4 +262,44 @@ class InsApply(QtWidgets.QMainWindow):
             self.tab_ins_apply_total_fee.ins_total_fee,
         )
         self.ui.tabWidget_ins_data.addTab(self.tab_ins_check_apply_fee, '申報金額核對')
+
+    def _open_nhi_vpn(self):
+        med_vpn_addr = 'https://medvpn.nhi.gov.tw/iwse0000/IWSE0020S02.aspx'
+        webbrowser.open(med_vpn_addr, new=0)  # 0: open in existing tab, 2: new tab
+
+    @staticmethod
+    def _message_box(title, message, hint):
+        msg_box = QMessageBox()
+        msg_box.setIcon(QMessageBox.Information)
+        msg_box.setWindowTitle(title)
+        msg_box.setText(message)
+        msg_box.setInformativeText(hint)
+        msg_box.setStandardButtons(QMessageBox.NoButton)
+
+        return msg_box
+
+    def _upload_data(self):
+        xml_file = nhi_utils.get_ins_xml_file_name(self.apply_type_code, self.apply_date)
+        if not os.path.isfile(xml_file):
+            system_utils.show_message_box(
+                QMessageBox.Information,
+                '無申報檔案',
+                '<font size="4" color="red"><b>找不到申報檔案, 請確定是否已執行過健保申報作業.</b></font>',
+                '請重新執行健保申報申報作業.'
+            )
+            return
+
+        zip_file = '{clinic_id}14{apply_date}{apply_type}3B.zip'.format(
+            clinic_id=self.system_settings.field('院所代號'),
+            apply_date=self.apply_date,
+            apply_type=self.apply_type_code,
+        )
+        zip_file = os.path.join(nhi_utils.XML_OUT_PATH, zip_file)
+
+        cmd = ['7z', 'a', '-tzip', zip_file, xml_file, '-o{0}'.format(nhi_utils.XML_OUT_PATH)]
+        sp = subprocess.Popen(cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
+        sp.communicate()
+
+        type_code = '03'  # 醫療費用申報
+        nhi_utils.NHI_SendB(self.system_settings, type_code, zip_file)
 

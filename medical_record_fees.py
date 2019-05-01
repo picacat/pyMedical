@@ -177,6 +177,9 @@ class MedicalRecordFees(QtWidgets.QMainWindow):
         self.calculate_self_fees(self.parent.tab_list, self.ui.checkBox_disable_calculate)
 
     def calculate_ins_fees(self):
+        if self.parent.tab_list[0] is None:
+            return
+
         treat_type = string_utils.xstr(self.parent.tab_registration.comboBox_treat_type.currentText())
         share = string_utils.xstr(self.parent.tab_registration.comboBox_share_type.currentText())
         course = number_utils.get_integer(self.parent.tab_registration.comboBox_course.currentText())

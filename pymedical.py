@@ -15,6 +15,7 @@ from libs import ui_utils
 from libs import module_utils
 from libs import system_utils
 from libs import personnel_utils
+from libs import string_utils
 
 from dialog import dialog_system_settings
 from dialog import dialog_ic_card
@@ -48,10 +49,11 @@ class PyMedical(QtWidgets.QMainWindow):
         self.statistics_dicts = None
         self.socket_server = udp_socket_server.UDPSocketServer()
 
-        self._reset_wait()
         self._set_ui()
         self._set_signal()
         self._start_udp_socket_server()
+
+        self.reset_wait()
 
     # 解構
     def __del__(self):
@@ -143,9 +145,9 @@ class PyMedical(QtWidgets.QMainWindow):
         self.ui.action_convert.triggered.connect(self.convert)                              # 轉檔作業
         self.ui.action_export_emr_xml.triggered.connect(self.export_emr_xml)                              # 轉檔作業
 
-        self.ui.action_ins_check.triggered.connect(self._open_subroutine)                   # 申報預檢
-        self.ui.action_ins_apply.triggered.connect(self._open_subroutine)                   # 申報預檢
-        self.ui.action_ins_judge.triggered.connect(self._open_subroutine)                   # 申報預檢
+        self.ui.action_ins_check.triggered.connect(self._open_subroutine)                   # 申報檢查
+        self.ui.action_ins_apply.triggered.connect(self._open_subroutine)                   # 健保申報
+        self.ui.action_ins_judge.triggered.connect(self._open_subroutine)                   # 健保抽審
 
         self.ui.action_registration.triggered.connect(self._open_subroutine)
         self.ui.action_cashier.triggered.connect(self._open_subroutine)
@@ -183,12 +185,14 @@ class PyMedical(QtWidgets.QMainWindow):
         system_utils.set_theme(self.ui, self.system_settings)
 
     # 候診名單歸零
-    def _reset_wait(self):
+    def reset_wait(self):
         today = datetime.datetime.today().strftime('%Y-%m-%d 00:00:00')
         sql = '''
             DELETE FROM wait 
             WHERE
-                CaseDate < "{0}"
+                CaseDate < "{0}" AND
+                DoctorDone = "True" AND
+                ChargeDone = "True"
         '''.format(today)
         self.database.exec_sql(sql)
 
@@ -243,7 +247,7 @@ class PyMedical(QtWidgets.QMainWindow):
             '病患查詢',
             '病歷查詢',
             '健保IC卡資料上傳',
-            '申報預檢',
+            '申報檢查',
             '健保申報',
             '健保抽審',
         ]:
@@ -338,7 +342,7 @@ class PyMedical(QtWidgets.QMainWindow):
                     current_tab.refresh_patient_record()
                 elif tab_name == '櫃台購藥':
                     current_tab.ui.tableWidget_purchase_list.setFocus(True)
-                    # current_tab.read_purchase_today()
+                    current_tab.read_purchase_today()
                 elif tab_name == '門診掛號':
                     current_tab.read_wait()
 
@@ -376,9 +380,9 @@ class PyMedical(QtWidgets.QMainWindow):
             return
 
         tab_name = '{0}-{1}-病歷資料-{2}'.format(
-            str(row['PatientKey']),
-            str(row['Name']),
-            str(row['CaseDate'].date()),
+            string_utils.xstr(row['PatientKey']),
+            string_utils.xstr(row['Name']),
+            string_utils.xstr(row['CaseDate'].date()),
         )
         self._add_tab(tab_name, self.database, self.system_settings, row['CaseKey'], call_from)
 
@@ -510,7 +514,7 @@ class PyMedical(QtWidgets.QMainWindow):
     def _refresh_waiting_data(self, data):
         index = self.ui.tabWidget_window.currentIndex()
         current_tab_text = self.ui.tabWidget_window.tabText(index)
-        if current_tab_text in ['醫師看診作業', '批價作業']:
+        if current_tab_text in ['門診掛號', '醫師看診作業', '批價作業']:
             tab = self.ui.tabWidget_window.currentWidget()
             tab.read_wait()
 
@@ -545,6 +549,7 @@ class PyMedical(QtWidgets.QMainWindow):
 
         ic_card = cshis.CSHIS(self.database, self.system_settings)
         # ic_card.verify_sam()
+
     def _update_files(self):
         dialog = system_update.SystemUpdate(self.ui, self.database, self.system_settings)
         dialog.exec_()

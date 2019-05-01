@@ -37,3 +37,16 @@ def get_message_box(title, icon, text, info_text):
     msg_box.addButton(QPushButton("確定"), QMessageBox.YesRole)
 
     return msg_box
+
+
+def message_box(title, message, hint):
+    msg_box = QMessageBox()
+    msg_box.setIcon(QMessageBox.Information)
+    msg_box.setWindowTitle(title)
+    msg_box.setText(message)
+    msg_box.setInformativeText(hint)
+    msg_box.setStandardButtons(QMessageBox.NoButton)
+
+    return msg_box
+
+

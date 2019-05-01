@@ -9,7 +9,7 @@ from libs import string_utils
 from libs import number_utils
 
 
-# 健保收據格式3 5 x 3 inches
+# 健保收據格式3 4.5 x 3 inches
 # 2018.10.09
 class PrintReceiptInsForm3:
     # 初始化
@@ -84,7 +84,7 @@ class PrintReceiptInsForm3:
         prescript_record = printer_utils.get_prescript_html(
             self.database, self.system_settings,
             self.case_key, self.medicine_set,
-            print_alias, print_total_dosage, blocks=2)
+            '費用收據', print_alias, print_total_dosage, blocks=2)
         instruction = printer_utils.get_instruction_html(
             self.database, self.case_key, self.medicine_set
         )

@@ -16,6 +16,7 @@ from libs import case_utils
 from libs import prescript_utils
 from libs import string_utils
 from libs import nhi_utils
+from libs import system_utils
 
 
 # 健保ICD卡 2018.03.31
@@ -23,7 +24,17 @@ class CSHIS:
     def __init__(self, database, system_settings):
         self.database = database
         self.com_port = number_utils.get_integer(system_settings.field('健保卡讀卡機連接埠')) - 1  # com1=0, com2=1, com3=2,...
-        self.cshis = ctypes.cdll.LoadLibrary('/nhi/lib/cshis50.so')
+        try:
+            self.cshis = ctypes.cdll.LoadLibrary('/nhi/lib/cshis50.so')
+        except OSError as e:
+            system_utils.show_message_box(
+                QMessageBox.Critical,
+                'OSError',
+                '<font size="4" color="red"><b>{error_message}</b></font>'.format(error_message=e),
+                '函式錯誤, 找不到此函式.'
+            )
+            self.cshis = None
+
         self.basic_data = cshis_utils.BASIC_DATA
         self.treat_data = cshis_utils.TREAT_DATA
 
@@ -81,7 +92,7 @@ class CSHIS:
             self.verify_sam_thread,
             '健保讀卡機安全模組卡認證',
             '<font size="4" color="red"><b>健保讀卡機安全模組卡認證中, 請稍後...</b></font>',
-            '正在與與健保IDC資訊中心連線, 會花費一些時間.'
+            '正在與健保IDC資訊中心連線, 會花費一些時間.'
         )
 
     def update_hc(self,  show_message=True):

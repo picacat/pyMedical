@@ -8,6 +8,8 @@ from PyQt5.QtWidgets import QMessageBox, QPushButton
 from libs import ui_utils
 from libs import string_utils
 from libs import number_utils
+from libs import printer_utils
+from libs import system_utils
 from dialog import dialog_medical_record_list
 from classes import table_widget
 from printer import print_prescription
@@ -66,11 +68,17 @@ class MedicalRecordList(QtWidgets.QMainWindow):
         self.ui.action_open_record.triggered.connect(self.open_medical_record)
         self.ui.action_print_prescript.triggered.connect(self._print_prescript)
         self.ui.action_print_receipt.triggered.connect(self._print_receipt)
+        self.ui.action_print_cases.triggered.connect(self._print_cases)
+        self.ui.action_export_cases_pdf.triggered.connect(self._print_cases)
+        self.ui.action_print_fees.triggered.connect(self._print_fees)
+        self.ui.action_export_fees_pdf.triggered.connect(self._print_fees)
+        self.ui.action_set_check.triggered.connect(self._set_check)
+        self.ui.action_set_uncheck.triggered.connect(self._set_check)
         self.ui.tableWidget_medical_record_list.doubleClicked.connect(self.open_medical_record)
 
-    # 設定欄位寬度
+        # 設定欄位寬度
     def _set_table_width(self):
-        width = [70, 160, 50, 40, 40, 40, 50, 80, 80, 40, 120, 50, 80, 80, 70, 40, 40, 80, 200,
+        width = [70, 10, 160, 50, 40, 40, 40, 50, 80, 80, 40, 120, 50, 80, 80, 70, 40, 40, 80, 200,
                  80, 80, 80, 80, 80]
         self.table_widget_medical_record_list.set_table_heading_width(width)
 
@@ -107,7 +115,19 @@ class MedicalRecordList(QtWidgets.QMainWindow):
         if result == 0:
             return
 
-        self.table_widget_medical_record_list.set_db_data(sql, self._set_table_data)
+        if sql == '':
+            return
+
+        try:
+            self.table_widget_medical_record_list.set_db_data(sql, self._set_table_data)
+        except:
+            system_utils.show_message_box(
+                QMessageBox.Critical,
+                '資料查詢錯誤',
+                '<font size="4" color="red"><b>病歷資料查詢條件設定有誤, 請重新查詢.</b></font>',
+                '請檢查查詢的內容是否有標點符號或其他字元.'
+            )
+
         self._set_tool_button()
 
     def _set_tool_button(self):
@@ -138,13 +158,14 @@ class MedicalRecordList(QtWidgets.QMainWindow):
 
         medical_record = [
             string_utils.xstr(row['CaseKey']),
+            None,
             string_utils.xstr(row['CaseDate']),
             string_utils.xstr(row['Period']),
             None,
             None,
-            string_utils.xstr(row['Room']),
-            string_utils.xstr(row['RegistNo']),
-            string_utils.xstr(row['PatientKey']),
+            row['Room'],
+            row['RegistNo'],
+            row['PatientKey'],
             string_utils.xstr(row['Name']),
             string_utils.xstr(row['Gender']),
             string_utils.xstr(row['Birthday']),
@@ -152,28 +173,29 @@ class MedicalRecordList(QtWidgets.QMainWindow):
             string_utils.xstr(row['Share']),
             string_utils.xstr(row['TreatType']),
             string_utils.xstr(row['Card']),
-            string_utils.int_to_str(row['Continuance']).strip('0'),
+            row['Continuance'],
             string_utils.xstr(row['Doctor']),
             string_utils.xstr(row['DiseaseName1']),
-            string_utils.int_to_str(pres_days),
+            pres_days,
             string_utils.xstr(row['Massager']),
-            string_utils.int_to_str(row['RegistFee']),
-            string_utils.int_to_str(row['SDiagShareFee']),
-            string_utils.int_to_str(row['SDrugShareFee']),
-            string_utils.int_to_str(row['TotalFee']),
+            number_utils.get_integer(row['RegistFee']),
+            number_utils.get_integer(row['SDiagShareFee']),
+            number_utils.get_integer(row['SDrugShareFee']),
+            number_utils.get_integer(row['TotalFee']),
         ]
 
         for column in range(len(medical_record)):
+            item = QtWidgets.QTableWidgetItem()
+            item.setData(QtCore.Qt.EditRole, medical_record[column])
             self.ui.tableWidget_medical_record_list.setItem(
-                row_no, column,
-                QtWidgets.QTableWidgetItem(medical_record[column])
+                row_no, column, item,
             )
-            if column in [5, 6, 7, 15, 18, 20, 21, 22, 23]:
+            if column in [6, 7, 8, 16, 19, 21, 22, 23, 24]:
                 self.ui.tableWidget_medical_record_list.item(
                     row_no, column).setTextAlignment(
                     QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
                 )
-            elif column in [2, 9]:
+            elif column in [3, 10]:
                 self.ui.tableWidget_medical_record_list.item(
                     row_no, column).setTextAlignment(
                     QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
@@ -194,7 +216,20 @@ class MedicalRecordList(QtWidgets.QMainWindow):
                     QtGui.QColor('darkgreen')
                 )
 
+        self._set_print_check_box(row_no)
         self._set_done_status(row, row_no)
+
+    def _set_print_check_box(self, row_no):
+        check_box_print = QtWidgets.QCheckBox()
+        check_box_print.setChecked(True)
+        col_no = 1
+
+        self.ui.tableWidget_medical_record_list.setCellWidget(
+            row_no, col_no, check_box_print)
+        self.ui.tableWidget_medical_record_list.item(
+            row_no, col_no).setTextAlignment(
+            QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
+        )
 
     def _set_done_status(self, row, row_no):
         gtk_apply = './icons/gtk-apply.svg'
@@ -207,7 +242,7 @@ class MedicalRecordList(QtWidgets.QMainWindow):
             property_value = False
 
         ui_utils.set_table_widget_field_icon(
-            self.ui.tableWidget_medical_record_list, row_no, 3, gtk_icon_file,
+            self.ui.tableWidget_medical_record_list, row_no, 4, gtk_icon_file,
             'doctor_done', property_value, self._done_button_clicked)
 
         if (string_utils.xstr(row['ChargeDone']) == 'True' and
@@ -220,7 +255,7 @@ class MedicalRecordList(QtWidgets.QMainWindow):
             property_value = False
 
         ui_utils.set_table_widget_field_icon(
-            self.ui.tableWidget_medical_record_list, row_no, 4, gtk_icon_file,
+            self.ui.tableWidget_medical_record_list, row_no, 5, gtk_icon_file,
             'charge_done', property_value, self._done_button_clicked)
 
     # 更改完診或批價狀態
@@ -229,7 +264,7 @@ class MedicalRecordList(QtWidgets.QMainWindow):
 
         row_no = self.ui.tableWidget_medical_record_list.currentRow()
         doctor_done = self.ui.tableWidget_medical_record_list.cellWidget(
-            row_no, 3).property(property_name)
+            row_no, 4).property(property_name)
         if doctor_done:
             return
 
@@ -244,7 +279,7 @@ class MedicalRecordList(QtWidgets.QMainWindow):
         dialog.deleteLater()
 
     def delete_medical_record(self):
-        name = self.table_widget_medical_record_list.field_value(6)
+        name = self.table_widget_medical_record_list.field_value(9)
         msg_box = QMessageBox()
         msg_box.setIcon(QMessageBox.Warning)
         msg_box.setWindowTitle('刪除病歷資料')
@@ -316,3 +351,126 @@ class MedicalRecordList(QtWidgets.QMainWindow):
         print_charge.print()
 
         del print_charge
+
+
+    def _set_check(self):
+        sender_name = self.sender().objectName()
+        if sender_name == 'action_set_check':
+            check = True
+        else:
+            check = False
+
+        row_count = self.ui.tableWidget_medical_record_list.rowCount()
+        for row_no in range(row_count):
+            check_box = self.ui.tableWidget_medical_record_list.cellWidget(row_no, 1)
+            check_box.setChecked(check)
+
+    def _print_cases(self):
+        row_count = self.ui.tableWidget_medical_record_list.rowCount()
+        patient_key = self.ui.tableWidget_medical_record_list.item(0, 8).text()
+
+        for row_no in range(1, row_count):  # 檢查是否同一病患
+            check_box = self.ui.tableWidget_medical_record_list.cellWidget(row_no, 1)
+            if not check_box.isChecked():
+                continue
+
+            next_patient_key = self.ui.tableWidget_medical_record_list.item(row_no, 8)
+            if next_patient_key is None:
+                break
+            else:
+                next_patient_key = next_patient_key.text()
+                if patient_key != next_patient_key:
+                    patient_key = None
+                    break
+
+        case_key_list = []
+        for row_no in range(row_count):
+            check_box = self.ui.tableWidget_medical_record_list.cellWidget(row_no, 1)
+            if check_box.isChecked():
+                case_key_list.append(self.ui.tableWidget_medical_record_list.item(row_no, 0).text())
+
+        if len(case_key_list) <= 0:
+            return
+
+        if patient_key is not None:
+            patient_key_condition = 'AND PatientKey = {0}'.format(patient_key)
+        else:
+            patient_key_condition = ''
+
+        sql = '''
+            SELECT * FROM cases 
+            WHERE
+                CaseKey IN({case_key_list})
+                {patient_key_condition}
+            ORDER BY CaseKey
+        '''.format(
+            case_key_list=','.join(case_key_list),
+            patient_key_condition=patient_key_condition,
+        )
+
+        sender_name = self.sender().objectName()
+        if sender_name == 'action_print_cases':
+            printer_utils.print_medical_records(
+                self, self.database, self.system_settings,
+                patient_key, sql, None, None,
+            )
+        else:
+            printer_utils.print_medical_records(
+                self, self.database, self.system_settings,
+                patient_key, sql, None, None, 'pdf_by_dialog',
+            )
+
+    def _print_fees(self):
+        row_count = self.ui.tableWidget_medical_record_list.rowCount()
+        patient_key = self.ui.tableWidget_medical_record_list.item(0, 8).text()
+
+        for row_no in range(1, row_count):  # 檢查是否同一病患
+            check_box = self.ui.tableWidget_medical_record_list.cellWidget(row_no, 1)
+            if not check_box.isChecked():
+                continue
+
+            next_patient_key = self.ui.tableWidget_medical_record_list.item(row_no, 8)
+            if next_patient_key is None:
+                break
+            else:
+                next_patient_key = next_patient_key.text()
+                if patient_key != next_patient_key:
+                    patient_key = None
+                    break
+
+        case_key_list = []
+        for row_no in range(row_count):
+            check_box = self.ui.tableWidget_medical_record_list.cellWidget(row_no, 1)
+            if check_box.isChecked():
+                case_key_list.append(self.ui.tableWidget_medical_record_list.item(row_no, 0).text())
+
+        if len(case_key_list) <= 0:
+            return
+
+        if patient_key is not None:
+            patient_key_condition = 'AND PatientKey = {0}'.format(patient_key)
+        else:
+            patient_key_condition = ''
+
+        sql = '''
+            SELECT * FROM cases 
+            WHERE
+                CaseKey IN({case_key_list})
+                {patient_key_condition}
+            ORDER BY CaseKey
+        '''.format(
+            case_key_list=','.join(case_key_list),
+            patient_key_condition=patient_key_condition,
+        )
+
+        sender_name = self.sender().objectName()
+        if sender_name == 'action_print_fees':
+            printer_utils.print_medical_fees(
+                self, self.database, self.system_settings,
+                patient_key, sql,
+            )
+        else:
+            printer_utils.print_medical_fees(
+                self, self.database, self.system_settings,
+                patient_key, sql, 'pdf_by_dialog',
+            )

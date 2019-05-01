@@ -111,6 +111,9 @@ class CheckPrescriptDays(QtWidgets.QMainWindow):
         self.parent.ui.progressBar.setValue(0)
 
         self.ui.tableWidget_medical_record.setRowCount(0)
+
+        self.total_pres_days = 0
+        self.total_duplicated_days = 0
         for row_no, row in zip(range(len(self.rows)), self.rows):
             error_messages = []
             error_messages += self._check_duplicated_days(row_no, row)
@@ -128,6 +131,16 @@ class CheckPrescriptDays(QtWidgets.QMainWindow):
 
         self.parent.ui.label_progress.setText('檢查進度: 檢查完成')
         self.ui.tableWidget_medical_record.resizeRowsToContents()
+        if self.total_pres_days <= 0:
+            self.ui.label_message.setText('用藥重複率: 0%')
+        else:
+            self.ui.label_message.setText(
+                '用藥重複率 = {0} (重複給藥日份) / {1} (總給藥日份) = {2:.2f}%'.format(
+                    string_utils.xstr(self.total_duplicated_days),
+                    string_utils.xstr(self.total_pres_days),
+                    (self.total_duplicated_days / self.total_pres_days * 100),
+                )
+            )
 
     def _check_duplicated_days(self, row_no, row):
         error_message = []
@@ -138,6 +151,7 @@ class CheckPrescriptDays(QtWidgets.QMainWindow):
                 self.ui.tableWidget_medical_record.item(row_no-1, 1).text(), '%Y-%m-%d').date()
             last_patient_key = self.ui.tableWidget_medical_record.item(row_no-1, 3).text()
             last_prescript_days = int(self.ui.tableWidget_medical_record.item(row_no-1, 8).text())
+            self.total_pres_days += number_utils.get_integer(last_prescript_days)
         except AttributeError:
             last_case_date = None
             last_patient_key = None
@@ -150,6 +164,7 @@ class CheckPrescriptDays(QtWidgets.QMainWindow):
                                row['CaseDate'].date()).days
             if duplicated_days > 0:
                 error_message.append('給藥重複{0}日'.format(duplicated_days))
+                self.total_duplicated_days += duplicated_days
                 self.errors += 1
 
         return error_message

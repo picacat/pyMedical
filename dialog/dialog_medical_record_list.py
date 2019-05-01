@@ -3,12 +3,14 @@
 #coding: utf-8
 
 from PyQt5 import QtWidgets
+from PyQt5.QtWidgets import QMessageBox
 import datetime
 import re
 
 from libs import ui_utils
 from libs import system_utils
 from libs import nhi_utils
+from libs import patient_utils
 from dialog import dialog_select_patient
 
 
@@ -154,29 +156,20 @@ class DialogMedicalRecordList(QtWidgets.QDialog):
             condition.append('Doctor = "{0}"'.format(doctor))
 
         keyword = self.ui.lineEdit_patient_key.text()
-        if keyword != '':
-            if keyword.isdigit() and len(keyword) < 7:
-                condition.append('cases.PatientKey = {0}'.format(keyword))
+        if keyword == '':
+            pass
+        elif keyword.isdigit() and len(keyword) < 7:
+            condition.append('cases.PatientKey = {0}'.format(keyword))
+        else:
+            rows = patient_utils.get_patient_by_keyword(self.database, keyword)
+            if len(rows) == 1:
+                patient_key = rows[0]['PatientKey']
             else:
-                sql = '''
-                    SELECT PatientKey FROM patient
-                    WHERE
-                        Birthday = "{0}" OR
-                        Name LIKE "%{0}%" OR
-                        ID LIKE "{0}%" OR
-                        Telephone LIKE "%{0}%" OR
-                        Cellphone LIKE "{0}%" OR
-                        Address LIKE "%{0}%"
-                '''.format(keyword)
-                rows = self.database.select_record(sql)
-                if len(rows) == 1:
-                    patient_key = rows[0]['PatientKey']
-                else:
-                    self._select_patient(keyword)
-                    patient_key = self.ui.lineEdit_patient_key.text()
+                self._select_patient(keyword)
+                patient_key = self.ui.lineEdit_patient_key.text()
 
-                if patient_key != '':
-                    condition.append('cases.PatientKey = {0}'.format(patient_key))
+            if patient_key != '':
+                condition.append('cases.PatientKey = {0}'.format(patient_key))
 
         if len(condition) > 0:
             script += 'WHERE {condition}'.format(
@@ -184,6 +177,9 @@ class DialogMedicalRecordList(QtWidgets.QDialog):
             )
 
         script += " ORDER BY CaseDate, cases.Room, cases.RegistNo"
+
+        if self.ui.radioButton_all_date.isChecked() and self.ui.lineEdit_patient_key.text() == '':
+            script = ''
 
         return script
 
@@ -193,7 +189,9 @@ class DialogMedicalRecordList(QtWidgets.QDialog):
     def _select_patient(self, keyword=None):
         patient_key = ''
 
-        dialog = dialog_select_patient.DialogSelectPatient(self, self.database, self.system_settings, keyword)
+        dialog = dialog_select_patient.DialogSelectPatient(
+            self, self.database, self.system_settings, keyword
+        )
         if dialog.exec_():
             patient_key = dialog.get_patient_key()
 

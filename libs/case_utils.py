@@ -1,4 +1,5 @@
 from PyQt5 import QtWidgets
+from lxml import etree
 import xml.etree.ElementTree as ET
 from xml.dom.minidom import Document
 from libs import string_utils
@@ -31,14 +32,13 @@ def get_security_xml_dict(root):
 
 
 def get_treat_data_xml_dict(xml_string):
-    from lxml import etree as ET
     security_xml_dict = create_treat_data_xml_dict()
 
     try:
         root = ET.fromstring(xml_string)[0]
         for child in root:
             security_xml_dict[child.tag] = child.text
-    except ET.XMLSyntaxError:
+    except ET.ParseError:
         pass
 
     return security_xml_dict
@@ -162,17 +162,28 @@ def extract_security_xml(xml_field, field):
 
 
 # 寫入病歷檔安全簽章XML
-def update_xml_doc(database, xml_field, field_name, field_value):
-    sql = """ 
-        SELECT UPDATEXML('{0}', '{1}', '{2}')
-    """.format(
-        xml_field,
-        '//{0}'.format(field_name),
-        '<{0}>{1}</{0}>'.format(field_name, field_value)
-    )
-    row = database.select_record(sql, False)[0]
+# def update_xml_doc(database, xml_field, field_name, field_value):
+#     sql = """
+#         SELECT UPDATEXML('{0}', '{1}', '{2}')
+#     """.format(
+#         xml_field,
+#         '//{0}'.format(field_name),
+#         '<{0}>{1}</{0}>'.format(field_name, field_value)
+#     )
+#     row = database.select_record(sql, False)[0]
+#
+#     return row[0]
 
-    return row[0]
+
+# 寫入病歷檔安全簽章XML
+def update_xml_doc(xml_field, field_name, field_value):
+    ic_card_xml = ''.join(string_utils.get_str(xml_field, 'utf-8'))
+
+    root = etree.fromstring(ic_card_xml)
+    root.xpath('//DOCUMENT/treat_data/{field_name}'.format(
+        field_name=field_name, ))[0].text = field_value
+
+    return etree.tostring(root)
 
 
 # 寫入病歷檔安全簽章XML
@@ -192,28 +203,14 @@ def update_xml(database, table_name, field_name, xml_field, field_value, primary
 
 def extract_xml(database, case_key, xml_field):
     sql = '''
-            SELECT ExtractValue(Security, "//{0}") AS XMLValue
+            SELECT ExtractValue(Security, "//{0}") AS xml_value
             FROM cases WHERE
                 CaseKey = {1}
         '''.format(xml_field, case_key)
     row = database.select_record(sql)[0]
-    xml_value =string_utils.get_str(row['XMLValue'], 'utf-8')  # 1-正常上傳 2-異常上傳 3-正常補正 4-異常補正
+    xml_value =string_utils.get_str(row['xml_value'], 'utf-8')  # 1-正常上傳 2-異常上傳 3-正常補正 4-異常補正
 
     return xml_value
-
-
-'''
-# 寫入病歷檔安全簽章XML
-def update_xml_doc(xml_field, field_name, field_value):
-    ic_card_xml = ''.join(string_utils.get_str(xml_field, 'utf-8'))
-
-    root = ET.fromstring(ic_card_xml)[0]
-    treat_data = get_treat_data_xml_dict(root)
-    treat_data[field_name] = field_value
-    doc = create_security_xml(treat_data)
-
-    return doc.toprettyxml(indent='\t')
-'''
 
 
 def get_pres_days(database, case_key, medicine_set=1):
@@ -618,6 +615,10 @@ def copy_past_medical_record(
 
             medical_record.tab_list[tab_index].copy_past_prescript(case_key, medicine_set)
 
+    if medical_record.tab_list[1] is None:  # 2019.04.27 拷貝完, 清除所有自費處方後, 自動新增自費處方1
+        medical_record.add_prescript_tab()
+        medical_record.ui.tabWidget_prescript.setCurrentIndex(0)
+
 
 def icd9_to_icd10(database, icd9_code):
     sql = '''
@@ -697,6 +698,9 @@ def get_drug_name(database, ins_code):
 
 
 def get_disease_name_html(in_disease_name):
+    if in_disease_name is None:
+        return None
+
     for word in INJURY_LIST:
         new_word = '<font color="red">{0}</font>'.format(word)
         in_disease_name = in_disease_name.replace(word, new_word)
@@ -711,9 +715,46 @@ def get_disease_name_html(in_disease_name):
 
     return QtWidgets.QLabel(in_disease_name)
 
+
 def get_full_card(card, course):
     card = string_utils.xstr(card)
     if number_utils.get_integer(course) >= 1:
         card += '-{0}'.format(course)
 
     return card
+
+
+def is_disease_code_neat(database, disease_code):
+    is_neat = True
+
+    sql = '''
+        SELECT ICD10Key FROM icd10
+        WHERE
+            ICDCode LIKE "{disease_code}%"
+    '''.format(
+        disease_code=disease_code,
+    )
+
+    rows = database.select_record(sql)
+    if len(rows) >= 2:
+        is_neat = False
+
+    return is_neat
+
+def is_disease_code_exist(database, disease_code):
+    is_exist = True
+
+    sql = '''
+        SELECT ICD10Key FROM icd10
+        WHERE
+            ICDCode = "{disease_code}"
+    '''.format(
+        disease_code=disease_code,
+    )
+
+    rows = database.select_record(sql)
+    if len(rows) <= 0:
+        is_exist = False
+
+    return is_exist
+

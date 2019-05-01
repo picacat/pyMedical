@@ -3,14 +3,15 @@
 #coding: utf-8
 
 from PyQt5 import QtWidgets
+from PyQt5.QtWidgets import QMessageBox
 import datetime
 from libs import ui_utils
 from libs import system_utils
-from libs import nhi_utils
+from libs import patient_utils
 from dialog import dialog_select_patient
 
 
-# 病歷查詢視窗
+# 醫療費用證明書查詢
 class DialogCertificateQuery(QtWidgets.QDialog):
     # 初始化
     def __init__(self, parent=None, *args):
@@ -46,23 +47,24 @@ class DialogCertificateQuery(QtWidgets.QDialog):
         current_year = datetime.datetime.now().year
         self.ui.spinBox_year.setMaximum(current_year)
         self.ui.spinBox_year.setValue(current_year)
+        self.ui.lineEdit_keyword.setFocus()
 
     # 設定信號
     def _set_signal(self):
         self.ui.buttonBox.accepted.connect(self.accepted_button_clicked)
         self.ui.radioButton_patient.clicked.connect(self._set_patient)
         self.ui.radioButton_year.clicked.connect(self._set_patient)
-        self.ui.toolButton_select_patient.clicked.connect(self._select_patient)
+        self.ui.toolButton_select_patient.clicked.connect(lambda: self._select_patient(None))
 
     def _set_patient(self):
         if self.ui.radioButton_patient.isChecked():
             enabled = True
         else:
-            self.ui.lineEdit_patient_key.setText('')
+            self.ui.lineEdit_keyword.setText('')
             enabled = False
 
-        self.ui.label_patient_key.setEnabled(enabled)
-        self.ui.lineEdit_patient_key.setEnabled(enabled)
+        self.ui.label_keyword.setEnabled(enabled)
+        self.ui.lineEdit_keyword.setEnabled(enabled)
         self.ui.toolButton_select_patient.setEnabled(enabled)
 
         self.ui.label_year.setEnabled(not enabled)
@@ -77,7 +79,21 @@ class DialogCertificateQuery(QtWidgets.QDialog):
         '''.format(self.certificate_type)
 
         if self.ui.radioButton_patient.isChecked():
-            self.sql += ' AND certificate.PatientKey = {0}'.format(self.ui.lineEdit_patient_key.text())
+            keyword = self.ui.lineEdit_keyword.text()
+            if keyword == '':
+                pass
+            elif keyword.isdigit() and len(keyword) < 7:
+                self.sql += ' AND certificate.PatientKey = {0}'.format(keyword)
+            else:
+                rows = patient_utils.get_patient_by_keyword(self.database, keyword)
+                if len(rows) == 1:
+                    patient_key = rows[0]['PatientKey']
+                else:
+                    self._select_patient(keyword)
+                    patient_key = self.ui.lineEdit_keyword.text()
+
+                if patient_key != '':
+                    self.sql += ' AND certificate.PatientKey = {0}'.format(patient_key)
         else:
             start_date = '{0}-01-01 00:00:00'.format(self.ui.spinBox_year.value())
             end_date = '{0}-12-31 23:59:59'.format(self.ui.spinBox_year.value())
@@ -88,12 +104,14 @@ class DialogCertificateQuery(QtWidgets.QDialog):
 
         self.sql += ' ORDER BY CertificateKey DESC'
 
-    def _select_patient(self):
+    def _select_patient(self, keyword=None):
         patient_key = ''
-        dialog = dialog_select_patient.DialogSelectPatient(self, self.database, self.system_settings)
+        dialog = dialog_select_patient.DialogSelectPatient(
+            self, self.database, self.system_settings, keyword
+        )
         if dialog.exec_():
             patient_key = dialog.get_patient_key()
 
-        self.ui.lineEdit_patient_key.setText(patient_key)
+        self.ui.lineEdit_keyword.setText(patient_key)
 
         dialog.deleteLater()

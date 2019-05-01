@@ -47,6 +47,11 @@
         </column>
         <column>
          <property name="text">
+          <string>註</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
           <string>門診日期</string>
          </property>
         </column>
@@ -185,11 +190,25 @@
     <property name="title">
      <string>檔案</string>
     </property>
+    <addaction name="action_open_record"/>
+    <addaction name="action_delete_record"/>
+    <addaction name="separator"/>
+    <addaction name="action_print_prescript"/>
+    <addaction name="action_print_receipt"/>
+    <addaction name="action_print_cases"/>
+    <addaction name="action_print_fees"/>
+    <addaction name="separator"/>
+    <addaction name="action_export_cases_pdf"/>
+    <addaction name="action_export_fees_pdf"/>
+    <addaction name="separator"/>
+    <addaction name="action_close"/>
    </widget>
    <widget class="QMenu" name="menu_2">
     <property name="title">
      <string>編輯</string>
     </property>
+    <addaction name="action_set_check"/>
+    <addaction name="action_set_uncheck"/>
    </widget>
    <addaction name="menu"/>
    <addaction name="menu_2"/>
@@ -283,6 +302,60 @@
    </property>
    <property name="text">
     <string>列印醫療收據</string>
+   </property>
+  </action>
+  <action name="action_print_cases">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/printer.png</normaloff>../icons/printer.png</iconset>
+   </property>
+   <property name="text">
+    <string>列印實體病歷</string>
+   </property>
+  </action>
+  <action name="action_export_cases_pdf">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/document-export.svg</normaloff>../icons/document-export.svg</iconset>
+   </property>
+   <property name="text">
+    <string>匯出實體病歷PDF</string>
+   </property>
+  </action>
+  <action name="action_set_check">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/dialog-ok.svg</normaloff>../icons/dialog-ok.svg</iconset>
+   </property>
+   <property name="text">
+    <string>全部註記</string>
+   </property>
+  </action>
+  <action name="action_set_uncheck">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/button_cancel.svg</normaloff>../icons/button_cancel.svg</iconset>
+   </property>
+   <property name="text">
+    <string>全不註記</string>
+   </property>
+  </action>
+  <action name="action_print_fees">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/printer-printing.png</normaloff>../icons/printer-printing.png</iconset>
+   </property>
+   <property name="text">
+    <string>列印收費明細</string>
+   </property>
+  </action>
+  <action name="action_export_fees_pdf">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/document-export.svg</normaloff>../icons/document-export.svg</iconset>
+   </property>
+   <property name="text">
+    <string>匯出收費明細PDF</string>
    </property>
   </action>
  </widget>

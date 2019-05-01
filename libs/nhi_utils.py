@@ -1,12 +1,22 @@
 # 2018.01.23C
 
+from PyQt5 import QtCore
+from PyQt5.QtWidgets import QMessageBox
+
+from threading import Thread
+from queue import Queue
 import datetime
 import os
+import sys
+import ctypes
+
 from libs import number_utils
 from libs import string_utils
 from libs import case_utils
 from libs import personnel_utils
 from libs import charge_utils
+from libs import system_utils
+from libs import dialog_utils
 
 XML_OUT_PATH = '{0}/nhi_upload'.format(os.getcwd())
 EMR_OUT_PATH = '{0}/emr'.format(os.getcwd())
@@ -64,7 +74,7 @@ OCCUPATIONAL_INJURY_TYPE = ['職業傷害', '職業病']
 OCCUPATIONAL_INJURY_CARD = 'IC06'
 
 INJURY_TYPE = GENERAL_INJURY_TYPE + OCCUPATIONAL_INJURY_TYPE
-INSURED_TYPE = ['基層醫療', '榮民', '低收入戶']
+INSURED_TYPE = ['基層醫療', '榮民', '低收入戶', '災民']
 SHARE_TYPE = INSURED_TYPE + [
     '重大傷病', '職業傷害', '三歲兒童',
     '山地離島', '其他免部份負擔', '新生兒', '愛滋病', '替代役男', '天然災害',
@@ -221,6 +231,7 @@ ABNORMAL_CARD_WITH_HINT = [
     'Z000 其他',
     'H000 高齡醫師',
 ]
+
 ABNORMAL_CARD = [
     ABNORMAL_CARD_WITH_HINT[i].split(' ')[0] for i in range(len(ABNORMAL_CARD_WITH_HINT))
 ]
@@ -228,7 +239,21 @@ ABNORMAL_CARD_DICT = {
     ABNORMAL_CARD_WITH_HINT[i].split(' ')[0]: ABNORMAL_CARD_WITH_HINT[i]
     for i in range(len(ABNORMAL_CARD_WITH_HINT))
 }
-CARD = ['自動取得', '不須取得', '欠卡'] + ABNORMAL_CARD_WITH_HINT
+
+INJURY_CARD_WITH_HINT = [
+    'IC06 職業傷害',
+]
+INJURY_CARD = [
+    INJURY_CARD_WITH_HINT[i].split(' ')[0] for i in range(len(INJURY_CARD_WITH_HINT))
+]
+INJURY_CARD_DICT = {
+    INJURY_CARD_WITH_HINT[i].split(' ')[0]: INJURY_CARD_WITH_HINT[i]
+    for i in range(len(INJURY_CARD_WITH_HINT))
+}
+
+CARD = ['自動取得', '不須取得', '欠卡'] + INJURY_CARD_WITH_HINT + ABNORMAL_CARD_WITH_HINT
+UPLOAD_TYPE = ['1-正常上傳','2-異常上傳', '3-正常補正', '4-異常補正']
+TREAT_AFTER_CHECK = ['1-正常','2-補卡']
 
 COURSE = ['1', '2', '3', '4', '5', '6']
 ROOM = ['1', '2', '3', '5', '6', '7', '8', '9', '10', '11', '12', '13', '15', '16', '17', '18', '19', '20']
@@ -247,6 +272,868 @@ PACKAGE = ['1', '2', '3', '4', '5', '6']
 PRESDAYS = ['3', '4', '5', '6', '7', '10', '14', '21', '28', '30']
 SELF_PRESDAYS = ['1', '2', '3', '4', '5', '6', '7', '10', '14', '21', '28', '30']
 INSTRUCTION = ['飯前', '飯後', '飯後睡前']
+
+nhi_eii_api_error_code = {
+    500: '申請檔案作業種類(sTypeCode)錯誤',
+    5000: '網路環境載入異常',
+    5001: '檔案權限不足或檔案大小異常',
+    5002: '找不到Reader.dll',
+    5003: '檔名錯誤',
+    5004: '系統忙碌中，請稍後再試',
+    5005: '產生簽章錯誤',
+    5006: '記憶體不足',
+    5007: '下載路徑不存在',
+    5008: '取得醫療院所代碼錯誤',
+    5009: '檔名有誤',
+    5010: '認證錯誤',
+    9999: '不明異常',
+    5020: '連線總數量已超過，請稍後再試。',
+    5021: '網路作業錯誤，訊息不完整',
+    5022: '等待醫療系統處理中',
+    5023: '等待EIIAPI處理中或交易不存在',
+    5024: '無法建立檔案',
+    5025: '寫入磁碟異常',
+    5026: '解密錯誤',
+    5027: '網路作業錯誤但已完成',
+    5028: '連線錯誤',
+    8203: '上傳下載請求檔未成功連線至伺服器',
+    8218: '回饋資料下載未成功連線至伺服器',
+}
+
+COMPLICATED_ACUPUNCTURE_DISEASE_DICT = {
+    '唇舌口惡性腫瘤': [
+        [
+            [('C00-C10',)], [],
+        ]
+    ],
+    '鼻咽食道惡性腫瘤': [
+        [
+            [('C11-C15',)], [],
+        ]
+    ],
+    '胃腸惡性腫瘤': [
+        [
+            [('C16-C20',)], [],
+        ]
+    ],
+    '肛門惡性腫瘤': [
+        [
+            ['C21'], [],
+        ]
+    ],
+    '肝膽胰脾惡性腫瘤': [
+        [
+            [('C22-C29',)], [],
+        ]
+    ],
+    '呼吸系統惡性腫瘤': [
+        [
+            [('C30-C34',)], [],
+        ]
+    ],
+    '胸腔器官惡性腫瘤': [
+        [
+            [('C37-C39',)], [],
+        ]
+    ],
+    '肢體惡性腫瘤': [
+        [
+            [('C40-C41',)], [],
+        ]
+    ],
+    '皮膚惡性腫瘤': [
+        [
+            [('C43-C46',)], [],
+        ]
+    ],
+    '神經系統惡性腫瘤': [
+        [
+            ['C47'], [],
+        ]
+    ],
+    '腹腔惡性腫瘤': [
+        [
+            ['C48'], [],
+        ]
+    ],
+    '結締組織惡性腫瘤': [
+        [
+            ['C49'], [],
+        ]
+    ],
+    '乳房惡性腫瘤': [
+        [
+            ['C50'], [],
+        ]
+    ],
+    '女性生殖器官惡性腫瘤': [
+        [
+            [('C51-C59',)], [],
+        ]
+    ],
+    '男性生殖器官惡性腫瘤': [
+        [
+            [('C60-C63',)], [],
+        ]
+    ],
+    '泌尿系統惡性腫瘤': [
+        [
+            [('C64-C68',)], [],
+        ]
+    ],
+    '眼惡性腫瘤': [
+        [
+            ['C69'], [],
+        ]
+    ],
+    '腦惡性腫瘤': [
+        [
+            [('C70-C71',)], [],
+        ]
+    ],
+    '中樞神經惡性腫瘤': [
+        [
+            ['C72'], [],
+        ]
+    ],
+    '內分泌腺體惡性腫瘤': [
+        [
+            [('C73-C75',)], [],
+        ]
+    ],
+    '其他惡性腫瘤': [
+        [
+            [('C76-C96',)], [],
+        ]
+    ],
+    '腦瘤併發神經功能障礙': [
+        [
+            ['D33'], [],
+        ]
+    ],
+    '老年期及初老年期器質性精神病態': [
+        [
+            [('F03-F05',)], [],
+        ]
+    ],
+    '亞急性譫妄': [
+        [
+            ['F05'], [],
+        ]
+    ],
+    '其他器質性精神病態': [
+        [
+            ['F02', 'F04', 'F09'], [],
+        ]
+    ],
+    '思覺失調症': [
+        [
+            ['F20', 'F21', 'F25'], [],
+        ]
+
+    ],
+    '情感性精神病': [
+        [
+            [('F30-F39',)], [],
+        ]
+    ],
+    '妄想狀態': [
+        [
+            ['F22', 'F23', 'F24'], [],
+        ]
+    ],
+    '源自兒童期之精神病': [
+        [
+            ['F84'], []
+        ]
+    ],
+    '急性脊髓灰白質炎併有其他麻痺者': [
+        [
+            ['A80'], [],
+        ]
+    ],
+    '嬰兒腦性麻痺': [
+        [
+            ['G80'], [],
+        ]
+    ],
+    '其他麻痺性徵候群': [  # 需要輸入次診斷碼
+        [
+            ['G82', 'G83'], ['B91'],
+        ]
+    ],
+    '重症肌無力症': [
+        [
+            ['G70'], [],
+        ]
+    ],
+    '頸椎脊髓損傷, 伴有脊髓病灶': [  # 需要輸入次診斷碼
+        [
+            ['S141'], [('S120-S126',)]
+        ],
+    ],
+    '胸椎脊髓損傷, 伴有脊髓病灶': [  # 需要輸入次診斷碼
+        [
+            ['S241'], ['S220']
+        ],
+    ],
+    '腰部脊髓傷害, 伴有脊髓病灶': [  # 需要輸入次診斷碼
+        [
+            ['S341'], [('S220-S320',)]
+        ],
+    ],
+    '無明顯脊椎損傷之脊髓傷害': [
+        [
+            ['S141', 'S241', 'S341'], [],
+        ]
+    ],
+    '其他脊髓病變': [
+        [
+            ['G95'], [],
+        ]
+    ],
+    '蜘蛛膜下腔出血': [
+        [
+            ['I60'], [],
+        ]
+    ],
+    '腦內出血': [
+        [
+            ['I61', 'I62'], [],
+        ]
+    ],
+    '腦梗塞': [
+        [
+            ['I63', 'I65', 'I66'], [],
+        ]
+    ],
+    '其他腦血管疾病': [
+        [
+            ['G45', 'G46', 'I67'], [],
+        ]
+    ],
+    '癲癇': [
+        [
+            ['G40'], [],
+        ]
+    ],
+    '巴金森病': [
+        [
+            ['G20', 'G21'], [],
+        ]
+    ],
+    '脊髓小腦症': [
+        [
+            ['G11', 'G94'], [],
+        ]
+    ],
+    '腦裂傷及挫傷': [
+        [
+            ['S019', 'S063'], [],
+        ]
+    ],
+    '受傷後之蜘蛛網膜下、硬腦膜下及硬腦膜外出血': [
+        [
+            ['S019', ('S064-S066',)], [],
+        ]
+    ],
+    '視神經及神經徑之損傷': [
+        [
+            [('S0401-S0404',)], [],
+        ]
+    ],
+    '神經根級脊神經叢之損傷': [
+        [
+            ['S142', 'S143' , 'S242', 'S342', 'S344'], [],
+        ]
+    ],
+    '肩及骨盆以外之軀幹神經損傷': [
+        [
+            ['S145', 'S243' , 'S244', 'S248', 'S249', 'S345', 'S346', 'S348', 'S349'], [],
+        ]
+    ],
+    '肩及上肢末梢神經之損傷': [
+        [
+            [('S440-S445',)], [],
+        ],
+        [
+            [('S448-S449',)], [],
+        ],
+        [
+            [('S540-S543',)], [],
+        ],
+        [
+            [('S548-S549',)], [],
+        ],
+        [
+            [('S640-S644',)], [],
+        ],
+        [
+            [('S648-S649',)], [],
+
+        ],
+    ],
+    '骨盆及下肢末梢神經損傷': [
+        [
+            [('S740-S742',)], [],
+        ],
+        [
+            [('S748-S749',)], [],
+        ],
+        [
+            [('S840-S842',)], [],
+        ],
+        [
+            [('S848-S849',)], [],
+        ],
+        [
+            [('S940-S943',)], [],
+        ],
+        [
+            [('S948-S949',)], [],
+
+        ],
+    ],
+}
+
+
+COMPLICATED_MASSAGE_DISEASE_DICT = {
+    '雷特病之關節病變及有關病態，多處部位': [
+        [
+            ['M0239'], [],
+        ]
+    ],
+    '畢賽徵候群之關節病變，多處部位': [
+        [
+            ['M352'], [],
+        ]
+    ],
+    '更年期關節炎，多處部位': [
+        [
+            ['M1389'], [],
+        ]
+    ],
+    '未明示之多發性關節病變或多發性關節炎，多處部位': [
+        [
+            ['M130'], [],
+        ]
+    ],
+    '其他明示之關節病變, 多處部位': [
+        [
+            ['M1289'], [],
+        ]
+    ],
+    '未明示之關節病變，多處部位': [
+        [
+            ['M129'], [],
+        ]
+    ],
+    '關節軟骨疾患，多處部位': [
+        [
+            ['M2410'], [],
+        ]
+    ],
+    '關節緊縮，多處部位': [
+        [
+            ['M2450'], [],
+        ]
+    ],
+    '關節粘連，多處部位': [
+        [
+            ['M2460'], [],
+        ]
+    ],
+    '其他關節障礙，他處未歸類，多處部位': [
+        [
+            ['M2480'], [],
+        ]
+    ],
+    '未明示之關節障礙，多處部位': [
+        [
+            ['M249'], [],
+        ]
+    ],
+    '復發性風濕，多處部位': [
+        [
+            ['M1239'], [],
+        ]
+    ],
+    '關節痛，多處部位': [
+        [
+            ['M2550'], [],
+        ]
+    ],
+    '關節僵直，他處未歸類者，多處部位': [
+        [
+            ['M2560'], [],
+        ]
+    ],
+    '行走障礙，多處部位': [
+        [
+            ['R262'], [],
+        ]
+    ],
+    '未明示之關節疾患，多處部位': [
+        [
+            ['M259'], [],
+        ]
+    ],
+    '肩膀及上臂骨折': [
+        [
+            ['S42'], [],
+        ]
+    ],
+    '肩部及上臂其他及未明示損傷': [
+        [
+            ['S49'], [],
+        ]
+    ],
+    '手肘及前臂其他及未明示損傷': [
+        [
+            ['S59'], [],
+        ]
+    ],
+    '腕部及手部骨折': [
+        [
+            ['S62'], [],
+        ]
+    ],
+    '股骨骨折': [
+        [
+            ['S72'], [],
+        ]
+    ],
+    '小腿踝部閉鎖性骨折': [
+        [
+            ['S82'], [],
+        ]
+    ],
+    '足部與腳趾骨折，足踝除外': [
+        [
+            ['S92'], [],
+        ]
+    ],
+    '顱骨穹窿骨折': [
+        [
+            ['S020'], [],
+        ]
+    ],
+    '顱骨底部骨折': [
+        [
+            ['S021'], [],
+        ]
+    ],
+    '臉骨骨折': [
+        [
+            ['S022', 'S026'], [],
+        ]
+    ],
+    '顴骨及上頷骨骨折，閉鎖性': [
+        [
+            ['S024'], [],
+        ]
+    ],
+    '眶底閉鎖性骨折': [
+        [
+            ['S023'], [],
+        ]
+    ],
+    '其他顏面骨閉鎖性骨折': [
+        [
+            [('S028-S029',)], [],
+        ]
+    ],
+    '脊柱骨折，閉鎖性': [
+        [
+            [('S120-S129',)], [],
+        ]
+    ],
+    '頸椎骨折，閉鎖性': [
+        [
+            [('S120-S126',), 'S220'], [],
+        ]
+    ],
+    '腰椎骨折，閉鎖性': [
+        [
+            ['S320'], [],
+        ]
+    ],
+    '胝骨及尾骨骨折，閉鎖性': [
+        [
+            [('S321-S322',)], [],
+        ]
+    ],
+    '未明示之脊柱骨折，閉鎖性': [
+        [
+            ['S129', 'S220', ('S320-S321',)], [],
+        ]
+    ],
+    '肋骨閉鎖性骨折': [
+        [
+            [('S223-S224',)], [],
+        ]
+    ],
+    '胸骨閉鎖性骨折': [
+        [
+            ['S222'], [],
+        ]
+    ],
+    '連枷胸（多條肋骨塌陷性骨折）': [
+        [
+            ['S225'], [],
+        ]
+    ],
+    '喉部及氣管閉鎖性骨折': [
+        [
+            ['S129'], [],
+        ]
+    ],
+    '骨盆骨折': [
+        [
+            [('S323-S329',)], [],
+        ]
+    ],
+    '髖臼閉鎖性骨折': [
+        [
+            ['S324'], [],
+        ]
+    ],
+    '恥骨閉鎖性骨折': [
+        [
+            ['S325'], [],
+        ]
+    ],
+    '骨盆其他明示部位之閉鎖性骨折': [
+        [
+            ['S323', 'S326', ('S32810-S32811',)], [],
+        ]
+    ],
+    '骨盆之其他骨折，閉鎖性': [
+        [
+            ['S3289'], [],
+        ]
+    ],
+    '診斷欠明之軀幹骨骨折': [
+        [
+            ['S229'], [],
+        ]
+    ],
+    '鎖骨閉鎖性骨折': [
+        [
+            [('S42001-S42036',)], [],
+        ]
+    ],
+    '肩胛骨骨折': [
+        [
+            [('S42101-S42199',)], [],
+        ]
+    ],
+    '其他之肩胛骨骨折，閉鎖性': [
+        [
+            [('S42113-S42116',)], [],
+        ]
+    ],
+    '肱骨上端閉鎖性骨折': [
+        [
+            [('S42201-S42296',)], [],
+        ]
+    ],
+    '肱骨骨幹或未明示部位之閉鎖性骨折': [
+        [
+            [('S42301-S42399',)], [],
+        ]
+    ],
+    '肱骨踝上骨折，閉鎖性': [
+        [
+            [('S42101-S42496',)], [],
+        ]
+    ],
+    '橈骨及尺骨上端閉鎖性骨折': [
+        [
+            [('S52101-S52189',)], [],
+        ]
+    ],
+    '橈骨及尺骨骨幹閉鎖性骨折': [
+        [
+            [('S52201-S52399',)], [],
+        ]
+    ],
+    '橈骨及尺骨下端閉鎖性骨折': [
+        [
+            [('S52501-S52699',)], [],
+        ]
+    ],
+    '橈骨及尺骨之閉鎖性骨折': [
+        [
+            [('S5290-S5292',)], [],
+        ]
+    ],
+    '腕骨骨折': [
+        [
+            [('S62001-S62186',)], [],
+        ]
+    ],
+    '掌骨骨折': [
+        [
+            [('S62201-S62399',)], [],
+        ]
+    ],
+    '一個或多個手指骨骨折': [
+        [
+            [('S62501-S62699',)], [],
+        ]
+    ],
+    '手骨之多處閉鎖性骨折': [
+        [
+            [('S6290-S6292',)], [],
+        ]
+    ],
+    '肩帶未明示部位骨折': [
+        [
+            [('S4290-S4292',)], [],
+        ]
+    ],
+    '前臂骨折': [
+        [
+            [('S5290-S5292',)], [],
+        ]
+    ],
+    '胸骨骨折': [
+        [
+            ['S2220', 'S2239', 'S2249'], [],
+        ]
+    ],
+    '股骨頸骨折': [
+        [
+            [('S72001-S72099',)], [],
+        ]
+    ],
+    '經由粗隆之骨折，閉鎖性': [
+        [
+            [('S72101-S7226',)], [],
+        ]
+    ],
+    '未明示部位之股骨頸骨折，閉鎖性': [
+        [
+            [('S72001-S72009',)], [],
+        ]
+    ],
+    '股骨骨折，閉鎖性': [
+        [
+            [('S72301-S72499',)], [],
+        ]
+    ],
+    '閉鎖性髕骨之骨折': [
+        [
+            [('S82001-S82099',)], [],
+        ]
+    ],
+    '脛骨與腓骨之上端閉鎖性骨折': [
+        [
+            [('S82101-S82109',)], [],
+        ]
+    ],
+    '脛骨幹閉鎖性骨折': [
+        [
+            [('S82201-S82299', )], [],
+        ]
+    ],
+    '腓骨幹閉鎖性骨折': [
+        [
+            [('S82401-S82499',)], [],
+        ]
+    ],
+    '閉鎖性踝骨折': [
+        [
+            [('S8251-S8266',)], [],
+        ]
+    ],
+    '閉鎖性跟骨骨折': [
+        [
+            [('S92001-S92066',)], [],
+        ]
+    ],
+    '其他跗骨及蹠骨之骨折，閉鎖性': [
+        [
+            [('S92101-S925',)], [],
+        ]
+    ],
+    '閉鎖性一個或多個腳趾骨骨折': [
+        [
+            [('S92401-S92919',)], [],
+        ]
+    ],
+    '閉鎖性下肢之其他多處及診斷欠明之骨折': [
+        [
+            [('S8290-S8292',)], [],
+        ]
+    ],
+    '閉鎖性多處骨折，侵及兩側下肢，下與上肢及下肢與肋骨和胸骨者': [
+        [
+            ['T07'], [],
+        ]
+    ],
+    '閉鎖性未明示部位之骨折': [
+        [
+            ['T148'], [],
+        ]
+    ],
+    '肩關節半脫位和脫臼': [
+        [
+            [('S430-S433',)], [],
+        ]
+    ],
+    '橈骨頭半脫位及脫臼': [
+        [
+            [('S530-S531',)], [],
+        ]
+    ],
+    '腕部及手部關節半脫位及脫臼': [
+        [
+            ['S630'], [],
+        ]
+    ],
+    '手指半脫位及脫臼': [
+        [
+            [('S631-S632',)], [],
+        ]
+    ],
+    '髖部半脫位及脫臼': [
+        [
+            ['S730'], [],
+        ]
+    ],
+    '內半月板桶柄狀撕裂，近期損傷': [
+        [
+            [('S8321-S8324',)], [],
+        ]
+    ],
+    '髕骨半脫位及脫臼': [
+        [
+            [('S83001-S83096',)], [],
+        ]
+    ],
+    '膝部半脫位及脫臼': [
+        [
+            [('S83101-S83196',)], [],
+        ]
+    ],
+    '踝關節半脫位': [
+        [
+            ['S930'], [],
+        ]
+    ],
+    '足部半脫位及脫臼': [
+        [
+            ['S933'], [],
+        ]
+    ],
+    '頸部關節及韌帶脫臼及扭傷': [
+        [
+            [('S130-S132',)], [],
+        ]
+    ],
+    '腰(部)脊椎半脫位(臼)和脫位(臼)': [
+        [
+            [('S331-S333',)], [],
+        ]
+    ],
+    '胸部關節及靱帶之扭傷及脫位': [
+        [
+            [('S231-S232',)], [],
+        ]
+    ],
+    '胸鎖骨間關節半脫位和脫臼': [
+        [
+            ['S432'], [],
+        ]
+    ],
+    '其他和未明示部位的腰(部)脊椎[腰椎]和骨盆(腔)骨脫位(臼)': [
+        [
+            [('S3330-S3339',)], [],
+        ]
+    ],
+    '軀幹多處挫傷': [
+        [
+            ['T148'], [],
+        ]
+    ],
+    '上肢多處挫傷': [
+        [
+            ['S40019'], [],
+        ]
+    ],
+    '下肢多處挫傷': [
+        [
+            ['S7010', 'S7012', 'S8010', 'S8012'], [],
+        ]
+    ],
+    '下肢挫傷及其他與未明示位置之挫傷，多處位置挫傷，他處未歸類者': [
+        [
+            ['T148'], [],
+        ]
+    ],
+    '肩及上臂多處位置壓砸傷': [
+        [
+            ['S47'], [],
+        ]
+    ],
+    '髖部及大腿壓砸傷': [
+        [
+            ['S770', 'S771', 'S772'], [],
+        ]
+    ],
+    '膝部及小腿壓砸傷': [
+        [
+            ['S870', 'S878'], [],
+        ]
+    ],
+    '踝部、腳趾及足部壓砸傷': [
+        [
+            ['S970', 'S971', 'S978'], [],
+        ]
+    ],
+    '多處及未明示位置之壓砸傷': [
+        [
+            ['S772'], [],
+        ]
+    ],
+    '顱骨及面骨骨折之後期影響': [
+        [
+            ['S02'], [],
+        ]
+    ],
+    '脊柱及軀幹骨折之後期影響，未提及脊髓病灶者': [
+        [
+            ['S129', 'S220', 'S229', 'S329'], [],
+        ]
+    ],
+    '肱骨上端骨折': [
+        [
+            [('S422-S429',)], [],
+        ]
+    ],
+    '頷骨脫臼': [
+        [
+            ['S030'], [],
+        ]
+    ],
+    '鼻中隔軟骨脫位': [
+        [
+            ['S031'], [],
+        ]
+    ],
+    '胸椎間盤創傷性破裂': [
+        [
+            ['S230'], [],
+        ]
+    ],
+    '腰(部)椎間盤創傷性破裂': [
+        [
+            ['S330'], [],
+        ]
+    ],
+}
 
 
 # 取得負擔類別
@@ -284,6 +1171,10 @@ def get_medicine_type(database, medicine_type):
     rows = database.select_record(sql)
     medicine_groups = []
     for row in rows:
+        if (medicine_type == '藥品類別' and  # 過濾自訂處方類別有與針傷處方類別相同的類別
+                string_utils.xstr(row['DictGroupsName']) in ['穴道', '處置']):
+            continue
+
         medicine_groups.append(row['DictGroupsName'])
 
     return medicine_groups
@@ -761,4 +1652,179 @@ def get_usage(instruction):
         usage = 'PC'
 
     return usage
+
+def get_disease_rows(database, disease_list):
+    disease_rows = []
+    for disease in disease_list:
+        if type(disease) is tuple:
+            start_disease = disease[0].split('-')[0]
+            end_disease = disease[0].split('-')[1]
+
+            sql = '''
+                SELECT ICDCode FROM icd10 
+                WHERE 
+                    ICDCode BETWEEN "{start_disease}" AND "{end_disease}" OR
+                    ICDCode LIKE "{end_disease}%"
+                ORDER BY ICDCode
+            '''.format(
+                start_disease=start_disease,
+                end_disease=end_disease,
+            )
+            icd_rows = database.select_record(sql)
+        else:
+            sql = '''
+                SELECT ICDCode FROM icd10 
+                WHERE 
+                    ICDCode LIKE "{0}%" 
+                ORDER BY ICDCode
+            '''.format(disease)
+            icd_rows = database.select_record(sql)
+
+        for icd_row in icd_rows:
+            icd_code = string_utils.xstr(icd_row['ICDCode'])
+            sql = 'SELECT ICDCode FROM icd10 WHERE ICDCode LIKE "{0}%" LIMIT 2'.format(icd_code)
+            temp_rows = database.select_record(sql)
+            if len(temp_rows) == 1:
+                disease_rows.append(string_utils.xstr(temp_rows[0]['ICDCode']))
+
+    return disease_rows
+
+
+def get_complicated_acupuncture_rows(database, groups_name, disease=1):
+    disease_rows = []
+    rows = COMPLICATED_ACUPUNCTURE_DISEASE_DICT[groups_name]
+    for row in rows:
+        disease_list1, disease_list2 = row[0], row[1]
+        if disease == 1:
+            disease_list = disease_list1
+        else:
+            disease_list = disease_list2
+
+        disease_row = get_disease_rows(database, disease_list)
+        disease_rows += disease_row
+
+    return disease_rows
+
+
+def get_complicated_acupuncture_list(database, disease=1):
+    disease_rows = []
+    for row in list(COMPLICATED_ACUPUNCTURE_DISEASE_DICT.keys()):
+        rows = get_complicated_acupuncture_rows(database, row, disease)
+        disease_rows += rows
+
+    return disease_rows
+
+
+def get_complicated_massage_rows(database, groups_name, disease=1):
+    disease_rows = []
+    rows = COMPLICATED_MASSAGE_DISEASE_DICT[groups_name]
+    for row in rows:
+        disease_list1, disease_list2 = row[0], row[1]
+        if disease == 1:
+            disease_list = disease_list1
+        else:
+            disease_list = disease_list2
+
+        disease_row = get_disease_rows(database, disease_list)
+        disease_rows += disease_row
+
+    return disease_rows
+
+
+def get_complicated_massage_list(database, disease=1):
+    disease_rows = []
+    for row in list(COMPLICATED_MASSAGE_DISEASE_DICT.keys()):
+        rows = get_complicated_massage_rows(database, row, disease)
+        disease_rows += rows
+
+    return disease_rows
+
+
+def NHI_SendB(system_settings, type_code, dest_file):
+    if sys.platform == 'win32':
+        dest_file = dest_file.replace('/', '\\')
+
+    title = '上傳健保資料'
+    message = '<font size="4" color="red"><b>正在上傳健保資料中, 請稍後...</b></font>'
+    hint = '正在與與健保IDC資訊中心連線, 會花費一些時間.'
+    msg_box = dialog_utils.message_box(title, message, hint)
+    msg_box.show()
+
+    msg_queue = Queue()
+    QtCore.QCoreApplication.processEvents()
+
+    t = Thread(target=NHI_SendB_thread, args=(
+        msg_queue, system_settings, type_code, dest_file,
+    ))
+    t.start()
+    (error_code, local_id, nhi_id) = msg_queue.get()
+    msg_box.close()
+
+    if error_code != 0:
+        error_message = nhi_eii_api_error_code[error_code]
+    else:
+        error_message = '''
+                上傳成功<br>
+                本機作業碼: {local_id}
+                IDC作業碼: {nhi_id}
+            '''.format(
+            local_id=str(local_id).encode('ascii'),
+            nhi_id=str(nhi_id).encode('ascii'),
+        )
+
+    system_utils.show_message_box(
+        QMessageBox.Information,
+        '上傳結果',
+        '<font size="4" color="red"><b>{error_message}</b></font>'.format(
+            error_message=error_message,
+        ),
+        '若上傳成功, 請於30分鐘後至健保VPN網站查看上傳結果.'
+    )
+
+'''
+// 回傳值: 0：無任何錯誤, 其他：參考異常碼對應。
+int NHI_SendB(
+    int iRs232PortNo,           // [ in]健保讀卡機連接之通訊連接埠編號，起始值為0
+    char *sReaderDllPathName,   // [ in]健保讀卡機Reader.dll放置路徑，為完整路徑及檔名，
+                                // 例：C:\Reader.dll
+    char *sUploadFileName,      // [ in]上傳作業檔案，為完整路徑及檔名，
+                                // 例：C:\3501200000110990913B.zip
+    char *sTypeCode,            // [ in]上傳作業種類：
+                                //      03：醫費申報資料XML格式
+                                //      05：預檢醫費申報資料XML格式
+                                //      07：醫療費用電子申復資料
+                                //      09：預檢醫療費用電子申復資料
+                                //      26：檢驗(查)每日上傳資料XML格式
+    char *sLocal_ID,            // [out] 本機端回傳之作業辨識碼，供識別作業之用，使用時須搭配sNHI_ID，為12個位元組
+                                //       Ansi資料，存放方式請參考範例程式碼
+    char *sNHI_ID)              // [out] IDC回傳之作業辨識碼，供識別作業之用，為12個位元組
+                                //       Ansi資料，存放方式請參考範例程式碼
+
+                                // 本函式將使用者端之「上傳作業種類」檔案傳送至IDC
+)
+'''
+def NHI_SendB_thread(out_queue, system_settings, type_code, dest_file):
+    BASE_DIR = os.path.abspath(os.path.join(os.path.dirname("__file__")))
+    dll_file = os.path.join(BASE_DIR, 'nhi_eiiapi.dll')
+    nhi_eii_api = ctypes.windll.LoadLibrary(dll_file)
+
+    com_port = number_utils.get_integer(system_settings.field('健保卡讀卡機連接埠')) - 1  # com1=0, com2=1, com3=2,...
+    reader_file = os.path.join(BASE_DIR, 'reader.dll')
+
+    p_reader_file = ctypes.c_char_p(reader_file.encode('ascii'))
+    p_type_code = ctypes.c_char_p(type_code.encode('ascii'))
+    p_zip_file = ctypes.c_char_p(dest_file.encode('ascii'))
+
+    local_id = ctypes.c_buffer(12)
+    nhi_id = ctypes.c_buffer(12)
+    error_code = nhi_eii_api.NHI_SendB(
+        com_port,
+        p_reader_file,
+        p_zip_file,
+        p_type_code,
+        local_id,
+        nhi_id,
+    )
+
+    out_queue.put((error_code, local_id, nhi_id))
 

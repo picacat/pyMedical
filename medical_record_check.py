@@ -2,14 +2,20 @@
 #coding: utf-8
 
 
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtWidgets import QMessageBox, QPushButton
 import datetime
+from threading import Thread
+from queue import Queue
 
 from libs import string_utils
 from libs import system_utils
 from libs import date_utils
 from libs import prescript_utils
+from libs import case_utils
+from libs import nhi_utils
+from libs import dialog_utils
+from libs import registration_utils
 
 
 # 系統設定 2018.03.19
@@ -25,11 +31,12 @@ class MedicalRecordCheck(QtWidgets.QDialog):
         self.disease_code1 = args[5]
         self.disease_code2 = args[6]
         self.disease_code3 = args[7]
-        self.treatment = args[8]
-        self.pres_days = args[9]
-        self.table_widget_ins_prescript = args[10]
-        self.table_widget_ins_treat = args[11]
-        self.table_widget_ins_care = args[12]
+        self.special_code = args[8]
+        self.treatment = args[9]
+        self.pres_days = args[10]
+        self.table_widget_ins_prescript = args[11]
+        self.table_widget_ins_treat = args[12]
+        self.table_widget_ins_care = args[13]
         self.parent = parent
 
         self._set_ui()
@@ -388,6 +395,10 @@ class MedicalRecordCheck(QtWidgets.QDialog):
         if not check_ok:
             return check_ok
 
+        check_ok = self._check_ins_medicine()
+        if not check_ok:
+            return check_ok
+
         check_ok = self._check_empty_prescript()
         if not check_ok:
             return check_ok
@@ -396,7 +407,40 @@ class MedicalRecordCheck(QtWidgets.QDialog):
         if not check_ok:
             return check_ok
 
+        check_ok = self._check_injury_treat()
+        if not check_ok:
+            return check_ok
+
         check_ok = self._check_dosage()
+        if not check_ok:
+            return check_ok
+
+        if self.treatment == '複雜針灸':
+            check_ok = self._check_complicated_acupuncture()
+            if not check_ok:
+                return check_ok
+        elif self.treatment == '複雜傷科':
+            check_ok = self._check_complicated_massage()
+            if not check_ok:
+                return check_ok
+
+        check_ok = self._check_disease_neat()
+        if not check_ok:
+            return check_ok
+
+        check_ok = self._check_disease_self_payment()
+        if not check_ok:
+            return check_ok
+
+        check_ok = self._check_disease_duplicated()
+        if not check_ok:
+            return check_ok
+
+        check_ok = self._check_special_code()
+        if not check_ok:
+            return check_ok
+
+        check_ok = self._check_pres_days()
         if not check_ok:
             return check_ok
 
@@ -546,3 +590,357 @@ class MedicalRecordCheck(QtWidgets.QDialog):
                 check_ok = False
 
         return check_ok
+
+    def _check_injury_treat(self):
+        check_ok = True
+        error_message = []
+
+        if self.medical_record['Share'] == '職業傷害' and self.treatment == '':
+            error_message.append('此病歷為職業傷害案件, 但無針灸或傷科處置, 請確定是否遺漏輸入.')
+
+        if len(error_message) > 0:
+            msg_box = QMessageBox()
+            msg_box.setIcon(QMessageBox.Warning)
+            msg_box.setWindowTitle('處置空白')
+            msg_box.setText(
+                '''
+                    <font size="4" color="red">
+                      <b>
+                        處置檢查錯誤如下:<br>
+                        <br>
+                        {0}
+                      </b>
+                    </font>
+                '''.format('<br>'.join(error_message)),
+            )
+            msg_box.setInformativeText("請確定是否遺漏輸入處置.")
+            msg_box.addButton(QPushButton("繼續存檔"), QMessageBox.YesRole)
+            msg_box.addButton(QPushButton("取消"), QMessageBox.NoRole)
+            save_file = msg_box.exec_()
+            if save_file == QMessageBox.RejectRole:
+                check_ok = False
+
+        return check_ok
+
+    def _check_pres_days(self):
+        check_ok = True
+
+        if self.pres_days <= 0:  # 沒開藥不用檢查
+            return check_ok
+
+        message = registration_utils.check_prescription_finished(
+            self.database, self.patient_record['PatientKey'],
+            self.medical_record['CaseDate']
+        )
+
+        if message is not None:
+            msg_box = QMessageBox()
+            msg_box.setIcon(QMessageBox.Warning)
+            msg_box.setWindowTitle('用藥重複')
+            msg_box.setText(
+                '''
+                    <font size="4" color="red">
+                      <b>
+                        用藥檢查錯誤如下:<br>
+                        <br>
+                        {0}
+                      </b>
+                    </font>
+                '''.format(message),
+            )
+            msg_box.setInformativeText("請注意用藥重複.")
+            msg_box.addButton(QPushButton("繼續存檔"), QMessageBox.YesRole)
+            msg_box.addButton(QPushButton("取消"), QMessageBox.NoRole)
+            save_file = msg_box.exec_()
+            if save_file == QMessageBox.RejectRole:
+                check_ok = False
+
+        return check_ok
+
+    def _check_disease_self_payment(self):
+        check_ok = True
+        error_message = []
+
+        disease_code_list = [
+            self.disease_code1,
+            self.disease_code2,
+            self.disease_code3,
+        ]
+
+        for disease_code in disease_code_list:
+            if disease_code == '':
+                continue
+
+            if disease_code[:3] in ['E65', 'E66']:
+                error_message.append('肥胖症')
+            elif disease_code[:3] in ['L67']:
+                error_message.append('白髮或髮色異常')
+            elif disease_code[:4] in ['L812']:
+                error_message.append('雀斑')
+            elif disease_code[:3] in ['H49', 'H50']:
+                error_message.append('斜視')
+            elif disease_code[:4] in ['H521']:
+                error_message.append('近視')
+            elif disease_code[:4] in ['H522']:
+                error_message.append('散光')
+            elif disease_code[:4] in ['H524']:
+                error_message.append('老花眼')
+
+        if len(error_message) > 0:
+            system_utils.show_message_box(
+                QMessageBox.Critical,
+                '診斷碼檢查錯誤',
+                '''
+                    <font size="4" color="red">
+                      <b>
+                        診斷碼檢查錯誤如下:<br>
+                        <br>
+                        {0}為健保中醫門診不給付項目之病名
+                      </b>
+                    </font>
+                '''.format('<br>'.join(error_message)),
+                '請更正上述的錯誤，以利健保申報.'
+            )
+            check_ok = False
+
+        return check_ok
+
+    def _check_disease_neat(self):
+        check_ok = True
+        error_message = []
+
+        disease_code_list = [
+            self.disease_code1,
+            self.disease_code2,
+            self.disease_code3,
+        ]
+
+        for disease_code in disease_code_list:
+            if disease_code == '':
+                continue
+
+            if not case_utils.is_disease_code_neat(self.database, disease_code):
+                error_message.append('診斷碼 {0} 非最細碼<br>'.format(disease_code))
+            elif not case_utils.is_disease_code_exist(self.database, disease_code):
+                error_message.append('診斷碼 {0} 無效<br>'.format(disease_code))
+
+        if len(error_message) > 0:
+            system_utils.show_message_box(
+                QMessageBox.Critical,
+                '診斷碼檢查錯誤',
+                '''
+                    <font size="4" color="red">
+                      <b>
+                        診斷碼檢查錯誤如下:<br>
+                        <br>
+                        {0}
+                      </b>
+                    </font>
+                '''.format('<br>'.join(error_message)),
+                '請更正上述的錯誤，以利健保申報.'
+            )
+            check_ok = False
+
+        return check_ok
+
+    def _check_disease_duplicated(self):
+        check_ok = True
+        error_message = []
+
+        disease_code_list = [
+            self.disease_code1,
+            self.disease_code2,
+            self.disease_code3,
+        ]
+
+        disease_duplicate = [x for n, x in enumerate(disease_code_list) if x in disease_code_list[:n]]
+        if len(disease_duplicate) and ''.join(disease_duplicate) != '':
+            error_message.append('診斷碼 {0} 重複輸入<br>'.format(', '.join(disease_duplicate)))
+
+        if len(error_message) > 0:
+            system_utils.show_message_box(
+                QMessageBox.Critical,
+                '診斷碼檢查錯誤',
+                '''
+                    <font size="4" color="red">
+                      <b>
+                        診斷碼檢查錯誤如下:<br>
+                        <br>
+                        {0}
+                      </b>
+                    </font>
+                '''.format('<br>'.join(error_message)),
+                '請更正上述的錯誤，以利健保申報.'
+            )
+            check_ok = False
+
+        return check_ok
+
+    def _check_special_code(self):
+        check_ok = True
+        error_message = []
+
+        if self.treatment != '':  # 有處置不受限制
+            return check_ok
+
+        if self.special_code != '' and self.pres_days < 7:
+            error_message.append('慢性病開藥至少要七天')
+        elif self.special_code == '' and self.pres_days > 7:
+            error_message.append('非慢性病開藥不得超過七天')
+
+        if len(error_message) > 0:
+            system_utils.show_message_box(
+                QMessageBox.Critical,
+                '診斷碼檢查錯誤',
+                '''
+                    <font size="4" color="red">
+                      <b>
+                        慢性病開藥檢查錯誤如下:<br>
+                        <br>
+                        {0}
+                      </b>
+                    </font>
+                '''.format('<br>'.join(error_message)),
+                '請更正上述的錯誤，以利健保申報.'
+            )
+            check_ok = False
+
+        return check_ok
+
+    def _get_complicated_acupuncture_list_thread(self, out_queue, disease):
+        complicated_acupuncture_list1 = nhi_utils.get_complicated_acupuncture_list(self.database, disease)
+
+        out_queue.put((complicated_acupuncture_list1,))
+
+    # 取得安全簽章
+    def _get_complicated_acupuncture_list(self, disease=1):
+        message_box = dialog_utils.message_box(
+            '複雜性針灸檢查', '複雜性針灸適應症病名檢查中...', '這樣會花費一些時間, 請稍後',
+        )
+        message_box.show()
+
+        msg_queue = Queue()
+        QtCore.QCoreApplication.processEvents()
+
+        t = Thread(target=self._get_complicated_acupuncture_list_thread, args=(msg_queue, disease))
+        t.start()
+        (complicated_acupuncture_list,) = msg_queue.get()
+        message_box.close()
+
+        return complicated_acupuncture_list
+
+    def _check_complicated_acupuncture(self):
+        check_ok = True
+        error_message = []
+
+        complicated_acupuncture_list1 = self._get_complicated_acupuncture_list(disease=1)
+
+        if self.disease_code1 not in complicated_acupuncture_list1:
+            error_message.append('主診斷碼{0}非複雜性針灸適應症'.format(self.disease_code1))
+
+        if len(error_message) > 0:
+            system_utils.show_message_box(
+                QMessageBox.Critical,
+                '複雜性針灸檢查錯誤',
+                '''
+                    <font size="4" color="red">
+                      <b>
+                        複雜性針灸檢查錯誤如下:<br>
+                        <br>
+                        {0}
+                      </b>
+                    </font>
+                '''.format('<br>'.join(error_message)),
+                '請更正上述的錯誤，以利健保申報.'
+            )
+            check_ok = False
+
+        return check_ok
+
+    def _get_complicated_massage_list_thread(self, out_queue, disease):
+        complicated_massage_list1 = nhi_utils.get_complicated_massage_list(self.database, disease)
+
+        out_queue.put((complicated_massage_list1,))
+
+    # 取得安全簽章
+    def _get_complicated_massage_list(self, disease=1):
+        message_box = dialog_utils.message_box(
+            '複雜性傷科檢查', '複雜性傷科適應症病名檢查中...', '這樣會花費一些時間, 請稍後',
+        )
+        message_box.show()
+
+        msg_queue = Queue()
+        QtCore.QCoreApplication.processEvents()
+
+        t = Thread(target=self._get_complicated_massage_list_thread, args=(msg_queue, disease))
+        t.start()
+        (complicated_massage_list,) = msg_queue.get()
+        message_box.close()
+
+        return complicated_massage_list
+
+    def _check_complicated_massage(self):
+        check_ok = True
+        error_message = []
+
+        complicated_massage_list1 = self._get_complicated_massage_list(disease=1)
+
+        if self.disease_code1 not in complicated_massage_list1:
+            error_message.append('主診斷碼{0}非複雜性傷科適應症'.format(self.disease_code1))
+
+        if len(error_message) > 0:
+            system_utils.show_message_box(
+                QMessageBox.Critical,
+                '複雜性傷科檢查錯誤',
+                '''
+                    <font size="4" color="red">
+                      <b>
+                        複雜性傷科檢查錯誤如下:<br>
+                        <br>
+                        {0}
+                      </b>
+                    </font>
+                '''.format('<br>'.join(error_message)),
+                '請更正上述的錯誤，以利健保申報.'
+            )
+            check_ok = False
+
+        return check_ok
+
+    def _check_ins_medicine(self):
+        check_ok = True
+        error_message = []
+
+        if self.pres_days <= 0:  # 沒開藥不用檢查
+            return check_ok
+
+        ins_medicine = 0
+        for row_no in range(self.table_widget_ins_prescript.rowCount()):
+            ins_code = self.table_widget_ins_prescript.item(
+                row_no, prescript_utils.INS_PRESCRIPT_COL_NO['InsCode'],
+            )
+            if ins_code is not None and ins_code.text() != '':
+                ins_medicine += 1
+
+        if ins_medicine <= 0:
+            error_message.append('有健保開藥天數但無健保處方'.format(self.disease_code1))
+
+        if len(error_message) > 0:
+            system_utils.show_message_box(
+                QMessageBox.Critical,
+                '健保藥品檢查錯誤',
+                '''
+                    <font size="4" color="red">
+                      <b>
+                        健保藥品檢查錯誤如下:<br>
+                        <br>
+                        {0}
+                      </b>
+                    </font>
+                '''.format('<br>'.join(error_message)),
+                '請更正上述的錯誤，以利健保申報.'
+            )
+            check_ok = False
+
+        return check_ok
+

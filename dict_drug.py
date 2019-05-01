@@ -106,17 +106,17 @@ class DictDrug(QtWidgets.QMainWindow):
         '''.format(self.dict_type)
         self.table_widget_dict_groups.set_db_data(sql, self._set_dict_groups_data)
 
-    def _set_dict_groups_data(self, rec_no, rec):
-        dict_groups_rec = [
-            string_utils.xstr(rec['DictGroupsKey']),
-            string_utils.xstr(rec['DictOrderNo']),
-            string_utils.xstr(rec['DictGroupsName']),
+    def _set_dict_groups_data(self, row_no, row):
+        dict_groups_row = [
+            string_utils.xstr(row['DictGroupsKey']),
+            string_utils.xstr(row['DictOrderNo']),
+            string_utils.xstr(row['DictGroupsName']),
         ]
 
-        for column in range(len(dict_groups_rec)):
+        for column in range(len(dict_groups_row)):
             self.ui.tableWidget_dict_groups.setItem(
-                rec_no, column,
-                QtWidgets.QTableWidgetItem(dict_groups_rec[column])
+                row_no, column,
+                QtWidgets.QTableWidgetItem(dict_groups_row[column])
             )
 
     def dict_groups_changed(self):
@@ -139,35 +139,35 @@ class DictDrug(QtWidgets.QMainWindow):
         medicine_key = self.table_widget_dict_drug.field_value(0)
         self._read_drug_description(medicine_key)
 
-    def _set_dict_drug_data(self, rec_no, rec):
-        dict_drug_rec = [
-            string_utils.xstr(rec['MedicineKey']),
-            string_utils.xstr(rec['MedicineCode']),
-            string_utils.xstr(rec['InputCode']),
-            string_utils.xstr(rec['MedicineName']),
-            string_utils.xstr(rec['InsCode']),
-            string_utils.xstr(rec['Unit']),
-            string_utils.xstr(rec['Dosage']),
-            string_utils.xstr(rec['MedicineMode']),
-            string_utils.xstr(rec['MedicineAlias']),
-            string_utils.xstr(rec['Location']),
-            string_utils.xstr(rec['InPrice']),
-            string_utils.xstr(rec['SalePrice']),
-            string_utils.xstr(rec['Quantity']),
-            string_utils.xstr(rec['SafeQuantity']),
+    def _set_dict_drug_data(self, row_no, row):
+        dict_drug_row = [
+            string_utils.xstr(row['MedicineKey']),
+            string_utils.xstr(row['MedicineCode']),
+            string_utils.xstr(row['InputCode']),
+            string_utils.xstr(row['MedicineName']),
+            string_utils.xstr(row['InsCode']),
+            string_utils.xstr(row['Unit']),
+            string_utils.xstr(row['Dosage']),
+            string_utils.xstr(row['MedicineMode']),
+            string_utils.xstr(row['MedicineAlias']),
+            string_utils.xstr(row['Location']),
+            string_utils.xstr(row['InPrice']),
+            string_utils.xstr(row['SalePrice']),
+            string_utils.xstr(row['Quantity']),
+            string_utils.xstr(row['SafeQuantity']),
         ]
 
-        for column in range(len(dict_drug_rec)):
+        for column in range(len(dict_drug_row)):
             self.ui.tableWidget_dict_drug.setItem(
-                rec_no, column,
-                QtWidgets.QTableWidgetItem(dict_drug_rec[column])
+                row_no, column,
+                QtWidgets.QTableWidgetItem(dict_drug_row[column])
             )
             if column in [6, 10, 11, 12, 13]:
-                self.ui.tableWidget_dict_drug.item(rec_no, column).setTextAlignment(
+                self.ui.tableWidget_dict_drug.item(row_no, column).setTextAlignment(
                     QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
                 )
             elif column in [5]:
-                self.ui.tableWidget_dict_drug.item(rec_no, column).setTextAlignment(
+                self.ui.tableWidget_dict_drug.item(row_no, column).setTextAlignment(
                     QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
                 )
 

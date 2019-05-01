@@ -60,7 +60,7 @@ module_dict = {
     '病歷查詢': MedicalRecordList,
     '病患資料': Patient,
 
-    '申報預檢': InsCheck,
+    '申報檢查': InsCheck,
     '健保申報': InsApply,
     '健保抽審': InsJudge,
 

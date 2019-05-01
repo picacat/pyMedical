@@ -110,6 +110,11 @@ class MedicalRecordFamily(QtWidgets.QMainWindow):
             condition.append('Cellphone Like "%{cellphone}%"'.format(
                 cellphone=cellphone,
             ))
+        address = string_utils.xstr(self.patient_row['Address'])
+        if cellphone != '':
+            condition.append('Address Like "%{address}%"'.format(
+                address=address,
+            ))
 
         if len(condition) <= 0:
             return

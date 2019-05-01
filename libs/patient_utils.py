@@ -1,8 +1,11 @@
+
+from PyQt5.QtWidgets import QMessageBox
 from dialog import dialog_patient
 import datetime
 from classes import address
 
 from libs import string_utils
+from libs import system_utils
 
 
 # 尋找病患資料
@@ -38,6 +41,31 @@ def search_patient(ui, database, settings, keyword):
         row = database.select_record(script)
 
     return row
+
+
+def get_patient_by_keyword(database, keyword):
+    sql = '''
+        SELECT PatientKey FROM patient
+        WHERE
+            Birthday = "{0}" OR
+            Name LIKE "%{0}%" OR
+            ID LIKE "{0}%" OR
+            Telephone LIKE "%{0}%" OR
+            Cellphone LIKE "{0}%" OR
+            Address LIKE "%{0}%"
+    '''.format(keyword)
+    try:
+        rows = database.select_record(sql)
+    except:
+        system_utils.show_message_box(
+            QMessageBox.Critical,
+            '資料查詢錯誤',
+            '<font size="4" color="red"><b>病歷資料查詢條件設定有誤, 請重新查詢.</b></font>',
+            '請檢查查詢的內容是否有標點符號或其他字元.'
+        )
+        return None
+
+    return rows
 
 
 # 取得性別
@@ -115,6 +143,9 @@ def get_init_date(database, patient_key):
 
 
 def get_patient_row(database, patient_key):
+    if patient_key is None:
+        return None
+
     sql = '''
         SELECT * FROM patient
         WHERE

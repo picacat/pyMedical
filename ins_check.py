@@ -10,6 +10,7 @@ from dialog import dialog_ins_check
 
 import check_errors
 import check_course
+import check_card
 import check_medical_record_count
 import check_prescript_days
 import check_ins_drug
@@ -57,7 +58,7 @@ class InsCheck(QtWidgets.QMainWindow):
         self.ui.action_close.triggered.connect(self.close_app)
 
     def open_medical_record(self, case_key):
-        self.parent.open_medical_record(case_key, '申報預檢')
+        self.parent.open_medical_record(case_key, '申報檢查')
 
     def open_dialog(self):
         dialog = dialog_ins_check.DialogInsCheck(self.ui, self.database, self.system_settings)
@@ -101,6 +102,10 @@ class InsCheck(QtWidgets.QMainWindow):
             self, self.database, self.system_settings,
             self.apply_year, self.apply_month, self.apply_type
         )
+        self.tab_check_card = check_card.CheckCard(
+            self, self.database, self.system_settings,
+            self.apply_year, self.apply_month, self.apply_type
+        )
         self.tab_check_medical_record_count = check_medical_record_count.CheckMedicalRecordCount(
             self, self.database, self.system_settings,
             self.apply_year, self.apply_month, self.apply_type, self.treat_limit, self.diag_limit,
@@ -125,6 +130,9 @@ class InsCheck(QtWidgets.QMainWindow):
         self.tab_check_course.start_check()
         self.ui.tabWidget_ins_data.addTab(self.tab_check_course, '療程檢查')
 
+        self.tab_check_card.start_check()
+        self.ui.tabWidget_ins_data.addTab(self.tab_check_card, '卡序檢查')
+
         self.tab_check_medical_record_count.start_check()
         self.ui.tabWidget_ins_data.addTab(self.tab_check_medical_record_count, '門診次數檢查')
 
@@ -148,14 +156,16 @@ class InsCheck(QtWidgets.QMainWindow):
             tab_icon_list[0] = ui_utils.ICON_NO
         if (self.tab_check_course.error_count() > 0):
             tab_icon_list[1] = ui_utils.ICON_NO
-        if (self.tab_check_medical_record_count.error_count() > 0):
+        if (self.tab_check_card.error_count() > 0):
             tab_icon_list[2] = ui_utils.ICON_NO
-        if (self.tab_check_prescript_days.error_count() > 0):
+        if (self.tab_check_medical_record_count.error_count() > 0):
             tab_icon_list[3] = ui_utils.ICON_NO
-        if (self.tab_check_ins_drug.error_count() > 0):
+        if (self.tab_check_prescript_days.error_count() > 0):
             tab_icon_list[4] = ui_utils.ICON_NO
-        if (self.tab_check_ins_treat.error_count() > 0):
+        if (self.tab_check_ins_drug.error_count() > 0):
             tab_icon_list[5] = ui_utils.ICON_NO
+        if (self.tab_check_ins_treat.error_count() > 0):
+            tab_icon_list[6] = ui_utils.ICON_NO
 
         for i, icon in zip(range(len(tab_icon_list)), tab_icon_list):
             self.ui.tabWidget_ins_data.setTabIcon(i, icon)

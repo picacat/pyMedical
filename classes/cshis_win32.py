@@ -81,7 +81,7 @@ class CSHIS:
             self.verify_sam_thread,
             '健保讀卡機安全模組卡認證',
             '<font size="4" color="red"><b>健保讀卡機安全模組卡認證中, 請稍後...</b></font>',
-            '正在與與健保IDC資訊中心連線, 會花費一些時間.'
+            '正在與健保IDC資訊中心連線, 會花費一些時間.'
         )
 
     def update_hc(self,  show_message=True):
@@ -607,14 +607,21 @@ class CSHIS:
                                                      buffer中的資料長度(buffer的尾端不必補\0)
         );
     '''
-    def upload_data_thread(self, out_queue, xml_file_name, file_size, record_count):
-        p_upload_file_name = ctypes.c_char_p(xml_file_name.encode('ascii'))
-        p_file_size = ctypes.c_char_p(file_size.encode('ascii'))
-        p_number = ctypes.c_char_p(record_count.encode('ascii'))
+    def upload_data_thread(self, out_queue, xml_file_name, record_count):
+        file_size = str(os.path.getsize(xml_file_name))
+
+        b_file_name = xml_file_name.encode('ascii')
+        b_file_size =  file_size.encode(('ascii'))
+        b_record_count = str(record_count).encode('ascii')
+
+        p_upload_file_name = ctypes.c_char_p(b_file_name)
+        p_file_size = ctypes.c_char_p(b_file_size)
+        p_number = ctypes.c_char_p(b_record_count)
 
         buffer_size = 50
-        buffer = ctypes.create_string_buffer(buffer_size)  # c: char *
-        buffer_len = ctypes.c_short(buffer_size)  # c: int *
+        # buffer = ctypes.create_string_buffer(buffer_size)  # c: char *
+        buffer = ctypes.c_buffer(buffer_size)
+        buffer_len = ctypes.c_int(buffer_size)  # c: int *
         self._open_com()
         error_code = self.cshis.csUploadData(
             p_upload_file_name,
@@ -635,10 +642,9 @@ class CSHIS:
         msg_box.show()
         msg_queue = Queue()
 
-        file_size = os.path.getsize(xml_file_name)
         QtCore.QCoreApplication.processEvents()
         t = Thread(target=self.upload_data_thread, args=(
-            msg_queue, xml_file_name, str(file_size), str(record_count)))
+            msg_queue, xml_file_name, record_count))
         t.start()
         (error_code, buffer) = msg_queue.get()
         msg_box.close()
@@ -734,7 +740,10 @@ class CSHIS:
 
     # ic 醫令寫卡
     def write_ic_medical_record(self, case_key, treat_after_check):
-        self.write_ic_treatment(case_key, treat_after_check)  # 寫入病名, 費用
+        doctor_id = self.write_ic_treatment(case_key, treat_after_check)  # 寫入病名, 費用
+        if doctor_id is None:
+            return
+
         self.write_prescript_signature(case_key)  # 寫入醫令簽章
         case_utils.update_xml(
             self.database, 'cases', 'Security', 'prescript_sign_time',
@@ -867,6 +876,8 @@ class CSHIS:
             ' ' * 7,
             )
         doctor_id = self.write_treatment_code(registration_nhi_datetime, patient_id, birthday_nhi_datetime, data_write)
+        if doctor_id is None:
+            return doctor_id
 
         ins_total_fee = string_utils.xstr(case_row['InsTotalFee'])
         share_fee = string_utils.xstr(

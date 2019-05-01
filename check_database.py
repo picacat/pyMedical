@@ -206,6 +206,7 @@ class CheckDatabase(QtWidgets.QDialog):
         process_list = [
             self.database.check_field_exists('dict_groups', 'add', 'DictOrderNo', 'varchar(10) AFTER DictGroupsKey'),
             self.database.check_field_exists('person', 'add', 'Title', 'varchar(20) AFTER Code'),
+            self.database.check_field_exists('reservation_table', 'add', 'Weekday', 'varchar(10) AFTER Period'),
         ]
         self._exec_process(process_list)
 

@@ -14,7 +14,7 @@ from dialog import dialog_debt
 from classes import table_widget
 
 
-# 主視窗
+# 欠還款作業
 class Debt(QtWidgets.QMainWindow):
     # 初始化
     def __init__(self, parent=None, *args):
@@ -46,8 +46,9 @@ class Debt(QtWidgets.QMainWindow):
     def _set_signal(self):
         self.ui.action_close.triggered.connect(self.close_debt)
         self.ui.action_pay_back.triggered.connect(self.pay_back)
-        # self.ui.action_open_record.triggered.connect(self.open_medical_record)
-        # self.ui.tableWidget_patient_list.doubleClicked.connect(self.open_medical_record)
+        self.ui.tableWidget_debt.itemSelectionChanged.connect(self._debt_item_selection_changed)
+        self.ui.action_open_medical_record.triggered.connect(self.open_medical_record)
+        self.ui.tableWidget_debt.doubleClicked.connect(self.open_medical_record)
 
     # 設定欄位寬度
     def _set_table_width(self):
@@ -61,6 +62,16 @@ class Debt(QtWidgets.QMainWindow):
         '''
 
         self.table_widget_debt.set_db_data(sql, self._set_table_data)
+        self._set_tool_button()
+
+    def _set_tool_button(self):
+        if self.ui.tableWidget_debt.rowCount() <= 0:
+            enabled = False
+        else:
+            enabled = True
+
+        self.ui.action_open_medical_record.setEnabled(enabled)
+        self.ui.action_pay_back.setEnabled(enabled)
 
     def _set_table_data(self, rec_no, rec):
         case_key = number_utils.get_integer(rec['CaseKey'])
@@ -103,6 +114,7 @@ class Debt(QtWidgets.QMainWindow):
     def pay_back(self):
         debt_key = self.table_widget_debt.field_value(0)
         case_key = self.table_widget_debt.field_value(1)
+
         dialog = dialog_debt.DialogDebt(
             self, self.database, self.system_settings,
             debt_key, case_key,
@@ -133,3 +145,6 @@ class Debt(QtWidgets.QMainWindow):
     def close_debt(self):
         self.close_all()
         self.close_tab()
+
+    def _debt_item_selection_changed(self):
+        pass

@@ -13,6 +13,12 @@ from libs import printer_utils
 
 from classes import system_settings
 
+import sys
+if sys.platform == 'win32':
+    from classes import cshis_win32 as cshis
+else:
+    from classes import cshis
+
 
 # 系統設定 2018.03.19
 class DialogSettings(QtWidgets.QDialog):
@@ -44,6 +50,7 @@ class DialogSettings(QtWidgets.QDialog):
         self.ui.buttonBox.rejected.connect(self.button_rejected)
         self.ui.spinBox_station_no.valueChanged.connect(self.spin_button_value_changed)
         self.ui.toolButton_emr_path.clicked.connect(self._get_emr_path)
+        self.ui.pushButton_detect_com_port.clicked.connect(self._detect_com_port)
 
     def _set_combo_box(self):
         # if sys.platform == 'win32':
@@ -253,6 +260,7 @@ class DialogSettings(QtWidgets.QDialog):
         self._set_check_box(self.ui.checkBox_print_alias, '列印處方別名')
         self._set_check_box(self.ui.checkBox_print_clinic_name, '列印院所名稱')
         self._set_check_box(self.ui.checkBox_print_massager, '列印推拿師父')
+        self._set_check_box(self.ui.checkBox_print_treat, '列印穴道處置')
 
     def _read_reader_settings(self):
         self._set_check_box(self.ui.checkBox_use_reader, '使用讀卡機')
@@ -420,6 +428,7 @@ class DialogSettings(QtWidgets.QDialog):
         self._save_check_box(self.ui.checkBox_print_alias, '列印處方別名')
         self._save_check_box(self.ui.checkBox_print_clinic_name, '列印院所名稱')
         self._save_check_box(self.ui.checkBox_print_massager, '列印推拿師父')
+        self._save_check_box(self.ui.checkBox_print_treat, '列印穴道處置')
 
     def _save_reader_settings(self):
         self._save_check_box( self.ui.checkBox_use_reader, '使用讀卡機')
@@ -521,4 +530,34 @@ class DialogSettings(QtWidgets.QDialog):
     def spin_button_value_changed(self):
         self.system_settings = system_settings.SystemSettings(self.database, self.ui.spinBox_station_no.value())
         self._read_settings()
+
+    def _detect_com_port(self):
+        MAX_PORT = 16
+        progress_dialog = QtWidgets.QProgressDialog(
+            '正在偵測讀卡機連接埠中, 請稍後...', '取消', 0, MAX_PORT, self
+        )
+
+        progress_dialog.setWindowModality(QtCore.Qt.WindowModal)
+        progress_dialog.setValue(0)
+        ic_card = cshis.CSHIS(self.database, self.system_settings)
+        com_port = None
+        for i in range(MAX_PORT):
+            progress_dialog.setValue(i)
+            result = ic_card.cshis.csOpenCom(i)
+            if result == 0:  # 成功
+                com_port = i + 1
+                break
+
+        progress_dialog.setValue(MAX_PORT)
+        if com_port is not None:
+            self.ui.spinBox_ic_reader_port.setValue(com_port)
+        else:
+            self.ui.spinBox_ic_reader_port.setValue(0)
+            system_utils.show_message_box(
+                QtWidgets.QMessageBox.Critical,
+                '偵測失敗',
+                '<font size="4" color="red"><b>偵測不到讀卡機, 請檢查讀卡機是否連接正確.</b></font>',
+                '請確定讀卡機是否連接, 或VPN網路是否暢通.'
+            )
+
 

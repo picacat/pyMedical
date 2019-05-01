@@ -610,7 +610,7 @@
      <normaloff>../icons/dialog-question.png</normaloff>../icons/dialog-question.png</iconset>
    </property>
    <property name="text">
-    <string>申報預檢</string>
+    <string>申報檢查</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+1</string>

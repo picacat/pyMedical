@@ -273,7 +273,7 @@ class InsApplyList(QtWidgets.QMainWindow):
 
         printer_utils.print_medical_records(
             self, self.database, self.system_settings,
-            patient_key, start_date, end_date,
+            patient_key, None, start_date, end_date,
         )
 
     # 列印病歷首頁

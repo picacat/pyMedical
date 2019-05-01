@@ -79,6 +79,7 @@ class MedicalRecordRecentlyHistory(QtWidgets.QMainWindow):
         '''.format(patient_key, self.case_key)
         rows = self.database.select_record(sql)
         if len(rows) <= 0:
+            self.ui.toolButton_copy.setEnabled(False)
             return
 
         history_list = []

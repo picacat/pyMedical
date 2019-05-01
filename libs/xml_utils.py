@@ -2,6 +2,8 @@ import os
 
 
 def set_xml_file_to_big5(xml_file_name, dest_file_name=None):
+    from shutil import copyfile
+
     file_path, file_name = os.path.split(xml_file_name)
     temp_file_name = os.path.join(file_path, 'temp.xml')
 
@@ -11,13 +13,12 @@ def set_xml_file_to_big5(xml_file_name, dest_file_name=None):
         txt = txt.replace('BIG5', 'Big5')
         out_file.write(txt)
 
-    if os.path.exists(xml_file_name):
-        os.remove(xml_file_name)
-
     if dest_file_name is not None:
-        os.rename(temp_file_name, dest_file_name)
+        copyfile(temp_file_name, dest_file_name)
     else:
-        os.rename(temp_file_name, xml_file_name)
+        copyfile(temp_file_name, xml_file_name)
+
+    os.remove(temp_file_name)
 
     # convert LF => CR/LF
     # if sys.platform == 'win32':

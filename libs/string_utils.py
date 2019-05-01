@@ -33,6 +33,14 @@ def strip_string(in_string):
     return in_string
 
 
+# 清除不必要的ascii字元
+def replace_ascii_char(ascii_char_list, in_string):
+    for ascii_char in ascii_char_list:
+        in_string = in_string.replace(ascii_char, '')
+
+    return in_string
+
+
 # 整數轉字串(零不顯示)
 def int_to_str(number):
     if number is None:

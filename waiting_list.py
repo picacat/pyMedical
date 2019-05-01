@@ -15,6 +15,7 @@ from libs import string_utils
 from libs import nhi_utils
 from libs import case_utils
 from libs import statistics_utils
+from libs import patient_utils
 from printer import print_prescription
 from printer import print_receipt
 
@@ -130,60 +131,61 @@ class WaitingList(QtWidgets.QMainWindow):
     def _set_tool_button(self, enabled):
         self.ui.action_medical_record.setEnabled(enabled)
 
-    def _set_table_data(self, rec_no, rec):
-        registration_time = rec['CaseDate'].strftime('%H:%M')
+    def _set_table_data(self, row_no, row):
+        registration_time = row['CaseDate'].strftime('%H:%M')
 
-        time_delta = datetime.datetime.now() - rec['CaseDate']
+        time_delta = datetime.datetime.now() - row['CaseDate']
         wait_seconds = datetime.timedelta(seconds=time_delta.total_seconds())
         wait_time = '{0}分'.format(wait_seconds.seconds // 60)
 
-        age_year, age_month = date_utils.get_age(rec['Birthday'], rec['CaseDate'])
+        age_year, age_month = date_utils.get_age(row['Birthday'], row['CaseDate'])
         if age_year is None:
             age = 'N/A'
         else:
             age = '{0}歲{1}月'.format(age_year, age_month)
 
-        wait_rec = [
-                    string_utils.xstr(rec['WaitKey']),
-                    string_utils.xstr(rec['CaseKey']),
-                    string_utils.xstr(rec['PatientKey']),
-                    string_utils.xstr(rec['Name']),
-                    string_utils.xstr(rec['Gender']),
+        wait_row = [
+                    string_utils.xstr(row['WaitKey']),
+                    string_utils.xstr(row['CaseKey']),
+                    row['PatientKey'],
+                    string_utils.xstr(row['Name']),
+                    string_utils.xstr(row['Gender']),
                     age,
-                    string_utils.xstr(rec['Room']),
-                    string_utils.xstr(rec['RegistNo']),
+                    row['Room'],
+                    row['RegistNo'],
                     registration_time,
                     wait_time,
-                    string_utils.xstr(rec['InsType']),
-                    string_utils.xstr(rec['RegistType']),
-                    string_utils.xstr(rec['Share']),
-                    string_utils.xstr(rec['TreatType']),
-                    string_utils.xstr(rec['Visit']),
-                    string_utils.xstr(rec['Card']),
-                    string_utils.int_to_str(rec['Continuance']).strip('0'),
-                    string_utils.xstr(rec['Massager']),
-                    string_utils.xstr(rec['Remark']),
+                    string_utils.xstr(row['InsType']),
+                    string_utils.xstr(row['RegistType']),
+                    string_utils.xstr(row['Share']),
+                    string_utils.xstr(row['TreatType']),
+                    string_utils.xstr(row['Visit']),
+                    string_utils.xstr(row['Card']),
+                    row['Continuance'],
+                    string_utils.xstr(row['Massager']),
+                    string_utils.xstr(row['Remark']),
         ]
 
-        for column in range(len(wait_rec)):
+        for col_no in range(len(wait_row)):
+            item = QtWidgets.QTableWidgetItem()
+            item.setData(QtCore.Qt.EditRole, wait_row[col_no])
             self.ui.tableWidget_waiting_list.setItem(
-                rec_no, column,
-                QtWidgets.QTableWidgetItem(wait_rec[column])
+                row_no, col_no, item,
             )
-            if column in [2, 5, 6, 7, 9, 16]:
+            if col_no in [2, 5, 6, 7, 9, 16]:
                 self.ui.tableWidget_waiting_list.item(
-                    rec_no, column).setTextAlignment(
+                    row_no, col_no).setTextAlignment(
                     QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
                 )
-            elif column in [4, 14]:
+            elif col_no in [4, 14]:
                 self.ui.tableWidget_waiting_list.item(
-                    rec_no, column).setTextAlignment(
+                    row_no, col_no).setTextAlignment(
                     QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
                 )
 
-            if rec['InsType'] == '自費':
+            if row['InsType'] == '自費':
                 self.ui.tableWidget_waiting_list.item(
-                    rec_no, column).setForeground(
+                    row_no, col_no).setForeground(
                     QtGui.QColor('blue')
                 )
 
@@ -206,7 +208,10 @@ class WaitingList(QtWidgets.QMainWindow):
         room = self._get_room_script('reserve')
 
         sql = '''
-            SELECT * FROM reserve
+            SELECT 
+                reserve.*, 
+                patient.Birthday, patient.Gender, patient.Cellphone, patient.Telephone 
+            FROM reserve
                 LEFT JOIN patient ON patient.PatientKey = reserve.PatientKey
             WHERE
                 ReserveDate BETWEEN "{0}" AND "{1}" AND
@@ -221,72 +226,111 @@ class WaitingList(QtWidgets.QMainWindow):
 
         self.table_widget_reservation_list.set_db_data(sql, self._set_reservation_data)
 
-    def _set_reservation_data(self, row_no, row_data):
+    def _set_reservation_data(self, row_no, row):
+        reserve_key = string_utils.xstr(row['ReserveKey'])
+        reserve_date = string_utils.xstr(row['ReserveDate'].time().strftime('%H:%M'))
+        period = string_utils.xstr(row['Period'])
+        room = row['Room']
+        reserve_no = row['ReserveNo']
+        patient_key = row['PatientKey']
+        name = string_utils.xstr(row['Name'])
+        gender = string_utils.xstr(row['Gender'])
+
+        if string_utils.xstr(row['Cellphone']) != '':
+            phone = string_utils.xstr(row['Cellphone'])
+        else:
+            phone = string_utils.xstr(row['Telephone'])
+
+        if string_utils.xstr(row['Source']) == '網路初診預約':
+            sql = '''
+                SELECT * FROM temp_patient
+                WHERE
+                    TempPatientKey = {0}
+            '''.format(
+                patient_key
+            )
+            rows = self.database.select_record(sql)
+            if len(rows) > 0:
+                row = rows[0]
+                id = string_utils.xstr(row['ID'])
+                if id != '':
+                    gender = patient_utils.get_gender(id[1])
+            else:
+                gender = ''
+
+            patient_key = '網路初診'
+
         age_year, age_month = date_utils.get_age(
-            row_data['Birthday'], row_data['ReserveDate'])
+            row['Birthday'], datetime.datetime.now())
         if age_year is None:
             age = ''
         else:
             age = '{0}歲'.format(age_year)
 
-        if string_utils.xstr(row_data['Cellphone']) != '':
-            phone = string_utils.xstr(row_data['Cellphone'])
-        else:
-            phone = string_utils.xstr(row_data['Telephone'])
-
-        reservation_data = [
-            string_utils.xstr(row_data['ReserveKey']),
-            string_utils.xstr(row_data['ReserveDate'].time().strftime('%H:%M')),
-            string_utils.xstr(row_data['Period']),
-            string_utils.xstr(row_data['Room']),
-            string_utils.xstr(row_data['ReserveNo']),
-            string_utils.xstr(row_data['PatientKey']),
-            string_utils.xstr(row_data['Name']),
-            string_utils.xstr(row_data['Gender']),
+        reservation_row = [
+            reserve_key,
+            reserve_date,
+            period,
+            room,
+            reserve_no,
+            patient_key,
+            name,
+            gender,
             age,
             phone,
         ]
 
-        for column in range(len(reservation_data)):
+        for col_no in range(len(reservation_row)):
+            item = QtWidgets.QTableWidgetItem()
+            item.setData(QtCore.Qt.EditRole, reservation_row[col_no])
             self.ui.tableWidget_reservation_list.setItem(
-                row_no, column,
-                QtWidgets.QTableWidgetItem(reservation_data[column])
+                row_no, col_no, item,
             )
 
-            if column in [3, 4, 5]:
+            if col_no in [3, 4, 5]:
                 self.ui.tableWidget_reservation_list.item(
-                    row_no, column).setTextAlignment(
+                    row_no, col_no).setTextAlignment(
                     QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
                 )
-            elif column in [1, 2, 7, 8]:
+            elif col_no in [1, 2, 7, 8]:
                 self.ui.tableWidget_reservation_list.item(
-                    row_no, column).setTextAlignment(
+                    row_no, col_no).setTextAlignment(
                     QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
                 )
 
     def _show_last_medical_record(self):
         self.ui.textEdit_medical_record.setHtml(None)
-        patient_key = self.table_widget_reservation_list.field_value(5)
-        if patient_key == '':
-            return
 
-        sql = '''
-            SELECT * FROM cases 
-            WHERE
-                PatientKey = {0}
-            ORDER BY CaseDate DESC LIMIT 1
-        '''.format(patient_key)
-        rows = self.database.select_record(sql)
-        if len(rows) <= 0:
-            self.ui.textEdit_medical_record.setHtml(
-                '<br><br><br><center>無過去病歷</center>'
-            )
+        try:
+            patient_key = self.table_widget_reservation_list.field_value(5)
+            if patient_key is None:
+                return
 
-            return
+            if patient_key in ['', '網路初診']:
+                return
 
-        case_key = rows[0]['CaseKey']
-        html = case_utils.get_medical_record_html(self.database, self.system_settings, case_key)
-        self.ui.textEdit_medical_record.setHtml(html)
+            sql = '''
+                SELECT * FROM cases 
+                WHERE
+                    PatientKey = {0}
+                ORDER BY CaseDate DESC LIMIT 1
+            '''.format(patient_key)
+            rows = self.database.select_record(sql)
+            if len(rows) <= 0:
+                self.ui.textEdit_medical_record.setHtml(
+                    '<br><br><br><center>無過去病歷</center>'
+                )
+
+                return
+
+            case_key = rows[0]['CaseKey']
+            if case_key is None:
+                return
+
+            html = case_utils.get_medical_record_html(self.database, self.system_settings, case_key)
+            self.ui.textEdit_medical_record.setHtml(html)
+        except:
+            pass
 
     def _waiting_list_tab_changed(self, i):
         self.tab_name = self.ui.tabWidget_waiting_list.tabText(i)
@@ -314,60 +358,61 @@ class WaitingList(QtWidgets.QMainWindow):
 
         self.table_widget_wait_completed.set_db_data(sql, self._set_wait_completed_data)
 
-    def _set_wait_completed_data(self, rec_no, rec):
-        pres_days = case_utils.get_pres_days(self.database, rec['CaseKey'])
+    def _set_wait_completed_data(self, row_no, row):
+        pres_days = case_utils.get_pres_days(self.database, row['CaseKey'])
 
-        age_year, age_month = date_utils.get_age(rec['Birthday'], rec['CaseDate'])
+        age_year, age_month = date_utils.get_age(row['Birthday'], row['CaseDate'])
         if age_year is None:
             age = 'N/A'
         else:
             age = '{0}歲{1}月'.format(age_year, age_month)
 
-        disease_name = string_utils.xstr(rec['DiseaseName1'])
+        disease_name = string_utils.xstr(row['DiseaseName1'])
         if disease_name != '':
             disease_name = disease_name[:8]  # 只取前8個字元
 
-        wait_rec = [
-            string_utils.xstr(rec['WaitKey']),
-            string_utils.xstr(rec['CaseKey']),
-            string_utils.xstr(rec['PatientKey']),
-            string_utils.xstr(rec['Name']),
-            string_utils.xstr(rec['Gender']),
+        wait_row = [
+            string_utils.xstr(row['WaitKey']),
+            string_utils.xstr(row['CaseKey']),
+            row['PatientKey'],
+            string_utils.xstr(row['Name']),
+            string_utils.xstr(row['Gender']),
             age,
-            string_utils.xstr(rec['Room']),
-            string_utils.xstr(rec['RegistNo']),
-            string_utils.xstr(rec['InsType']),
-            string_utils.xstr(rec['RegistType']),
-            string_utils.xstr(rec['Share']),
-            string_utils.xstr(rec['TreatType']),
-            string_utils.xstr(rec['Visit']),
-            string_utils.xstr(rec['Card']),
-            string_utils.int_to_str(rec['Continuance']).strip('0'),
+            row['Room'],
+            row['RegistNo'],
+            string_utils.xstr(row['InsType']),
+            string_utils.xstr(row['RegistType']),
+            string_utils.xstr(row['Share']),
+            string_utils.xstr(row['TreatType']),
+            string_utils.xstr(row['Visit']),
+            string_utils.xstr(row['Card']),
+            row['Continuance'],
             disease_name,
-            string_utils.xstr(pres_days),
-            string_utils.xstr(rec['Doctor']),
-            string_utils.xstr(rec['Massager']),
+            pres_days,
+            string_utils.xstr(row['Doctor']),
+            string_utils.xstr(row['Massager']),
         ]
 
-        for column in range(len(wait_rec)):
+        for col_no in range(len(wait_row)):
+            item = QtWidgets.QTableWidgetItem()
+            item.setData(QtCore.Qt.EditRole, wait_row[col_no])
             self.ui.tableWidget_wait_completed.setItem(
-                rec_no, column,
-                QtWidgets.QTableWidgetItem(wait_rec[column])
+                row_no, col_no, item,
             )
-            if column in [2, 5, 6, 7, 9, 16]:
+            if col_no in [2, 5, 6, 7, 9, 16]:
                 self.ui.tableWidget_wait_completed.item(
-                    rec_no, column).setTextAlignment(
+                    row_no, col_no).setTextAlignment(
                     QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
                 )
-            elif column in [4, 14]:
+            elif col_no in [4, 14]:
                 self.ui.tableWidget_wait_completed.item(
-                    rec_no, column).setTextAlignment(
+                    row_no, col_no).setTextAlignment(
                     QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
                 )
 
-            if rec['InsType'] == '自費':
+            if row['InsType'] == '自費':
                 self.ui.tableWidget_wait_completed.item(
-                    rec_no, column).setForeground(
+                    row_no, col_no).setForeground(
                     QtGui.QColor('blue')
                 )
 

@@ -106,7 +106,13 @@ class Database:
 
     # 讀取記錄
     def select_record(self, sql, dictionary=True):
-        cursor = self.cnx.cursor(dictionary=dictionary)
+        try:
+            cursor = self.cnx.cursor(dictionary=dictionary)
+        except:
+            self.cnx.close()
+            self._connect_to_db()
+            cursor = self.cnx.cursor(dictionary=dictionary)
+
         cursor.execute(sql)
         rows = cursor.fetchall()
         cursor.close()

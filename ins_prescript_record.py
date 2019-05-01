@@ -2,7 +2,7 @@
 #coding: utf-8
 
 from PyQt5 import QtWidgets, QtCore, QtGui
-from PyQt5.QtWidgets import QTableWidget
+from PyQt5.QtWidgets import QMessageBox, QPushButton
 
 from libs import ui_utils
 from libs import string_utils
@@ -55,6 +55,12 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
         self.table_widget_prescript.set_column_hidden([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
         self.table_widget_treat = table_widget.TableWidget(self.ui.tableWidget_treat, self.database)
         self.table_widget_treat.set_column_hidden([0, 1, 2, 3, 4, 5, 6, 7])
+
+        self.ui.tableWidget_prescript.setDragEnabled(True)
+        self.ui.tableWidget_prescript.setAcceptDrops(True)
+        self.ui.tableWidget_treat.setDragEnabled(True)
+        self.ui.tableWidget_treat.setAcceptDrops(True)
+
         self._set_table_width()
         self._set_combo_box()
         self._set_treat_ui()
@@ -81,14 +87,140 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
         self.ui.toolButton_dictionary.clicked.connect(self._open_dictionary)
         self.ui.toolButton_treat_dictionary.clicked.connect(self._open_treat_dictionary)
         self.ui.toolButton_show_costs.clicked.connect(self._show_costs)
+        self.ui.toolButton_medicine_info.clicked.connect(self._show_medicine_description)
 
         self.ui.comboBox_pres_days.currentTextChanged.connect(self.pres_days_changed)
         self.ui.tableWidget_prescript.itemChanged.connect(self._prescript_item_changed)
+        self.ui.tableWidget_prescript.itemSelectionChanged.connect(self._prescript_item_selection_changed)
 
         self.ui.tableWidget_prescript.keyPressEvent = self._table_widget_prescript_key_press
         self.ui.tableWidget_treat.keyPressEvent = self._table_widget_treat_key_press
         self.ui.tableWidget_prescript.cellClicked.connect(self._prescript_cell_clicked)
         self.ui.tableWidget_treat.cellClicked.connect(self._prescript_cell_clicked)
+        self.ui.tableWidget_prescript.dropEvent = self.prescript_drop_event
+        self.ui.tableWidget_treat.dropEvent = self.treat_drop_event
+
+    def prescript_drop_event(self, event):
+        table_widget = event.source()
+
+        source_row = table_widget.currentRow()
+        target_item = table_widget.itemAt(event.pos())
+
+        if target_item is None:
+            target_row = table_widget.rowCount()
+        else:
+            target_row = target_item.row()
+
+        medicine_name = table_widget.item(
+            source_row, prescript_utils.INS_PRESCRIPT_COL_NO['MedicineName']
+        )
+        if medicine_name is None:
+            return
+
+        medicine_name = medicine_name.text()
+        if medicine_name == '':
+            return
+
+        # msg_box = QMessageBox()
+        # msg_box.setIcon(QMessageBox.Warning)
+        # msg_box.setWindowTitle('移動處方資料')
+        # msg_box.setText("<font size='4' color='red'><b>確定移動{0}?</b></font>".format(medicine_name))
+        # msg_box.setInformativeText("注意！處方移動後, 將無法回復!")
+        # msg_box.addButton(QPushButton("取消"), QMessageBox.NoRole)
+        # msg_box.addButton(QPushButton("確定"), QMessageBox.YesRole)
+        # drag_record = msg_box.exec_()
+        # if not drag_record:
+        #     return
+
+        prescript_row = []
+        for col_no in range(table_widget.columnCount()):
+            prescript_row.append(table_widget.item(source_row, col_no))
+
+        table_widget.insertRow(target_row)
+        for col_no in range(len(prescript_row)):
+            table_widget.setItem(
+                target_row, col_no,
+                QtWidgets.QTableWidgetItem(prescript_row[col_no])
+            )
+            self._adjust_prescript_align(target_row, col_no)
+
+        # medicine_key_item = prescript_row[prescript_utils.INS_PRESCRIPT_COL_NO['MedicineKey']]
+        # if medicine_key_item is not None:
+        #     self._add_prescript_info_button(target_row, medicine_key_item.text())
+
+        if target_row > source_row:
+            remove_row = source_row
+        else:
+            remove_row = source_row + 1
+
+        table_widget.removeRow(remove_row)
+        table_widget.resizeRowsToContents()
+
+        if target_row < source_row:
+            move_row = target_row
+        else:
+            move_row = target_row - 1
+
+        table_widget.setCurrentCell(move_row, prescript_utils.INS_PRESCRIPT_COL_NO['MedicineName'])
+
+    def treat_drop_event(self, event):
+        table_widget = event.source()
+
+        source_row = table_widget.currentRow()
+        target_item = table_widget.itemAt(event.pos())
+
+        if target_item is None:
+            target_row = table_widget.rowCount()
+        else:
+            target_row = target_item.row()
+
+        treat_name = table_widget.item(
+            source_row, prescript_utils.INS_TREAT_COL_NO['MedicineName']
+        )
+
+        if treat_name is None:
+            return
+
+        treat_name = treat_name.text()
+        if treat_name == '':
+            return
+
+        # msg_box = QMessageBox()
+        # msg_box.setIcon(QMessageBox.Warning)
+        # msg_box.setWindowTitle('移動處置資料')
+        # msg_box.setText("<font size='4' color='red'><b>確定移動{0}?</b></font>".format(treat_name))
+        # msg_box.setInformativeText("注意！處置移動後, 將無法回復!")
+        # msg_box.addButton(QPushButton("取消"), QMessageBox.NoRole)
+        # msg_box.addButton(QPushButton("確定"), QMessageBox.YesRole)
+        # drag_record = msg_box.exec_()
+        # if not drag_record:
+        #     return
+
+        treat_row = []
+        for col_no in range(table_widget.columnCount()):
+            treat_row.append(table_widget.item(source_row, col_no))
+
+        table_widget.insertRow(target_row)
+        for col_no in range(len(treat_row)):
+            table_widget.setItem(
+                target_row, col_no,
+                QtWidgets.QTableWidgetItem(treat_row[col_no])
+            )
+
+        if target_row > source_row:
+            remove_row = source_row
+        else:
+            remove_row = source_row + 1
+
+        table_widget.removeRow(remove_row)
+        table_widget.resizeRowsToContents()
+
+        if target_row < source_row:
+            move_row = target_row
+        else:
+            move_row = target_row - 1
+
+        table_widget.setCurrentCell(move_row, prescript_utils.INS_TREAT_COL_NO['MedicineName'])
 
     def _table_widget_prescript_key_press(self, event):
         system_utils.set_keyboard_layout('英文')
@@ -160,12 +292,15 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
         if item.text() == previous_medicine_name:
             return
 
+        keyword = item.text()
+        keyword = string_utils.replace_ascii_char(['\\', '"', '\''], keyword)
+
         medicine_type = 'AND (MedicineType NOT IN ("水藥", "外用", "高貴", "穴道", "處置", "檢驗"))'
         sql = '''
             SELECT * FROM medicine WHERE 
             (MedicineName like "{0}%" OR InputCode LIKE "{0}%" OR MedicineCode = "{0}" OR InsCode = "{0}") 
             {1}
-        '''.format(item.text(), medicine_type)
+        '''.format(keyword, medicine_type)
         rows = self.database.select_record(sql)
 
         if len(rows) <= 0:
@@ -181,6 +316,7 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
                 self.medicine_set,
                 self.ui.tableWidget_prescript,
                 previous_medicine_name,
+                keyword,
             )
             dialog.exec_()
             dialog.deleteLater()
@@ -189,7 +325,6 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
         system_utils.set_keyboard_layout('英文')
 
         key = event.key()
-
         current_row = self.ui.tableWidget_treat.currentRow()
 
         if key == QtCore.Qt.Key_Delete:
@@ -236,6 +371,8 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
         if item.text() == previous_medicine_name:
             return
 
+        keyword = item.text()
+        keyword = string_utils.replace_ascii_char(['\\', '"', '\''], keyword)
         medicine_type = ''
         if self.combo_box_treatment.currentText() in nhi_utils.ACUPUNCTURE_TREAT:
             medicine_type = 'AND (MedicineType in ("穴道", "成方"))'
@@ -246,7 +383,7 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
             SELECT * FROM medicine WHERE 
             (MedicineName like "{0}%" OR InputCode LIKE "{0}%" OR MedicineCode = "{0}" OR InsCode = "{0}") 
             {1}
-        '''.format(item.text(), medicine_type)
+        '''.format(keyword, medicine_type)
         rows = self.database.select_record(sql)
 
         if len(rows) <= 0:
@@ -262,6 +399,7 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
                 self.medicine_set,
                 self.ui.tableWidget_treat,
                 previous_medicine_name,
+                keyword,
             )
             dialog.exec_()
             dialog.deleteLater()
@@ -325,8 +463,9 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
                 if item is not None:
                     item.setForeground(QtGui.QColor('blue'))
 
-        medicine_key = row[prescript_utils.INS_PRESCRIPT_COL_NO['MedicineKey']][1]
-        self._add_prescript_info_button(row_no, medicine_key)
+        # medicine_key = row[prescript_utils.INS_PRESCRIPT_COL_NO['MedicineKey']][1]
+        # self._add_prescript_info_button(row_no, medicine_key)
+        self.ui.tableWidget_prescript.resizeRowsToContents()
 
     def append_treat(self, row):
         medicine_type = string_utils.xstr(row['MedicineType'])
@@ -363,7 +502,7 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
         medicine_width = [
             70,
             100, 100, 100, 100, 100, 100, 100, 100, 100,
-            190, 50, 50, 50, 20,
+            210, 50, 50, 50,
         ]
         treat_width = [
             70,
@@ -447,30 +586,32 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
             string_utils.xstr(row['Instruction']),
         ]
 
-        for column in range(len(prescript_row)):
+        for col_no in range(len(prescript_row)):
             self.ui.tableWidget_prescript.setItem(
-                row_no, column,
-                QtWidgets.QTableWidgetItem(prescript_row[column])
+                row_no, col_no,
+                QtWidgets.QTableWidgetItem(prescript_row[col_no])
             )
 
-            if column in [prescript_utils.INS_PRESCRIPT_COL_NO['Dosage']]:
-                self.ui.tableWidget_prescript.item(
-                    row_no, column).setTextAlignment(
-                    QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
-                )
-            elif column in [prescript_utils.INS_PRESCRIPT_COL_NO['Unit']]:
-                self.ui.tableWidget_prescript.item(
-                    row_no, column).setTextAlignment(
-                    QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
-                )
-            #
+            self._adjust_prescript_align(row_no, col_no)
             if ins_code == '':
                 self.ui.tableWidget_prescript.item(
-                    row_no, column).setForeground(
+                    row_no, col_no).setForeground(
                     QtGui.QColor('blue')
                 )
 
-        self._add_prescript_info_button(row_no, medicine_key)
+        # self._add_prescript_info_button(row_no, medicine_key)
+
+    def _adjust_prescript_align(self, row_no, col_no):
+        if col_no in [prescript_utils.INS_PRESCRIPT_COL_NO['Dosage']]:
+            self.ui.tableWidget_prescript.item(
+                row_no, col_no).setTextAlignment(
+                QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
+            )
+        elif col_no in [prescript_utils.INS_PRESCRIPT_COL_NO['Unit']]:
+            self.ui.tableWidget_prescript.item(
+                row_no, col_no).setTextAlignment(
+                QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
+            )
 
     def _add_prescript_info_button(self, row_no, medicine_key):
         description = prescript_utils.get_medicine_description(self.database, medicine_key)
@@ -486,7 +627,18 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
         self.ui.tableWidget_prescript.setCellWidget(
             row_no, prescript_utils.INS_PRESCRIPT_COL_NO['Info'], button)
 
-    def _show_medicine_description(self, description):
+    def _show_medicine_description(self):
+        medicine_key_item = self.ui.tableWidget_prescript.item(
+            self.ui.tableWidget_prescript.currentRow(),
+            prescript_utils.SELF_PRESCRIPT_COL_NO['MedicineKey']
+        )
+        if medicine_key_item is None:
+            return
+
+        description = prescript_utils.get_medicine_description(self.database, medicine_key_item.text())
+        if description is None:
+            return
+
         dialog = dialog_rich_text.DialogRichText(
             self, self.database, self.system_settings,
             'rich_text', description
@@ -729,7 +881,7 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
 
         data = [
             items[prescript_utils.INS_PRESCRIPT_COL_NO['PrescriptNo']],
-            items[prescript_utils.INS_PRESCRIPT_COL_NO['CaseKey']],
+            self.case_key,
             items[prescript_utils.INS_PRESCRIPT_COL_NO['CaseDate']],
             items[prescript_utils.INS_PRESCRIPT_COL_NO['MedicineSet']],
             items[prescript_utils.INS_PRESCRIPT_COL_NO['MedicineType']],
@@ -774,7 +926,7 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
         ]
         data = [
             items[prescript_utils.INS_PRESCRIPT_COL_NO['PrescriptNo']],
-            items[prescript_utils.INS_PRESCRIPT_COL_NO['CaseKey']],
+            self.case_key,
             items[prescript_utils.INS_PRESCRIPT_COL_NO['CaseDate']],
             items[prescript_utils.INS_PRESCRIPT_COL_NO['MedicineSet']],
             items[prescript_utils.INS_PRESCRIPT_COL_NO['MedicineType']],
@@ -868,6 +1020,8 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
 
     # 處置內容變更
     def _combo_box_treat_changed(self, copy_from=None):
+        system_utils.set_keyboard_layout('英文')
+
         if self.combo_box_treatment.currentText() == '':
             self.ui.tableWidget_treat.setRowCount(0)
             self._set_treat_ui()
@@ -969,7 +1123,7 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
     def _prescript_cell_clicked(self):
         system_utils.set_keyboard_layout('英文')
 
-    def _prescript_item_changed(self, item):
+    def _prescript_item_selection_changed(self):
         if self.ui.tableWidget_prescript.rowCount() <= 0:
             enabled = False
         else:
@@ -977,7 +1131,20 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
 
         self.ui.toolButton_remove_medicine.setEnabled(enabled)
         self.ui.toolButton_show_costs.setEnabled(enabled)
+        self.ui.toolButton_medicine_info.setEnabled(enabled)
 
+        medicine_key_item = self.ui.tableWidget_prescript.item(
+            self.ui.tableWidget_prescript.currentRow(),
+            prescript_utils.INS_PRESCRIPT_COL_NO['MedicineKey']
+        )
+        if medicine_key_item is None:
+            return
+
+        description = prescript_utils.get_medicine_description(self.database, medicine_key_item.text())
+        if description is None:
+            self.ui.toolButton_medicine_info.setEnabled(False)
+
+    def _prescript_item_changed(self, item):
         if item is None:
             return
 

@@ -7,6 +7,7 @@ from PyQt5.QtWidgets import QMessageBox, QPushButton
 from lxml import etree as ET
 
 import sys
+import time
 
 from classes import table_widget
 from libs import ui_utils
@@ -79,6 +80,7 @@ class ICRecordUpload(QtWidgets.QMainWindow):
         self.ui.action_open_record.triggered.connect(self.open_medical_record)
         self.ui.action_upload_file.triggered.connect(self.upload_xml_file)
         self.ui.action_remark.triggered.connect(self.remark_record)
+        self.ui.action_correct_errors.triggered.connect(self._correct_errors)
         self.ui.tableWidget_ic_record.doubleClicked.connect(self.open_medical_record)
 
     # 設定欄位寬度
@@ -104,14 +106,14 @@ class ICRecordUpload(QtWidgets.QMainWindow):
         else:
             self.upload_type = '2'
 
-        sql = dialog.get_sql()
+        self.sql = dialog.get_sql()
         dialog.close_all()
         dialog.deleteLater()
 
         if result == 0:
             return
 
-        self.table_widget_medical_record.set_db_data(sql, self._set_table_data)
+        self.table_widget_medical_record.set_db_data(self.sql, self._set_table_data)
 
     def _set_table_data(self, row_no, row):
         sql = '''
@@ -124,7 +126,11 @@ class ICRecordUpload(QtWidgets.QMainWindow):
         else:
             pres_days = None
 
-        security_row = case_utils.get_treat_data_xml_dict(string_utils.xstr(row['Security']))
+        security_row = case_utils.get_treat_data_xml_dict(string_utils.get_str(row['Security'], 'utf-8'))
+        upload_type = case_utils.extract_security_xml(row['Security'], '資料格式')
+        treat_after_check = case_utils.extract_security_xml(row['Security'], '補卡註記')
+        upload_time = case_utils.extract_security_xml(row['Security'], '上傳時間')
+
         error_message = self._check_error(row, security_row)
         if error_message != '':
             remark = ''
@@ -134,12 +140,8 @@ class ICRecordUpload(QtWidgets.QMainWindow):
         medical_record = [
             string_utils.xstr(row['CaseKey']),
             remark,
-            cshis_utils.UPLOAD_TYPE_DICT[
-                string_utils.xstr(security_row['upload_type'])
-            ],
-            cshis_utils.TREAT_AFTER_CHECK_DICT[
-                string_utils.xstr(security_row['treat_after_check'])
-            ],
+            cshis_utils.UPLOAD_TYPE_DICT[upload_type],
+            cshis_utils.UPLOAD_TYPE_DICT[treat_after_check],
             string_utils.xstr(row['CaseDate']),
             string_utils.xstr(row['Period']),
             string_utils.xstr(row['PatientKey']),
@@ -153,7 +155,7 @@ class ICRecordUpload(QtWidgets.QMainWindow):
             string_utils.int_to_str(row['Continuance']).strip('0'),
             string_utils.int_to_str(pres_days),
             string_utils.xstr(row['Doctor']),
-            string_utils.xstr(row['DiseaseName1']),
+            upload_time,
             error_message,
         ]
 
@@ -186,44 +188,56 @@ class ICRecordUpload(QtWidgets.QMainWindow):
         sql = 'SELECT * FROM patient WHERE PatientKey = {0}'.format(row['PatientKey'])
         patient_record = self.database.select_record(sql)[0]
 
-        error_message = ''
+        error_message = []
+        # if string_utils.xstr(row['Card']) in nhi_utils.ABNORMAL_CARD:
+        #     return error_message
+
         if security_row['upload_type'] == '1':
             if security_row['registered_date'] == '':
-                error_message += '[無IC卡掛號時間]'
+                error_message.append('無IC卡掛號時間')
             if security_row['security_signature'] == '':
-                error_message += '[無安全簽章]'
+                error_message.append('無安全簽章')
             if security_row['sam_id'] == '':
-                error_message += '[無安全模組代碼]'
+                error_message.append('無安全模組代碼')
             if security_row['clinic_id']== '':
-                error_message += '[無院所代碼]'
+                error_message.append('無院所代碼')
             if string_utils.xstr(patient_record['CardNo']) == '':
-                error_message += '[病患資料無卡片號碼]'
+                error_message.append('病患資料無卡片號碼')
 
         if string_utils.xstr(patient_record['ID']) == '':
-            error_message += '[病患資料無身份證號碼]'
+            error_message.append('病患資料無身份證號碼')
         if string_utils.xstr(patient_record['Birthday']) == '':
-            error_message += '[病患資料無生日]'
+            error_message.append('病患資料無生日')
         if security_row['upload_type'] == '':
-            error_message += '[無上傳格式]'
+            error_message.append('無上傳格式')
         if security_row['treat_after_check']== '':
-            error_message += '[無補卡註記]'
+            error_message.append('無補卡註記')
         if string_utils.xstr(row['Card']) == '':
-            error_message += '[無卡序]'
+            error_message.append('無卡序')
+        if len(string_utils.xstr(row['Card'])) >= 5:
+            error_message.append('卡序超過4碼')
 
         doctor_id = personnel_utils.get_personnel_field_value(
             self.database, string_utils.xstr(row['Doctor']), 'ID')
         position_list = personnel_utils.get_personnel(self.database, '醫師')
 
         if doctor_id == '':
-            error_message += '[無醫師身份證號]'
+            error_message.append('無醫師身份證號')
         elif string_utils.xstr(row['Doctor']) not in position_list:
-            error_message += '[醫師欄位非醫師]'
+            error_message.append('醫師欄位非醫師')
         if string_utils.xstr(row['DiseaseCode1']) == '':
-            error_message += '[無主診斷碼]'
+            error_message.append('無主診斷碼')
         if string_utils.xstr(row['InsTotalFee']) == '':
-            error_message += '[無申報費用]'
+            error_message.append('無申報費用')
+        for i in range(1, 4):
+            disease_code = string_utils.xstr(row['DiseaseCode{0}'.format(i)])
+            if disease_code == '':
+                continue
 
-        return error_message
+            if not case_utils.is_disease_code_neat(self.database, disease_code):
+                error_message.append('病名{0}非最細碼'.format(i))
+
+        return ', '.join(error_message)
 
     def open_medical_record(self):
         case_key = self.table_widget_medical_record.field_value(0)
@@ -266,6 +280,8 @@ class ICRecordUpload(QtWidgets.QMainWindow):
 
         ic_card = cshis.CSHIS(self.database, self.system_settings)
         if ic_card.upload_data(xml_file_name, record_count):
+            self._set_uploaded_records()
+
             system_utils.show_message_box(
                 QMessageBox.Information,
                 '上傳成功',
@@ -281,7 +297,23 @@ class ICRecordUpload(QtWidgets.QMainWindow):
                     ic_card.xml_feedback_data['upload_time'],
                     ic_card.xml_feedback_data['receive_time']
                 ),
-                '上傳結果請於24小時後再查詢'
+                '上傳結果請於2小時後再查詢'
+            )
+
+    # 更新健保上傳時間
+    def _set_uploaded_records(self):
+        upload_time = date_utils.now_to_str()
+
+        for row in range(self.ui.tableWidget_ic_record.rowCount()):
+            self.ui.tableWidget_ic_record.setCurrentCell(row, 0)
+            remark = self.ui.tableWidget_ic_record.item(row, 1).text()
+            if remark != '*':
+                continue
+
+            case_key = self.ui.tableWidget_ic_record.item(row, 0).text()
+            case_utils.update_xml(
+                self.database, 'cases', 'Security', 'upload_time',
+                upload_time, 'CaseKey', case_key,
             )
 
     def create_xml_file(self, xml_file_name):
@@ -294,17 +326,17 @@ class ICRecordUpload(QtWidgets.QMainWindow):
                 continue
 
             case_key = self.ui.tableWidget_ic_record.item(row, 0).text()
-            upload_type = self.get_upload_type(case_key)
             medical_record = self.database.select_record(
                 'SELECT * FROM cases WHERE CaseKey = {0}'.format(case_key))[0]
+            upload_type = self.get_upload_type(medical_record)
             self.add_rec(root, medical_record, upload_type)
 
         tree = ET.ElementTree(root)
         tree.write(xml_file_name, pretty_print=True, xml_declaration=True, encoding="Big5")
         xml_utils.set_xml_file_to_big5(xml_file_name)
 
-    def get_upload_type(self, case_key):
-        upload_type = case_utils.extract_xml(self.database, case_key, 'upload_type')
+    def get_upload_type(self, medical_record):
+        upload_type = case_utils.extract_security_xml(medical_record['Security'], '資料格式')
         if upload_type == '':
             upload_type = '1'
         if self.upload_type == '2':  # 補正上傳
@@ -350,7 +382,9 @@ class ICRecordUpload(QtWidgets.QMainWindow):
         if upload_type in ['1', '3']:
             clinic_id = case_utils.extract_security_xml(medical_record['Security'], '院所代號')
             card = case_utils.extract_security_xml(medical_record['Security'], '健保卡序')
-            registered_date = case_utils.extract_security_xml(medical_record['Security'], '寫卡時間')
+            registered_date = date_utils.west_datetime_to_nhi_datetime(
+                case_utils.extract_security_xml(medical_record['Security'], '寫卡時間')
+            )
         else:
             clinic_id = self.system_settings.field('院所代號')
             card = string_utils.xstr(medical_record['Card'])
@@ -362,7 +396,9 @@ class ICRecordUpload(QtWidgets.QMainWindow):
         if xcard != '':
             card = xcard
 
-        treat_after_check = case_utils.extract_xml(self.database, case_key, 'treat_after_check')
+        card = string_utils.xstr(card)[:4]
+
+        treat_after_check = case_utils.extract_security_xml(medical_record['Security'],'補卡註記')
         treat_item = cshis_utils.get_treat_item(medical_record['Continuance'])
         disease_code1 = string_utils.xstr(medical_record['DiseaseCode1'])
         disease_code2 = string_utils.xstr(medical_record['DiseaseCode2'])
@@ -390,7 +426,7 @@ class ICRecordUpload(QtWidgets.QMainWindow):
         )
 
         if upload_type in ['1', '3']:
-            sam_id = case_utils.extract_xml(self.database, case_key, 'sam_id')
+            sam_id = case_utils.extract_security_xml(medical_record['Security'], '安全模組')
             a16 = ET.SubElement(mb1, 'A16')
             a16.text = string_utils.xstr(sam_id)
 
@@ -412,7 +448,7 @@ class ICRecordUpload(QtWidgets.QMainWindow):
         a19.text = string_utils.xstr(treat_after_check)
 
         if upload_type in ['1', '3']:
-            security_signature = case_utils.extract_xml(self.database, case_key, 'security_signature')
+            security_signature = case_utils.extract_security_xml(medical_record['Security'], '安全簽章')
             a22 = ET.SubElement(mb1, 'A22')
             a22.text = string_utils.xstr(security_signature)
 
@@ -458,7 +494,7 @@ class ICRecordUpload(QtWidgets.QMainWindow):
 
         if upload_type in ['1', '3']:
             registered_date = date_utils.west_datetime_to_nhi_datetime(
-                case_utils.extract_xml(self.database, case_key, 'registered_date')
+                case_utils.extract_security_xml(medical_record['Security'], '寫卡時間')
             )
         else:
             registered_date = date_utils.west_datetime_to_nhi_datetime(
@@ -533,7 +569,7 @@ class ICRecordUpload(QtWidgets.QMainWindow):
 
         if upload_type in ['1', '3']:
             registered_date = date_utils.west_datetime_to_nhi_datetime(
-                case_utils.extract_xml(self.database, case_key, 'registered_date')
+                case_utils.extract_security_xml(medical_record['Security'], '寫卡時間')
             )
         else:
             registered_date = date_utils.west_datetime_to_nhi_datetime(
@@ -571,3 +607,29 @@ class ICRecordUpload(QtWidgets.QMainWindow):
             if prescript_sign != '':
                 a79 = ET.SubElement(mb2, 'A79')
                 a79.text = string_utils.xstr(prescript_sign)
+
+    def _correct_errors(self):
+        for row_no in range(self.ui.tableWidget_ic_record.rowCount()):
+            case_key = self.ui.tableWidget_ic_record.item(row_no, 0).text()
+            card_item = self.ui.tableWidget_ic_record.item(row_no, 13)
+            if card_item is None:
+                continue
+
+            card = card_item.text()
+
+            if card not in nhi_utils.ABNORMAL_CARD:  # 正常卡序不調整
+                continue
+
+            upload_type = '2'
+            treat_after_check = '1'
+
+            case_utils.update_xml(
+                self.database, 'cases', 'Security', 'upload_type',
+                upload_type, 'CaseKey', case_key,
+            )  # 更新健保寫卡資料
+            case_utils.update_xml(
+                self.database, 'cases', 'Security', 'treat_after_check',
+                treat_after_check, 'CaseKey', case_key,
+            )  # 更新健保寫卡資料
+
+        self.table_widget_medical_record.set_db_data(self.sql, self._set_table_data)

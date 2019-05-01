@@ -96,7 +96,9 @@ class DialogCertificatePayment(QtWidgets.QDialog):
 
     def _select_patient(self):
         patient_key = self.ui.lineEdit_patient_key.text()
-        dialog = dialog_select_patient.DialogSelectPatient(self, self.database, self.system_settings)
+        dialog = dialog_select_patient.DialogSelectPatient(
+            self, self.database, self.system_settings, ''
+        )
         if dialog.exec_():
             patient_key = dialog.get_patient_key()
 

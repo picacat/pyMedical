@@ -250,8 +250,24 @@ class CheckErrors(QtWidgets.QMainWindow):
                         disease_name = '次診斷{0}'.format(i-1)
                     error_messages.append('{0}非ICD10碼'.format(disease_name))
 
+        if string_utils.xstr(row['Treatment']) == '複雜針灸':
+            complicated_acupuncture_list1 = nhi_utils.get_complicated_acupuncture_list(
+                self.database, disease=1
+            )
+            disease_code1 = string_utils.xstr(row['DiseaseCode1'])
+            if disease_code1 != '' and disease_code1 not in complicated_acupuncture_list1:
+                error_messages.append('{0}非複雜性針灸適應症'.format(disease_code1))
+
         if string_utils.get_str(row['Symptom'], 'utf-8') == '':
             error_messages.append('無主訴')
+
+        for i in range(1, 4):
+            disease_code = string_utils.xstr(row['DiseaseCode{0}'.format(i)])
+            if disease_code == '':
+                continue
+
+            if not case_utils.is_disease_code_neat(self.database, disease_code):
+                error_messages.append('病名{0}非最細碼'.format(i))
 
         return error_messages
 
@@ -269,15 +285,20 @@ class CheckErrors(QtWidgets.QMainWindow):
         )
 
         prescript_rows = self.database.select_record(sql)
+        pres_days = case_utils.get_pres_days(self.database, case_key)
 
         acupuncture_treat = 0
         massage_treat = 0
 
+        total_ins_medicine = 0
         for prescript_row in prescript_rows:
             if string_utils.xstr(prescript_row['MedicineType']) == '穴道':
                 acupuncture_treat += 1
             elif string_utils.xstr(prescript_row['MedicineType']) == '處置':
                 massage_treat += 1
+
+            if string_utils.xstr(prescript_row['InsCode']) != '':
+                total_ins_medicine += 1
 
             if string_utils.xstr(prescript_row['MedicineType']) in ['單方', '複方']:
                 if prescript_row['Dosage'] is None or string_utils.xstr(prescript_row['Dosage']) == '':
@@ -291,6 +312,9 @@ class CheckErrors(QtWidgets.QMainWindow):
             error_messages.append('針灸治療無穴位記錄')
         elif string_utils.xstr(row['Treatment']) in nhi_utils.MASSAGE_TREAT and massage_treat <= 0:
             error_messages.append('傷科治療無治療手法記錄')
+
+        if pres_days > 0 and total_ins_medicine <= 0:
+            error_messages.append('無健保碼藥品')
 
         return error_messages
 

@@ -2,7 +2,7 @@
 #coding: utf-8
 
 
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtCore
 from PyQt5.Qt import PYQT_VERSION_STR
 import sys
 import mysql.connector
@@ -31,6 +31,7 @@ class Login(QtWidgets.QDialog):
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_LOGIN, self)
+
         self.setFixedSize(self.size())  # non resizable dialog
         system_utils.set_css(self, self.system_settings)
         self._set_combo_box()

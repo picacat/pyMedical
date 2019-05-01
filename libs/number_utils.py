@@ -7,6 +7,11 @@ def get_integer(value):
     else:
         return int(float(value))
 
+def get_integer_without_zero(value):
+    if value is None or value == '':
+        return None
+    else:
+        return int(float(value))
 
 def get_float(value):
     if value is None or value == '':

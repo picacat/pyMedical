@@ -128,7 +128,7 @@
              <item row="3" column="2">
               <widget class="QLabel" name="label_9">
                <property name="text">
-                <string>保險類別</string>
+                <string>健保身份</string>
                </property>
                <property name="alignment">
                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>

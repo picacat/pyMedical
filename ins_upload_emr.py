@@ -5,6 +5,7 @@
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyPDF2 import PdfFileMerger
 import os
+import shutil
 import datetime
 from lxml import etree as ET
 import subprocess
@@ -55,7 +56,15 @@ class InsUploadEMR(QtWidgets.QMainWindow):
     def _set_signal(self):
         pass
 
-    def generate_emr_files(self):
+    def upload_emr_files(self):
+        self._generate_emr_files()
+
+        type_code = '15'  # 費用抽審批次上傳
+        zip_file = self._get_zip_file_name()
+        nhi_utils.NHI_SendB(self.system_settings, type_code, zip_file)
+
+    def _generate_emr_files(self):
+        shutil.rmtree(self.EXPORT_DIR, ignore_errors=True)
 
         sql = '''
             SELECT 
@@ -91,13 +100,11 @@ class InsUploadEMR(QtWidgets.QMainWindow):
                 break
 
             pdf_file = self._create_pdf_files(row)
-            att_file = self._zip_pdf_file(row_no, pdf_file)
-
-            self._create_xml_files(row_no, row, att_file)
+            self._zip_pdf_file(row_no, pdf_file)
+            self._create_xml_files(row_no, row, pdf_file)
 
         progress_dialog.setValue(row_count)
         self._zip_all_files()
-
 
     # 建立抽審用pdf檔
     def _create_pdf_files(self, row):
@@ -106,6 +113,7 @@ class InsUploadEMR(QtWidgets.QMainWindow):
 
         printer_utils.print_ins_apply_order(
             self, self.database, self.system_settings,
+            self.apply_year, self.apply_month,
             self.apply_type, ins_apply_key, 'pdf'
         )
 
@@ -159,11 +167,10 @@ class InsUploadEMR(QtWidgets.QMainWindow):
         return file_name
 
     def _zip_pdf_file(self, row_no, pdf_file):
-        att_file = 'ATT{1}_{2}{3:0>8}.7z'.format(
-            self.EXPORT_DIR,
+        att_file = 'ATT{0}_{1}{2:0>8}.7z'.format(
             self.system_settings.field('院所代號'),
             datetime.datetime.now().strftime('%Y%m%d'),
-            row_no+1,
+            row_no+1001,  # 應該是 +1, 暫時的，for 抽審測試
         )
 
         zip_file = '{0}/{1}'.format(self.EXPORT_DIR, att_file)
@@ -181,7 +188,7 @@ class InsUploadEMR(QtWidgets.QMainWindow):
             self.EXPORT_DIR,
             self.system_settings.field('院所代號'),
             datetime.datetime.now().strftime('%Y%m%d'),
-            row_no+1,
+            row_no+1001,  # 應該是 +1, 暫時的，for 抽審測試
         )
 
         root = ET.Element('feereview')
@@ -225,13 +232,17 @@ class InsUploadEMR(QtWidgets.QMainWindow):
         tree.write(xml_file_name, pretty_print=True, xml_declaration=True, encoding="Big5")
         xml_utils.set_xml_file_to_big5(xml_file_name)
 
-    def _zip_all_files(self):
-        zip_file = '{0}/{1}_{2}_{3:0>3}.zip'.format(
+    def _get_zip_file_name(self):
+        zip_file_name = '{0}/{1}_{2}_001.zip'.format(
             self.EXPORT_DIR,
             self.system_settings.field('院所代號'),
             date_utils.west_date_to_nhi_date(datetime.datetime.now()),
-            1,
-            )
+        )
+
+        return zip_file_name
+
+    def _zip_all_files(self):
+        zip_file = self._get_zip_file_name()
 
         list_files = [f for f in os.listdir(self.EXPORT_DIR) if os.path.isfile(os.path.join(self.EXPORT_DIR, f))]
         list_files.sort()

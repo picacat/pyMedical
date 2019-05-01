@@ -25,7 +25,7 @@
      <item>
       <widget class="QTabWidget" name="tabWidget_settings">
        <property name="currentIndex">
-        <number>3</number>
+        <number>5</number>
        </property>
        <widget class="QWidget" name="tab_4">
         <attribute name="icon">
@@ -1631,17 +1631,17 @@
             </property>
             <item>
              <layout class="QGridLayout" name="gridLayout_18">
-              <item row="5" column="0">
-               <widget class="QCheckBox" name="checkBox_print_alias">
-                <property name="text">
-                 <string>收費收據列印處方別名</string>
-                </property>
-               </widget>
-              </item>
               <item row="0" column="0">
                <widget class="QCheckBox" name="checkBox_print_clinic_name">
                 <property name="text">
                  <string>掛號收據列印院所名稱</string>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="0">
+               <widget class="QCheckBox" name="checkBox_print_alias">
+                <property name="text">
+                 <string>收費收據列印處方別名</string>
                 </property>
                </widget>
               </item>
@@ -1652,7 +1652,7 @@
                 </property>
                </widget>
               </item>
-              <item row="6" column="0">
+              <item row="7" column="0">
                <spacer name="verticalSpacer_10">
                 <property name="orientation">
                  <enum>Qt::Vertical</enum>
@@ -1683,6 +1683,13 @@
                <widget class="QCheckBox" name="checkBox_print_massager">
                 <property name="text">
                  <string>掛號收據列印推拿師父姓名</string>
+                </property>
+               </widget>
+              </item>
+              <item row="6" column="0">
+               <widget class="QCheckBox" name="checkBox_print_treat">
+                <property name="text">
+                 <string>費用收據列印穴道或處置</string>
                 </property>
                </widget>
               </item>
@@ -1789,10 +1796,30 @@
             </item>
             <item>
              <layout class="QGridLayout" name="gridLayout_8">
-              <item row="0" column="1">
-               <widget class="QSpinBox" name="spinBox_ic_reader_port"/>
+              <item row="0" column="0">
+               <widget class="QLabel" name="label_20">
+                <property name="text">
+                 <string>健保卡讀卡機連接埠 COM</string>
+                </property>
+               </widget>
               </item>
-              <item row="0" column="2">
+              <item row="1" column="1">
+               <widget class="QSpinBox" name="spinBox_hpc_reader_port"/>
+              </item>
+              <item row="1" column="3">
+               <spacer name="horizontalSpacer_12">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item row="0" column="3">
                <spacer name="horizontalSpacer_8">
                 <property name="orientation">
                  <enum>Qt::Horizontal</enum>
@@ -1805,13 +1832,6 @@
                 </property>
                </spacer>
               </item>
-              <item row="0" column="0">
-               <widget class="QLabel" name="label_20">
-                <property name="text">
-                 <string>健保卡讀卡機連接埠 COM</string>
-                </property>
-               </widget>
-              </item>
               <item row="1" column="0">
                <widget class="QLabel" name="label_62">
                 <property name="text">
@@ -1819,21 +1839,15 @@
                 </property>
                </widget>
               </item>
-              <item row="1" column="1">
-               <widget class="QSpinBox" name="spinBox_hpc_reader_port"/>
+              <item row="0" column="1">
+               <widget class="QSpinBox" name="spinBox_ic_reader_port"/>
               </item>
-              <item row="1" column="2">
-               <spacer name="horizontalSpacer_12">
-                <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
+              <item row="0" column="2">
+               <widget class="QPushButton" name="pushButton_detect_com_port">
+                <property name="text">
+                 <string>自動偵測連接埠</string>
                 </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>40</width>
-                  <height>20</height>
-                 </size>
-                </property>
-               </spacer>
+               </widget>
               </item>
              </layout>
             </item>

@@ -2,15 +2,17 @@
 # 輸入處方 2018.06.15
 #coding: utf-8
 
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtWidgets import QFileDialog, QMessageBox, QPushButton
 
-import datetime
+import urllib.request
+from threading import Thread
+from queue import Queue
+
 import os.path
 from os import listdir
 import ntpath
 import shutil
-import sys
 import datetime
 
 from classes import table_widget
@@ -19,7 +21,7 @@ from libs import system_utils
 from libs import string_utils
 
 
-# 主視窗
+# 醫療系統更新
 class SystemUpdate(QtWidgets.QDialog):
     # 初始化
     def __init__(self, parent=None, *args):
@@ -56,11 +58,26 @@ class SystemUpdate(QtWidgets.QDialog):
         self.table_widget_file_list = table_widget.TableWidget(self.ui.tableWidget_file_list, self.database)
         self._set_table_width()
 
+        self._set_radio_buttons()
         self.ui.lineEdit_file_name.setFocus()
 
     # 設定信號
     def _set_signal(self):
         self.ui.buttonBox.accepted.connect(self.accepted_button_clicked)
+        self.ui.radioButton_auto_update.clicked.connect(self._set_radio_buttons)
+        self.ui.radioButton_manual_update.clicked.connect(self._set_radio_buttons)
+        self.ui.pushButton_download.clicked.connect(self._check_downloaded_file)
+
+    def _set_radio_buttons(self):
+        self.ui.pushButton_download.setEnabled(False)
+        self.ui.lineEdit_file_name.setEnabled(False)
+        self.ui.toolButton_open_file.setEnabled(False)
+
+        if self.ui.radioButton_auto_update.isChecked():
+            self.ui.pushButton_download.setEnabled(True)
+        else:
+            self.ui.lineEdit_file_name.setEnabled(True)
+            self.ui.toolButton_open_file.setEnabled(True)
 
     def _set_table_width(self):
         width = [200, 220, 350, 200]
@@ -85,18 +102,9 @@ class SystemUpdate(QtWidgets.QDialog):
         if not os.path.isfile(file_name):
             return
 
-        self._check_files()
-        if self.ui.tableWidget_file_list.rowCount() <= 0:
-            msg_box = QMessageBox()
-            msg_box.setIcon(QMessageBox.Warning)
-            msg_box.setWindowTitle('系統更新完成')
-            msg_box.setText("<font size='4'><b>系統已經是最新檔, 不需更新.</b></font>")
-            msg_box.setInformativeText("請按取消鍵結束系統更新.")
-            msg_box.addButton(QPushButton("確定"), QMessageBox.YesRole)
-            msg_box.exec_()
-            return
+        zip_file_name = self.ui.lineEdit_file_name.text()
+        self._check_files(zip_file_name)
 
-        self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setEnabled(True)
 
     def accepted_button_clicked(self):
         self._update_files()
@@ -110,10 +118,9 @@ class SystemUpdate(QtWidgets.QDialog):
         msg_box.exec_()
 
 
-    def _check_files(self):
+    def _check_files(self, zip_file_name):
         dest_root = os.path.dirname(os.path.abspath(__file__))
 
-        zip_file_name = self.ui.lineEdit_file_name.text()
         temp_dir = os.path.join(dest_root, '_temp')
         if os.path.exists(temp_dir):
             shutil.rmtree(temp_dir)
@@ -138,6 +145,18 @@ class SystemUpdate(QtWidgets.QDialog):
         self._list_files(zip_source_root, dest_root, 'ui')
 
         self.ui.tableWidget_file_list.resizeRowsToContents()
+
+        if self.ui.tableWidget_file_list.rowCount() <= 0:
+            msg_box = QMessageBox()
+            msg_box.setIcon(QMessageBox.Warning)
+            msg_box.setWindowTitle('系統更新完成')
+            msg_box.setText("<font size='4'><b>經過檢查更新檔案, 發現系統已經是最新檔, 不需更新.</b></font>")
+            msg_box.setInformativeText("請按取消鍵結束系統更新.")
+            msg_box.addButton(QPushButton("確定"), QMessageBox.YesRole)
+            msg_box.exec_()
+            return
+
+        self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setEnabled(True)
 
     def _list_files(self, zip_source_root, dest_root, dir_name):
         source_dir = os.path.join(zip_source_root, dir_name)
@@ -195,3 +214,44 @@ class SystemUpdate(QtWidgets.QDialog):
 
             shutil.copy2(source_file_name, dest_file_name)
 
+    @staticmethod
+    def _message_box(title, message, hint):
+        msg_box = QMessageBox()
+        msg_box.setIcon(QMessageBox.Information)
+        msg_box.setWindowTitle(title)
+        msg_box.setText(message)
+        msg_box.setInformativeText(hint)
+        msg_box.setStandardButtons(QMessageBox.NoButton)
+
+        return msg_box
+
+    def _download_file_thread(self, out_queue):
+        QtCore.QCoreApplication.processEvents()
+
+        url = 'https://www.dropbox.com/s/38b7ltynil553fn/pymedical.zip?dl=1'
+        u = urllib.request.urlopen(url)
+        data = u.read()
+        u.close()
+        download_file_name = 'pymedical.zip'
+        with open(download_file_name, "wb") as f:
+            f.write(data)
+
+        out_queue.put(download_file_name)
+
+    # 取得安全簽章
+    def _check_downloaded_file(self):
+        title = '下載更新檔'
+        message = '<font size="4" color="red"><b>正在下載醫療系統更新檔, 請稍後...</b></font>'
+        hint = '正在與更新檔資料庫連線, 會花費一些時間.'
+        msg_box = self._message_box(title, message, hint)
+        msg_box.show()
+
+        msg_queue = Queue()
+        QtCore.QCoreApplication.processEvents()
+
+        t = Thread(target=self._download_file_thread, args=(msg_queue, ))
+        t.start()
+        download_file_name = msg_queue.get()
+        msg_box.close()
+
+        self._check_files(download_file_name)

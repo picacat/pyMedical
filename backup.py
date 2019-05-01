@@ -2,7 +2,8 @@
 #coding: utf-8
 
 
-from PyQt5 import QtWidgets, QtGui, QtCore
+from PyQt5 import QtWidgets, QtCore
+from PyQt5.QtWidgets import QMessageBox, QPushButton
 import os
 import configparser
 import datetime
@@ -56,6 +57,7 @@ class Backup(QtWidgets.QDialog):
             ['dosage.sql', '"CaseKey IN (SELECT CaseKey FROM cases WHERE CaseDate BETWEEN \'{0}\' AND \'{1}\')"'.format(start_date, end_date)],
             ['deposit.sql', '"CaseKey IN (SELECT CaseKey FROM cases WHERE CaseDate BETWEEN \'{0}\' AND \'{1}\')"'.format(start_date, end_date)],
             ['debt.sql', '"CaseKey IN (SELECT CaseKey FROM cases WHERE CaseDate BETWEEN \'{0}\' AND \'{1}\')"'.format(start_date, end_date)],
+            ['reserve.sql', '"ReserveDate BETWEEN \'{0}\' AND \'{1}\'"'.format(start_date, end_date)],
         ]
         max_progress = len(backup_list)
 
@@ -72,7 +74,7 @@ class Backup(QtWidgets.QDialog):
 
         progress_dialog.setValue(max_progress)
 
-        if datetime.datetime.today().day in [1, 11, 21]:  # 每個月1, 11, 21日備份所有資料
+        if datetime.datetime.today().day in [5, 10, 15, 20, 25, 30]:  # 每個月5, 10, 15, 20, 25, 30日備份所有資料
             self._dump_database(backup_path)
 
     def _check_backup_path(self, backup_path):
@@ -122,10 +124,19 @@ class Backup(QtWidgets.QDialog):
         dump_file = os.path.join(backup_path, '{0}.sql'.format(database_name))
 
         dump_cmd = '''
-            mysqldump --host={host} --user={user} --password={password}  --complete-insert {database} > {dump_file}
+            mysqldump --host={host} --user={user} --password={password} --complete-insert {database} > {dump_file}
         '''.format(
             host=host_name, user=user_name, password=password,
             database=database_name, dump_file=dump_file,
         )
 
-        os.system(dump_cmd)
+        err_no = os.system(dump_cmd)
+        if err_no != 0:
+            msg_box = QMessageBox()
+            msg_box.setIcon(QMessageBox.Warning)
+            msg_box.setWindowTitle('備份失敗')
+            msg_box.setText("<font size='4' color='red'><b>無法備份全部的資料庫, 資料庫檔案需要檢查.</b></font>")
+            msg_box.setInformativeText("請與本公司聯繫, 並告知上面的訊息.")
+            msg_box.addButton(QPushButton("確定"), QMessageBox.YesRole)
+            msg_box.exec_()
+

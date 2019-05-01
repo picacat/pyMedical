@@ -95,7 +95,7 @@ class InsApplyTab(QtWidgets.QMainWindow):
             msg_box = QMessageBox()
             msg_box.setIcon(QMessageBox.Warning)
             msg_box.setWindowTitle('申報檔有誤')
-            msg_box.setText("<font size='4' color='red'><b>申報檔有錯誤, 請至申報預檢完成錯誤檢查流程.</b></font>")
+            msg_box.setText("<font size='4' color='red'><b>申報檔有錯誤, 請至申報檢查完成錯誤檢查流程.</b></font>")
             msg_box.setInformativeText("錯誤未全部更正前, 請勿申報上傳, 以免遭到退件.")
             msg_box.addButton(QPushButton("確定"), QMessageBox.YesRole)
             msg_box.exec_()

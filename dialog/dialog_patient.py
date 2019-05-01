@@ -7,6 +7,7 @@ from classes import table_widget
 
 from libs import ui_utils
 from libs import system_utils
+from libs import string_utils
 
 
 # 門診掛號 2018.01.22
@@ -50,15 +51,15 @@ class DialogPatient(QtWidgets.QDialog):
         self.table_widget_patient_list.set_db_data(None, self._set_table_data, row)
 
     def _set_table_data(self, row_no, row):
-        patient_rec = [str(row['PatientKey']),
-                       str(row['Name']),
-                       str(row['Gender']),
-                       str(row['Birthday']),
-                       str(row['ID']),
-                       str(row['InsType']),
-                       str(row['Telephone']),
-                       str(row['Cellphone']),
-                       str(row['Address'])]
+        patient_rec = [string_utils.xstr(row['PatientKey']),
+                       string_utils.xstr(row['Name']),
+                       string_utils.xstr(row['Gender']),
+                       string_utils.xstr(row['Birthday']),
+                       string_utils.xstr(row['ID']),
+                       string_utils.xstr(row['InsType']),
+                       string_utils.xstr(row['Telephone']),
+                       string_utils.xstr(row['Cellphone']),
+                       string_utils.xstr(row['Address'])]
 
         for column in range(len(patient_rec)):
             self.ui.tableWidget_patient_list.setItem(

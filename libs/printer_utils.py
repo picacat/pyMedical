@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import QInputDialog
 from PyQt5.QtPrintSupport import QPrinter, QPrinterInfo
 
 from libs import dialog_utils
+from libs import number_utils
 
 from printer.print_registration_form1 import *
 from printer.print_registration_form2 import *
@@ -11,30 +12,35 @@ from printer.print_registration_form3 import *
 from printer.print_prescription_ins_form1 import *
 from printer.print_prescription_ins_form2 import *
 from printer.print_prescription_ins_form3 import *
+from printer.print_prescription_ins_form4 import *
 
 from printer.print_prescription_self_form1 import *
 from printer.print_prescription_self_form2 import *
 from printer.print_prescription_self_form3 import *
+from printer.print_prescription_self_form4 import *
 
 from printer.print_receipt_ins_form1 import *
 from printer.print_receipt_ins_form2 import *
 from printer.print_receipt_ins_form3 import *
+from printer.print_receipt_ins_form4 import *
 
 from printer.print_receipt_self_form1 import *
 from printer.print_receipt_self_form2 import *
 from printer.print_receipt_self_form3 import *
+from printer.print_receipt_self_form4 import *
 
 from printer.print_ins_apply_total_fee import *
 from printer.print_ins_apply_order import *
 from printer.print_ins_apply_schedule_table import *
 
 from printer.print_medical_records import *
+from printer.print_medical_fees import *
 from printer.print_medical_chart import *
 
 from printer.print_certificate_diagnosis import *
 from printer.print_certificate_payment import *
 
-PRINT_MODE = ['不印', '列印', '詢問', '預覽']
+PRINT_MODE = ['不印', '列印', '藥品', '詢問', '預覽']
 PRINT_REGISTRATION_FORM = {
     '01-熱感紙掛號單': PrintRegistrationForm1,
     '02-11"中二刀空白掛號單': PrintRegistrationForm2,
@@ -45,24 +51,28 @@ PRINT_PRESCRIPTION_INS_FORM = {
     '01-11"中二刀健保處方箋': PrintPrescriptionInsForm1,
     '02-2"健保處方箋': PrintPrescriptionInsForm2,
     '03-3"健保處方箋': PrintPrescriptionInsForm3,
+    '04-4"健保處方箋': PrintPrescriptionInsForm4,
 }
 
 PRINT_PRESCRIPTION_SELF_FORM = {
     '01-11"中二刀自費處方箋': PrintPrescriptionSelfForm1,
     '02-2"自費處方箋': PrintPrescriptionSelfForm2,
     '03-3"自費處方箋': PrintPrescriptionSelfForm3,
+    '04-4"自費處方箋': PrintPrescriptionSelfForm4,
 }
 
 PRINT_RECEIPT_INS_FORM = {
     '01-11"中二刀健保醫療收據': PrintReceiptInsForm1,
     '02-2"健保醫療收據': PrintReceiptInsForm2,
     '03-3"健保醫療收據': PrintReceiptInsForm3,
+    '04-4"健保醫療收據': PrintReceiptInsForm4,
 }
 
 PRINT_RECEIPT_SELF_FORM = {
     '01-11"中二刀自費醫療收據': PrintReceiptSelfForm1,
     '02-2"自費醫療收據': PrintReceiptSelfForm2,
     '03-3"自費醫療收據': PrintReceiptSelfForm3,
+    '04-4"自費醫療收據': PrintReceiptSelfForm4,
 }
 
 
@@ -341,8 +351,69 @@ def get_disease(database, case_key):
     return disease
 
 
+def get_self_prescript_html(database, system_setting, case_key):
+    sql = '''
+        SELECT * FROM prescript 
+        WHERE 
+            CaseKey = {case_key} AND
+            MedicineSet = 2
+        ORDER BY MedicineSet, PrescriptNo, PrescriptKey
+    '''.format(
+        case_key=case_key,
+    )
+
+    rows = database.select_record(sql)
+    if len(rows) <= 0:
+        return ''
+
+    prescript_line = ''
+    for row in rows:
+        try:
+            unit_price = '{0:.1f}'.format(row['Price'])
+        except:
+            unit_price = '0.0'
+
+        try:
+            dosage = '{0:.1f}'.format(row['Dosage'])
+        except:
+            dosage = '0.0'
+
+        try:
+            total_amount = '{0:.1f}'.format(row['Amount'])
+        except:
+            total_amount = '0.0'
+
+        prescript_line += '''
+            <tr>
+                <td align="left" width="40%">{medicine_name}</td>
+                <td align="right" width="10%">{unit_price}</td>
+                <td align="right" width="10%">{dosage}{unit}</td>
+                <td align="right" width="10%">{total_amount}</td>
+                <td width="20%"></td>
+            </tr>
+        '''.format(
+            medicine_name=string_utils.xstr(row['MedicineName']),
+            unit=string_utils.xstr(row['Unit']),
+            unit_price=unit_price,
+            dosage=dosage,
+            total_amount=total_amount,
+        )
+
+    prescript = '''
+        <tr>
+            <th align="left">處方名稱</th>
+            <th align="right">單價</th>
+            <th align="right">數量</th>
+            <th align="right">金額</th>
+        </tr>
+        {prescript_line}
+    '''.format(
+        prescript_line=prescript_line,
+    )
+    return prescript
+
 def get_prescript_html(database, system_setting, case_key, medicine_set,
-                       print_alias, print_total_dosage, blocks):
+                       print_type, print_alias, print_total_dosage, blocks):
     if medicine_set is None:
         prescript = '''
             <tr>
@@ -362,15 +433,24 @@ def get_prescript_html(database, system_setting, case_key, medicine_set,
     rows = database.select_record(sql)
     treatment = rows[0]['Treatment']
 
+    treat_condition = ''
+    if print_type == '費用收據' and system_setting.field('列印穴道處置') == 'N':
+        treat_condition = ' AND (prescript.MedicineType NOT IN ("穴道")) '
+
     sql = '''
         SELECT prescript.*, medicine.Location, medicine.MedicineAlias FROM prescript 
             LEFT JOIN medicine ON medicine.MedicineKey = prescript.MedicineKey
         WHERE 
-            CaseKey = {0} AND
-            MedicineSet = {1} AND
+            CaseKey = {case_key} AND
+            MedicineSet = {medicine_set} AND
             (prescript.MedicineName IS NOT NULL AND LENGTH(prescript.MedicineName) > 0)
+            {treat_condition}
         ORDER BY PrescriptNo, PrescriptKey
-    '''.format(case_key, medicine_set)
+    '''.format(
+        case_key=case_key,
+        medicine_set=medicine_set,
+        treat_condition=treat_condition,
+    )
 
     rows = database.select_record(sql)
     if medicine_set == 1 and treatment in nhi_utils.INS_TREAT:
@@ -473,7 +553,7 @@ def get_ins_fees_html(database, case_key):
           <td>門診負擔:{diag_share_fee}</td>
           <td>藥品負擔:{drug_share_fee}</td>
           <td>欠卡費:{deposit_fee}</td>
-          <td>實收金額:{total_fee}</td>
+          <td>健保實收:{total_fee}</td>
         </tr> 
         <tr>
           <td>診察費:{diag_fee}</td>
@@ -532,8 +612,8 @@ def get_self_fees_html(database, case_key):
 
     html = '''
         <tr>
-          <td>掛號費:{regist_fee}</td>
-          <td>診察費:{diag_fee}</td>
+          <td>自費掛號費:{regist_fee}</td>
+          <td>自費診察費:{diag_fee}</td>
           <td>一般藥費:{drug_fee}</td>
           <td>水煎藥費:{herb_fee}</td>
           <td>高貴藥費:{expensive_fee}</td>
@@ -798,7 +878,11 @@ def print_ins_prescript(parent, database, system_settings, case_key,
     if print_option != '系統設定' and printable == '不印':
         printable = '列印'
 
+    prescript_count = get_prescript_count(database, case_key, medicine_set=1)
+
     if printable == '不印':
+        return
+    elif printable == '藥品' and prescript_count <= 0:
         return
     elif printable == '詢問':
         dialog = QtPrintSupport.QPrintDialog()
@@ -829,7 +913,11 @@ def print_self_prescript(parent, database, system_settings, case_key, medicine_s
     if print_option != '系統設定' and printable == '不印':
         printable = '列印'
 
+    prescript_count = get_prescript_count(database, case_key, medicine_set)
+
     if printable == '不印':
+        return
+    elif printable == '藥品' and prescript_count <= 0:
         return
     elif printable == '詢問':
         dialog = QtPrintSupport.QPrintDialog()
@@ -993,9 +1081,9 @@ def print_ins_apply_order(parent, database, system_settings,
     del print_ins_order
 
 
-# 列印雙月病歷
+# 列印實體病歷
 def print_medical_records(parent, database, system_settings,
-                          patient_key, start_date, end_date, print_type=None):
+                          patient_key, sql, start_date, end_date, print_type=None):
     if print_type is None:  # 如果未指定列印方式，以系統設定為主
         if system_settings.field('列印報表') == '不印':
             return
@@ -1010,7 +1098,7 @@ def print_medical_records(parent, database, system_settings,
 
     print_cases = PrintMedicalRecords(
         parent, database, system_settings,
-        patient_key, start_date, end_date,
+        patient_key, sql, start_date, end_date,
     )
 
     if print_type == 'print':
@@ -1019,8 +1107,42 @@ def print_medical_records(parent, database, system_settings,
         print_cases.preview()
     elif print_type == 'pdf':
         print_cases.save_to_pdf()
+    elif print_type == 'pdf_by_dialog':
+        print_cases.save_to_pdf_by_dialog()
 
     del print_cases
+
+
+# 列印收費明細
+def print_medical_fees(parent, database, system_settings,
+                       patient_key, sql, print_type=None):
+    if print_type is None:  # 如果未指定列印方式，以系統設定為主
+        if system_settings.field('列印報表') == '不印':
+            return
+        elif system_settings.field('列印報表') == '詢問':
+            dialog = QtPrintSupport.QPrintDialog()
+            if dialog.exec() == QtWidgets.QDialog.Rejected:
+                return
+        elif system_settings.field('列印報表') == '預覽':
+            print_type = 'preview'
+        elif system_settings.field('列印報表') == '列印':
+            print_type = 'print'
+
+    print_fees = PrintMedicalFees(
+        parent, database, system_settings,
+        patient_key, sql,
+    )
+
+    if print_type == 'print':
+        print_fees.print()
+    elif print_type == 'preview':
+        print_fees.preview()
+    elif print_type == 'pdf':
+        print_fees.save_to_pdf()
+    elif print_type == 'pdf_by_dialog':
+        print_fees.save_to_pdf_by_dialog()
+
+    del print_fees
 
 
 # 列印雙月病歷首頁
@@ -1108,3 +1230,28 @@ def print_certificate_payment(parent, database, system_settings, certificate_key
         print_certificate.save_to_pdf()
 
     del print_certificate
+
+
+def get_prescript_count(database, case_key, medicine_set):
+    if medicine_set == 1:
+        medicine_type_script = ' AND MedicineType NOT IN ("穴道", "處置", "檢驗") '
+    else:
+        medicine_type_script = ''
+
+    sql = '''
+        SELECT PrescriptKey FROM prescript
+        WHERE
+            CaseKey = {case_key} AND
+            MedicineSet = {medicine_set}
+            {medicine_type_script}
+            
+    '''.format(
+        case_key=case_key,
+        medicine_set=medicine_set,
+        medicine_type_script=medicine_type_script,
+    )
+
+    rows = database.select_record(sql)
+    prescript_count = len(rows)
+
+    return prescript_count

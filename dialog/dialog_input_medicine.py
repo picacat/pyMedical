@@ -24,7 +24,7 @@ class DialogInputMedicine(QtWidgets.QDialog):
         self.medicine_set = args[3]
         self.table_widget_prescript = args[4]
         self.previous_medicine_name = args[5]
-        self.input_code = self.table_widget_prescript.currentItem().text()
+        self.input_code = args[6]
 
         self.settings = QSettings('__settings.ini', QSettings.IniFormat)
         self.ui = None

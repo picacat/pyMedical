@@ -29,6 +29,7 @@ class MedicalRecordRegistration(QtWidgets.QMainWindow):
         self.patient_data = None
         self.ui = None
         self.data_changed = False
+        self.cshis_data_changed = False
 
         self._set_ui()
         self._read_case_registration()
@@ -80,10 +81,14 @@ class MedicalRecordRegistration(QtWidgets.QMainWindow):
         self.ui.comboBox_xcard.currentTextChanged.connect(self._set_data_changed)
         self.ui.comboBox_card.currentTextChanged.connect(self._set_data_changed)
         self.ui.comboBox_course.currentTextChanged.connect(self._set_data_changed)
+
+        self.ui.comboBox_upload_type.currentTextChanged.connect(self._cshis_data_changed)
+        self.ui.comboBox_treat_after_check.currentTextChanged.connect(self._cshis_data_changed)
+
         self.ui.lineEdit_special_code.textChanged.connect(self.set_special_code)
 
     def _set_table_width(self):
-        width = [160, 120, 470]
+        width = [200, 100, 470]
         self.table_widget_prescript_sign.set_table_heading_width(width)
 
     # 檢查資料是否異動
@@ -125,6 +130,9 @@ class MedicalRecordRegistration(QtWidgets.QMainWindow):
         ui_utils.set_combo_box(self.ui.comboBox_xcard, nhi_utils.ABNORMAL_CARD_WITH_HINT, None)
         ui_utils.set_combo_box(self.ui.comboBox_card, nhi_utils.ABNORMAL_CARD_WITH_HINT, None, '欠卡')
         ui_utils.set_combo_box(self.ui.comboBox_course, nhi_utils.COURSE, None)
+
+        ui_utils.set_combo_box(self.ui.comboBox_upload_type, nhi_utils.UPLOAD_TYPE, None)
+        ui_utils.set_combo_box(self.ui.comboBox_treat_after_check, nhi_utils.TREAT_AFTER_CHECK, None)
 
     def set_special_code(self):
         self.data_changed = True
@@ -195,8 +203,10 @@ class MedicalRecordRegistration(QtWidgets.QMainWindow):
         self.ui.lineEdit_clinic_id.setText(clinic_id)
         self.ui.lineEdit_sam_id.setText(sam_id)
         self.ui.lineEdit_upload_time.setText(upload_time)
-        self.ui.lineEdit_upload_type.setText(cshis_utils.UPLOAD_TYPE_DICT[upload_type])
-        self.ui.lineEdit_treat_after_check.setText(cshis_utils.TREAT_AFTER_CHECK_DICT[treat_after_check])
+
+        self.ui.comboBox_upload_type.setCurrentText(cshis_utils.UPLOAD_TYPE_DICT[upload_type])
+        self.ui.comboBox_treat_after_check.setCurrentText(cshis_utils.TREAT_AFTER_CHECK_DICT[treat_after_check])
+
         self.ui.lineEdit_prescript_sign_time.setText(prescript_sign_time)
         self.ui.textEdit_signature.setPlainText(signature)
 
@@ -267,7 +277,9 @@ class MedicalRecordRegistration(QtWidgets.QMainWindow):
             start_index = 1
 
         sql = '''
-            SELECT prescript.MedicineName, prescript.InsCode, presextend.Content FROM prescript
+            SELECT 
+                prescript.PrescriptKey, prescript.MedicineName, prescript.InsCode, 
+                presextend.Content FROM prescript
             LEFT JOIN presextend ON presextend.PrescriptKey = prescript.PrescriptKey 
             WHERE
             prescript.CaseKey = {0} AND
@@ -277,16 +289,16 @@ class MedicalRecordRegistration(QtWidgets.QMainWindow):
         '''.format(self.case_key)
         self.table_widget_prescript_sign.set_db_data(sql, self._set_prescript_sign_data, None, start_index)
 
-    def _set_prescript_sign_data(self, rec_no, rec):
+    def _set_prescript_sign_data(self, row_no, row):
         prescript_sign_rec = [
-            string_utils.xstr(rec['MedicineName']),
-            string_utils.xstr(rec['InsCode']),
-            string_utils.xstr(rec['Content']),
+            string_utils.xstr(row['MedicineName']),
+            string_utils.xstr(row['InsCode']),
+            string_utils.xstr(row['Content']),
         ]
 
         for column in range(len(prescript_sign_rec)):
             self.ui.tableWidget_prescript_sign.setItem(
-                rec_no, column,
+                row_no, column,
                 QtWidgets.QTableWidgetItem(prescript_sign_rec[column])
             )
 
@@ -337,3 +349,17 @@ class MedicalRecordRegistration(QtWidgets.QMainWindow):
 
         self.database.update_record('cases', fields, 'CaseKey', self.case_key, data)
 
+
+        if self.cshis_data_changed:
+            upload_type = self.ui.comboBox_upload_type.currentText().split('-')[0]
+            treat_after_check = self.ui.comboBox_treat_after_check.currentText().split('-')[0]
+
+            case_utils.update_xml(
+                self.database, 'cases', 'Security', 'upload_type', upload_type, 'CaseKey', self.case_key,
+            )  # 更新健保寫卡資料
+            case_utils.update_xml(
+                self.database, 'cases', 'Security', 'treat_after_check', treat_after_check, 'CaseKey', self.case_key,
+            )  # 更新健保寫卡資料
+
+    def _cshis_data_changed(self):
+        self.cshis_data_changed = True

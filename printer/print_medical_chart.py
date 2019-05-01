@@ -107,14 +107,15 @@ class PrintMedicalChart:
                 PatientKey = {0}
             ORDER BY CaseDate LIMIT 1
         '''.format(self.patient_key)
+
         rows = self.database.select_record(sql)
         case_row = rows[0]
 
         init_date = patient_utils.get_init_date(self.database, self.patient_key)
         prescript_record = printer_utils.get_prescript_html(
             self.database, self.system_settings,
-            case_row['CaseKey'], medicine_set=1,
-            print_alias=False, print_total_dosage=False, blocks=3)
+            case_row['CaseKey'], 1,
+            '病歷表', print_alias=False, print_total_dosage=False, blocks=3)
         instruction = printer_utils.get_instruction_html(
             self.database, case_row['CaseKey'], medicine_set=1
         )

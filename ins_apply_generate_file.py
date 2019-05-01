@@ -96,12 +96,16 @@ class InsApplyGenerateFile(QtWidgets.QMainWindow):
             FROM cases 
                 LEFT JOIN patient ON patient.PatientKey = cases.PatientKey
             WHERE
-                (CaseDate BETWEEN "{0}" AND "{1}") AND
+                (CaseDate BETWEEN "{start_date}" AND "{end_date}") AND
                 (cases.InsType = "健保") AND
                 (Card != "欠卡") AND
-                (ApplyType = "{2}") 
+                (ApplyType = "{apply_type}") 
             ORDER BY CaseDate
-        '''.format(start_date, end_date, self.apply_type)
+        '''.format(
+            start_date=start_date,
+            end_date=end_date,
+            apply_type=self.apply_type
+        )
         rows = self.database.select_record(sql)
 
         return rows
@@ -167,20 +171,29 @@ class InsApplyGenerateFile(QtWidgets.QMainWindow):
 
         patient_key = number_utils.get_integer(row['PatientKey'])
         card = string_utils.xstr(row['Card'])
+
+        # 找出同卡序且有執行療程首次的病歷
         sql = '''
             SELECT * FROM insapply
             WHERE
-                ClinicID = "{0}" AND
-                ApplyDate = "{1}" AND
-                ApplyPeriod = "{2}" AND
-                ApplyType = "{3}" AND
-                PatientKey = {4} AND
-                Card = "{5}"
+                ClinicID = "{clinic_id}" AND
+                ApplyDate = "{apply_date}" AND
+                ApplyPeriod = "{apply_period}" AND
+                ApplyType = "{apply_type}" AND
+                PatientKey = {patient_key} AND
+                Card = "{card}" AND
+                TreatCode1 IS NOT NULL AND
+                TreatCode{course} IS NULL
         '''.format(
-            self.clinic_id, self.apply_date, self.period,
-            nhi_utils.APPLY_TYPE_DICT[self.apply_type],
-            patient_key, card,
+            clinic_id=self.clinic_id,
+            apply_date=self.apply_date,
+            apply_period=self.period,
+            apply_type=nhi_utils.APPLY_TYPE_DICT[self.apply_type],
+            patient_key=patient_key,
+            card=card,
+            course=string_utils.xstr(course),
         )
+
         ins_apply_rows = self.database.select_record(sql)
         if len(ins_apply_rows) > 0:
             ins_apply_row = ins_apply_rows[0]

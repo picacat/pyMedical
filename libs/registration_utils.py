@@ -4,6 +4,7 @@ from PyQt5.QtWidgets import QMessageBox, QPushButton
 import datetime
 from libs import nhi_utils
 from libs import number_utils
+from libs import string_utils
 
 
 # 取得班別
@@ -46,7 +47,7 @@ def get_last_reg_no(database, system_settings, start_date, end_date, period, roo
         sql += ' AND Period = "{0}"'.format(period)
 
     if system_settings.field('現場掛號給號模式') == '預約班表':
-        sql += ' AND RegistType = "一般門診"'
+        sql += ' AND RegistType = "一般門診"'  # 一定要讀現場號，否則預約報到後，現場號會變成預約號之後, 早成中間許多現場號空號
 
     sql += ' ORDER BY RegistNo DESC LIMIT 1'
     rows = database.select_record(sql)
@@ -125,8 +126,7 @@ def get_reg_no_by_mode(database, system_settings, period, room, doctor, reg_no):
         sql = '''
             SELECT * FROM reservation_table
             WHERE
-                ReserveNo >= {reg_no} AND
-                Room = {room}
+                ReserveNo >= {reg_no} 
                 {period_condition}
                 {doctor_condition}
             ORDER BY ReserveNo 
@@ -163,7 +163,6 @@ def check_release_reserve_no(database, room, period, doctor, reg_no):
         SELECT * FROM reserve 
         WHERE
             ReserveDate BETWEEN "{start_date}" AND "{end_date}" AND
-            Room = {room} AND
             Period = "{period}" AND
             Doctor = "{doctor}" AND
             ReserveNo = {reg_no}
@@ -251,7 +250,7 @@ def get_diag_fee_times(database, patient_key):
 # 檢查當月健保有診察費就診次數
 def check_diag_fee_times(database, system_settings, patient_key):
     message = None
-    diag_fee_times = get_treat_times(database, patient_key)
+    diag_fee_times = get_diag_fee_times(database, patient_key)
     diag_fee_times_limit = number_utils.get_integer(system_settings.field('首次警告次數'))
     if diag_fee_times >= diag_fee_times_limit:
         message = '* 診察次數警告: 本月診察次數共{0}次, 已達系統設定{1}次的限制.<br>'.format(
@@ -275,7 +274,11 @@ def check_deposit(database, patient_key):
     rows = database.select_record(sql)
 
     if len(rows) > 0:
-        message = '* 欠卡提醒: 本月{0}門診尚有欠卡未還.<br>'.format(rows[0]['CaseDate'].strftime('%m月%d日'))
+        row = rows[0]
+        message = '* 欠卡提醒: 本月{0}月{1}日門診尚有欠卡未還.'.format(
+            row['CaseDate'].month,
+            row['CaseDate'].day,
+        )
 
     return message
 
@@ -323,30 +326,38 @@ def check_card_yesterday(database, patient_key, course=None):
 
 
 # 檢查上次給藥是否用完
-def check_prescription_finished(database, patient_key):
+def check_prescription_finished(database, patient_key, in_date=None):
     message = None
-    end_date = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d 23:59:59")
+    if in_date is None:
+        in_date = datetime.date.today()
+    else:
+        in_date = in_date.date()
+
+    end_date = (in_date - datetime.timedelta(days=1)).strftime("%Y-%m-%d 23:59:59")
     sql = '''
-        SELECT cases.CaseDate, dosage.Days FROM cases
+        SELECT cases.CaseDate, cases.Name, dosage.Days FROM cases
         LEFT JOIN dosage on dosage.CaseKey = cases.CaseKey
         WHERE
-        (cases.PatientKey = {0}) AND
-        (cases.CaseDate <= "{1}") AND
-        (cases.InsType = "健保") AND
-        (dosage.Days > 0)
+            (cases.PatientKey = {0}) AND
+            (cases.CaseDate <= "{1}") AND
+            (cases.InsType = "健保") AND
+            (dosage.MedicineSet = 1) AND (dosage.Days > 0)
         ORDER BY CaseDate DESC LIMIT 1
     '''.format(patient_key, end_date)
     rows = database.select_record(sql)
 
     if len(rows) > 0:
-        prescription_days = number_utils.get_integer(rows[0]['Days'])
-        today = datetime.date.today()
-        last_prescription_date = (rows[0]['CaseDate']).date()
-        days = (today - last_prescription_date).days + 1  # 給藥當日也算一日
-        if prescription_days > days:
-            message = '* 用藥檢查: {0}給藥尚有{1}日藥未服用完畢.'.format(
-                rows[0]['CaseDate'].strftime('%Y-%m-%d'),
-                (prescription_days-days))
+        row = rows[0]
+        prescription_days = number_utils.get_integer(row['Days'])
+        last_prescription_date = row['CaseDate'].date()
+        days = (in_date - last_prescription_date).days + 1  # 已服用天數 (給藥當日也算一日)
+        remain_days = prescription_days - days  # 剩餘藥日
+        if remain_days > 0:  # 藥還有剩
+            message = '* 用藥檢查: {name}在{case_date}開藥, 到目前尚有{remain_days}日藥未服用完畢.'.format(
+                name=string_utils.xstr(row['Name']),
+                case_date=rows[0]['CaseDate'].strftime('%Y-%m-%d'),
+                remain_days=remain_days,
+            )
 
     return message
 
@@ -404,3 +415,100 @@ def check_course_complete_in_two_weeks(database, patient_key, card, course):
         message = '* 療程提醒: 療程已超過14日, 尚未完成全部療程.<br>'
 
     return message
+
+
+# 療程days日未完成
+def check_course_complete_in_days(database, patient_key, card, course, days):
+    message = None
+
+    if number_utils.get_integer(course) <= 1:  # 療程首次或內科不檢查
+        return message
+
+    start_date = (datetime.datetime.now() - datetime.timedelta(days=days+1)).strftime("%Y-%m-%d 00:00:00")
+    end_date = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d 23:59:59")
+    sql = '''
+        SELECT Continuance FROM cases WHERE
+        (PatientKey = {0}) AND
+        (CaseDate BETWEEN "{1}" AND "{2}") AND
+        (InsType = "健保") AND
+        (Card = "{3}") AND
+        (Continuance = 1)
+        ORDER BY CaseDate DESC LIMIT 1
+    '''.format(patient_key, start_date, end_date, card)
+    rows = database.select_record(sql)
+
+    if len(rows) <= 0:
+        message = '* 療程提醒: 療程已超過{0}日, 尚未完成全部療程.<br>'.format(days)
+
+    return message
+
+# 取得診別
+def get_room(database, period, doctor):
+    room = 1
+
+    week_day_list = [
+        'Monday',
+        'Tuesday',
+        'Wednesday',
+        'Thursday',
+        'Friday',
+        'Saturday',
+        'Sunday',
+    ]
+
+    today = datetime.datetime.now().weekday()
+    weekday = week_day_list[today]
+
+    sql = '''
+        SELECT * FROM doctor_schedule
+        WHERE
+            Period = "{period}" AND
+            {weekday} = "{doctor}"
+    '''.format(
+        period=period,
+        weekday=weekday,
+        doctor=doctor,
+    )
+    rows = database.select_record(sql)
+    if len(rows) <= 0:
+        return room
+
+    room = rows[0]['Room']
+
+    return room
+
+# 取得醫師
+def get_doctor(database, period, room):
+    week_day_list = [
+        'Monday',
+        'Tuesday',
+        'Wednesday',
+        'Thursday',
+        'Friday',
+        'Saturday',
+        'Sunday',
+    ]
+
+    today = datetime.datetime.now().weekday()
+    weekday = week_day_list[today]
+
+    sql = '''
+        SELECT * FROM doctor_schedule
+        WHERE
+            Period = "{period}" AND
+            room = "{room}"
+    '''.format(
+        period=period,
+        room=room,
+    )
+    rows = database.select_record(sql)
+    if len(rows) <= 0:
+        return room
+
+    try:
+        doctor = string_utils.xstr(rows[0][weekday])
+    except:
+        doctor = ''
+
+    return doctor
+

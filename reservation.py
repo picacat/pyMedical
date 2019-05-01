@@ -3,8 +3,9 @@
 #coding: utf-8
 
 from PyQt5 import QtWidgets, QtCore, QtGui
-from PyQt5.QtWidgets import QMessageBox, QPushButton
+from PyQt5.QtWidgets import QMessageBox, QPushButton, QFileDialog
 import datetime
+import calendar
 
 from libs import ui_utils
 from libs import date_utils
@@ -13,8 +14,11 @@ from libs import string_utils
 from libs import number_utils
 from libs import patient_utils
 from libs import registration_utils
+from libs import export_utils
+from libs import system_utils
 from classes import table_widget
 from dialog import dialog_reservation_booking
+from dialog import dialog_reservation_query
 
 
 # 主視窗
@@ -70,11 +74,14 @@ class Reservation(QtWidgets.QMainWindow):
         self.ui.action_add_reservation.setEnabled(False)
         self.ui.action_cancel_reservation.setEnabled(False)
         self.ui.action_reservation_arrival.setEnabled(False)
-        ui_utils.set_combo_box(self.ui.comboBox_room, nhi_utils.ROOM)
 
         self._set_combo_box_doctor()
 
     def _set_week_day(self):
+        week_day_name = self._get_week_day_name()
+        self.ui.label_weekday_name.setText(week_day_name)
+
+    def _get_week_day_name(self):
         current_week_day = datetime.datetime(
             self.ui.dateEdit_reservation_date.date().year(),
             self.ui.dateEdit_reservation_date.date().month(),
@@ -82,7 +89,8 @@ class Reservation(QtWidgets.QMainWindow):
         ).weekday()
 
         week_day_name = date_utils.get_weekday_name(current_week_day)
-        self.ui.label_weekday_name.setText(week_day_name)
+
+        return week_day_name
 
     # 設定醫師
     def _set_combo_box_doctor(self):
@@ -110,9 +118,14 @@ class Reservation(QtWidgets.QMainWindow):
     # 設定信號
     def _set_signal(self):
         self.ui.action_close.triggered.connect(self.close_reservation)
-        self.ui.action_save_table.triggered.connect(self._save_table)
+        self.ui.action_save_general_table.triggered.connect(self._save_general_table)
+        self.ui.action_save_assigned_table.triggered.connect(self._save_assigned_table)
+        self.ui.action_remove_assigned_table.triggered.connect(self._remove_assigned_table)
         self.ui.action_cancel_reservation.triggered.connect(self._cancel_reservation)
         self.ui.action_reservation_arrival.triggered.connect(self.reservation_arrival)
+        self.ui.action_reservation_query.triggered.connect(self._reservation_query)
+        self.ui.action_export_reservation_excel.triggered.connect(self._export_reservation_excel)
+
         self.ui.dateEdit_reservation_date.dateChanged.connect(self.read_reservation)
         self.ui.radioButton_period1.clicked.connect(self.read_reservation)
         self.ui.radioButton_period2.clicked.connect(self.read_reservation)
@@ -131,9 +144,10 @@ class Reservation(QtWidgets.QMainWindow):
         self.ui.tableWidget_reservation_list.itemSelectionChanged.connect(self._reservation_list_changed)
 
         self.ui.comboBox_doctor.currentTextChanged.connect(self.read_reservation)
-        self.ui.comboBox_room.currentTextChanged.connect(self.read_reservation)
 
         self.ui.dateEdit_reservation_date.dateChanged.connect(self._set_week_day)
+
+        self.ui.tableWidget_calendar.cellClicked.connect(self._calendar_changed)
 
     # 設定欄位寬度
     def _set_table_width(self):
@@ -151,6 +165,7 @@ class Reservation(QtWidgets.QMainWindow):
     def read_reservation(self):
         self._set_reservation_table()
         self._set_reservation_data()
+        self._set_calendar()
 
     def _set_reservation_table(self):
         self.ui.tableWidget_reservation.clear()
@@ -166,25 +181,9 @@ class Reservation(QtWidgets.QMainWindow):
         hidden_columns = [i * len(self.table_header) - 1 for i in range(1, self.max_reservation_table_times+1)]
         self.table_widget_reservation.set_column_hidden(hidden_columns)
 
-        room = self.ui.comboBox_room.currentText()
-        doctor = self.ui.comboBox_doctor.currentText()
-        period = self._get_period()
+        reservation_table_rows = self._get_reservation_table_rows()
 
-        sql = '''
-            SELECT * FROM reservation_table
-            WHERE
-                (Room="{room}") AND
-                (Doctor="{doctor}") AND
-                (Period = "{period}")
-            ORDER BY RowNo, ColumnNo
-        '''.format(
-            room=room,
-            doctor=doctor,
-            period=period,
-        )
-        rows = self.database.select_record(sql)
-
-        for row in rows:
+        for row in reservation_table_rows:
             self.ui.tableWidget_reservation.setItem(
                 number_utils.get_integer(row['RowNo']),
                 number_utils.get_integer(row['ColumnNo']),
@@ -206,8 +205,42 @@ class Reservation(QtWidgets.QMainWindow):
                 QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
             )
 
+    def _get_reservation_table_rows(self):
+        doctor = self.ui.comboBox_doctor.currentText()
+        period = self._get_period()
+        weekday_name = self._get_week_day_name()
+
+        sql = '''
+            SELECT * FROM reservation_table
+            WHERE
+                (Doctor="{doctor}") AND
+                (Period = "{period}") AND
+                (Weekday = "{weekday_name}")
+            ORDER BY RowNo, ColumnNo
+        '''.format(
+            doctor=doctor,
+            period=period,
+            weekday_name=weekday_name,
+        )
+        rows = self.database.select_record(sql)
+
+        if len(rows) <= 0:
+            sql = '''
+                SELECT * FROM reservation_table
+                WHERE
+                    (Doctor="{doctor}") AND
+                    (Period = "{period}") AND
+                    (Weekday IS NULL)
+                ORDER BY RowNo, ColumnNo
+            '''.format(
+                doctor=doctor,
+                period=period,
+            )
+            rows = self.database.select_record(sql)
+
+        return rows
+
     def _set_reservation_data(self):
-        room = self.ui.comboBox_room.currentText()
         doctor = self.ui.comboBox_doctor.currentText()
         period = self._get_period()
 
@@ -231,13 +264,11 @@ class Reservation(QtWidgets.QMainWindow):
                     WHERE
                         ReserveDate = "{reservation_date}" AND
                         Period = "{period}" AND
-                        room = "{room}" AND
                         Doctor = "{doctor}" AND
                         ReserveNo = {reserve_no}
                 '''.format(
                     reservation_date=reservation_date,
                     period=period,
-                    room=room,
                     doctor=doctor,
                     reserve_no=reserve_no.text(),
                 )
@@ -269,23 +300,38 @@ class Reservation(QtWidgets.QMainWindow):
                         QtGui.QColor(color)
                     )
 
-    def _save_table(self):
-        room = self.ui.comboBox_room.currentText()
+    def _save_general_table(self):
+        self._save_table()
+
+    def _save_assigned_table(self):
+        weekday_name = self._get_week_day_name()
+        self._save_table(weekday_name)
+
+    def _remove_assigned_table(self):
+        doctor = self.ui.comboBox_doctor.currentText()
+        period = self._get_period()
+        weekday_name = self._get_week_day_name()
+
+        msg_box = QMessageBox()
+        msg_box.setIcon(QMessageBox.Warning)
+        msg_box.setWindowTitle('刪除掛號資料')
+        msg_box.setText("<font size='4' color='red'><b>確定刪除{doctor}醫師 {weekday_name}{period}的預約班表表格?</b></font>"
+                        .format(doctor=doctor, weekday_name=weekday_name, period=period))
+        msg_box.setInformativeText("注意！資料刪除後, 將無法回復!")
+        msg_box.addButton(QPushButton("取消"), QMessageBox.NoRole)
+        msg_box.addButton(QPushButton("確定"), QMessageBox.YesRole)
+        delete_record = msg_box.exec_()
+        if not delete_record:
+            return
+
+        self._remove_reservation_table(doctor, period, weekday_name)
+        self.read_reservation()
+
+    def _save_table(self, weekday=None):
         doctor = self.ui.comboBox_doctor.currentText()
         period = self._get_period()
 
-        sql = '''
-            DELETE FROM reservation_table
-            WHERE
-                Room = "{room}" AND
-                Doctor = "{doctor}" AND 
-                Period = "{period}"
-        '''.format(
-            room=room,
-            doctor=doctor,
-            period=period,
-        )
-        self.database.exec_sql(sql)
+        self._remove_reservation_table(doctor, period, weekday)
 
         for row_no in range(self.ui.tableWidget_reservation.rowCount()):
             for i in range(1, self.max_reservation_table_times+1):
@@ -294,17 +340,31 @@ class Reservation(QtWidgets.QMainWindow):
                 reserve_no = self.ui.tableWidget_reservation.item(row_no, col_no+1)
                 if time != None and reserve_no != None:
                     self._insert_reservation_table(
-                        room, period, doctor, row_no, col_no,
+                        period, weekday, doctor, row_no, col_no,
                         time.text(), reserve_no.text()
                     )
 
-    def _insert_reservation_table(self, room, period, doctor, row_no, col_no, time, reserve_no):
+    def _remove_reservation_table(self, doctor, period, weekday):
+        sql = '''
+            DELETE FROM reservation_table
+            WHERE
+                Doctor = "{doctor}" AND 
+                Period = "{period}" AND
+                Weekday = "{weekday}"
+        '''.format(
+            doctor=doctor,
+            period=period,
+            weekday=weekday,
+        )
+        self.database.exec_sql(sql)
+
+    def _insert_reservation_table(self, period, weekday, doctor, row_no, col_no, time, reserve_no):
         fields = [
-            'Room', 'Period', 'Doctor', 'RowNo', 'ColumnNo', 'Time', 'ReserveNo'
+            'Period', 'Weekday', 'Doctor', 'RowNo', 'ColumnNo', 'Time', 'ReserveNo'
         ]
 
         data = [
-            room, period, doctor, row_no, col_no, time, reserve_no
+            period, weekday, doctor, row_no, col_no, time, reserve_no
         ]
 
         self.database.insert_record('reservation_table', fields, data)
@@ -350,7 +410,6 @@ class Reservation(QtWidgets.QMainWindow):
 
         doctor = self.ui.comboBox_doctor.currentText()
         period = self._get_period()
-        room = self.ui.comboBox_room.currentText()
         reservation_date = '{0} {1}'.format(
             self.ui.dateEdit_reservation_date.date().toString('yyyy-MM-dd'),
             time
@@ -358,7 +417,7 @@ class Reservation(QtWidgets.QMainWindow):
 
         dialog = dialog_reservation_booking.DialogReservationBooking(
             self, self.database, self.system_settings,
-            reservation_date, period, doctor, room, reserve_no,
+            reservation_date, period, doctor, reserve_no,
         )
 
         dialog.exec_()
@@ -370,25 +429,30 @@ class Reservation(QtWidgets.QMainWindow):
         self.tab_name = self.ui.tabWidget_reservation.tabText(i)
 
         if self.tab_name == '預約一覽表':
-            self.ui.action_save_table.setEnabled(True)
+            self.ui.action_save_general_table.setEnabled(True)
+            self.ui.action_save_assigned_table.setEnabled(True)
+            self.ui.action_remove_assigned_table.setEnabled(True)
+
             self.read_reservation()
-            enabled = False
             self.ui.tableWidget_reservation.setCurrentCell(0, 0)
             self.ui.tableWidget_reservation.setFocus()
-        else:
-            self.ui.action_add_reservation.setEnabled(False)
-            self.ui.action_save_table.setEnabled(False)
 
+            self._reservation_table_item_changed()
+        else:
             self._read_reservation_list()
+
+            self.ui.action_add_reservation.setEnabled(False)
+            self.ui.action_save_general_table.setEnabled(False)
+            self.ui.action_save_assigned_table.setEnabled(False)
+            self.ui.action_remove_assigned_table.setEnabled(False)
+            self.ui.action_reservation_arrival.setEnabled(False)
 
             if self.table_widget_reservation_list.row_count() > 0:
                 enabled = True
             else:
                 enabled = False
 
-        self.ui.action_reservation_arrival.setEnabled(enabled)
-        self.ui.action_cancel_reservation.setEnabled(enabled)
-
+            self.ui.action_cancel_reservation.setEnabled(enabled)
 
     def _read_reservation_list(self):
         self.ui.tableWidget_reservation_list.setRowCount(1)
@@ -423,14 +487,17 @@ class Reservation(QtWidgets.QMainWindow):
         else:
             arrival = '未報到'
 
+        patient_key = string_utils.xstr(row_data['PatientKey'])
+        if string_utils.xstr(row_data['Source']) == '網路初診預約':
+            patient_key = '網路初診'
+
         reservation_list_data = [
             string_utils.xstr(row_data['ReserveKey']),
             string_utils.xstr(row_data['ReserveDate']),
             string_utils.xstr(row_data['Period']),
-            string_utils.xstr(row_data['PatientKey']),
+            patient_key,
             string_utils.xstr(row_data['Name']),
             string_utils.xstr(row_data['Doctor']),
-            string_utils.xstr(row_data['Room']),
             string_utils.xstr(row_data['ReserveNo']),
             arrival,
             string_utils.xstr(row_data['Source']),
@@ -441,7 +508,7 @@ class Reservation(QtWidgets.QMainWindow):
                 row_no, column,
                 QtWidgets.QTableWidgetItem(reservation_list_data[column])
             )
-            if column in [3, 6, 7]:
+            if column in [3, 6]:
                 self.ui.tableWidget_reservation_list.item(
                     row_no, column).setTextAlignment(
                     QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
@@ -563,6 +630,11 @@ class Reservation(QtWidgets.QMainWindow):
 
         self._set_action_add_reservation()
 
+        reserve_date = self.ui.dateEdit_reservation_date.date()
+        if reserve_date != datetime.datetime.today():
+            self.ui.action_reservation_arrival.setEnabled(False)
+
+
     def _set_action_add_reservation(self):
         current_row = self.ui.tableWidget_reservation.currentRow()
         current_column = self.ui.tableWidget_reservation.currentColumn()
@@ -603,18 +675,44 @@ class Reservation(QtWidgets.QMainWindow):
         if name is None:
             return
 
-        reserve_key = self.ui.tableWidget_reservation.item(current_row, current_column+1).text()
-
-        reserve_row = self._check_reservation_first_visit(reserve_key)  # 檢查是否為初診預約報到
-        if reserve_row is not None:
-            self._first_visit_arrival(reserve_row)
+        name = name.text()
+        reserve_key_item = self.ui.tableWidget_reservation.item(current_row, current_column+1)
+        if reserve_key_item is None:
             return
+
+        reserve_key = reserve_key_item.text()
 
         arrival = self._check_reservation_arrival(reserve_key)
         if arrival:  # 已報到
             return
 
-        name = name.text()
+        first_reserve_row = self._check_reservation_first_visit(reserve_key)  # 檢查是否為初診預約報到
+        if first_reserve_row is not None:
+            self._first_visit_arrival(first_reserve_row)
+        else:
+            self._normal_arrival(reserve_key, name)
+
+    def _check_reservation_first_visit(self, reserve_key):
+        sql = '''
+            SELECT * FROM reserve
+            WHERE
+                ReserveKey = {reserve_key}
+        '''.format(
+            reserve_key=reserve_key,
+        )
+        rows = self.database.select_record(sql)
+        if len(rows) <= 0:
+            return None
+
+        row = rows[0]
+
+        reservation_source = string_utils.xstr(row['Source'])
+        if reservation_source == '網路初診預約':
+            return row
+        else:
+            return None
+
+    def _normal_arrival(self, reserve_key, name):
         msg_box = QMessageBox()
         msg_box.setIcon(QMessageBox.Warning)
         msg_box.setWindowTitle('預約掛號報到')
@@ -631,35 +729,13 @@ class Reservation(QtWidgets.QMainWindow):
 
         self.parent.registration_arrival(reserve_key)
 
-    def _check_reservation_first_visit(self, reserve_key):
-        first_visit = None
-
-        sql = '''
-            SELECT * FROM reserve
-            WHERE
-                ReserveKey = {reserve_key}
-        '''.format(
-            reserve_key=reserve_key,
-        )
-        rows = self.database.select_record(sql)
-        if len(rows) <= 0:
-            return first_visit
-
-        row = rows[0]
-
-        reservation_source = string_utils.xstr(row['Source'])
-        if reservation_source != '網路初診預約':
-            return first_visit
-
-        return row
-
-    def _first_visit_arrival(self, reserve_row):
+    def _first_visit_arrival(self, first_reserve_row):
         sql = '''
             SELECT * FROM temp_patient
             WHERE
                 TempPatientKey = {temp_patient_key}
         '''.format(
-            temp_patient_key=reserve_row['PatientKey'],
+            temp_patient_key=first_reserve_row['PatientKey'],
         )
         temp_patient_rows = self.database.select_record(sql)
         if len(temp_patient_rows) <= 0:
@@ -679,7 +755,7 @@ class Reservation(QtWidgets.QMainWindow):
                 出生日期: {birthday}<br>
                 聯絡電話: {phone_no}<br>
             '''.format(
-                name=string_utils.xstr(reserve_row['Name']),
+                name=string_utils.xstr(first_reserve_row['Name']),
                 id=string_utils.xstr(temp_patient_row['ID']),
                 birthday=string_utils.xstr(temp_patient_row['Birthday']),
                 phone_no=string_utils.xstr(temp_patient_row['PhoneNo']),
@@ -693,7 +769,7 @@ class Reservation(QtWidgets.QMainWindow):
             return
 
         new_patient_key = self._update_new_patient(temp_patient_row)
-        reserve_key = reserve_row['ReserveKey']
+        reserve_key = first_reserve_row['ReserveKey']
         sql = '''
             UPDATE reserve
             SET
@@ -785,6 +861,144 @@ class Reservation(QtWidgets.QMainWindow):
         else:
             enabled = True
 
-        self.ui.action_reservation_arrival.setEnabled(enabled)
         self.ui.action_cancel_reservation.setEnabled(enabled)
+
+    def _reservation_query(self):
+        dialog = dialog_reservation_query.DialogReservationQuery(self, self.database, self.system_settings)
+        dialog.exec()
+        dialog.deleteLater()
+
+    def _set_calendar(self):
+        for i in range(0, self.ui.tableWidget_calendar.columnCount()):
+            self.ui.tableWidget_calendar.setColumnWidth(i, 100)
+
+        for i in range(0, self.ui.tableWidget_calendar.rowCount()):
+            self.ui.tableWidget_calendar.setRowHeight(i, 110)
+
+        calendar_list = {
+            0:  [0, 0], 1:  [0, 1], 2:  [0, 2], 3:  [0, 3], 4:  [0, 4], 5:  [0, 5], 6:  [0, 6],
+            7:  [1, 0], 8:  [1, 1], 9:  [1, 2], 10: [1, 3], 11: [1, 4], 12: [1, 5], 13: [1, 6],
+            14: [2, 0], 15: [2, 1], 16: [2, 2], 17: [2, 3], 18: [2, 4], 19: [2, 5], 20: [2, 6],
+            21: [3, 0], 22: [3, 1], 23: [3, 2], 24: [3, 3], 25: [3, 4], 26: [3, 5], 27: [3, 6],
+            28: [4, 0], 29: [4, 1], 30: [4, 2], 31: [4, 3], 32: [4, 4], 33: [4, 5], 34: [4, 6],
+            35: [5, 0], 36: [5, 1], 37: [5, 2], 38: [5, 3], 39: [5, 4], 40: [5, 5], 41: [5, 6],
+        }
+
+        year = self.ui.dateEdit_reservation_date.date().year()
+        month = self.ui.dateEdit_reservation_date.date().month()
+        doctor = self.ui.comboBox_doctor.currentText()
+
+        self.ui.label_calendar.setText(
+            '<b>{doctor}</b>醫師 <b>{year}</b>年<b>{month}</b>月份 預約狀況一覽表'.format(
+                year=year,
+                month=month,
+                doctor=doctor,
+            )
+        )
+
+        start_day = datetime.datetime(year, month, 1).weekday()
+        if start_day == 6:
+            start_day = 0
+        else:
+            start_day += 1
+
+        week_list = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六']
+        period_list = ['日期', '早班', '午班', '晚班']
+
+        self.ui.tableWidget_calendar.clear()
+        for i in range(len(week_list)):
+            self.ui.tableWidget_calendar.setHorizontalHeaderItem(
+                i, QtWidgets.QTableWidgetItem(week_list[i])
+            )
+        for i in range(self.ui.tableWidget_calendar.rowCount()):
+            self.ui.tableWidget_calendar.setVerticalHeaderItem(
+                i, QtWidgets.QTableWidgetItem('\n'.join(period_list))
+            )
+
+        last_day = calendar.monthrange(year, month)[1]
+        for i in range(0, last_day):
+            day = i + 1
+            reservation_date = '{0}-{1}-{2}'.format(year, month, day)
+            reservation1 = self._get_reservation_status(reservation_date, '早班', doctor)
+            reservation2 = self._get_reservation_status(reservation_date, '午班', doctor)
+            reservation3 = self._get_reservation_status(reservation_date, '晚班', doctor)
+
+            self.ui.tableWidget_calendar.setItem(
+                calendar_list[start_day+i][0],
+                calendar_list[start_day+i][1],
+                QtWidgets.QTableWidgetItem(
+                    str(day) + '\n' +
+                    reservation1 + '\n'+
+                    reservation2 + '\n' +
+                    reservation3
+                )
+            )
+            self.ui.tableWidget_calendar.item(
+                calendar_list[start_day+i][0],
+                calendar_list[start_day+i][1],
+            ).setBackground(QtGui.QColor('white'))
+
+    def _get_reservation_status(self, reservation_date, period, doctor):
+        status = ''
+
+        start_date = '{0} 00:00:00'.format(reservation_date)
+        end_date = '{0} 23:59:59'.format(reservation_date)
+
+        sql = '''
+            SELECT ReserveKey FROM reserve
+            WHERE
+                (ReserveDate BETWEEN "{start_date}" AND "{end_date}") AND
+                (Doctor="{doctor}") AND
+                (Period = "{period}")
+        '''.format(
+            start_date=start_date,
+            end_date=end_date,
+            doctor=doctor,
+            period=period,
+        )
+        rows = self.database.select_record(sql)
+        reservation_count = len(rows)
+
+        if reservation_count > 0:
+            status = '預約: {0}人'.format(reservation_count)
+
+        return status
+
+    def _calendar_changed(self):
+        current_row = self.ui.tableWidget_calendar.currentRow()
+        current_column = self.ui.tableWidget_calendar.currentColumn()
+        item = self.ui.tableWidget_calendar.item(
+            current_row, current_column
+        )
+
+        if item is None:
+            return
+
+        year = int(self.ui.dateEdit_reservation_date.date().year())
+        month = int(self.ui.dateEdit_reservation_date.date().month())
+        day = int(item.text().split('\n')[0])
+        self.ui.dateEdit_reservation_date.setDate(QtCore.QDate(year, month, day))
+
+    def _export_reservation_excel(self):
+        if self.ui.tabWidget_reservation.currentIndex != 1:
+            self.ui.tabWidget_reservation.setCurrentIndex(1)
+
+        options = QFileDialog.Options()
+        excel_file_name, _ = QFileDialog.getSaveFileName(
+            self.parent,
+            "QFileDialog.getSaveFileName()",
+            '預約門診資料.xlsx',
+            "excel檔案 (*.xlsx);;Text Files (*.txt)", options = options
+        )
+        if not excel_file_name:
+            return
+
+        export_utils.export_table_widget_to_excel(excel_file_name, self.ui.tableWidget_reservation_list, [0])
+
+        system_utils.show_message_box(
+            QMessageBox.Information,
+            '資料匯出完成',
+            '<h3>預約資料檔{0}匯出完成.</h3>'.format(excel_file_name),
+            'Microsoft Excel 格式.'
+        )
 

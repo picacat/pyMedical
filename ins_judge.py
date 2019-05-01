@@ -9,6 +9,7 @@ from PyQt5.QtWidgets import QMessageBox, QPushButton
 from libs import ui_utils
 from libs import number_utils
 from libs import string_utils
+from libs import system_utils
 import ins_apply_tab
 from dialog import dialog_ins_judge
 import ins_upload_emr
@@ -124,6 +125,6 @@ class InsJudge(QtWidgets.QMainWindow):
             self.apply_upload_date,
         )
 
-        ins_emr.generate_emr_files()
-
+        ins_emr.upload_emr_files()
         del ins_emr
+

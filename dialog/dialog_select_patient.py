@@ -33,6 +33,7 @@ class DialogSelectPatient(QtWidgets.QDialog):
 
         if self.keyword != '':
             self.ui.lineEdit_query.setText(self.keyword)
+            self.ui.tableWidget_patient_list.setFocus()
 
     # 設定GUI
     def _set_ui(self):

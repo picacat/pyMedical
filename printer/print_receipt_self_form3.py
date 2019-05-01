@@ -9,7 +9,7 @@ from libs import string_utils
 from libs import number_utils
 
 
-# 自費收據格式3 5 x 3 inches
+# 自費收據格式3 4.5 x 3 inches
 # 2018.10.09
 class PrintReceiptSelfForm3:
     # 初始化
@@ -71,7 +71,7 @@ class PrintReceiptSelfForm3:
         prescript_record = printer_utils.get_prescript_html(
             self.database, self.system_settings,
             self.case_key, self.medicine_set,
-            print_alias=False, print_total_dosage=True, blocks=2)
+            '費用收據', print_alias=False, print_total_dosage=True, blocks=2)
         fees_record = printer_utils.get_self_fees_html(self.database, self.case_key)
         remark = '<hr>* 本收據可為報稅之憑證, 請妥善保存, 遺失恕不補發'
 

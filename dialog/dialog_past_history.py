@@ -5,10 +5,11 @@ from PyQt5.QtCore import QSettings, QSize, QPoint
 from libs import ui_utils
 from libs import system_utils
 from libs import string_utils
+from libs import case_utils
 from classes import table_widget
 
 
-# 主畫面
+# 掛號過去病歷視窗
 class DialogPastHistory(QtWidgets.QDialog):
     # 初始化
     def __init__(self, parent=None, *args):
@@ -74,31 +75,34 @@ class DialogPastHistory(QtWidgets.QDialog):
         self.medical_record = self.database.select_record(sql)
         self.table_widget_past_history.set_db_data(sql, self._set_table_data)
 
-    def _set_table_data(self, rec_no, rec):
+    def _set_table_data(self, row_no, row):
+        pres_days = case_utils.get_pres_days(self.database, row['CaseKey'])
+
         wait_rec = [
-            string_utils.xstr(rec['CaseKey']),
-            string_utils.xstr(rec['CaseDate']),
-            string_utils.xstr(rec['InsType']),
-            string_utils.xstr(rec['TreatType']),
-            string_utils.xstr(rec['Card']),
-            string_utils.int_to_str(rec['Continuance']).strip('0'),
-            string_utils.xstr(rec['Doctor']),
-            string_utils.xstr(rec['Massager']),
-            string_utils.xstr(rec['DiseaseName1']),
+            string_utils.xstr(row['CaseKey']),
+            string_utils.xstr(row['CaseDate']),
+            string_utils.xstr(row['InsType']),
+            string_utils.xstr(row['TreatType']),
+            string_utils.xstr(row['Card']),
+            string_utils.int_to_str(row['Continuance']).strip('0'),
+            string_utils.xstr(pres_days).strip('0'),
+            string_utils.xstr(row['Doctor']),
+            string_utils.xstr(row['Massager']),
+            string_utils.xstr(row['DiseaseName1']),
         ]
 
         for column in range(len(wait_rec)):
             self.ui.tableWidget_past_history.setItem(
-                rec_no, column, QtWidgets.QTableWidgetItem(wait_rec[column])
+                row_no, column, QtWidgets.QTableWidgetItem(wait_rec[column])
             )
-            if column in [5]:
+            if column in [5, 6]:
                 self.ui.tableWidget_past_history.item(
-                    rec_no, column).setTextAlignment(
+                    row_no, column).setTextAlignment(
                     QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
                 )
 
-            if rec['InsType'] == '自費':
+            if row['InsType'] == '自費':
                 self.ui.tableWidget_past_history.item(
-                    rec_no, column).setForeground(
+                    row_no, column).setForeground(
                     QtGui.QColor('blue')
                 )

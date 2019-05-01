@@ -19,6 +19,7 @@ ERROR_MESSAGE = {
     4033: ['所置入非健保IC卡', None],
     4034: ['所置入非醫事人員卡', None],
     4042: ['醫事人員卡PIN尚未認證成功', None],
+    4043: ['健保卡讀取/寫入作業異常', None],
     4050: ['安全模組尚未與IDC認證', '請執行[健保讀卡機安全模組認證]'],
     4051: ['安全模組與IDC認證失敗', None],
     4061: ['網路不通', '請檢查電腦網路接頭是否鬆脫或中華電信VPN網路數據機是否正常, 如有檢查困難, 請致電中華電信 0800-080-128 查詢'],
@@ -50,6 +51,7 @@ ERROR_MESSAGE = {
     5062: ['放棄同意器官捐贈及安寧緩和醫療註記輸入', None],
     5067: ['安全模組卡「醫療院所代碼」讀取失敗', None],
     5068: ['預防保健資料寫入失敗', None],
+    5069: ['兒童預防保健服務紀錄寫入孕婦產檢欄位失敗', None],
     5071: ['緊急聯絡電話寫失敗。', None],
     5078: ['產前檢查資料寫入失敗', None],
     5079: ['性別不符，健保IC卡記載為男性', None],
@@ -154,6 +156,12 @@ ERROR_MESSAGE = {
     9999: ['找不到醫事人員卡讀卡機', None],
 }
 
+INSURED_MARK_DICT = {
+    '1': '低收入戶',
+    '2': '榮民',
+    '3': '基層醫療',
+    '8': '災民',
+}
 
 BASIC_DATA = {
     'card_no': None,
@@ -192,18 +200,18 @@ XML_FEEDBACK_DATA = {
 UPLOAD_TYPE_DICT = {
     None: '',
     '': '',
-    '0': '0 - 尚未上傳',
-    '1': '1 - 正常上傳',
-    '2': '2 - 異常上傳',
-    '3': '3 - 正常補正',
-    '4': '4 - 異常補正',
+    '0': '0-尚未上傳',
+    '1': '1-正常上傳',
+    '2': '2-異常上傳',
+    '3': '3-正常補正',
+    '4': '4-異常補正',
 }
 
 TREAT_AFTER_CHECK_DICT = {
     None: '',
     '': '',
-    '1': '1 - 正常',
-    '2': '2 - 補卡',
+    '1': '1-正常',
+    '2': '2-補卡',
 }
 
 
@@ -230,13 +238,9 @@ def get_cancel_mark(cancel_mark_code):
 
 # 取得卡片保險身分
 def get_insured_mark(insured_mark_code):
-    insured_mark = ''
-
-    if insured_mark_code == '1':
-        insured_mark = '低收入戶'
-    elif insured_mark_code == '2':
-        insured_mark = '榮民'
-    elif insured_mark_code == '3':
+    try:
+        insured_mark = INSURED_MARK_DICT[insured_mark_code]
+    except:
         insured_mark = '基層醫療'
 
     return insured_mark
@@ -264,7 +268,7 @@ def decode_basic_data(basic_data):
 
 def decode_register_basic_data(buffer):
     basic_data_info = decode_basic_data_common(buffer)
-    basic_data_info['insured_code'] = buffer[58:60].decode('ascii').strip()
+    basic_data_info['insured_code'] = buffer[58:60].decode('ascii').strip()  # Reserved, not use
     basic_data_info['insured_mark'] = get_insured_mark(buffer[60:61].decode('ascii').strip())
     basic_data_info['card_valid_date'] = date_utils.nhi_date_to_west_date(buffer[61:68].decode('ascii').strip())
     basic_data_info['card_available_count'] = number_utils.get_integer(buffer[68:70].decode('ascii').strip())

@@ -12,16 +12,16 @@ from libs import ui_utils
 from libs import date_utils
 from libs import number_utils
 from libs import string_utils
-from libs import validator_utils
+from libs import case_utils
 from libs import personnel_utils
 from libs import nhi_utils
 
 
-# 候診名單 2018.01.31
-class CheckCourse(QtWidgets.QMainWindow):
+# 卡序檢查 2019.04.24
+class CheckCard(QtWidgets.QMainWindow):
     # 初始化
     def __init__(self, parent=None, *args):
-        super(CheckCourse, self).__init__(parent)
+        super(CheckCard, self).__init__(parent)
         self.parent = parent
         self.database = args[0]
         self.system_settings = args[1]
@@ -52,15 +52,15 @@ class CheckCourse(QtWidgets.QMainWindow):
 
     # 設定GUI
     def _set_ui(self):
-        self.ui = ui_utils.load_ui_file(ui_utils.UI_CHECK_COURSE, self)
+        self.ui = ui_utils.load_ui_file(ui_utils.UI_CHECK_CARD, self)
         self._set_table_widget()
 
     def _set_table_widget(self):
         self.table_widget_errors = table_widget.TableWidget(self.ui.tableWidget_errors, self.database)
         self.table_widget_errors.set_column_hidden([0])
         width = [
-            100, 120, 60, 80, 80, 100, 70, 30, 100, 450, 100,
-            80, 80, 250,
+            100, 120, 60, 80, 80, 100, 70, 50, 100, 450, 100,
+            80, 60, 250,
         ]
         self.table_widget_errors.set_table_heading_width(width)
 
@@ -98,7 +98,6 @@ class CheckCourse(QtWidgets.QMainWindow):
                 (CaseDate BETWEEN "{0}" AND "{1}") AND
                 (cases.InsType = "健保") AND
                 (Card != "欠卡") AND
-                (Continuance >= 1) AND
                 (ApplyType = "{2}") 
             ORDER BY PatientKey, CaseDate
         '''.format(start_date, end_date, self.apply_type)
@@ -108,7 +107,7 @@ class CheckCourse(QtWidgets.QMainWindow):
         return len(self.rows)
 
     def start_check(self):
-        self.parent.ui.label_progress.setText('檢查進度: 療程檢查')
+        self.parent.ui.label_progress.setText('檢查進度: 卡序檢查')
         self.read_data()
 
         self.ui.tableWidget_errors.setRowCount(0)
@@ -119,7 +118,7 @@ class CheckCourse(QtWidgets.QMainWindow):
         self._set_last_month_color()
         self.ui.tableWidget_errors.setAlternatingRowColors(True)
 
-        self._check_course()
+        self._check_data()
         if self.errors <= 0:
             self.ui.toolButton_find_error.setEnabled(False)
         else:
@@ -127,52 +126,19 @@ class CheckCourse(QtWidgets.QMainWindow):
 
         self.ui.tableWidget_errors.resizeRowsToContents()
 
-    def _get_first_course_delta(self, row_no, patient_key, course, next_case_date):
-        first_case_date = None
-        for i in range(course, 0, -1):
-            previous_case_date = self.ui.tableWidget_errors.item(row_no-i, 1)
-            previous_patient_key = self.ui.tableWidget_errors.item(row_no-i, 3)
-            if previous_case_date is None:
-                continue
-
-            if previous_patient_key.text() != patient_key:
-                continue
-
-            previous_case_date = previous_case_date.text()
-            previous_course = number_utils.get_integer(
-                self.ui.tableWidget_errors.item(row_no-i, 7).text()
-            )
-            if previous_course == 1:
-                first_case_date = previous_case_date
-                # if self.ui.tableWidget_errors.item(row_no-i, 3).text() == '407':
-                #     print(
-                #         first_case_date, next_case_date,
-                #         date_utils.str_to_date(next_case_date) - date_utils.str_to_date(first_case_date)
-                #     )
-                break
-
-        if first_case_date is not None:
-            delta = date_utils.str_to_date(next_case_date) - date_utils.str_to_date(first_case_date)
-        else:
-            delta = None
-
-        return delta
-
-    def _check_course(self):
+    def _check_data(self):
         self.parent.ui.progressBar.setMaximum(self.ui.tableWidget_errors.rowCount()-1)
         self.parent.ui.progressBar.setValue(0)
 
         for row_no in range(self.ui.tableWidget_errors.rowCount()):
             case_date = self.ui.tableWidget_errors.item(row_no, 1).text()
-            if date_utils.str_to_date(case_date).month != self.apply_month:
-                continue
-
             patient_key = self.ui.tableWidget_errors.item(row_no, 3).text()
             share_type = self.ui.tableWidget_errors.item(row_no, 5).text()
             card = self.ui.tableWidget_errors.item(row_no, 6).text()
             course = number_utils.get_integer(self.ui.tableWidget_errors.item(row_no, 7).text())
             disease_code = self.ui.tableWidget_errors.item(row_no, 8).text()
-            treatment = self.ui.tableWidget_errors.item(row_no, 10).text()
+            treat_type = self.ui.tableWidget_errors.item(row_no, 10).text()
+            pres_days = number_utils.get_integer(self.ui.tableWidget_errors.item(row_no, 12).text())
 
             try:
                 next_case_date = self.ui.tableWidget_errors.item(row_no+1, 1).text()
@@ -181,7 +147,8 @@ class CheckCourse(QtWidgets.QMainWindow):
                 next_card = self.ui.tableWidget_errors.item(row_no+1, 6).text()
                 next_course = number_utils.get_integer(self.ui.tableWidget_errors.item(row_no+1, 7).text())
                 next_disease_code = self.ui.tableWidget_errors.item(row_no+1, 8).text()
-                next_treatment = self.ui.tableWidget_errors.item(row_no+1, 10).text()
+                next_treat_type = self.ui.tableWidget_errors.item(row_no+1, 10).text()
+                next_pres_days = number_utils.get_integer(self.ui.tableWidget_errors.item(row_no+1, 12).text())
             except AttributeError:
                 next_case_date = None
                 next_patient_key = 0
@@ -189,71 +156,81 @@ class CheckCourse(QtWidgets.QMainWindow):
                 next_card = None
                 next_course = 0
                 next_disease_code = None
-                next_treatment = None
+                next_treat_type = None
+                next_pres_days = 0
 
             error_message = []
-            next_error_message = []
             if next_patient_key == 0:
                 pass
-            elif (patient_key != next_patient_key):
-                delta = self._get_first_course_delta(
-                    row_no, patient_key, course, case_date,
-                )
+            elif (patient_key != next_patient_key):  # 換人
+                pass
+            else:  # 同一人
+                if treat_type != next_treat_type and next_course <= 1 and 1 <= course <= 5:
+                    is_new_course = False
+                    for i in range(row_no, self.ui.tableWidget_errors.rowCount()+1):
+                        check_next_patient_key = self.ui.tableWidget_errors.item(i+1, 3)
+                        if check_next_patient_key is None:
+                            continue
 
-                if next_course >= 2:
-                    next_error_message.append('療程未見首次')
+                        if patient_key != check_next_patient_key.text():
+                            break
 
-                if course >= 2 and delta.days > 30:
-                    error_message.append('療程已超過30日')
-            else:
+                        check_next_card = self.ui.tableWidget_errors.item(i+1, 6)
+                        if check_next_card is None:
+                            continue
+
+                        if card != check_next_card.text():
+                            continue
+
+                        if (self.ui.tableWidget_errors.item(i+1, 7) is not None and
+                                number_utils.get_integer(
+                                    self.ui.tableWidget_errors.item(i+1, 7).text()) > course):
+                            is_new_course = True
+                            break
+
+                    if is_new_course:
+                        error_message.append('療程中刷卡')
+                elif ((treat_type in nhi_utils.INS_TREAT and next_treat_type == '內科') or
+                        (treat_type == '內科' and next_treat_type in nhi_utils.INS_TREAT)):
+                    error_message.append('內科與針傷療程交替')
+
+                if (treat_type in nhi_utils.INS_TREAT and next_treat_type == '內科' and
+                        disease_code == next_disease_code):
+                    error_message.append('內科與針傷療程同診斷碼')
+                elif (treat_type == '內科' and next_treat_type in nhi_utils.INS_TREAT and
+                        disease_code == next_disease_code):
+                    error_message.append('針傷療程與內科同診斷碼')
+
+                if course <= 1 and next_course <= 1:
+                    delta = date_utils.str_to_date(next_case_date) - date_utils.str_to_date(case_date)
+                    if delta.days == 1:
+                        error_message.append('連續刷卡')
+
                 if card != next_card:  # 換新療程
-                    delta = self._get_first_course_delta(
-                        row_no, patient_key, course, case_date,
-                    )
-                    if course >= 2 and delta.days > 30:
-                        error_message.append('療程已超過30日')
-
-                    if course < 6:
-                        if delta is None:
-                            next_error_message.append('療程未滿6次')
-                        elif delta.days < 14:
-                            next_error_message.append('療程14日未完成另開新療程')
-                        elif delta.days < 30:
-                            next_error_message.append('療程未滿30日另開新療程')
-                    elif course > 6:
-                        next_error_message.append('療程超過6次')
+                    pass
                 else:   # 同療程
-                    if next_course == course:
-                        if course >= 2:
-                            next_error_message.append('療程重複')
-                    elif course < 6 and next_course != 1 and next_course - course != 1:
-                        next_error_message.append('療程不連續')
-
-                    if case_date >= next_case_date:
-                        next_error_message.append('門診日期未照順序')
-
-                    if share_type != next_share_type:
-                        next_error_message.append('負擔類別不一致')
-
-                    if disease_code != next_disease_code and next_course >= 2:
-                        next_error_message.append('診斷碼不一致')
-
-                    if next_treatment == '':
-                        next_error_message.append('無處置')
-                    elif treatment != next_treatment:
-                        next_error_message.append('處置不一致')
+                    pass
 
             if len(error_message) > 0:
                 self.errors += 1
-                self._set_row_error_message(row_no, 13, error_message)
-
-            if len(next_error_message) > 0:
-                self.errors += 1
-                self._set_row_error_message(row_no+1, 13, next_error_message)
+                self.ui.tableWidget_errors.setItem(
+                    row_no+1, 13,
+                    QtWidgets.QTableWidgetItem(
+                        ', '.join(error_message)
+                    )
+                )
+                self._set_row_color(row_no+1, 'red')
 
             self.parent.ui.progressBar.setValue(
                 self.parent.ui.progressBar.value() + 1
             )
+
+    def _set_row_color(self, row_no, color):
+        for column_no in range(self.ui.tableWidget_errors.columnCount()):
+            self.ui.tableWidget_errors.item(row_no, column_no).setForeground(QtGui.QColor(color))
+
+    def error_count(self):
+        return self.errors
 
     def _set_row_error_message(self, row_no, col_no, error_message):
         self.ui.tableWidget_errors.setItem(
@@ -263,13 +240,6 @@ class CheckCourse(QtWidgets.QMainWindow):
             )
         )
         self._set_row_color(row_no, 'red')
-
-    def _set_row_color(self, row_no, color):
-        for column_no in range(self.ui.tableWidget_errors.columnCount()):
-            self.ui.tableWidget_errors.item(row_no, column_no).setForeground(QtGui.QColor(color))
-
-    def error_count(self):
-        return self.errors
 
     def _remove_useless_record(self):
         for row_no in range(self.ui.tableWidget_errors.rowCount()):
@@ -329,6 +299,8 @@ class CheckCourse(QtWidgets.QMainWindow):
                         QtGui.QColor('darkGray'))
 
     def _insert_record(self, row):
+        pres_days = case_utils.get_pres_days(self.database, row['CaseKey'])
+
         row_no = self.ui.tableWidget_errors.rowCount()
         self.ui.tableWidget_errors.setRowCount(row_no + 1)
         error_record = [
@@ -344,13 +316,9 @@ class CheckCourse(QtWidgets.QMainWindow):
             string_utils.xstr(row['Continuance']),
             string_utils.xstr(row['DiseaseCode1']),
             string_utils.xstr(row['DiseaseName1']),
-            string_utils.xstr(row['Treatment']),
+            string_utils.xstr(row['TreatType']),
             string_utils.xstr(row['Doctor']),
-            string_utils.xstr(
-                number_utils.get_integer(row['AcupunctureFee']) +
-                number_utils.get_integer(row['MassageFee']) +
-                number_utils.get_integer(row['DislocateFee'])
-            ),
+            string_utils.xstr(pres_days),
             None,
         ]
         for column_no in range(len(error_record)):

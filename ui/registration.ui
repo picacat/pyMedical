@@ -231,6 +231,48 @@
          <layout class="QVBoxLayout" name="verticalLayout_2">
           <item>
            <layout class="QGridLayout" name="gridLayout_7">
+            <item row="0" column="0">
+             <widget class="QToolButton" name="toolButton_edit_cases">
+              <property name="text">
+               <string>掛號修正</string>
+              </property>
+              <property name="icon">
+               <iconset>
+                <normaloff>../icons/accessories-text-editor.png</normaloff>../icons/accessories-text-editor.png</iconset>
+              </property>
+              <property name="toolButtonStyle">
+               <enum>Qt::ToolButtonTextBesideIcon</enum>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="4">
+             <widget class="QToolButton" name="toolButton_modify_patient2">
+              <property name="text">
+               <string>病患修正</string>
+              </property>
+              <property name="icon">
+               <iconset>
+                <normaloff>../icons/document-open.svg</normaloff>../icons/document-open.svg</iconset>
+              </property>
+              <property name="toolButtonStyle">
+               <enum>Qt::ToolButtonTextBesideIcon</enum>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="5">
+             <widget class="QToolButton" name="toolButton_print_wait_2">
+              <property name="text">
+               <string>補印收據</string>
+              </property>
+              <property name="icon">
+               <iconset>
+                <normaloff>../icons/document-print.svg</normaloff>../icons/document-print.svg</iconset>
+              </property>
+              <property name="toolButtonStyle">
+               <enum>Qt::ToolButtonTextBesideIcon</enum>
+              </property>
+             </widget>
+            </item>
             <item row="0" column="1">
              <widget class="QToolButton" name="toolButton_write_ic">
               <property name="text">
@@ -259,7 +301,7 @@
               </property>
              </widget>
             </item>
-            <item row="0" column="5">
+            <item row="0" column="6">
              <spacer name="horizontalSpacer_2">
               <property name="orientation">
                <enum>Qt::Horizontal</enum>
@@ -273,41 +315,13 @@
              </spacer>
             </item>
             <item row="0" column="3">
-             <widget class="QToolButton" name="toolButton_modify_patient2">
+             <widget class="QToolButton" name="toolButton_rewrite_ic_prescript">
               <property name="text">
-               <string>病患修正</string>
+               <string>重寫IC卡</string>
               </property>
               <property name="icon">
                <iconset>
-                <normaloff>../icons/document-open.svg</normaloff>../icons/document-open.svg</iconset>
-              </property>
-              <property name="toolButtonStyle">
-               <enum>Qt::ToolButtonTextBesideIcon</enum>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="4">
-             <widget class="QToolButton" name="toolButton_print_wait_2">
-              <property name="text">
-               <string>補印收據</string>
-              </property>
-              <property name="icon">
-               <iconset>
-                <normaloff>../icons/document-print.svg</normaloff>../icons/document-print.svg</iconset>
-              </property>
-              <property name="toolButtonStyle">
-               <enum>Qt::ToolButtonTextBesideIcon</enum>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="0">
-             <widget class="QToolButton" name="toolButton_edit_cases">
-              <property name="text">
-               <string>掛號修正</string>
-              </property>
-              <property name="icon">
-               <iconset>
-                <normaloff>../icons/accessories-text-editor.png</normaloff>../icons/accessories-text-editor.png</iconset>
+                <normaloff>../icons/edit-redo-rtl.png</normaloff>../icons/edit-redo-rtl.png</iconset>
               </property>
               <property name="toolButtonStyle">
                <enum>Qt::ToolButtonTextBesideIcon</enum>
@@ -1277,6 +1291,7 @@
    <addaction name="separator"/>
    <addaction name="action_save"/>
    <addaction name="separator"/>
+   <addaction name="action_med_vpn"/>
    <addaction name="action_close"/>
   </widget>
   <widget class="QMenuBar" name="menubar">
@@ -1285,13 +1300,14 @@
      <x>0</x>
      <y>0</y>
      <width>1115</width>
-     <height>26</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu">
     <property name="title">
      <string>檔案</string>
     </property>
+    <addaction name="action_clear_wait"/>
    </widget>
    <addaction name="menu"/>
   </widget>
@@ -1347,6 +1363,24 @@
    </property>
    <property name="text">
     <string>關閉視窗</string>
+   </property>
+  </action>
+  <action name="action_clear_wait">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/gtk-clear.svg</normaloff>../icons/gtk-clear.svg</iconset>
+   </property>
+   <property name="text">
+    <string>清除非本日的候診名單</string>
+   </property>
+  </action>
+  <action name="action_med_vpn">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/emblem-web.png</normaloff>../icons/emblem-web.png</iconset>
+   </property>
+   <property name="text">
+    <string>開啟雲端藥歷</string>
    </property>
   </action>
  </widget>
