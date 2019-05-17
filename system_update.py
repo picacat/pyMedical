@@ -105,7 +105,6 @@ class SystemUpdate(QtWidgets.QDialog):
         zip_file_name = self.ui.lineEdit_file_name.text()
         self._check_files(zip_file_name)
 
-
     def accepted_button_clicked(self):
         self._update_files()
 
@@ -113,10 +112,11 @@ class SystemUpdate(QtWidgets.QDialog):
         msg_box.setIcon(QMessageBox.Information)
         msg_box.setWindowTitle('系統更新完成')
         msg_box.setText("<font size='4'><b>恭喜您! 系統已更新至最新檔, 系統檔案全部更新成功.</b></font>")
-        msg_box.setInformativeText("為了讓更新檔生效, 請退出系統重新執行.")
+        msg_box.setInformativeText("為了讓更新檔生效, 即將重新啟動醫療系統.")
         msg_box.addButton(QPushButton("確定"), QMessageBox.YesRole)
         msg_box.exec_()
 
+        self.parent.restart_pymedical()
 
     def _check_files(self, zip_file_name):
         dest_root = os.path.dirname(os.path.abspath(__file__))
@@ -143,6 +143,7 @@ class SystemUpdate(QtWidgets.QDialog):
         self._list_files(zip_source_root, dest_root, 'mysql')
         self._list_files(zip_source_root, dest_root, 'printer')
         self._list_files(zip_source_root, dest_root, 'ui')
+        self._list_files(zip_source_root, dest_root, 'images')
 
         self.ui.tableWidget_file_list.resizeRowsToContents()
 
@@ -208,6 +209,9 @@ class SystemUpdate(QtWidgets.QDialog):
             self.ui.progressBar.setValue(row_no)
             source_dir = self.ui.tableWidget_file_list.item(row_no, 1).text()
             dest_dir = self.ui.tableWidget_file_list.item(row_no, 2).text()
+
+            if not os.path.exists(dest_dir):
+                os.mkdir(dest_dir)
 
             source_file_name = os.path.join(source_dir, self.ui.tableWidget_file_list.item(row_no, 0).text())
             dest_file_name = os.path.join(dest_dir, self.ui.tableWidget_file_list.item(row_no, 0).text())

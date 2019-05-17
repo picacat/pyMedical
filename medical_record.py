@@ -771,6 +771,8 @@ class MedicalRecord(QtWidgets.QMainWindow):
             disease_code3 = string_utils.xstr(self.ui.lineEdit_disease_code3.text())
             treatment = string_utils.xstr(self.tab_list[0].combo_box_treatment.currentText())
             pres_days = number_utils.get_integer(self.tab_list[0].ui.comboBox_pres_days.currentText())
+            packages = number_utils.get_integer(self.tab_list[0].ui.comboBox_package.currentText())
+            instruction = self.tab_list[0].ui.comboBox_instruction.currentText()
 
             table_widget_prescript = self.tab_list[0].ui.tableWidget_prescript
             table_widget_treat = self.tab_list[0].ui.tableWidget_treat
@@ -786,7 +788,7 @@ class MedicalRecord(QtWidgets.QMainWindow):
                 treat_type,
                 disease_code1, disease_code2, disease_code3,
                 special_code,
-                treatment, pres_days,
+                treatment, pres_days, packages, instruction,
                 table_widget_prescript,
                 table_widget_treat,
                 table_widget_ins_care,
@@ -833,12 +835,11 @@ class MedicalRecord(QtWidgets.QMainWindow):
 
     # 設定必要欄位
     def _set_necessary_fields(self):
-        if (self.medical_record['InsType'] != '健保'):
-            return
-
-        self._set_treatment_and_course()
-        if (self.call_from == '醫師看診作業'):
+        if (self.call_from == '醫師看診作業'):  # 所有病歷都要設定
             self._set_doctor()
+
+        if (string_utils.xstr(self.medical_record['InsType']) == '健保'):
+            self._set_treatment_and_course()
 
     # 設定主治醫師姓名
     def _set_doctor(self):

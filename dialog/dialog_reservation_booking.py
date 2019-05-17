@@ -150,6 +150,9 @@ class DialogReservationBooking(QtWidgets.QDialog):
     # 檢查重複預約
     def _check_reservation_duplicated(self, patient_key, name):
         is_ok = True
+        if name == '休診':
+            return is_ok
+
         start_date = '{0} 00:00:00'.format(self.reservation_date[:10])
         end_date = '{0} 23:59:59'.format(self.reservation_date[:10])
         sql = '''
@@ -186,6 +189,9 @@ class DialogReservationBooking(QtWidgets.QDialog):
     # 檢查預約次數限制
     def _check_reservation_limit(self, patient_key, name):
         is_ok = True
+        if name == '休診':
+            return is_ok
+
         reservation_limit = number_utils.get_integer(self.system_settings.field('預約次數限制'))
         start_date = datetime.datetime.now().strftime('%Y-%m-%d 00:00:00')
         sql = '''
@@ -221,6 +227,9 @@ class DialogReservationBooking(QtWidgets.QDialog):
     # 檢查爽約次數
     def _check_reservation_missing_appointment(self, patient_key, name):
         is_ok = True
+        if name == '休診':
+            return is_ok
+
         reservation_period = number_utils.get_integer(self.system_settings.field('爽約期間'))
         reservation_missing_appointment = number_utils.get_integer(self.system_settings.field('爽約次數'))
 

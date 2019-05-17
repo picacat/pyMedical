@@ -561,7 +561,7 @@ class CSHIS:
 
         doc = case_utils.create_security_xml(treat_data)
 
-        return doc.toprettyxml(indent='\t')
+        return doc
 
     def return_seq_number_thread(self, out_queue, treat_date):
         p_treat_date = ctypes.c_char_p(treat_date.encode('ascii'))
@@ -664,6 +664,9 @@ class CSHIS:
             return False
 
         available_date, available_count = self.get_card_status()
+        if available_count is None:
+            return False
+
         if available_count <= 0:
             self.update_hc(False)
 

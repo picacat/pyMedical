@@ -57,6 +57,13 @@ UI_INS_APPLY_TOTAL_FEE = "ins_apply_total_fee.ui"
 UI_INS_CHECK_APPLY_FEE = "ins_check_apply_fee.ui"
 UI_INS_APPLY_SCHEDULE_TABLE = "ins_apply_schedule_table.ui"
 
+UI_STATISTICS_DOCTOR = "statistics_doctor.ui"
+UI_STATISTICS_DOCTOR_COUNT = "statistics_doctor_count.ui"
+UI_STATISTICS_DOCTOR_INCOME = "statistics_doctor_income.ui"
+
+UI_STATISTICS_RETURN_RATE = "statistics_return_rate.ui"
+UI_STATISTICS_RETURN_RATE_DOCTOR = "statistics_return_rate_doctor.ui"
+UI_STATISTICS_RETURN_RATE_MASSAGER = "statistics_return_rate_massager.ui"
 
 UI_DOCTOR_SCHEDULE = "doctor_schedule.ui"
 UI_DOCTOR_NURSE_TABLE = "doctor_nurse_table.ui"
@@ -98,6 +105,9 @@ UI_DIALOG_MEDICAL_RECORD_PICKER = "dialog_medical_record_picker.ui"
 UI_DIALOG_MEDICAL_RECORD_DONE = "dialog_medical_record_done.ui"
 UI_DIALOG_MEDICINE = "dialog_medicine.ui"
 
+UI_DIALOG_STATISTICS_DOCTOR = "dialog_statistics_doctor.ui"
+UI_DIALOG_STATISTICS_RETURN_RATE = "dialog_statistics_return_rate.ui"
+
 UI_DIALOG_CERTIFICATE_DIAGNOSIS = "dialog_certificate_diagnosis.ui"
 UI_DIALOG_CERTIFICATE_PAYMENT = "dialog_certificate_payment.ui"
 UI_DIALOG_CERTIFICATE_QUERY = "dialog_certificate_query.ui"
@@ -108,6 +118,7 @@ UI_DIALOG_PATIENT_LIST = "dialog_patient_list.ui"
 UI_DIALOG_SELECT_PATIENT = "dialog_select_patient.ui"
 
 UI_DIALOG_RESERVATION_BOOKING = "dialog_reservation_booking.ui"
+UI_DIALOG_RESERVATION_MODIFY = "dialog_reservation_modify.ui"
 UI_DIALOG_RESERVATION_QUERY = "dialog_reservation_query.ui"
 
 UI_DIALOG_ADDRESS = "dialog_address.ui"
@@ -125,6 +136,8 @@ UI_DIALOG_DEBT = "dialog_debt.ui"
 UI_DIALOG_ELECTRIC_ACUPUNCTURE = "dialog_electric_acupuncture.ui"
 UI_DIALOG_PURCHASE_LIST = "dialog_purchase_list.ui"
 UI_DIALOG_EXPORT_EMR_XML = "dialog_export_emr_xml.ui"
+UI_DIALOG_DATE_PICKER = "dialog_date_picker.ui"
+UI_DIALOG_PERMISSION = "dialog_permission.ui"
 
 UI_DIALOG_INS_CHECK = "dialog_ins_check.ui"
 UI_DIALOG_INS_APPLY = "dialog_ins_apply.ui"

@@ -164,7 +164,7 @@ class ICRecordUpload(QtWidgets.QMainWindow):
                 row_no, column,
                 QtWidgets.QTableWidgetItem(medical_record[column])
             )
-            if column in [4, 5, 6, 14, 15, 19, 20, 21, 22]:
+            if column in [5, 6, 14, 15, 19, 20, 21, 22]:
                 self.ui.tableWidget_ic_record.item(
                     row_no, column).setTextAlignment(
                     QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
@@ -275,7 +275,9 @@ class ICRecordUpload(QtWidgets.QMainWindow):
             self.upload_type,
             date_utils.date_to_str()
         )
-        self.create_xml_file(xml_file_name)
+        if not self.create_xml_file(xml_file_name):
+            return
+
         record_count = self.get_upload_record_count()
 
         ic_card = cshis.CSHIS(self.database, self.system_settings)
@@ -329,11 +331,14 @@ class ICRecordUpload(QtWidgets.QMainWindow):
             medical_record = self.database.select_record(
                 'SELECT * FROM cases WHERE CaseKey = {0}'.format(case_key))[0]
             upload_type = self.get_upload_type(medical_record)
-            self.add_rec(root, medical_record, upload_type)
+            if not self.add_rec(root, medical_record, upload_type):
+                return False
 
         tree = ET.ElementTree(root)
         tree.write(xml_file_name, pretty_print=True, xml_declaration=True, encoding="Big5")
         xml_utils.set_xml_file_to_big5(xml_file_name)
+
+        return True
 
     def get_upload_type(self, medical_record):
         upload_type = case_utils.extract_security_xml(medical_record['Security'], '資料格式')
@@ -349,7 +354,10 @@ class ICRecordUpload(QtWidgets.QMainWindow):
         rec = ET.SubElement(root, 'REC')
 
         self.add_msh(rec, upload_type)  # 表頭
-        self.add_mb(rec, medical_record, upload_type)   # 資料本體
+        if not self.add_mb(rec, medical_record, upload_type):   # 資料本體
+            return False
+
+        return True
 
     # 表頭內容
     def add_msh(self, rec, upload_type):
@@ -366,8 +374,13 @@ class ICRecordUpload(QtWidgets.QMainWindow):
     def add_mb(self, rec, medical_record, upload_type):
         mb = ET.SubElement(rec, 'MB')
 
-        self.add_mb1(mb, medical_record, upload_type)
-        self.add_mb2(mb, medical_record, upload_type)
+        if not self.add_mb1(mb, medical_record, upload_type):
+            return False
+
+        if not self.add_mb2(mb, medical_record, upload_type):
+            return False
+
+        return True
 
     # 健保資料段
     def add_mb1(self, mb, medical_record, upload_type):
@@ -474,15 +487,22 @@ class ICRecordUpload(QtWidgets.QMainWindow):
             medical_record['CaseDate'])
         )
 
+        return True
+
     # 醫療專區
     def add_mb2(self, mb, medical_record, upload_type):
-        self.add_treat(mb, medical_record, upload_type)
-        self.add_medicine(mb, medical_record, upload_type)
+        if not self.add_treat(mb, medical_record, upload_type):
+            return False
+
+        if not self.add_medicine(mb, medical_record, upload_type):
+            return False
+
+        return True
 
     def add_treat(self, mb, medical_record, upload_type):
         treatment = string_utils.xstr(medical_record['Treatment'])
         if treatment == '':
-            return
+            return True
 
         case_key = medical_record['CaseKey']
         prescript_type = '3'  # 3-診療
@@ -526,6 +546,8 @@ class ICRecordUpload(QtWidgets.QMainWindow):
                 a79 = ET.SubElement(mb2, 'A79')
                 a79.text = string_utils.xstr(prescript_sign)
 
+        return True
+
     def add_medicine(self, mb, medical_record, upload_type):
         case_key = string_utils.xstr(medical_record['CaseKey'])
 
@@ -561,7 +583,11 @@ class ICRecordUpload(QtWidgets.QMainWindow):
         dosage_row = self.database.select_record(sql)
 
         for prescript_row in rows:
-            self.add_medicine_rows(mb, medical_record, prescript_row, dosage_row, case_key, upload_type)
+            if not self.add_medicine_rows(
+                    mb, medical_record, prescript_row, dosage_row, case_key, upload_type):
+                return False
+
+        return True
 
     def add_medicine_rows(self, mb, medical_record, prescript_row, dosage_row,
                           case_key, upload_type):
@@ -579,7 +605,18 @@ class ICRecordUpload(QtWidgets.QMainWindow):
         if len(dosage_row) > 0:
             frequency = nhi_utils.FREQUENCY[dosage_row[0]['Packages']]
             days = number_utils.get_integer(dosage_row[0]['Days'])
-            dosage = prescript_row['Dosage'] * days
+            try:
+                dosage = prescript_row['Dosage'] * days
+            except:
+                system_utils.show_message_box(
+                    QMessageBox.Critical,
+                    '資料錯誤',
+                    '<font size="4" color="red"><b>{0}的處方內容有誤, 請確認處方名稱或劑量是否空白.</b></font>'.format(
+                        string_utils.xstr(medical_record['Name'])
+                    ),
+                    '請進入病歷內查看並更正此錯誤後再上傳.'
+                )
+                return False
         else:
             frequency = ''
             days = 0
@@ -607,6 +644,8 @@ class ICRecordUpload(QtWidgets.QMainWindow):
             if prescript_sign != '':
                 a79 = ET.SubElement(mb2, 'A79')
                 a79.text = string_utils.xstr(prescript_sign)
+
+        return True
 
     def _correct_errors(self):
         for row_no in range(self.ui.tableWidget_ic_record.rowCount()):

@@ -27,7 +27,7 @@
   </component>
   <component name="DBNavigator.Project.DatabaseConsoleManager">
     <connection id="85dd102d-4da3-4481-ba69-4172ba68c41d">
-      <console name="Connection" type="STANDARD" schema="" session="Main"><![CDATA[select * from clinic where ClinicType = '舌診']]></console>
+      <console name="Connection" type="STANDARD" schema="med2000" session="Main"><![CDATA[select * from cases order by casekey desc limit 1]]></console>
     </connection>
   </component>
   <component name="DBNavigator.Project.DatabaseFileManager">
@@ -92,11 +92,11 @@
           <url-type value="DATABASE" />
           <host value="localhost" />
           <port value="3306" />
-          <database value="yiler" />
+          <database value="med2000" />
           <os-authentication value="false" />
           <empty-authentication value="false" />
           <user value="root" />
-          <deprecated-pwd value="" />
+          <deprecated-pwd value="NjIwMjEw" />
         </database>
         <properties>
           <auto-commit value="true" />
@@ -122,7 +122,7 @@
           <session-management value="true" />
           <ddl-file-binding value="true" />
           <database-logging value="false" />
-          <connect-automatically value="true" />
+          <connect-automatically value="false" />
           <restore-workspace value="true" />
           <restore-workspace-deep value="true" />
           <environment-type value="development" />

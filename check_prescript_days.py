@@ -135,7 +135,9 @@ class CheckPrescriptDays(QtWidgets.QMainWindow):
             self.ui.label_message.setText('用藥重複率: 0%')
         else:
             self.ui.label_message.setText(
-                '用藥重複率 = {0} (重複給藥日份) / {1} (總給藥日份) = {2:.2f}%'.format(
+                '''用藥重複率 = 重複給藥日份 / 總給藥日份<br>
+                   <b>{0} / {1} = {2:.2f}%</b>
+                '''.format(
                     string_utils.xstr(self.total_duplicated_days),
                     string_utils.xstr(self.total_pres_days),
                     (self.total_duplicated_days / self.total_pres_days * 100),

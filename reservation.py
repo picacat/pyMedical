@@ -18,6 +18,7 @@ from libs import export_utils
 from libs import system_utils
 from classes import table_widget
 from dialog import dialog_reservation_booking
+from dialog import dialog_reservation_modify
 from dialog import dialog_reservation_query
 
 
@@ -73,9 +74,59 @@ class Reservation(QtWidgets.QMainWindow):
 
         self.ui.action_add_reservation.setEnabled(False)
         self.ui.action_cancel_reservation.setEnabled(False)
-        self.ui.action_reservation_arrival.setEnabled(False)
+        self.ui.action_modify_reservation.setEnabled(False)
+        # self.ui.action_reservation_arrival.setEnabled(False)
 
         self._set_combo_box_doctor()
+
+    # 設定信號
+    def _set_signal(self):
+        self.ui.action_close.triggered.connect(self.close_reservation)
+        self.ui.action_save_general_table.triggered.connect(self._save_general_table)
+        self.ui.action_save_assigned_table.triggered.connect(self._save_assigned_table)
+        self.ui.action_remove_assigned_table.triggered.connect(self._remove_assigned_table)
+        self.ui.action_modify_reservation.triggered.connect(self._modify_reservation)
+        self.ui.action_cancel_reservation.triggered.connect(self._cancel_reservation)
+        self.ui.action_reservation_arrival.triggered.connect(self.reservation_arrival)
+        self.ui.action_reservation_query.triggered.connect(self._reservation_query)
+        self.ui.action_export_reservation_excel.triggered.connect(self._export_reservation_excel)
+
+        self.ui.dateEdit_reservation_date.dateChanged.connect(self.read_reservation)
+        self.ui.radioButton_period1.clicked.connect(self.read_reservation)
+        self.ui.radioButton_period2.clicked.connect(self.read_reservation)
+        self.ui.radioButton_period3.clicked.connect(self.read_reservation)
+
+        self.ui.tableWidget_reservation.doubleClicked.connect(self._booking_reservation)
+        self.ui.tableWidget_reservation_list.doubleClicked.connect(self.reservation_arrival)
+        self.ui.action_add_reservation.triggered.connect(self._booking_reservation)
+
+        self.ui.tabWidget_reservation.currentChanged.connect(self._tab_changed)                   # 切換分頁
+        self.ui.dateEdit_start_date.dateChanged.connect(self._read_reservation_list)
+        self.ui.dateEdit_end_date.dateChanged.connect(self._read_reservation_list)
+        self.ui.radioButton_arrival1.clicked.connect(self._read_reservation_list)
+        self.ui.radioButton_arrival2.clicked.connect(self._read_reservation_list)
+        self.ui.radioButton_arrival3.clicked.connect(self._read_reservation_list)
+        self.ui.tableWidget_reservation.itemSelectionChanged.connect(self._reservation_table_item_changed)
+        self.ui.tableWidget_reservation_list.itemSelectionChanged.connect(self._reservation_list_changed)
+
+        self.ui.comboBox_doctor.currentTextChanged.connect(self.read_reservation)
+
+        self.ui.dateEdit_reservation_date.dateChanged.connect(self._set_week_day)
+
+        self.ui.tableWidget_calendar.cellClicked.connect(self._calendar_changed)
+
+    # 設定欄位寬度
+    def _set_table_width(self):
+        width = self.table_header_width * self.max_reservation_table_times
+        self.table_widget_reservation.set_table_heading_width(width)
+
+    def close_tab(self):
+        current_tab = self.parent.ui.tabWidget_window.currentIndex()
+        self.parent.close_tab(current_tab)
+
+    def close_reservation(self):
+        self.close_all()
+        self.close_tab()
 
     def _set_week_day(self):
         week_day_name = self._get_week_day_name()
@@ -114,53 +165,6 @@ class Reservation(QtWidgets.QMainWindow):
             self.ui.radioButton_period2.setChecked(True)
         elif period == '晚班':
             self.ui.radioButton_period3.setChecked(True)
-
-    # 設定信號
-    def _set_signal(self):
-        self.ui.action_close.triggered.connect(self.close_reservation)
-        self.ui.action_save_general_table.triggered.connect(self._save_general_table)
-        self.ui.action_save_assigned_table.triggered.connect(self._save_assigned_table)
-        self.ui.action_remove_assigned_table.triggered.connect(self._remove_assigned_table)
-        self.ui.action_cancel_reservation.triggered.connect(self._cancel_reservation)
-        self.ui.action_reservation_arrival.triggered.connect(self.reservation_arrival)
-        self.ui.action_reservation_query.triggered.connect(self._reservation_query)
-        self.ui.action_export_reservation_excel.triggered.connect(self._export_reservation_excel)
-
-        self.ui.dateEdit_reservation_date.dateChanged.connect(self.read_reservation)
-        self.ui.radioButton_period1.clicked.connect(self.read_reservation)
-        self.ui.radioButton_period2.clicked.connect(self.read_reservation)
-        self.ui.radioButton_period3.clicked.connect(self.read_reservation)
-
-        self.ui.tableWidget_reservation.doubleClicked.connect(self._booking_reservation)
-        self.ui.action_add_reservation.triggered.connect(self._booking_reservation)
-
-        self.ui.tabWidget_reservation.currentChanged.connect(self._tab_changed)                   # 切換分頁
-        self.ui.dateEdit_start_date.dateChanged.connect(self._read_reservation_list)
-        self.ui.dateEdit_end_date.dateChanged.connect(self._read_reservation_list)
-        self.ui.radioButton_arrival1.clicked.connect(self._read_reservation_list)
-        self.ui.radioButton_arrival2.clicked.connect(self._read_reservation_list)
-        self.ui.radioButton_arrival3.clicked.connect(self._read_reservation_list)
-        self.ui.tableWidget_reservation.itemSelectionChanged.connect(self._reservation_table_item_changed)
-        self.ui.tableWidget_reservation_list.itemSelectionChanged.connect(self._reservation_list_changed)
-
-        self.ui.comboBox_doctor.currentTextChanged.connect(self.read_reservation)
-
-        self.ui.dateEdit_reservation_date.dateChanged.connect(self._set_week_day)
-
-        self.ui.tableWidget_calendar.cellClicked.connect(self._calendar_changed)
-
-    # 設定欄位寬度
-    def _set_table_width(self):
-        width = self.table_header_width * self.max_reservation_table_times
-        self.table_widget_reservation.set_table_heading_width(width)
-
-    def close_tab(self):
-        current_tab = self.parent.ui.tabWidget_window.currentIndex()
-        self.parent.close_tab(current_tab)
-
-    def close_reservation(self):
-        self.close_all()
-        self.close_tab()
 
     def read_reservation(self):
         self._set_reservation_table()
@@ -445,7 +449,7 @@ class Reservation(QtWidgets.QMainWindow):
             self.ui.action_save_general_table.setEnabled(False)
             self.ui.action_save_assigned_table.setEnabled(False)
             self.ui.action_remove_assigned_table.setEnabled(False)
-            self.ui.action_reservation_arrival.setEnabled(False)
+            # self.ui.action_reservation_arrival.setEnabled(False)
 
             if self.table_widget_reservation_list.row_count() > 0:
                 enabled = True
@@ -453,6 +457,7 @@ class Reservation(QtWidgets.QMainWindow):
                 enabled = False
 
             self.ui.action_cancel_reservation.setEnabled(enabled)
+            self.ui.action_modify_reservation.setEnabled(enabled)
 
     def _read_reservation_list(self):
         self.ui.tableWidget_reservation_list.setRowCount(1)
@@ -476,10 +481,14 @@ class Reservation(QtWidgets.QMainWindow):
             start_date,
             end_date,
             arrival,
-            str(nhi_utils.PERIOD)[1:-1]
+            string_utils.xstr(nhi_utils.PERIOD)[1:-1]
         )
 
         self.table_widget_reservation_list.set_db_data(sql, self._set_table_data)
+        if self.table_widget_reservation_list.row_count() > 0:
+            self.ui.action_reservation_arrival.setEnabled(True)
+        else:
+            self.ui.action_reservation_arrival.setEnabled(True)
 
     def _set_table_data(self, row_no, row_data):
         if string_utils.xstr(row_data['Arrival']) == 'True':
@@ -532,12 +541,6 @@ class Reservation(QtWidgets.QMainWindow):
                 QtGui.QColor(color)
             )
 
-    def _cancel_reservation(self):
-        if self.tab_name == '預約一覽表':
-            self._cancel_reservation_by_table()
-        else:
-            self._cancel_reservation_by_list()
-
     def _get_reserve_key_by_table(self, row_no, col_no, warning=False):
         header = self.ui.tableWidget_reservation.horizontalHeaderItem(col_no)
         if header is None:
@@ -578,6 +581,12 @@ class Reservation(QtWidgets.QMainWindow):
 
         return name.text()
 
+    def _cancel_reservation(self):
+        if self.tab_name == '預約一覽表':
+            self._cancel_reservation_by_table()
+        else:
+            self._cancel_reservation_by_list()
+
     def _cancel_reservation_by_table(self):
         current_row = self.ui.tableWidget_reservation.currentRow()
         current_column = self.ui.tableWidget_reservation.currentColumn()
@@ -595,6 +604,34 @@ class Reservation(QtWidgets.QMainWindow):
         name = self.table_widget_reservation_list.field_value(4)
         if self._delete_reserve_record(reserve_key, name):
             self._read_reservation_list()
+
+    def _modify_reservation(self):
+        if self.tab_name == '預約一覽表':
+            i = 0
+            current_row = self.ui.tableWidget_reservation.currentRow()
+            current_column = self.ui.tableWidget_reservation.currentColumn()
+            reserve_key = self._get_reserve_key_by_table(current_row, current_column, True)
+        else:
+            i = 1
+            reserve_key = self.table_widget_reservation_list.field_value(0)
+
+        if reserve_key is None:
+            return
+
+        if self._modify_reserve_record(reserve_key):
+            self._tab_changed(i)
+
+    def _modify_reserve_record(self, reserve_key):
+        dialog = dialog_reservation_modify.DialogReservationModify(
+            self, self.database, self.system_settings, reserve_key
+        )
+        if not dialog.exec_():
+            dialog.deleteLater()
+            return False
+
+        dialog.deleteLater()
+
+        return True
 
     def _delete_reserve_record(self, reserve_key, name):
         msg_box = QMessageBox()
@@ -626,6 +663,7 @@ class Reservation(QtWidgets.QMainWindow):
             enabled = True
 
         self.ui.action_cancel_reservation.setEnabled(enabled)
+        self.ui.action_modify_reservation.setEnabled(enabled)
         self.ui.action_reservation_arrival.setEnabled(enabled)
 
         self._set_action_add_reservation()
@@ -633,7 +671,6 @@ class Reservation(QtWidgets.QMainWindow):
         reserve_date = self.ui.dateEdit_reservation_date.date()
         if reserve_date != datetime.datetime.today():
             self.ui.action_reservation_arrival.setEnabled(False)
-
 
     def _set_action_add_reservation(self):
         current_row = self.ui.tableWidget_reservation.currentRow()
@@ -665,6 +702,13 @@ class Reservation(QtWidgets.QMainWindow):
                 self.ui.action_add_reservation.setEnabled(True)
 
     def reservation_arrival(self):
+        if self.tab_name == '預約一覽表':
+            self._arrival_by_table()
+        else:
+            self._arrival_by_list()
+
+    # 預約一覽表報到
+    def _arrival_by_table(self):
         current_column = self.ui.tableWidget_reservation.currentColumn()
         header = self.ui.tableWidget_reservation.horizontalHeaderItem(current_column).text()
         if header != '姓名':
@@ -675,13 +719,39 @@ class Reservation(QtWidgets.QMainWindow):
         if name is None:
             return
 
-        name = name.text()
         reserve_key_item = self.ui.tableWidget_reservation.item(current_row, current_column+1)
         if reserve_key_item is None:
             return
 
         reserve_key = reserve_key_item.text()
+        name = name.text()
 
+        self._ready_to_arrival(reserve_key, name)
+
+    # 預約名單報到
+    def _arrival_by_list(self):
+        if not self.ui.action_reservation_arrival.isEnabled():
+            return
+
+        current_row = self.ui.tableWidget_reservation_list.currentRow()
+        reserve_key_item = self.ui.tableWidget_reservation_list.item(current_row, 0)
+        if reserve_key_item is None:
+            return
+
+        name_item = self.ui.tableWidget_reservation_list.item(current_row, 4)
+        if name_item is None:
+            return
+
+        reserve_key = reserve_key_item.text()
+        name = name_item.text()
+
+        arrival = self._check_reservation_arrival(reserve_key)
+        if arrival:  # 已報到
+            return
+
+        self._ready_to_arrival(reserve_key, name)
+
+    def _ready_to_arrival(self, reserve_key, name):
         arrival = self._check_reservation_arrival(reserve_key)
         if arrival:  # 已報到
             return
@@ -862,6 +932,22 @@ class Reservation(QtWidgets.QMainWindow):
             enabled = True
 
         self.ui.action_cancel_reservation.setEnabled(enabled)
+        self.ui.action_modify_reservation.setEnabled(enabled)
+
+        enabled = True
+        reserve_date = self.ui.tableWidget_reservation_list.item(
+            self.ui.tableWidget_reservation_list.currentRow(), 1
+        )
+
+        if reserve_date is None:
+            enabled = False
+
+        reserve_date = reserve_date.text()[:10]
+        today = datetime.datetime.today().strftime('%Y-%m-%d')
+        if reserve_date != today:
+            enabled = False
+
+        self.ui.action_reservation_arrival.setEnabled(enabled)
 
     def _reservation_query(self):
         dialog = dialog_reservation_query.DialogReservationQuery(self, self.database, self.system_settings)

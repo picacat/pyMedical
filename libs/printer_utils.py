@@ -8,6 +8,7 @@ from libs import number_utils
 from printer.print_registration_form1 import *
 from printer.print_registration_form2 import *
 from printer.print_registration_form3 import *
+from printer.print_registration_form4 import *
 
 from printer.print_prescription_ins_form1 import *
 from printer.print_prescription_ins_form2 import *
@@ -45,6 +46,7 @@ PRINT_REGISTRATION_FORM = {
     '01-熱感紙掛號單': PrintRegistrationForm1,
     '02-11"中二刀空白掛號單': PrintRegistrationForm2,
     '03-3"套表掛號單': PrintRegistrationForm3,
+    '04-2.5x3"熱感掛號單': PrintRegistrationForm4,
 }
 
 PRINT_PRESCRIPTION_INS_FORM = {

@@ -104,6 +104,9 @@ class DictCompound(QtWidgets.QMainWindow):
 
     def dict_compound_changed(self):
         compound_key = self.table_widget_dict_compound.field_value(0)
+        if compound_key is None:
+            return
+
         self._read_ref_compound(compound_key)
         self.ui.tableWidget_dict_compound.setFocus(True)
 

@@ -143,11 +143,11 @@ class DialogReturnCard(QtWidgets.QDialog):
         security = ic_card.treat_data_to_xml(ic_card.treat_data)
         treat_after_check = '2'
         security = case_utils.update_xml_doc(
-            self.database, security, 'treat_after_check', treat_after_check)
+            security, 'treat_after_check', treat_after_check)
         security = case_utils.update_xml_doc(
-            self.database, security, 'prescript_sign_time', date_utils.now_to_str())
+            security, 'prescript_sign_time', date_utils.now_to_str())
         security = case_utils.update_xml_doc(
-            self.database, security, 'upload_type', '1')
+            security, 'upload_type', '1')
         data = [
             ic_card.treat_data['seq_number'],
             security,

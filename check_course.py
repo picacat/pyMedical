@@ -207,22 +207,31 @@ class CheckCourse(QtWidgets.QMainWindow):
                     error_message.append('療程已超過30日')
             else:
                 if card != next_card:  # 換新療程
+                    delta = self._get_first_course_delta(  # 檢查當筆
+                        row_no, patient_key, course, case_date,
+                    )
+                    next_delta = self._get_first_course_delta(  # 以下一筆為檢查資料
+                        row_no, patient_key, course, next_case_date,
+                    )
+                    if course >= 2 and delta.days + 1 > 30:
+                        error_message.append('療程已超過30日')
+
+                    if course < 6:
+                        if next_delta is None:
+                            next_error_message.append('療程未滿6次')
+                        elif next_delta.days + 1 < 14:  # 當天也算一天 +1
+                            next_error_message.append('療程14日未完成另開新療程')
+                        elif next_delta.days + 1 < 30:  # 當天也算一天 +1
+                            next_error_message.append('療程30日未完成另開新療程')
+                    elif course > 6:
+                        next_error_message.append('療程超過6次')
+                else:   # 同療程
                     delta = self._get_first_course_delta(
                         row_no, patient_key, course, case_date,
                     )
                     if course >= 2 and delta.days > 30:
                         error_message.append('療程已超過30日')
 
-                    if course < 6:
-                        if delta is None:
-                            next_error_message.append('療程未滿6次')
-                        elif delta.days < 14:
-                            next_error_message.append('療程14日未完成另開新療程')
-                        elif delta.days < 30:
-                            next_error_message.append('療程未滿30日另開新療程')
-                    elif course > 6:
-                        next_error_message.append('療程超過6次')
-                else:   # 同療程
                     if next_course == course:
                         if course >= 2:
                             next_error_message.append('療程重複')
@@ -280,7 +289,11 @@ class CheckCourse(QtWidgets.QMainWindow):
             if date_utils.str_to_date(case_date).month != self.apply_month:
                 last_case_date = case_date
                 for i in range(1, 6):
-                    next_case_date = self.ui.tableWidget_errors.item(row_no+i, 1).text()
+                    next_case_date = self.ui.tableWidget_errors.item(row_no+i, 1)
+                    if next_case_date is None:
+                        continue
+
+                    next_case_date = next_case_date.text()
                     next_patient_key = self.ui.tableWidget_errors.item(row_no+i, 3).text()
                     next_card = self.ui.tableWidget_errors.item(row_no+i, 6).text()
                     next_course = number_utils.get_integer(self.ui.tableWidget_errors.item(row_no+i, 7).text())

@@ -1,10 +1,7 @@
 from PyQt5 import QtWidgets
-from lxml import etree
-import xml.etree.ElementTree as ET
-from xml.dom.minidom import Document
+from lxml import etree as ET
 from libs import string_utils
 from libs import number_utils
-from libs import nhi_utils
 from libs import prescript_utils
 
 
@@ -14,34 +11,19 @@ INJURY_LIST = [
     '破裂', '壓迫',
 ]
 
-def get_security_xml_dict(root):
-    security_xml_dict = {
-        '寫卡時間': root[0].text,
-        '健保卡序': root[1].text,
-        '院所代號': root[2].text,
-        '安全簽章': root[3].text,
-        '安全模組': root[4].text,
-        '同日就診': root[5].text,
-        '上傳時間': root[6].text,
-        '資料格式': root[7].text,
-        '補卡註記': root[8].text,
-        '醫令時間': root[9].text,
-    }
 
-    return security_xml_dict
-
-
-def get_treat_data_xml_dict(xml_string):
-    security_xml_dict = create_treat_data_xml_dict()
-
-    try:
-        root = ET.fromstring(xml_string)[0]
-        for child in root:
-            security_xml_dict[child.tag] = child.text
-    except ET.ParseError:
-        pass
-
-    return security_xml_dict
+SECURITY_XML_DICT = {
+    '寫卡時間': 'registered_date',
+    '健保卡序': 'seq_number',
+    '院所代號': 'clinic_id',
+    '安全簽章': 'security_signature',
+    '安全模組': 'sam_id',
+    '同日就診': 'register_duplicated',
+    '上傳時間': 'upload_time',
+    '資料格式': 'upload_type',
+    '補卡註記': 'treat_after_check',
+    '醫令時間': 'prescript_sign_time',
+}
 
 
 def create_treat_data_xml_dict():
@@ -67,123 +49,71 @@ def create_security_xml(treat_data=None):
     if treat_data is None:
         treat_data = create_treat_data_xml_dict()
 
-    doc = Document()
-    document = doc.createElement('DOCUMENT')
-    document.setAttribute('content', 'cshis')
+    root = ET.Element('DOCUMENT', content='cshis')
+    treat_data_node = ET.SubElement(root, 'treat_data')
 
-    doc.appendChild(document)
-    security = doc.createElement('treat_data')
-    document.appendChild(security)
+    field_list = [
+        'registered_date',
+        'seq_number',
+        'clinic_id',
+        'security_signature',
+        'sam_id',
+        'register_duplicated',
+        'upload_time',
+        'upload_type',
+        'treat_after_check',
+        'prescript_sign_time',
+    ]
 
-    registered_date = doc.createElement('registered_date')
-    registered_date_value = doc.createTextNode(
-        treat_data['registered_date']
-    )
-    registered_date.appendChild(registered_date_value)
-    security.appendChild(registered_date)
+    for field_name in field_list:
+        xml_field = ET.SubElement(treat_data_node, field_name)
+        xml_field.text = treat_data[field_name]
 
-    seq_number = doc.createElement('seq_number')
-    seq_number_value = doc.createTextNode(
-        treat_data['seq_number']
-    )
-    seq_number.appendChild(seq_number_value)
-    security.appendChild(seq_number)
+    xml = ET.tostring(root)
 
-    clinic_id = doc.createElement('clinic_id')
-    clinic_id_value = doc.createTextNode(
-        treat_data['clinic_id']
-    )
-    clinic_id.appendChild(clinic_id_value)
-    security.appendChild(clinic_id)
+    return xml
 
-    security_signature = doc.createElement('security_signature')
-    security_signature_value = doc.createTextNode(
-        treat_data['security_signature']
-    )
-    security_signature.appendChild(security_signature_value)
-    security.appendChild(security_signature)
 
-    sam_id = doc.createElement('sam_id')
-    sam_id_value = doc.createTextNode(
-        treat_data['sam_id']
-    )
-    sam_id.appendChild(sam_id_value)
-    security.appendChild(sam_id)
+def get_treat_data_xml_dict(xml_string):
+    ic_card_xml = ''.join(string_utils.get_str(xml_string, 'utf-8'))
+    security_xml_dict = create_treat_data_xml_dict()
 
-    register_duplicated = doc.createElement('register_duplicated')
-    register_duplicated_value = doc.createTextNode(
-        treat_data['register_duplicated']
-    )
-    register_duplicated.appendChild(register_duplicated_value)
-    security.appendChild(register_duplicated)
+    root = ET.fromstring(ic_card_xml)
+    doc = root.xpath('//DOCUMENT/treat_data')[0]
+    for field in doc:
+        field_name = field.tag
+        field_value = root.xpath('//DOCUMENT/treat_data/{field_name}'.format(
+            field_name=field_name))[0].text
+        security_xml_dict[field_name] = field_value
 
-    upload_time = doc.createElement('upload_time')
-    upload_time_value = doc.createTextNode(
-        treat_data['upload_time']
-    )
-    upload_time.appendChild(upload_time_value)
-    security.appendChild(upload_time)
-
-    upload_type = doc.createElement('upload_type')
-    upload_type_value = doc.createTextNode(
-        treat_data['upload_type']
-    )
-    upload_type.appendChild(upload_type_value)
-    security.appendChild(upload_type)
-
-    treat_after_check = doc.createElement('treat_after_check')
-    treat_after_check_value = doc.createTextNode(
-        treat_data['treat_after_check']
-    )
-    treat_after_check.appendChild(treat_after_check_value)
-    security.appendChild(treat_after_check)
-
-    prescript_sign_time = doc.createElement('prescript_sign_time')
-    prescript_sign_time_value = doc.createTextNode(
-        treat_data['prescript_sign_time']
-    )
-    prescript_sign_time.appendChild(prescript_sign_time_value)
-    security.appendChild(prescript_sign_time)
-
-    return doc
+    return security_xml_dict
 
 
 # 取出病歷檔安全簽章XML
 def extract_security_xml(xml_field, field):
     ic_card_xml = ''.join(string_utils.get_str(xml_field, 'utf-8'))
+    if ic_card_xml in [None, '']:
+        return None
+
+    field_name = SECURITY_XML_DICT[field]
     try:
-        root = ET.fromstring(ic_card_xml)[0]
-    except ET.ParseError:
-        return ''
+        root = ET.fromstring(ic_card_xml)
+        field_value = root.xpath('//DOCUMENT/treat_data/{field_name}'.format(field_name=field_name))[0].text
+    except:
+        return None
 
-    security_xml_dict = get_security_xml_dict(root)
-
-    return security_xml_dict[field]
-
-
-# 寫入病歷檔安全簽章XML
-# def update_xml_doc(database, xml_field, field_name, field_value):
-#     sql = """
-#         SELECT UPDATEXML('{0}', '{1}', '{2}')
-#     """.format(
-#         xml_field,
-#         '//{0}'.format(field_name),
-#         '<{0}>{1}</{0}>'.format(field_name, field_value)
-#     )
-#     row = database.select_record(sql, False)[0]
-#
-#     return row[0]
+    return field_value
 
 
 # 寫入病歷檔安全簽章XML
 def update_xml_doc(xml_field, field_name, field_value):
     ic_card_xml = ''.join(string_utils.get_str(xml_field, 'utf-8'))
 
-    root = etree.fromstring(ic_card_xml)
+    root = ET.fromstring(ic_card_xml)
     root.xpath('//DOCUMENT/treat_data/{field_name}'.format(
         field_name=field_name, ))[0].text = field_value
 
-    return etree.tostring(root)
+    return ET.tostring(root)
 
 
 # 寫入病歷檔安全簽章XML
@@ -199,18 +129,6 @@ def update_xml(database, table_name, field_name, xml_field, field_value, primary
         key_value
     )
     database.exec_sql(sql)
-
-
-def extract_xml(database, case_key, xml_field):
-    sql = '''
-            SELECT ExtractValue(Security, "//{0}") AS xml_value
-            FROM cases WHERE
-                CaseKey = {1}
-        '''.format(xml_field, case_key)
-    row = database.select_record(sql)[0]
-    xml_value =string_utils.get_str(row['xml_value'], 'utf-8')  # 1-正常上傳 2-異常上傳 3-正常補正 4-異常補正
-
-    return xml_value
 
 
 def get_pres_days(database, case_key, medicine_set=1):
@@ -757,4 +675,174 @@ def is_disease_code_exist(database, disease_code):
         is_exist = False
 
     return is_exist
+
+
+def get_disease_special_code(database, disease_code):
+    sql = '''
+        SELECT SpecialCode FROM icd10
+        WHERE
+            ICDCode = "{disease_code}"
+    '''.format(
+        disease_code=disease_code,
+    )
+
+    rows = database.select_record(sql)
+    if len(rows) <= 0:
+        return None
+
+    return string_utils.xstr(rows[0]['SpecialCode']).strip()
+
+
+# def get_security_xml_dict(root):
+#     security_xml_dict = {
+#         '寫卡時間': root[0].text,
+#         '健保卡序': root[1].text,
+#         '院所代號': root[2].text,
+#         '安全簽章': root[3].text,
+#         '安全模組': root[4].text,
+#         '同日就診': root[5].text,
+#         '上傳時間': root[6].text,
+#         '資料格式': root[7].text,
+#         '補卡註記': root[8].text,
+#         '醫令時間': root[9].text,
+#     }
+#
+#     return security_xml_dict
+
+
+# def get_treat_data_xml_dict(xml_string):
+#     security_xml_dict = create_treat_data_xml_dict()
+#
+#     try:
+#         root = ET.fromstring(xml_string)[0]
+#         for child in root:
+#             security_xml_dict[child.tag] = child.text
+#     except ET.ParseError:
+#         pass
+#
+#     return security_xml_dict
+
+
+# 取出病歷檔安全簽章XML
+# def extract_security_xml(xml_field, field):
+#     ic_card_xml = ''.join(string_utils.get_str(xml_field, 'utf-8'))
+#     try:
+#         root = ET.fromstring(ic_card_xml)[0]
+#     except ET.ParseError:
+#         return ''
+#
+#     security_xml_dict = get_security_xml_dict(root)
+#
+#     return security_xml_dict[field]
+
+
+# 寫入病歷檔安全簽章XML
+# def update_xml_doc(database, xml_field, field_name, field_value):
+#     sql = """
+#         SELECT UPDATEXML('{0}', '{1}', '{2}')
+#     """.format(
+#         xml_field,
+#         '//{0}'.format(field_name),
+#         '<{0}>{1}</{0}>'.format(field_name, field_value)
+#     )
+#     row = database.select_record(sql, False)[0]
+#
+#     return row[0]
+
+
+# def extract_xml(database, case_key, xml_field):
+#     sql = '''
+#             SELECT ExtractValue(Security, "//{0}") AS xml_value
+#             FROM cases WHERE
+#                 CaseKey = {1}
+#         '''.format(xml_field, case_key)
+#     row = database.select_record(sql)[0]
+#     xml_value =string_utils.get_str(row['xml_value'], 'utf-8')  # 1-正常上傳 2-異常上傳 3-正常補正 4-異常補正
+#
+#     return xml_value
+
+
+# def create_security_xml(treat_data=None):
+#     if treat_data is None:
+#         treat_data = create_treat_data_xml_dict()
+#
+#     doc = Document()
+#     document = doc.createElement('DOCUMENT')
+#     document.setAttribute('content', 'cshis')
+#
+#     doc.appendChild(document)
+#     security = doc.createElement('treat_data')
+#     document.appendChild(security)
+#
+#     registered_date = doc.createElement('registered_date')
+#     registered_date_value = doc.createTextNode(
+#         treat_data['registered_date']
+#     )
+#     registered_date.appendChild(registered_date_value)
+#     security.appendChild(registered_date)
+#
+#     seq_number = doc.createElement('seq_number')
+#     seq_number_value = doc.createTextNode(
+#         treat_data['seq_number']
+#     )
+#     seq_number.appendChild(seq_number_value)
+#     security.appendChild(seq_number)
+#
+#     clinic_id = doc.createElement('clinic_id')
+#     clinic_id_value = doc.createTextNode(
+#         treat_data['clinic_id']
+#     )
+#     clinic_id.appendChild(clinic_id_value)
+#     security.appendChild(clinic_id)
+#
+#     security_signature = doc.createElement('security_signature')
+#     security_signature_value = doc.createTextNode(
+#         treat_data['security_signature']
+#     )
+#     security_signature.appendChild(security_signature_value)
+#     security.appendChild(security_signature)
+#
+#     sam_id = doc.createElement('sam_id')
+#     sam_id_value = doc.createTextNode(
+#         treat_data['sam_id']
+#     )
+#     sam_id.appendChild(sam_id_value)
+#     security.appendChild(sam_id)
+#
+#     register_duplicated = doc.createElement('register_duplicated')
+#     register_duplicated_value = doc.createTextNode(
+#         treat_data['register_duplicated']
+#     )
+#     register_duplicated.appendChild(register_duplicated_value)
+#     security.appendChild(register_duplicated)
+#
+#     upload_time = doc.createElement('upload_time')
+#     upload_time_value = doc.createTextNode(
+#         treat_data['upload_time']
+#     )
+#     upload_time.appendChild(upload_time_value)
+#     security.appendChild(upload_time)
+#
+#     upload_type = doc.createElement('upload_type')
+#     upload_type_value = doc.createTextNode(
+#         treat_data['upload_type']
+#     )
+#     upload_type.appendChild(upload_type_value)
+#     security.appendChild(upload_type)
+#
+#     treat_after_check = doc.createElement('treat_after_check')
+#     treat_after_check_value = doc.createTextNode(
+#         treat_data['treat_after_check']
+#     )
+#     treat_after_check.appendChild(treat_after_check_value)
+#     security.appendChild(treat_after_check)
+#
+#     prescript_sign_time = doc.createElement('prescript_sign_time')
+#     prescript_sign_time_value = doc.createTextNode(
+#         treat_data['prescript_sign_time']
+#     )
+#     prescript_sign_time.appendChild(prescript_sign_time_value)
+#     security.appendChild(prescript_sign_time)
+#
+#     return doc
 

@@ -25,7 +25,11 @@ def search_patient(ui, database, settings, keyword):
             ORDER BY PatientKey
         '''.format(keyword)
 
-    row = database.select_record(script)
+    try:
+        row = database.select_record(script)
+    except:
+        return None
+
     row_count = len(list(row))
 
     if row_count <= 0:

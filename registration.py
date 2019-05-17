@@ -112,6 +112,10 @@ class Registration(QtWidgets.QMainWindow):
         self.ui.toolButton_modify_patient2.clicked.connect(self._modify_patient)
         self.ui.toolButton_modify_wait.clicked.connect(self._modify_wait)
         self.ui.toolButton_edit_cases.clicked.connect(self._modify_wait)
+
+        self.ui.tableWidget_wait.doubleClicked.connect(self._modify_wait)
+        self.ui.tableWidget_wait_completed.doubleClicked.connect(self._modify_wait)
+
         self.ui.lineEdit_query.returnPressed.connect(self.query_patient)
         self.ui.comboBox_patient_share.currentIndexChanged.connect(self._selection_changed)
         self.ui.comboBox_patient_discount.currentIndexChanged.connect(self._selection_changed)
@@ -487,6 +491,7 @@ class Registration(QtWidgets.QMainWindow):
             else:
                 self.ui.comboBox_card_abnormal.setCurrentText(None)
                 self.ui.comboBox_card_abnormal.setEnabled(False)
+
         elif sender_name == 'comboBox_massager':
             self._set_charge()
         elif sender_name == 'comboBox_doctor':
@@ -517,6 +522,9 @@ class Registration(QtWidgets.QMainWindow):
             self._set_total_amount()
         elif sender_name == 'lineEdit_traditional_health_care_fee':
             self._set_total_amount()
+
+        if 'IC06' in self.ui.comboBox_card.currentText():
+            self.ui.comboBox_card_abnormal.setEnabled(True)
 
     # 開始查詢病患資料
     def query_patient(self):
@@ -567,6 +575,9 @@ class Registration(QtWidgets.QMainWindow):
         else:
             case_key = self.table_widget_wait_completed.field_value(1)
             patient_key = self.table_widget_wait_completed.field_value(2)
+
+        if case_key is None or patient_key is None:
+            return
 
         self._set_reg_mode(False)
         self.ui.action_save.setText('修正存檔')
@@ -668,7 +679,7 @@ class Registration(QtWidgets.QMainWindow):
         today = datetime.date.today()
         last_treat_date = (today - datetime.timedelta(days=30)).strftime('%Y-%m-%d 00:00:00')
         sql = '''
-            SELECT TreatType, Card, Continuance, XCard FROM cases WHERE
+            SELECT TreatType, Card, Continuance, Share, Injury, XCard FROM cases WHERE
             (CaseDate >= "{0}") AND
             (PatientKey = {1}) AND
             (InsType = "健保") 
@@ -686,11 +697,17 @@ class Registration(QtWidgets.QMainWindow):
         if number_utils.get_integer(row['Continuance']) >= 6:  # 療程已滿
             return
 
-        course = str(row['Continuance'] + 1)  # 療程自動續1次
-        self.ui.comboBox_card.setCurrentText(row['Card'])
-        self.ui.comboBox_course.setCurrentText(course)
+        share_type = string_utils.xstr(row['Share'])
+        treat_type = string_utils.xstr(row['TreatType'])
+        injury_type = string_utils.xstr(row['Injury'])
+        card = string_utils.xstr(row['Card'])
+        course = string_utils.xstr(row['Continuance'] + 1)  # 療程自動續1次
 
-        self.ui.comboBox_treat_type.setCurrentText(string_utils.xstr(row['TreatType']))
+        self.ui.comboBox_share_type.setCurrentText(share_type)
+        self.ui.comboBox_injury_type.setCurrentText(injury_type)
+        self.ui.comboBox_treat_type.setCurrentText(treat_type)
+        self.ui.comboBox_card.setCurrentText(card)
+        self.ui.comboBox_course.setCurrentText(course)
 
         # xcard = string_utils.xstr(row['XCard'])
         # if xcard in nhi_utils.ABNORMAL_CARD:
@@ -854,6 +871,8 @@ class Registration(QtWidgets.QMainWindow):
             card = medical_record['Card']
             course = str(medical_record['Continuance'])
             doctor = self.table_widget_wait.field_value(14)
+            if doctor is None:
+                doctor = str(medical_record['Doctor'])
             massager = medical_record['Massager']
             remark = string_utils.get_str(medical_record['Remark'], 'utf8')
 
@@ -1314,8 +1333,7 @@ class Registration(QtWidgets.QMainWindow):
         card = string_utils.xstr(self.ui.comboBox_card.currentText()).split(' ')[0]
         card_abnormal = string_utils.xstr(self.ui.comboBox_card_abnormal.currentText()).split(' ')[0]
         if ic_card is None:
-            doc = case_utils.create_security_xml()
-            security = doc.toprettyxml(indent='\t')
+            security = case_utils.create_security_xml()
         else:
             security = ic_card.treat_data_to_xml(ic_card.treat_data)
 
@@ -1709,6 +1727,15 @@ class Registration(QtWidgets.QMainWindow):
             return
 
         case_key = self.table_widget_wait_completed.field_value(1)
+
+
+        card = string_utils.xstr(self.table_widget_wait_completed.field_value(9))
+
+        if card == '':
+            self.rewrite_ic_card()
+            self._read_wait_completed()
+            return
+
         ic_card = cshis.CSHIS(self.database, self.system_settings)
         ic_card.write_ic_medical_record(case_key, cshis_utils.NORMAL_CARD)
 
@@ -1742,11 +1769,13 @@ class Registration(QtWidgets.QMainWindow):
         msg_box.setText(
             '''
             <font size="4" color="red">
-              <b>確定將病歷重新寫入健保卡?<br>
+              <b>確定要將病歷重新寫入健保卡?<br>
             </font>
             '''
         )
-        msg_box.setInformativeText("將會重寫診療及醫令資料.")
+        msg_box.setInformativeText(
+            "請注意! 如果要取得新卡序, 請先修正掛號資料, 將原來的卡序清除, 這樣才會產生新的卡序，否則只會重寫診療及醫令資料."
+        )
         msg_box.addButton(QPushButton("重新寫入"), QMessageBox.YesRole)
         msg_box.addButton(QPushButton("取消"), QMessageBox.NoRole)
         cancel = msg_box.exec_()
@@ -1792,11 +1821,11 @@ class Registration(QtWidgets.QMainWindow):
 
         treat_after_check = '1'  # 1:正常 2:補卡
         security = case_utils.update_xml_doc(
-            self.database, security, 'treat_after_check', treat_after_check)
+            security, 'treat_after_check', treat_after_check)
         security = case_utils.update_xml_doc(
-            self.database, security, 'prescript_sign_time', date_utils.now_to_str())
+            security, 'prescript_sign_time', date_utils.now_to_str())
         security = case_utils.update_xml_doc(
-            self.database, security, 'upload_type', '1')
+            security, 'upload_type', '1')
         data = [
             card,
             course,

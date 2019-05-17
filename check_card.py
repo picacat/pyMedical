@@ -13,7 +13,6 @@ from libs import date_utils
 from libs import number_utils
 from libs import string_utils
 from libs import case_utils
-from libs import personnel_utils
 from libs import nhi_utils
 
 
@@ -125,6 +124,7 @@ class CheckCard(QtWidgets.QMainWindow):
             self.ui.toolButton_find_error.setEnabled(True)
 
         self.ui.tableWidget_errors.resizeRowsToContents()
+        self._calculate_indicator()
 
     def _check_data(self):
         self.parent.ui.progressBar.setMaximum(self.ui.tableWidget_errors.rowCount()-1)
@@ -204,7 +204,7 @@ class CheckCard(QtWidgets.QMainWindow):
                 if course <= 1 and next_course <= 1:
                     delta = date_utils.str_to_date(next_case_date) - date_utils.str_to_date(case_date)
                     if delta.days == 1:
-                        error_message.append('連續刷卡')
+                        error_message.append('隔日刷卡')
 
                 if card != next_card:  # 換新療程
                     pass
@@ -250,12 +250,15 @@ class CheckCard(QtWidgets.QMainWindow):
             if date_utils.str_to_date(case_date).month != self.apply_month:
                 last_case_date = case_date
                 for i in range(1, 6):
-                    next_case_date = self.ui.tableWidget_errors.item(row_no+i, 1).text()
-                    next_patient_key = self.ui.tableWidget_errors.item(row_no+i, 3).text()
-                    next_card = self.ui.tableWidget_errors.item(row_no+i, 6).text()
-                    next_course = number_utils.get_integer(self.ui.tableWidget_errors.item(row_no+i, 7).text())
-                    if patient_key == next_patient_key and card == next_card and next_course > course:
-                        last_case_date = next_case_date
+                    try:
+                        next_case_date = self.ui.tableWidget_errors.item(row_no+i, 1).text()
+                        next_patient_key = self.ui.tableWidget_errors.item(row_no+i, 3).text()
+                        next_card = self.ui.tableWidget_errors.item(row_no+i, 6).text()
+                        next_course = number_utils.get_integer(self.ui.tableWidget_errors.item(row_no+i, 7).text())
+                        if patient_key == next_patient_key and card == next_card and next_course > course:
+                            last_case_date = next_case_date
+                    except:
+                        continue
 
                 if date_utils.str_to_date(last_case_date).month != self.apply_month:
                     self._set_row_error_message(row_no, 13, '!')
@@ -264,14 +267,6 @@ class CheckCard(QtWidgets.QMainWindow):
             remove_flag = self.ui.tableWidget_errors.item(row_no, 13)
             if remove_flag is not None and remove_flag.text() == '!':
                 self.ui.tableWidget_errors.removeRow(row_no)
-
-        # for row_no in reversed(range(self.ui.tableWidget_errors.rowCount())):
-        #     case_date = self.ui.tableWidget_errors.item(row_no, 1).text()
-        #     start_date = date_utils.get_start_date_by_year_month(
-        #         self.apply_year, self.apply_month)
-        #     if (datetime.datetime.strptime(case_date, '%Y-%m-%d') <
-        #             datetime.datetime.strptime(start_date, '%Y-%m-%d %H:%M:%S')):
-        #         self._check_remove_need(row_no)
 
     def _check_remove_need(self, row_no):
         start_date = date_utils.get_start_date_by_year_month(
@@ -337,3 +332,80 @@ class CheckCard(QtWidgets.QMainWindow):
                     QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
                 )
 
+    # 異常指標
+    def _calculate_indicator(self):
+        self._calculate_indicator1()
+        self._calculate_indicator2()
+        self._calculate_indicator3()
+
+    # 內傷交替率
+    def _calculate_indicator1(self):
+        denominator = self.ui.tableWidget_errors.rowCount()
+
+        numerator = 0
+        for row_no in range(self.ui.tableWidget_errors.rowCount()):
+            error_message = self.ui.tableWidget_errors.item(row_no, 13)
+            if error_message is None:
+                continue
+
+            if '內科與針傷療程交替' in error_message.text():
+                numerator += 1
+
+        self.ui.label_indicator1.setText(
+            '''內傷交替率 = 同時申報針傷及內科件數 / 當月申報總人數<br> 
+                <b>{numerator} / {denominator} = {result:.2f}%</b>'''.format(
+                numerator=numerator,
+                denominator=denominator,
+                result=numerator/denominator*100,
+            )
+        )
+
+    # 隔日刷卡率
+    def _calculate_indicator2(self):
+        denominator = 0
+        numerator = 0
+        for row_no in range(self.ui.tableWidget_errors.rowCount()):
+            course = self.ui.tableWidget_errors.item(row_no, 7)
+            if course is None or number_utils.get_integer(course.text()) <= 1:
+                denominator += 1
+
+            error_message = self.ui.tableWidget_errors.item(row_no, 13)
+            if error_message is None:
+                continue
+
+            if '隔日刷卡' in error_message.text():
+                numerator += 1
+
+        self.ui.label_indicator2.setText(
+            '''隔日刷卡率 = 隔日申報診察費件數 / 診察費總件數<br> 
+                <b>{numerator} / {denominator} = {result:.2f}%</b>'''.format(
+                numerator=numerator,
+                denominator=denominator,
+                result=numerator/denominator*100,
+            )
+        )
+
+    # 療程中刷卡率
+    def _calculate_indicator3(self):
+        denominator = 0
+        numerator = 0
+        for row_no in range(self.ui.tableWidget_errors.rowCount()):
+            course = self.ui.tableWidget_errors.item(row_no, 7)
+            if course is None or number_utils.get_integer(course.text()) >= 1:
+                denominator += 1
+
+            error_message = self.ui.tableWidget_errors.item(row_no, 13)
+            if error_message is None:
+                continue
+
+            if '療程中刷卡' in error_message.text():
+                numerator += 1
+
+        self.ui.label_indicator3.setText(
+            '''療程中刷卡率 = 療程中申報診察費件數 / 療程總件數 <br> 
+                <b>{numerator} / {denominator} = {result:.2f}%</b>'''.format(
+                numerator=numerator,
+                denominator=denominator,
+                result=numerator/denominator*100,
+            )
+        )

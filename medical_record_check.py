@@ -9,6 +9,7 @@ from threading import Thread
 from queue import Queue
 
 from libs import string_utils
+from libs import number_utils
 from libs import system_utils
 from libs import date_utils
 from libs import prescript_utils
@@ -34,9 +35,11 @@ class MedicalRecordCheck(QtWidgets.QDialog):
         self.special_code = args[8]
         self.treatment = args[9]
         self.pres_days = args[10]
-        self.table_widget_ins_prescript = args[11]
-        self.table_widget_ins_treat = args[12]
-        self.table_widget_ins_care = args[13]
+        self.packages = args[11]
+        self.instruction = args[12]
+        self.table_widget_ins_prescript = args[13]
+        self.table_widget_ins_treat = args[14]
+        self.table_widget_ins_care = args[15]
         self.parent = parent
 
         self._set_ui()
@@ -395,6 +398,22 @@ class MedicalRecordCheck(QtWidgets.QDialog):
         if not check_ok:
             return check_ok
 
+        check_ok = self._check_disease_duplicated()
+        if not check_ok:
+            return check_ok
+
+        check_ok = self._check_disease_neat()
+        if not check_ok:
+            return check_ok
+
+        check_ok = self._check_disease_self_payment()
+        if not check_ok:
+            return check_ok
+
+        check_ok = self._check_course_disease()
+        if not check_ok:
+            return check_ok
+
         check_ok = self._check_ins_medicine()
         if not check_ok:
             return check_ok
@@ -424,18 +443,6 @@ class MedicalRecordCheck(QtWidgets.QDialog):
             if not check_ok:
                 return check_ok
 
-        check_ok = self._check_disease_neat()
-        if not check_ok:
-            return check_ok
-
-        check_ok = self._check_disease_self_payment()
-        if not check_ok:
-            return check_ok
-
-        check_ok = self._check_disease_duplicated()
-        if not check_ok:
-            return check_ok
-
         check_ok = self._check_special_code()
         if not check_ok:
             return check_ok
@@ -458,13 +465,16 @@ class MedicalRecordCheck(QtWidgets.QDialog):
         for row_no in range(row_count):
             self.table_widget_ins_prescript.setCurrentCell(
                 row_no, prescript_utils.INS_PRESCRIPT_COL_NO['Dosage'])
-            medicine_name = self.table_widget_ins_prescript.item(
-                row_no, prescript_utils.INS_PRESCRIPT_COL_NO['MedicineName'])
-            if medicine_name is None or medicine_name.text() == '':  # 無效的處方, 不需檢查
+            medicine_key = self.table_widget_ins_prescript.item(
+                row_no, prescript_utils.INS_PRESCRIPT_COL_NO['MedicineKey'])
+            if medicine_key is None:
                 continue
 
+            medicine_name = self.table_widget_ins_prescript.item(
+                row_no, prescript_utils.INS_PRESCRIPT_COL_NO['MedicineName'])
             dosage = self.table_widget_ins_prescript.item(
                 row_no, prescript_utils.INS_PRESCRIPT_COL_NO['Dosage'])
+
             if dosage is None or dosage.text() == '':
                 error_message.append('{0} 無劑量'.format(medicine_name.text()))
                 break
@@ -476,7 +486,7 @@ class MedicalRecordCheck(QtWidgets.QDialog):
                 '''
                     <font size="4" color="red">
                       <b>
-                        處方劑量檢查錯誤如下:<br>
+                        處方及劑量檢查錯誤如下:<br>
                         <br>
                         {0}
                       </b>
@@ -511,6 +521,84 @@ class MedicalRecordCheck(QtWidgets.QDialog):
                 '請更正上述的錯誤，以利健保申報.'
             )
             check_ok = False
+
+        return check_ok
+
+    def _check_course_disease(self):
+        check_ok = True
+        if number_utils.get_integer(self.medical_record['Continuance']) <= 1:
+            return  check_ok
+
+        error_message = []
+
+        case_date = self.medical_record['CaseDate']
+        last_treat_date = (case_date - datetime.timedelta(days=30)).strftime('%Y-%m-%d 00:00:00')
+        sql = '''
+            SELECT 
+                Name, CaseDate, Card, Continuance, DiseaseCode1, DiseaseName1 FROM cases 
+            WHERE
+                (CaseKey != {case_key}) AND
+                (PatientKey = {patient_key}) AND
+                (CaseDate >= "{last_treat_date}") AND
+                (InsType = "健保") AND
+                (Card = "{card}") AND
+                (Continuance >= 2)
+            ORDER BY CaseDate DESC LIMIT 1
+        '''.format(
+            case_key = self.medical_record['CaseKey'],
+            patient_key=self.medical_record['PatientKey'],
+            last_treat_date=last_treat_date,
+            card=string_utils.xstr(self.medical_record['Card']),
+        )
+        rows = self.database.select_record(sql)
+        if len(rows) <= 0:
+            return check_ok
+
+        row = rows[0]
+        last_disease_code1 = string_utils.xstr(row['DiseaseCode1'])
+        if self.disease_code1 != last_disease_code1:
+            error_message.append(
+                '''
+                    本次療程主診斷碼與上次不同, 請確定是否輸入正確!<br>
+                    上次病歷為:<br>
+                    <font color="navy">
+                    病患姓名: {name}<br>
+                    門診日期: {case_date}<br>
+                    健保卡序: {card}-{course}<br>
+                    主診斷碼: {disease_code1}<br>
+                    中文名稱: {disease_name1}
+                    </font>
+                '''.format(
+                    name=string_utils.xstr(row['Name']),
+                    case_date=string_utils.xstr(row['CaseDate'].date()),
+                    card=string_utils.xstr(row['Card']),
+                    course=string_utils.xstr(row['Continuance']),
+                    disease_code1=string_utils.xstr(row['DiseaseCode1']),
+                    disease_name1=string_utils.xstr(row['DiseaseName1']),
+                )
+            )
+
+        if len(error_message) > 0:
+            msg_box = QMessageBox()
+            msg_box.setIcon(QMessageBox.Warning)
+            msg_box.setWindowTitle('診斷碼檢查錯誤')
+            msg_box.setText(
+                '''
+                    <font size="4" color="red">
+                      <b>
+                        診斷碼檢查錯誤如下:<br>
+                        <br>
+                        {0}
+                      </b>
+                    </font>
+                '''.format('<br>'.join(error_message)),
+            )
+            msg_box.setInformativeText("請確定上次療程診斷碼與本次是否差異過大.")
+            msg_box.addButton(QPushButton("繼續存檔"), QMessageBox.YesRole)
+            msg_box.addButton(QPushButton("取消"), QMessageBox.NoRole)
+            save_file = msg_box.exec_()
+            if save_file == QMessageBox.RejectRole:
+                check_ok = False
 
         return check_ok
 
@@ -789,21 +877,26 @@ class MedicalRecordCheck(QtWidgets.QDialog):
             error_message.append('非慢性病開藥不得超過七天')
 
         if len(error_message) > 0:
-            system_utils.show_message_box(
-                QMessageBox.Critical,
-                '診斷碼檢查錯誤',
+            msg_box = QMessageBox()
+            msg_box.setIcon(QMessageBox.Warning)
+            msg_box.setWindowTitle('診斷碼檢查錯誤')
+            msg_box.setText(
                 '''
                     <font size="4" color="red">
                       <b>
-                        慢性病開藥檢查錯誤如下:<br>
+                        診斷碼檢查錯誤如下:<br>
                         <br>
                         {0}
                       </b>
                     </font>
                 '''.format('<br>'.join(error_message)),
-                '請更正上述的錯誤，以利健保申報.'
             )
-            check_ok = False
+            msg_box.setInformativeText("請確定慢性病開藥天數是否正確.")
+            msg_box.addButton(QPushButton("繼續存檔"), QMessageBox.YesRole)
+            msg_box.addButton(QPushButton("取消"), QMessageBox.NoRole)
+            save_file = msg_box.exec_()
+            if save_file == QMessageBox.RejectRole:
+                check_ok = False
 
         return check_ok
 
@@ -924,6 +1017,15 @@ class MedicalRecordCheck(QtWidgets.QDialog):
 
         if ins_medicine <= 0:
             error_message.append('有健保開藥天數但無健保處方'.format(self.disease_code1))
+
+        if self.packages < 2:
+            error_message.append('給藥包數不足2包')
+
+        if self.pres_days < 3:
+            error_message.append('給藥天數不足3日')
+
+        if self.instruction in [None, '']:
+            error_message.append('服藥方式空白')
 
         if len(error_message) > 0:
             system_utils.show_message_box(

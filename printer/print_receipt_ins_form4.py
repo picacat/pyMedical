@@ -134,7 +134,6 @@ class PrintReceiptInsForm4:
                     {fees}
                   </tbody>
                 </table>
-                {instruction}
                 * 本收據可為報稅之憑證, 請妥善保存, 遺失恕不補發
               </body>
             </html>

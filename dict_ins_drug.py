@@ -11,7 +11,7 @@ from classes import table_widget
 from libs import ui_utils
 from libs import nhi_utils
 from libs import string_utils
-from pyexcel_ods3 import  get_data
+from pyexcel_ods3 import get_data
 
 
 # 健保藥品 2019.03.13

@@ -87,7 +87,6 @@ class ReturnCard(QtWidgets.QMainWindow):
         self._return_card_item_changed()
 
     def _set_tool_buttons(self):
-
         if self.ui.tableWidget_return_card.rowCount() <= 0:
             enabled = False
         else:

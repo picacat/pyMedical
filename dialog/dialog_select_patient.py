@@ -74,7 +74,11 @@ class DialogSelectPatient(QtWidgets.QDialog):
             self.ui.tableWidget_patient_list.setRowCount(0)
             return
 
-        self._read_patient(query_str)
+        try:
+            self._read_patient(query_str)
+        except:
+            return
+
         self.ui.lineEdit_query.setFocus(True)
         self.ui.lineEdit_query.setCursorPosition(len(query_str))
 

@@ -62,7 +62,7 @@ class DialogMedicalRecordList(QtWidgets.QDialog):
 
     # 設定comboBox
     def _set_combo_box(self):
-        script = 'select * from person where Position = "醫師"'
+        script = 'select * from person where Position IN("醫師", "支援醫師") '
         rows = self.database.select_record(script)
         doctor_list = []
         for row in rows:

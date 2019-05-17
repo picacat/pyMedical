@@ -346,10 +346,11 @@ class InsCheckApplyFee(QtWidgets.QMainWindow):
             pdata_fee['total_count'] += 1
 
             xdata = self._convert_node_to_dict(row)
+
             try:
                 price = number_utils.get_integer(xdata['p12'])
             except:
-                print(pdata)
+                price = 0
 
             if string_utils.xstr(xdata['p3']) == '0':
                 pdata_fee['diag_fee'] += price

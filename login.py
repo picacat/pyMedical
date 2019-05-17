@@ -39,6 +39,12 @@ class Login(QtWidgets.QDialog):
         self.ui.label_login_error.setVisible(False)
         self._display_info()
 
+        style = '''
+            QDialog#Dialog_login
+            {background-image: url(./images/login.jpg);}
+        '''
+        self.ui.setStyleSheet(style)
+
     def _display_info(self):
         sql = 'SHOW VARIABLES LIKE "version"'
         rows = self.database.select_record(sql)

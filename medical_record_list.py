@@ -222,6 +222,7 @@ class MedicalRecordList(QtWidgets.QMainWindow):
     def _set_print_check_box(self, row_no):
         check_box_print = QtWidgets.QCheckBox()
         check_box_print.setChecked(True)
+        # check_box_print.setStyleSheet('margin:auto')
         col_no = 1
 
         self.ui.tableWidget_medical_record_list.setCellWidget(
@@ -308,6 +309,9 @@ class MedicalRecordList(QtWidgets.QMainWindow):
     # 重新顯示資料 call from pymedical (call from here is not working)
     def refresh_medical_record(self):
         case_key = self.table_widget_medical_record_list.field_value(0)
+        if case_key is None:
+            return
+
         sql = '''
             SELECT 
                 CaseKey, DATE_FORMAT(CaseDate, '%Y-%m-%d %H:%i') AS CaseDate, DoctorDate, ChargeDate,

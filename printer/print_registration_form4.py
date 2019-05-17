@@ -9,9 +9,9 @@ from libs import number_utils
 from libs import system_utils
 
 
-# 掛號收據格式1 80mm * 80mm 熱感紙
-# 2018.07.09
-class PrintRegistrationForm1:
+# 掛號收據格式4 2.5 x 3 inches 熱感紙
+# 2019.05.06
+class PrintRegistrationForm4:
     # 初始化
     def __init__(self, parent=None, *args):
         self.parent = parent
@@ -56,7 +56,7 @@ class PrintRegistrationForm1:
 
     def print_painter(self):
         self.current_print = self.print_painter
-        self.printer.setPaperSize(QtCore.QSizeF(80, 80), QPrinter.Millimeter)
+        self.printer.setPaperSize(QtCore.QSizeF(2.5, 3), QPrinter.Inch)
 
         painter = QtGui.QPainter()
         painter.setFont(self.font)
@@ -67,7 +67,7 @@ class PrintRegistrationForm1:
 
     def print_html(self, printing):
         self.current_print = self.print_html
-        self.printer.setPaperSize(QtCore.QSizeF(80, 80), QPrinter.Millimeter)
+        self.printer.setPaperSize(QtCore.QSizeF(2.5, 3), QPrinter.Inch)
 
         document = printer_utils.get_document(self.printer, self.font)
         document.setDocumentMargin(5)
@@ -90,15 +90,15 @@ class PrintRegistrationForm1:
                 病患姓名: {2:0>6} - {3}<br>
                 保險類別: {4} - {5}<br>
                 健保卡序: {6}<br>
-                掛號費: {7} 門診負擔: {8} 欠卡費: {9}<br>
-                <center style="font-size:24px">{10}診 {11:0>3}號</b></center><br>
-                <center>本單據僅供看診叫號，不作報稅證明用途</center>
+                掛號費: {7}元 門診負擔: {8}元<br>
+                <center style="font-size:24px">{9}診 {10:0>3}號</b></center><br>
+                <center>本單據僅供叫號，不作報稅證明</center>
             </body>
             </html>
         '''.format(
             self.system_settings.field('院所名稱'),
             row['CaseDate'], row['PatientKey'], row['Name'],
-            row['InsType'], row['TreatType'], card, row['RegistFee'], row['SDiagShareFee'], row['DepositFee'],
+            row['InsType'], row['TreatType'], card, row['RegistFee'], row['SDiagShareFee'],
             row['Room'], row['RegistNo']
         )
 

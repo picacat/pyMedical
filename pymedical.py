@@ -7,7 +7,8 @@ from PyQt5.QtWidgets import QMessageBox, QPushButton
 import datetime
 import os
 
-from classes import system_settings, db
+from classes import db
+from classes import system_settings
 from classes import udp_socket_server
 from convert import convert
 
@@ -33,11 +34,13 @@ if sys.platform == 'win32':
 else:
     from classes import cshis
 
-# 主畫面
+
+# 主程式
 class PyMedical(QtWidgets.QMainWindow):
     # 初始化
     def __init__(self, parent=None, *args):
         super(PyMedical, self).__init__(parent)
+        # QtWidgets.QMainWindow.__init__(self)
         self.database = db.Database()
         if not self.database.connected():
             sys.exit(0)
@@ -90,6 +93,17 @@ class PyMedical(QtWidgets.QMainWindow):
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_PY_MEDICAL, self)
+        style = '''
+            QWidget#tab_home
+            {background-image: url(./images/home.jpg);}
+        '''
+        self.ui.tab_home.setStyleSheet(style)
+        self.ui.label_system_name.setText(
+            '{clinic_name} 醫療資訊管理系統'.format(
+                clinic_name=self.system_settings.field('院所名稱'),
+            )
+        )
+
         self.ui.tabWidget_window.setTabsClosable(True)
 
         # self.ui.setWindowFlags(Qt.FramelessWindowHint)  # 無視窗邊框
@@ -131,7 +145,7 @@ class PyMedical(QtWidgets.QMainWindow):
 
         self.ui.pushButton_waiting_list.clicked.connect(self._open_subroutine)           # 醫師看診作業
         self.ui.pushButton_medical_record_list.clicked.connect(self._open_subroutine)    # 病歷查詢
-        self.ui.pushButton_record_statistics.clicked.connect(self._open_subroutine)      # 病歷統計
+        self.ui.pushButton_medical_record_statistics.clicked.connect(self._open_subroutine)      # 病歷統計
 
         self.ui.pushButton_settings.clicked.connect(self.open_settings)                     # 系統設定
         self.ui.pushButton_charge.clicked.connect(self._open_subroutine)                 # 收費設定
@@ -170,6 +184,10 @@ class PyMedical(QtWidgets.QMainWindow):
         self.ui.action_diagnostic.triggered.connect(self._open_subroutine)
         self.ui.action_medicine.triggered.connect(self._open_subroutine)
         self.ui.action_ins_drug.triggered.connect(self._open_subroutine)
+
+        self.ui.action_statistics_doctor.triggered.connect(self._open_subroutine)
+        self.ui.action_statistics_return_rate.triggered.connect(self._open_subroutine)
+
         self.ui.action_ic_card.triggered.connect(self.open_ic_card)
         self.ui.action_show_side_bar.triggered.connect(self.switch_side_bar)
 
@@ -250,6 +268,8 @@ class PyMedical(QtWidgets.QMainWindow):
             '申報檢查',
             '健保申報',
             '健保抽審',
+            '醫師統計',
+            '回診率統計',
         ]:
             widget.open_dialog()
         elif widget_name == "醫師看診作業":
@@ -510,6 +530,199 @@ class PyMedical(QtWidgets.QMainWindow):
     def _start_udp_socket_server(self):
         self.socket_server.start()
 
+    def _authorize_all_permission(self):
+        action_list = [
+            self.ui.pushButton_registration,
+            self.ui.pushButton_reservation,
+            self.ui.pushButton_cashier,
+            self.ui.pushButton_return_card,
+            self.ui.pushButton_settings,
+            self.ui.pushButton_debt,
+            self.ui.pushButton_checkout,
+            self.ui.pushButton_patient_list,
+            self.ui.pushButton_waiting_list,
+            self.ui.pushButton_ic_record_upload,
+            self.ui.pushButton_medical_record_list,
+            self.ui.pushButton_medical_record_statistics,
+            self.ui.pushButton_charge,
+            self.ui.pushButton_diagnostic,
+            self.ui.pushButton_medicine,
+            self.ui.pushButton_ic_card,
+
+            self.ui.action_registration,
+            self.ui.action_cashier,
+            self.ui.action_return_card,
+            self.ui.action_purchase,
+            self.ui.action_checkout,
+            self.ui.action_patient_list,
+            self.ui.action_ins_record_upload,
+
+            self.ui.action_waiting_list,
+            self.ui.action_medical_record_list,
+            self.ui.action_medical_record_statistics,
+
+            self.ui.action_settings,
+            self.ui.action_charge,
+            self.ui.action_diagnostic,
+            self.ui.action_medicine,
+            self.ui.action_ic_card,
+
+            self.ui.action_doctor_schedule,
+            self.ui.action_doctor_nurse_table,
+            self.ui.action_users,
+            self.ui.action_ins_drug,
+
+            self.ui.action_export_emr_xml,
+            self.ui.action_update,
+
+            self.ui.action_certificate_diagnosis,
+            self.ui.action_certificate_payment,
+
+            self.ui.action_ins_check,
+            self.ui.action_ins_apply,
+            self.ui.action_ins_judge,
+
+            self.ui.action_statistics_doctor,
+            self.ui.action_statistics_return_rate,
+        ]
+
+        for action in action_list:
+            action.setEnabled(True)
+
+    # 設定權限
+    def set_permission(self):
+        self._authorize_all_permission()
+
+        user_name = self.system_settings.field('使用者')
+        if user_name == '超級使用者':
+            return
+
+        import copy
+        person_list = copy.deepcopy(personnel_utils.PERMISSION_LIST)  # 如果不copy, 會影響到 dialog_permission
+
+        for item in person_list:
+            if string_utils.xstr(item[1]) == '執行門診掛號':
+                item.append([
+                    self.ui.pushButton_registration,
+                    self.ui.action_registration
+                ])
+            elif string_utils.xstr(item[1]) == '執行預約掛號':
+                item.append(self.ui.pushButton_reservation)
+            elif string_utils.xstr(item[1]) == '執行批價作業':
+                item.append([
+                    self.ui.pushButton_cashier,
+                    self.ui.action_cashier,
+                ])
+            elif string_utils.xstr(item[1]) == '執行健保卡欠還卡':
+                item.append([
+                    self.ui.pushButton_return_card,
+                    self.ui.action_return_card,
+                ])
+            elif string_utils.xstr(item[1]) == '執行欠還款作業':
+                item.append(self.ui.pushButton_debt)
+            elif string_utils.xstr(item[1]) == '執行櫃台購藥':
+                item.append(self.ui.action_purchase)
+            elif string_utils.xstr(item[1]) == '執行掛號櫃台結帳':
+                item.append([
+                    self.ui.pushButton_checkout,
+                    self.ui.action_checkout,
+                ])
+            elif string_utils.xstr(item[1]) == '執行病患查詢':
+                item.append([
+                    self.ui.pushButton_patient_list,
+                    self.ui.action_patient_list,
+                ])
+            elif string_utils.xstr(item[1]) == '執行健保IC卡資料上傳':
+                item.append([
+                    self.ui.pushButton_ic_record_upload,
+                    self.ui.action_ins_record_upload,
+                ])
+
+            elif string_utils.xstr(item[1]) == '執行醫師看診作業':
+                item.append([
+                    self.ui.pushButton_waiting_list,
+                    self.ui.action_waiting_list,
+                ])
+            elif string_utils.xstr(item[1]) == '執行病歷查詢':
+                item.append([
+                    self.ui.pushButton_medical_record_list,
+                    self.ui.action_medical_record_list,
+                ])
+            elif string_utils.xstr(item[1]) == '執行病歷統計':
+                item.append([
+                    self.ui.pushButton_medical_record_statistics,
+                    self.ui.action_medical_record_statistics,
+                ])
+            elif string_utils.xstr(item[1]) == '執行系統設定':
+                item.append([
+                    self.ui.pushButton_settings,
+                    self.ui.action_settings,
+                ])
+            elif string_utils.xstr(item[1]) == '執行收費設定':
+                item.append([
+                    self.ui.pushButton_charge,
+                    self.ui.action_charge,
+                ])
+            elif string_utils.xstr(item[1]) == '執行診察資料':
+                item.append([
+                    self.ui.pushButton_diagnostic,
+                    self.ui.action_diagnostic,
+                ])
+            elif string_utils.xstr(item[1]) == '執行處方資料':
+                item.append([
+                    self.ui.pushButton_medicine,
+                    self.ui.action_medicine,
+                ])
+            elif string_utils.xstr(item[1]) == '執行健保卡讀卡機':
+                item.append([
+                    self.ui.pushButton_ic_card,
+                    self.ui.action_ic_card,
+                ])
+            elif string_utils.xstr(item[1]) == '執行醫師班表':
+                item.append(self.ui.action_doctor_schedule)
+            elif string_utils.xstr(item[1]) == '執行護士跟診表':
+                item.append(self.ui.action_doctor_nurse_table)
+            elif string_utils.xstr(item[1]) == '執行使用者管理':
+                item.append(self.ui.action_users)
+            elif string_utils.xstr(item[1]) == '執行健保藥品':
+                item.append(self.ui.action_ins_drug)
+            elif string_utils.xstr(item[1]) == '執行匯出電子病歷交換檔':
+                item.append(self.ui.action_export_emr_xml)
+            elif string_utils.xstr(item[1]) == '執行醫療軟體更新':
+                item.append(self.ui.action_update)
+
+            elif string_utils.xstr(item[1]) == '執行診斷證明書':
+                item.append(self.ui.action_certificate_diagnosis)
+            elif string_utils.xstr(item[1]) == '執行醫療費用證明書':
+                item.append(self.ui.action_certificate_payment)
+
+            elif string_utils.xstr(item[1]) == '執行申報檢查':
+                item.append(self.ui.action_ins_check)
+            elif string_utils.xstr(item[1]) == '執行健保申報':
+                item.append(self.ui.action_ins_apply)
+            elif string_utils.xstr(item[1]) == '執行健保抽審':
+                item.append(self.ui.action_ins_judge)
+
+            elif string_utils.xstr(item[1]) == '執行醫師統計':
+                item.append(self.ui.action_statistics_doctor)
+            elif string_utils.xstr(item[1]) == '執行回診率統計':
+                item.append(self.ui.action_statistics_return_rate)
+            else:
+                item.append(None)
+
+        for item in person_list:
+            action = item[2]
+            if action is None:
+                continue
+
+            if personnel_utils.get_permission(
+                    self.database, string_utils.xstr(item[0]), string_utils.xstr(item[1]), user_name) != 'Y':
+                if type(action) is list:
+                    for act in action:
+                        act.setEnabled(False)
+                else:
+                    action.setEnabled(False)
+
     # 重新顯示病歷登錄候診名單
     def _refresh_waiting_data(self, data):
         index = self.ui.tabWidget_window.currentIndex()
@@ -534,6 +747,7 @@ class PyMedical(QtWidgets.QMainWindow):
         self.system_settings.post('使用者', user_name)
         self.refresh_status_bar()
         self.set_root_permission()
+        self.set_permission()
 
         login_dialog.deleteLater()
 
@@ -554,6 +768,14 @@ class PyMedical(QtWidgets.QMainWindow):
         dialog = system_update.SystemUpdate(self.ui, self.database, self.system_settings)
         dialog.exec_()
         dialog.deleteLater()
+
+    # 重新啟動系統
+    @staticmethod
+    def restart_pymedical():
+        if sys.platform == 'win32':
+            os.execv(sys.executable, [sys.executable, __file__] + sys.argv)
+        else:
+            os.execv(__file__, sys.argv)
 
 
 # 主程式
@@ -583,6 +805,7 @@ def main():
     py_medical.system_settings.post('使用者', user_name)
     py_medical.refresh_status_bar()
     py_medical.set_root_permission()
+    py_medical.set_permission()
     py_medical.showMaximized()
     py_medical.check_ic_card()
     sys.exit(app.exec_())

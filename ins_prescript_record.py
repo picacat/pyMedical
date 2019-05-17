@@ -1165,7 +1165,7 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
                 dosage = number_utils.get_float(item.text())
             except ValueError:
                 item.setText(None)
-                dosage = 0
+                continue
 
             total_dosage += dosage
 

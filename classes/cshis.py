@@ -1,6 +1,7 @@
 
 # 讀卡機作業 2018.05.03
 from PyQt5 import QtCore
+from PyQt5.QtCore import QThread
 from PyQt5.QtWidgets import QMessageBox, QPushButton
 
 import ctypes
@@ -96,9 +97,16 @@ class CSHIS:
         )
 
     def update_hc(self,  show_message=True):
+        error_code = 0
+
         self._open_com()
-        error_code = self.cshis.csUpdateHCContents()
-        self._close_com()
+        try:
+            error_code = self.cshis.csUpdateHCContents()
+        except:
+            pass
+        finally:
+            self._close_com()
+
         if show_message or error_code != 0:
             cshis_utils.show_ic_card_message(error_code, '健保IC卡卡片內容更新')
 
@@ -572,7 +580,7 @@ class CSHIS:
 
         doc = case_utils.create_security_xml(treat_data)
 
-        return doc.toprettyxml(indent='\t')
+        return doc
 
     def return_seq_number_thread(self, out_queue, treat_date):
         p_treat_date = ctypes.c_char_p(treat_date.encode('ascii'))
@@ -670,6 +678,9 @@ class CSHIS:
             return False
 
         available_date, available_count = self.get_card_status()
+        if available_count is None:
+            return False
+
         if available_count <= 0:
             self.update_hc(False)
 
@@ -878,7 +889,9 @@ class CSHIS:
             ' ' * 7,
             ' ' * 7,
             )
-        doctor_id = self.write_treatment_code(registration_nhi_datetime, patient_id, birthday_nhi_datetime, data_write)
+        doctor_id = self.write_treatment_code(
+            registration_nhi_datetime, patient_id, birthday_nhi_datetime, data_write
+        )
 
         ins_total_fee = string_utils.xstr(case_row['InsTotalFee'])
         share_fee = string_utils.xstr(
@@ -892,7 +905,9 @@ class CSHIS:
             '0' * 7,
             '0' * 7,
             )
-        self.write_treatment_fee(registration_nhi_datetime, patient_id, birthday_nhi_datetime, data_write)
+        self.write_treatment_fee(
+            registration_nhi_datetime, patient_id, birthday_nhi_datetime, data_write
+        )
 
         return doctor_id
 

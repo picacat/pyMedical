@@ -31,6 +31,9 @@ from ins_judge import *
 from certificate_diagnosis import *
 from certificate_payment import *
 
+from statistics_doctor import *
+from statistics_return_rate import *
+
 from template import *
 
 module_dict = {
@@ -66,6 +69,9 @@ module_dict = {
 
     '診斷證明書': CertificateDiagnosis,
     '醫療費用證明書': CertificatePayment,
+
+    '醫師統計': StatisticsDoctor,
+    '回診率統計': StatisticsReturnRate,
 }
 
 

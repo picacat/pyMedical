@@ -30,12 +30,14 @@ class InsApplyScheduleTable(QtWidgets.QMainWindow):
         self.ins_generate_date = args[9]
         self.ins_calculated_table = args[10]
         self.ui = None
+        self.nurse_list = []
 
         self.apply_date = nhi_utils.get_apply_date(self.apply_year, self.apply_month)
         self.apply_type_code = nhi_utils.APPLY_TYPE_CODE[self.apply_type]
 
         self.month_table = self._get_month_table()
         self.medical_record = self._get_medical_record()
+
 
         self._set_ui()
         self._set_signal()
@@ -92,6 +94,8 @@ class InsApplyScheduleTable(QtWidgets.QMainWindow):
             nurse = personnel_utils.get_doctor_nurse(self.database, schedule_date, row['Period'], doctor_name)
             if nurse != '':
                 doctor_name += '({0})'.format(nurse)
+                if nurse not in self.nurse_list:
+                    self.nurse_list.append(nurse)
 
             if doctor_name not in medical_record[row['CaseDay']][row['Period']]:
                 medical_record[row['CaseDay']][row['Period']].append(doctor_name)
@@ -123,6 +127,18 @@ class InsApplyScheduleTable(QtWidgets.QMainWindow):
                     doctor_days=row['diag_days'],
                 )
 
+        nurse_html = ''
+        for nurse in self.nurse_list:
+            nurse_html += '''
+                <tr>
+                    <td>
+                        {nurse_name}護士
+                    </td>
+                </tr>
+            '''.format(
+            nurse_name=nurse,
+        )
+
         html = '''
             <div>
                 <table align=center cellpadding="1" cellspacing="0" width="90%">
@@ -135,7 +151,13 @@ class InsApplyScheduleTable(QtWidgets.QMainWindow):
                         </tr>
                         {doctor_html}
                         <br>
-                        <br>
+                        <tr>
+                            <td>
+                                <h4>* 本月份護理人員合計{nurse_count}名, 名單如下.</h4>
+                            </td>
+                        </tr>
+                        {nurse_html}
+                        <br><br><br><br>
                         <tr>
                             <td><h4>負責醫師 (簽名):</h4></td>
                             <td><h4>日期: {ins_generate_date}</h4></td>
@@ -145,8 +167,10 @@ class InsApplyScheduleTable(QtWidgets.QMainWindow):
             </div
         '''.format(
             doctor_count=doctor_count,
+            nurse_count=len(self.nurse_list),
             total_days=total_days,
             doctor_html=doctor_html,
+            nurse_html=nurse_html,
             ins_generate_date=apply_date,
         )
 

@@ -70,6 +70,9 @@ def get_usage_code(package):
 
 # 取得服藥方式代碼
 def get_instruction_code(instruction):
+    if instruction is None:
+        return 'PC'
+
     if instruction.find('飯前') >= 0:
         instruction_code = 'AC'
     elif instruction.find('飯後') >= 0:

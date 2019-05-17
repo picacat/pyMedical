@@ -7,6 +7,7 @@ from classes import table_widget
 from libs import ui_utils
 from libs import string_utils
 from dialog import dialog_input_user
+from dialog import dialog_permission
 
 
 # 使用者管理 2018.06.26
@@ -45,6 +46,7 @@ class Users(QtWidgets.QMainWindow):
         self.ui.toolButton_add_user.clicked.connect(self.add_user)
         self.ui.toolButton_remove_user.clicked.connect(self.remove_user)
         self.ui.toolButton_edit_user.clicked.connect(self.open_user_dialog)
+        self.ui.toolButton_permission.clicked.connect(self._set_permission)
 
     def close_tab(self):
         current_tab = self.parent.ui.tabWidget_window.currentIndex()
@@ -161,3 +163,13 @@ class Users(QtWidgets.QMainWindow):
     # 編輯使用者資料
     def edit_user(self):
         self.open_user_dialog()
+
+    # 設定權限
+    def _set_permission(self):
+        person_key = self.table_widget_users.field_value(0)
+        if person_key is None:
+            return
+
+        dialog = dialog_permission.DialogPermission(self, self.database, self.system_settings, person_key)
+        dialog.exec_()
+        dialog.deleteLater()

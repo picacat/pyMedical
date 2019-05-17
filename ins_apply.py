@@ -7,6 +7,7 @@ from PyQt5.QtWidgets import QMessageBox, QPushButton
 import os.path
 import webbrowser
 import subprocess
+import datetime
 
 from libs import ui_utils
 from libs import string_utils
@@ -302,4 +303,26 @@ class InsApply(QtWidgets.QMainWindow):
 
         type_code = '03'  # 醫療費用申報
         nhi_utils.NHI_SendB(self.system_settings, type_code, zip_file)
+
+        try:
+            self._write_log()
+        except:
+            pass
+
+    def _write_log(self):
+        apply_date = '{year}-{month:0>2}'.format(
+            year=self.apply_year,
+            month=self.apply_month,
+        )
+        generate_date = self.ins_generate_date.toString('yyyy-MM-dd')
+
+        self.database.exec_sql(
+            'DELETE FROM system_log WHERE LogType = "申報日期" AND LogName = "{apply_date}"'.format(
+                apply_date=apply_date,
+            )
+        )
+
+        fields = ['LogType', 'LogName', 'Log']
+        data = ['申報日期', apply_date, generate_date]
+        self.database.insert_record('system_log', fields, data)
 

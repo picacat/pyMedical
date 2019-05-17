@@ -25,7 +25,7 @@
      <item>
       <widget class="QTabWidget" name="tabWidget_settings">
        <property name="currentIndex">
-        <number>5</number>
+        <number>7</number>
        </property>
        <widget class="QWidget" name="tab_4">
         <attribute name="icon">
@@ -2070,6 +2070,61 @@
                </spacer>
               </item>
              </layout>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="QGroupBox" name="groupBox_37">
+           <property name="title">
+            <string>工作站列表</string>
+           </property>
+           <property name="flat">
+            <bool>true</bool>
+           </property>
+           <layout class="QVBoxLayout" name="verticalLayout_18">
+            <item>
+             <widget class="QTableWidget" name="tableWidget_station_list">
+              <property name="editTriggers">
+               <set>QAbstractItemView::NoEditTriggers</set>
+              </property>
+              <property name="selectionMode">
+               <enum>QAbstractItemView::SingleSelection</enum>
+              </property>
+              <property name="selectionBehavior">
+               <enum>QAbstractItemView::SelectRows</enum>
+              </property>
+              <column>
+               <property name="text">
+                <string>識別編號</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>使用地點</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>預設診療室</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>使用讀卡機</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>目前使用者</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>最近登入日期</string>
+               </property>
+              </column>
+             </widget>
             </item>
            </layout>
           </widget>

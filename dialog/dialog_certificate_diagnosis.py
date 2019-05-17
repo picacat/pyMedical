@@ -191,6 +191,7 @@ class DialogCertificateDiagnosis(QtWidgets.QDialog):
         self.table_widget_medical_record.set_db_data(sql, self._set_table_data, set_focus=False)
         self.ui.label_record_count.setText('門診次數: {0}次'.format(self.table_widget_medical_record.row_count()))
         self._set_doctor()
+        self._check_diagnosis_completed()
 
     def _set_doctor(self):
         doctor_list = []
@@ -207,7 +208,6 @@ class DialogCertificateDiagnosis(QtWidgets.QDialog):
                 doctor_list.append(doctor)
 
         ui_utils.set_combo_box(self.ui.comboBox_doctor, doctor_list)
-
 
     def _set_table_data(self, row_no, row):
         medical_record = [
@@ -265,7 +265,8 @@ class DialogCertificateDiagnosis(QtWidgets.QDialog):
         diagnosis = self.ui.textEdit_diagnosis.toPlainText()
         doctor_comment = self.ui.textEdit_doctor_comment.toPlainText()
 
-        if diagnosis != '' and doctor_comment != '':
+        if (diagnosis != '' and doctor_comment != '' and
+                self.ui.tableWidget_medical_record.rowCount() > 0):
             self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setEnabled(True)
         else:
             self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setEnabled(False)
@@ -280,6 +281,10 @@ class DialogCertificateDiagnosis(QtWidgets.QDialog):
             'InsType', 'StartDate', 'EndDate', 'Doctor', 'Diagnosis', 'DoctorComment', 'CertificateFee',
         ]
 
+        start_date = self.ui.tableWidget_medical_record.item(0, 1).text()
+        end_date = self.ui.tableWidget_medical_record.item(
+            self.ui.tableWidget_medical_record.rowCount()-1, 1).text()
+
         data = [
             case_key,
             self.ui.lineEdit_patient_key.text(),
@@ -287,8 +292,8 @@ class DialogCertificateDiagnosis(QtWidgets.QDialog):
             datetime.datetime.now().strftime('%Y-%m-%d'),
             '診斷證明',
             self.ui.comboBox_ins_type.currentText(),
-            self.ui.dateEdit_start_date.date().toString('yyyy-MM-dd'),
-            self.ui.dateEdit_end_date.date().toString('yyyy-MM-dd'),
+            start_date,
+            end_date,
             self.ui.comboBox_doctor.currentText(),
             self.ui.textEdit_diagnosis.toPlainText(),
             self.ui.textEdit_doctor_comment.toPlainText(),

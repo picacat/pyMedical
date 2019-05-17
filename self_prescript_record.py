@@ -759,7 +759,12 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
             if item is None:
                 continue
 
-            dosage = number_utils.get_float(item.text())
+            try:
+                dosage = number_utils.get_float(item.text())
+            except ValueError:
+                item.setText(None)
+                continue
+
             total_dosage += dosage
 
         self.ui.label_total_dosage.setText('總量: {0:.1f}'.format(total_dosage))

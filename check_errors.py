@@ -4,7 +4,7 @@
 import sys
 
 from PyQt5 import QtWidgets, QtGui, QtCore
-from PyQt5.QtWidgets import QMessageBox
+from PyQt5.QtWidgets import QMessageBox, QPushButton
 import datetime
 
 from classes import table_widget
@@ -71,6 +71,7 @@ class CheckErrors(QtWidgets.QMainWindow):
     def _set_signal(self):
         self.ui.tableWidget_errors.doubleClicked.connect(self.open_medical_record)
         self.ui.toolButton_calculate_ins_fee.clicked.connect(self._calculate_ins_fee)
+        self.ui.toolButton_correct_error.clicked.connect(self._correct_errors)
         # self.ui.action_close.triggered.connect(self.close_app)
 
     def open_medical_record(self):
@@ -241,6 +242,13 @@ class CheckErrors(QtWidgets.QMainWindow):
         if string_utils.xstr(row['DiseaseCode1']) == '':
             error_messages.append('無主診斷碼')
         else:
+            disease_code1 = string_utils.xstr(row['DiseaseCode1'])
+            special_code = case_utils.get_disease_special_code(
+                self.database, disease_code1,
+            )
+            if special_code != '' and string_utils.xstr(row['SpecialCode']).strip() == '':
+                error_messages.append('{0}為慢性病但病歷無慢性病代碼'.format(disease_code1))
+
             for i in range(1, 4):
                 disease_code = string_utils.xstr(row['DiseaseCode{0}'.format(i)])
                 if disease_code != '' and disease_code[0] in [str(i) for i in range(10)]:
@@ -248,6 +256,7 @@ class CheckErrors(QtWidgets.QMainWindow):
                         disease_name = '主診斷碼'
                     else:
                         disease_name = '次診斷{0}'.format(i-1)
+
                     error_messages.append('{0}非ICD10碼'.format(disease_name))
 
         if string_utils.xstr(row['Treatment']) == '複雜針灸':
@@ -286,6 +295,8 @@ class CheckErrors(QtWidgets.QMainWindow):
 
         prescript_rows = self.database.select_record(sql)
         pres_days = case_utils.get_pres_days(self.database, case_key)
+        packages = case_utils.get_packages(self.database, case_key)
+        instruction = case_utils.get_instruction(self.database, case_key)
 
         acupuncture_treat = 0
         massage_treat = 0
@@ -315,6 +326,14 @@ class CheckErrors(QtWidgets.QMainWindow):
 
         if pres_days > 0 and total_ins_medicine <= 0:
             error_messages.append('無健保碼藥品')
+
+        if total_ins_medicine > 0:
+            if pres_days < 3:
+                error_messages.append('給藥天數不足3日')
+            if packages < 2:
+                error_messages.append('給藥包數不足2包')
+            if instruction in [None, '']:
+                error_messages.append('服藥方式空白')
 
         return error_messages
 
@@ -387,3 +406,64 @@ class CheckErrors(QtWidgets.QMainWindow):
             )
 
         self.parent._check_ins_data()
+
+    def _correct_errors(self):
+        msg_box = QMessageBox()
+        msg_box.setIcon(QMessageBox.Warning)
+        msg_box.setWindowTitle('自動更新錯誤')
+        msg_box.setText(
+            """
+                <font size='4' color='red'><b>確定自動更正以下的錯誤?</b></font><br>
+                1. 更正針灸傷科療程空白 (應為療程1)<br>
+                2. 更正病名為慢性病但病歷無慢性病代碼<br>
+            """
+        )
+        msg_box.setInformativeText("注意！ 其他錯誤請自行更正")
+        msg_box.addButton(QPushButton("取消"), QMessageBox.NoRole)
+        msg_box.addButton(QPushButton("確定"), QMessageBox.YesRole)
+        correct_errors = msg_box.exec_()
+        if not correct_errors:
+            return
+
+        for row_no in range(self.ui.tableWidget_errors.rowCount()):
+            self.ui.tableWidget_errors.setCurrentCell(row_no, 1)
+            case_key = self.table_widget_errors.field_value(0)
+            if case_key is None:
+                continue
+
+            sql = '''
+                SELECT 
+                    CaseKey, TreatType, Treatment, Continuance, DiseaseCode1, SpecialCode 
+                FROM cases
+                WHERE
+                    CaseKey = {0}
+            '''.format(case_key)
+            rows = self.database.select_record(sql)
+            if len(rows) <= 0:
+                continue
+
+            row = rows[0]
+
+            fields = []
+            data = []
+
+            if (string_utils.xstr(row['Treatment']) in nhi_utils.INS_TREAT and
+                    string_utils.xstr(row['TreatType']) in nhi_utils.INS_TREAT and
+                    number_utils.get_integer(row['Continuance']) < 1):
+                fields.append('Continuance')
+                data.append(1)
+
+            disease_code1 = string_utils.xstr(row['DiseaseCode1'])
+            special_code = case_utils.get_disease_special_code(
+                self.database, disease_code1,
+            )
+            if special_code != '' and string_utils.xstr(row['SpecialCode']).strip() == '':
+                fields.append('SpecialCode')
+                data.append(special_code)
+
+            if len(fields) <= 0:
+                continue
+
+            self.database.update_record('cases', fields, 'CaseKey', case_key, data)
+
+        self.start_check()

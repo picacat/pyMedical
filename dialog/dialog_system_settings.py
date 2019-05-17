@@ -10,8 +10,10 @@ from libs import system_utils
 from libs import number_utils
 from libs import nhi_utils
 from libs import printer_utils
+from libs import string_utils
 
 from classes import system_settings
+from classes import table_widget
 
 import sys
 if sys.platform == 'win32':
@@ -43,6 +45,14 @@ class DialogSettings(QtWidgets.QDialog):
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Cancel).setText('取消')
         self.ui.tabWidget_settings.setCurrentIndex(0)
         self._set_combo_box()
+        self.table_widget_station_list = table_widget.TableWidget(
+            self.ui.tableWidget_station_list, self.database,
+        )
+        self._set_table_widget_width()
+
+    def _set_table_widget_width(self):
+        width = [90, 200, 100, 100, 120, 220]
+        self.table_widget_station_list.set_table_heading_width(width)
 
     # 設定信號
     def _set_signal(self):
@@ -132,6 +142,7 @@ class DialogSettings(QtWidgets.QDialog):
         self._read_printer_settings()
         self._read_reader_settings()
         self._read_misc()
+        self._read_station_list()
 
     # 讀取院所設定
     def _read_clinic_settings(self):
@@ -559,5 +570,81 @@ class DialogSettings(QtWidgets.QDialog):
                 '<font size="4" color="red"><b>偵測不到讀卡機, 請檢查讀卡機是否連接正確.</b></font>',
                 '請確定讀卡機是否連接, 或VPN網路是否暢通.'
             )
+
+    def _read_station_list(self):
+        sql = '''
+            SELECT StationNo FROM system_settings
+            WHERE
+                StationNo > 0
+            GROUP BY StationNo
+        '''
+        self.table_widget_station_list.set_db_data(sql, self._set_table_widget_station_list)
+
+    def _set_table_widget_station_list(self, row_no, row):
+        station_no = row['StationNo']
+        station_position = self._get_system_settings_value(station_no, '工作站位置')
+        room = self._get_system_settings_value(station_no, '診療室')
+        use_ic_reader = self._get_system_settings_value(station_no, '使用讀卡機')
+        user = self._get_system_settings_value(station_no, '使用者')
+        login_time = self._get_system_settings_value(station_no, '登入日期')
+        station_list_row = [
+            station_no,
+            station_position,
+            room,
+            use_ic_reader,
+            user,
+            login_time,
+        ]
+
+        for col_no in range(len(station_list_row)):
+            item = QtWidgets.QTableWidgetItem()
+            item.setData(QtCore.Qt.EditRole, station_list_row[col_no])
+            self.ui.tableWidget_station_list.setItem(
+                row_no, col_no, item,
+            )
+            if col_no in [0]:
+                self.ui.tableWidget_station_list.item(
+                    row_no, col_no).setTextAlignment(
+                    QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
+                )
+            elif col_no in [2, 3]:
+                self.ui.tableWidget_station_list.item(
+                    row_no, col_no).setTextAlignment(
+                    QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
+                )
+
+    def _get_system_settings_value(self, station_no, field_name):
+        if field_name == '登入日期':
+            sql = '''
+            SELECT TimeStamp FROM system_settings
+            WHERE
+                StationNo = {station_no} AND
+                Field = "使用者"
+            '''.format(
+                    station_no=station_no,
+                )
+            rows = self.database.select_record(sql)
+
+            if len(rows) <= 0:
+                return ''
+
+            return string_utils.xstr(rows[0]['TimeStamp'])
+
+        sql = '''
+            SELECT Value FROM system_settings
+            WHERE
+                StationNo = {station_no} AND
+                Field = "{field_name}"
+        '''.format(
+            station_no=station_no,
+            field_name=field_name,
+        )
+        rows = self.database.select_record(sql)
+
+        if len(rows) <= 0:
+            return ''
+
+        return string_utils.xstr(rows[0]['Value'])
+
 
 

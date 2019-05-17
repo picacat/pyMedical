@@ -15,7 +15,8 @@ from libs import string_utils
 from libs import registration_utils
 from libs import number_utils
 
-# 主視窗
+
+# 醫療費用證明
 class DialogCertificatePayment(QtWidgets.QDialog):
     # 初始化
     def __init__(self, parent=None, *args):
@@ -211,8 +212,6 @@ class DialogCertificatePayment(QtWidgets.QDialog):
 
         ui_utils.set_combo_box(self.ui.comboBox_doctor, doctor_list)
 
-
-
     def _set_table_data(self, row_no, row):
         medical_record = [
             string_utils.xstr(row['CaseKey']),
@@ -248,7 +247,6 @@ class DialogCertificatePayment(QtWidgets.QDialog):
         check_box.setChecked(True)
         self.ui.tableWidget_medical_record.setCellWidget(row_no, 1, check_box)
 
-
     def _save_files(self):
         case_key = self._write_medical_record()
         self._write_prescript(case_key)
@@ -257,12 +255,15 @@ class DialogCertificatePayment(QtWidgets.QDialog):
         certificate_key = self._write_certificate(case_key)
         self._write_certificate_items(certificate_key)
 
-
     def _write_certificate(self, case_key):
         fields = [
             'CaseKey', 'PatientKey', 'Name', 'CertificateDate', 'CertificateType',
             'InsType', 'Doctor', 'StartDate', 'EndDate', 'CertificateFee',
         ]
+
+        start_date = self.ui.tableWidget_medical_record.item(0, 2).text()
+        end_date = self.ui.tableWidget_medical_record.item(
+            self.ui.tableWidget_medical_record.rowCount()-1, 2).text()
 
         data = [
             case_key,
@@ -272,8 +273,8 @@ class DialogCertificatePayment(QtWidgets.QDialog):
             '收費證明',
             self.ui.comboBox_ins_type.currentText(),
             self.ui.comboBox_doctor.currentText(),
-            self.ui.dateEdit_start_date.date().toString('yyyy-MM-dd'),
-            self.ui.dateEdit_end_date.date().toString('yyyy-MM-dd'),
+            start_date,
+            end_date,
             self.ui.spinBox_certificate_fee.value(),
         ]
 

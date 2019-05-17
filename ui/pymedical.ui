@@ -277,7 +277,7 @@
               </widget>
              </item>
              <item>
-              <widget class="QPushButton" name="pushButton_record_statistics">
+              <widget class="QPushButton" name="pushButton_medical_record_statistics">
                <property name="text">
                 <string>病歷統計</string>
                </property>
@@ -502,11 +502,37 @@
       <property name="movable">
        <bool>true</bool>
       </property>
-      <widget class="QWidget" name="tab">
+      <widget class="QWidget" name="tab_home">
        <attribute name="title">
         <string>首頁</string>
        </attribute>
-       <layout class="QVBoxLayout" name="verticalLayout_9"/>
+       <layout class="QVBoxLayout" name="verticalLayout_9">
+        <item>
+         <widget class="QLabel" name="label_system_name">
+          <property name="font">
+           <font>
+            <pointsize>10</pointsize>
+           </font>
+          </property>
+          <property name="text">
+           <string>新生堂中醫診所</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="verticalSpacer_2">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
       </widget>
      </widget>
     </item>
@@ -518,7 +544,7 @@
      <x>0</x>
      <y>0</y>
      <width>1234</width>
-     <height>21</height>
+     <height>26</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu">
@@ -587,10 +613,18 @@
     <addaction name="action_certificate_diagnosis"/>
     <addaction name="action_certificate_payment"/>
    </widget>
+   <widget class="QMenu" name="menu_7">
+    <property name="title">
+     <string>統計表</string>
+    </property>
+    <addaction name="action_statistics_doctor"/>
+    <addaction name="action_statistics_return_rate"/>
+   </widget>
    <addaction name="menu"/>
    <addaction name="menu_2"/>
    <addaction name="menu_6"/>
    <addaction name="menu_5"/>
+   <addaction name="menu_7"/>
    <addaction name="menu_3"/>
    <addaction name="menu_4"/>
   </widget>
@@ -866,6 +900,27 @@
    </property>
    <property name="text">
     <string>健保藥品</string>
+   </property>
+  </action>
+  <action name="action_statistics_doctor">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/stock_select-all.svg</normaloff>../icons/stock_select-all.svg</iconset>
+   </property>
+   <property name="text">
+    <string>醫師統計</string>
+   </property>
+  </action>
+  <action name="action_statistics_return_rate">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/edit-redo.svg</normaloff>../icons/edit-redo.svg</iconset>
+   </property>
+   <property name="text">
+    <string>回診率統計</string>
+   </property>
+   <property name="toolTip">
+    <string>回診率統計</string>
    </property>
   </action>
  </widget>
