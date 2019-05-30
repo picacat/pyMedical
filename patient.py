@@ -5,7 +5,6 @@ import sys
 
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QMessageBox, QPushButton
-import datetime
 from libs import ui_utils
 from libs import string_utils
 from libs import nhi_utils
@@ -293,7 +292,10 @@ class Patient(QtWidgets.QMainWindow):
         '''.format(
             phone_no=phone_no,
         )
-        rows = self.database.select_record(sql)
+        try:
+            rows = self.database.select_record(sql)
+        except:
+            return
 
         if len(rows) > 0:
             self.ui.lineEdit_address.setText(string_utils.xstr(rows[0]['Address']))

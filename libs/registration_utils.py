@@ -372,59 +372,44 @@ def check_course_complete(database, patient_key, course):
     start_date = (datetime.datetime.now() - datetime.timedelta(days=30)).strftime("%Y-%m-%d 00:00:00")
     end_date = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d 23:59:59")
     sql = '''
-        SELECT CaseDate, Continuance FROM cases WHERE
-        (PatientKey = {0}) AND
-        (CaseDate BETWEEN "{1}" AND "{2}") AND
-        (InsType = "健保") AND
-        (Continuance >= 1)
+        SELECT CaseDate, Card, Continuance FROM cases 
+        WHERE
+            (PatientKey = {0}) AND
+            (CaseDate BETWEEN "{1}" AND "{2}") AND
+            (InsType = "健保") AND
+            (Continuance >= 1)
         ORDER BY CaseDate DESC LIMIT 1
     '''.format(patient_key, start_date, end_date, tuple(nhi_utils.INS_TREAT))
     rows = database.select_record(sql)
 
-    if len(rows) > 0:
-        if number_utils.get_integer(rows[0]['Continuance']) <= 5:
-            message = '* 療程提醒: {0}只到療程{1}, 尚未完成全部療程.<br>'.format(
-                rows[0]['CaseDate'].date(),
-                rows[0]['Continuance']
-            )
-
-    return message
-
-
-# 療程14日未完成
-def check_course_complete_in_two_weeks(database, patient_key, card, course):
-    message = None
-
-    if number_utils.get_integer(course) <= 1:  # 療程首次或內科不檢查
+    if len(rows) <= 0:
         return message
 
-    start_date = (datetime.datetime.now() - datetime.timedelta(days=14)).strftime("%Y-%m-%d 00:00:00")
-    end_date = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d 23:59:59")
-    sql = '''
-        SELECT Continuance FROM cases WHERE
-        (PatientKey = {0}) AND
-        (CaseDate BETWEEN "{1}" AND "{2}") AND
-        (InsType = "健保") AND
-        (Card = "{3}") AND
-        (Continuance = 1)
-        ORDER BY CaseDate DESC LIMIT 1
-    '''.format(patient_key, start_date, end_date, card)
-    rows = database.select_record(sql)
+    row = rows[0]
+    card = string_utils.xstr(row['Card'])
+    course = number_utils.get_integer(row['Continuance'])
 
-    if len(rows) <= 0:
-        message = '* 療程提醒: 療程已超過14日, 尚未完成全部療程.<br>'
+    if course >= 6:  # 療程已經完成
+        return message
+
+    if check_course_complete_in_days(database, patient_key, card, course, 30) is not None:  # 療程還沒有超過30天
+        return message
+
+    message = '* 療程提醒: {0}只到療程{1}, 尚未完成全部療程.<br>'.format(
+        row['CaseDate'].date(), course,
+    )
 
     return message
 
 
-# 療程days日未完成
+# 同療程days日未完成
 def check_course_complete_in_days(database, patient_key, card, course, days):
     message = None
 
     if number_utils.get_integer(course) <= 1:  # 療程首次或內科不檢查
         return message
 
-    start_date = (datetime.datetime.now() - datetime.timedelta(days=days+1)).strftime("%Y-%m-%d 00:00:00")
+    start_date = (datetime.datetime.now() - datetime.timedelta(days=days-1)).strftime("%Y-%m-%d 00:00:00")
     end_date = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d 23:59:59")
     sql = '''
         SELECT Continuance FROM cases WHERE
@@ -437,10 +422,11 @@ def check_course_complete_in_days(database, patient_key, card, course, days):
     '''.format(patient_key, start_date, end_date, card)
     rows = database.select_record(sql)
 
-    if len(rows) <= 0:
+    if len(rows) <= 0:  # 找不到代表療程已經不在天數內，已過期 例如: 30天內有找到第一次, 代表療程第一次到現在還沒超過30天
         message = '* 療程提醒: 療程已超過{0}日, 尚未完成全部療程.<br>'.format(days)
 
     return message
+
 
 # 取得診別
 def get_room(database, period, doctor):
@@ -512,3 +498,27 @@ def get_doctor(database, period, room):
 
     return doctor
 
+
+# 檢查預約是否已滿
+def is_reservation_full(database, reservation_date, period, reserve_no, doctor):
+    is_full = False
+
+    sql = '''
+        SELECT ReserveKey FROM reserve
+        WHERE
+            ReserveDate = "{reservation_date}" AND
+            Period = "{period}" AND
+            ReserveNo = {reserve_no} AND
+            Doctor = "{doctor}"
+    '''.format(
+        reservation_date=reservation_date,
+        period=period,
+        reserve_no=reserve_no,
+        doctor=doctor,
+    )
+    rows = database.select_record(sql)
+
+    if len(rows) > 0:
+        is_full = True
+
+    return is_full

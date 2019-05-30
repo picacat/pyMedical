@@ -555,6 +555,7 @@ def get_ins_special_care_fee(database, system_settings, case_key, treat_type,
 
     return ins_fee
 
+
 def get_ins_fee(database, system_settings, case_key, treat_type,
                 share, course, pres_days, pharmacy_type, treatment, table_widget_ins_care=None):
     if treat_type in nhi_utils.CARE_TREAT:
@@ -1006,3 +1007,73 @@ def get_table_widget_item_fee(table_widget, row_no, col_no):
         fee = 0.0
 
     return fee
+
+
+# 取得抽成率 2019.05.28
+def get_commission_rate(database, medicine_key, name):
+    commission_rate = ''
+    if medicine_key in [None, '']:
+        return commission_rate
+
+    sql = '''
+        SELECT * FROM commission
+        WHERE
+            MedicineKey = {medicine_key} AND
+            Name = "{name}"
+    '''.format(
+        medicine_key=medicine_key,
+        name=name,
+    )
+    rows = database.select_record(sql)
+
+    if len(rows) > 0:
+        commission_rate = string_utils.xstr(rows[0]['Commission'])
+        if commission_rate != '':
+            return commission_rate
+
+    sql = '''
+        SELECT * FROM medicine
+        WHERE
+            MedicineKey = {medicine_key}
+    '''.format(
+        medicine_key=medicine_key,
+    )
+    rows = database.select_record(sql)
+    medicine_type = None
+    if len(rows) > 0:
+        medicine_type = string_utils.xstr(rows[0]['MedicineType'])
+        commission_rate = string_utils.xstr(rows[0]['Commission'])
+        if commission_rate != '':
+            return commission_rate
+
+    if medicine_type is None:
+        return commission_rate
+
+    sql = '''
+        SELECT * FROM dict_groups
+        WHERE
+            DictGroupsType = "藥品類別" AND
+            DictGroupsName = "{dict_groups_name}"
+    '''.format(
+        dict_groups_name=medicine_type,
+    )
+    rows = database.select_record(sql)
+    if len(rows) > 0:
+        commission_rate = string_utils.xstr(rows[0]['DictGroupsLevel2'])
+        if commission_rate != '':
+            return '{0}%'.format(commission_rate)
+
+    return commission_rate
+
+
+# 計算抽成 2019.05.28
+def calc_commission(quantity, amount, commission_rate):
+    if '%' in commission_rate:
+        commission_rate = number_utils.get_float(commission_rate.strip('%'))
+        commission = amount * commission_rate / 100
+    else:
+        commission_rate = number_utils.get_float(commission_rate)
+        commission = quantity * commission_rate
+
+    return commission
+

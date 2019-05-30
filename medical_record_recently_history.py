@@ -198,8 +198,7 @@ class MedicalRecordRecentlyHistory(QtWidgets.QMainWindow):
                 SELECT PrescriptKey FROM prescript 
                 WHERE 
                     CaseKey = {case_key} AND 
-                    MedicineSet = 1 AND
-                    MedicineType IN ("單方", "複方") 
+                    MedicineSet = 1
             '''.format(
                 case_key=case_key,
             )

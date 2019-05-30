@@ -78,17 +78,22 @@ class InsApplyGenerateFile(QtWidgets.QMainWindow):
         sql = '''
             DELETE FROM insapply 
             WHERE 
-                ClinicID = "{0}" AND
-                ApplyDate = "{1}" AND
-                ApplyPeriod = "{2}" AND
-                ApplyType = "{3}"
-        '''.format(self.clinic_id, self.apply_date, self.period,
-                   nhi_utils.APPLY_TYPE_DICT[self.apply_type])
+                (ClinicID = "{clinic_id}") AND
+                (ApplyDate = "{apply_date}") AND
+                (ApplyPeriod = "{apply_period}") AND
+                (ApplyType = "{apply_type}")
+        '''.format(
+            clinic_id=self.clinic_id,
+            apply_date=self.apply_date,
+            apply_period=self.period,
+            apply_type=nhi_utils.APPLY_TYPE_DICT[self.apply_type],
+        )
         self.database.exec_sql(sql)
 
     def _get_medical_records(self):
         start_date = self.start_date.toString("yyyy-MM-dd 00:00:00")
         end_date = self.end_date.toString("yyyy-MM-dd 23:59:59")
+        apply_type_sql = nhi_utils.get_apply_type_sql(self.apply_type)
 
         sql = '''
             SELECT 
@@ -99,12 +104,12 @@ class InsApplyGenerateFile(QtWidgets.QMainWindow):
                 (CaseDate BETWEEN "{start_date}" AND "{end_date}") AND
                 (cases.InsType = "健保") AND
                 (Card != "欠卡") AND
-                (ApplyType = "{apply_type}") 
+                ({apply_type_sql}) 
             ORDER BY CaseDate
         '''.format(
             start_date=start_date,
             end_date=end_date,
-            apply_type=self.apply_type
+            apply_type_sql=apply_type_sql,
         )
         rows = self.database.select_record(sql)
 
@@ -144,16 +149,18 @@ class InsApplyGenerateFile(QtWidgets.QMainWindow):
         sql = '''
             SELECT * FROM insapply
             WHERE
-                ClinicID = "{0}" AND
-                ApplyDate = "{1}" AND
-                ApplyPeriod = "{2}" AND
-                ApplyType = "{3}" AND
-                PatientKey = {4} AND
+                ClinicID = "{clinic_id}" AND
+                ApplyDate = "{apply_date}" AND
+                ApplyPeriod = "{apply_period}" AND
+                ApplyType = "{apply_type}" AND
+                PatientKey = {patient_key} AND
                 CaseType = "30"
         '''.format(
-            self.clinic_id, self.apply_date, self.period,
-            nhi_utils.APPLY_TYPE_DICT[self.apply_type],
-            patient_key,
+            clinic_id=self.clinic_id,
+            apply_date=self.apply_date,
+            apply_period=self.period,
+            apply_type=nhi_utils.APPLY_TYPE_DICT[self.apply_type],
+            patient_key=patient_key,
         )
         ins_apply_rows = self.database.select_record(sql)
         if len(ins_apply_rows) > 0:
@@ -195,10 +202,58 @@ class InsApplyGenerateFile(QtWidgets.QMainWindow):
         )
 
         ins_apply_rows = self.database.select_record(sql)
+
+        if len(ins_apply_rows) <= 0:  # 首次不在本月
+            sql = '''
+            SELECT * FROM insapply
+            WHERE
+                ClinicID = "{clinic_id}" AND
+                ApplyDate = "{apply_date}" AND
+                ApplyPeriod = "{apply_period}" AND
+                ApplyType = "{apply_type}" AND
+                PatientKey = {patient_key} AND
+                Card = "{card}" AND
+                TreatCode{course} IS NULL
+        '''.format(
+                clinic_id=self.clinic_id,
+                apply_date=self.apply_date,
+                apply_period=self.period,
+                apply_type=nhi_utils.APPLY_TYPE_DICT[self.apply_type],
+                patient_key=patient_key,
+                card=card,
+                course=string_utils.xstr(course),
+            )
+
+        ins_apply_rows = self.database.select_record(sql)
+
         if len(ins_apply_rows) > 0:
             ins_apply_row = ins_apply_rows[0]
 
         return ins_apply_row
+
+    def _check_error(self, row):
+        message = []
+        doctor_name = string_utils.xstr(row['Doctor'])
+        doctor_id = personnel_utils.get_personnel_field_value(self.database, doctor_name, 'ID')
+
+        if row['Birthday'] is None:
+            message.append('病患生日空白')
+        if row['ID'] is None:
+            message.append('病患身份證空白')
+        if row['Card'] is None:
+            message.append('卡序空白')
+        if row['DiseaseCode1'] is None:
+            message.append('主診斷碼空白')
+        if doctor_name == '':
+            message.append('醫師姓名空白')
+        if doctor_id in ['', None]:
+            message.append('醫師身份證空白')
+        if number_utils.get_integer(row['InsApplyFee']) <= 0:
+            message.append('申報金額<=0')
+        if row['Name'] is None:
+            message.append('病患空白')
+
+        return message
 
     def _write_ins_record(self, row):
         case_type = nhi_utils.get_case_type(self.database, row)
@@ -206,7 +261,6 @@ class InsApplyGenerateFile(QtWidgets.QMainWindow):
         special_code = nhi_utils.get_special_code(self.database, row['CaseKey'])
         pres_days = case_utils.get_pres_days(self.database, row['CaseKey'])
         treat_records = nhi_utils.get_treat_records(self.database, row)
-
         drug_fee = number_utils.get_integer(row['InterDrugFee'])
 
         if string_utils.xstr(row['TreatType']) in ['腦血管疾病']:
@@ -244,11 +298,7 @@ class InsApplyGenerateFile(QtWidgets.QMainWindow):
         if case_type == 'B6':
             card = nhi_utils.OCCUPATIONAL_INJURY_CARD
 
-        message = []
-        if row['Birthday'] is None:
-            message.append('生日空白')
-        if row['ID'] is None:
-            message.append('身份證空白')
+        message = self._check_error(row)
 
         fields = [
             'ClinicID', 'ApplyDate', 'ApplyPeriod', 'ApplyType', 'CaseType', 'Sequence',
@@ -269,22 +319,11 @@ class InsApplyGenerateFile(QtWidgets.QMainWindow):
         ]
 
         data = [
-            self.clinic_id,
-            self.apply_date,
-            self.period,
-            nhi_utils.APPLY_TYPE_DICT[self.apply_type],
-            case_type,
-            self._get_sequence(case_type),
-            special_code[0],
-            special_code[1],
-            special_code[2],
-            special_code[3],
-            nhi_utils.INS_CLASS,
-            nhi_utils.get_start_date(self.database, row),
-            row['CaseDate'].date(),
-            row['Birthday'],
-            string_utils.xstr(row['ID']),
-            card,
+            self.clinic_id, self.apply_date, self.period, nhi_utils.APPLY_TYPE_DICT[self.apply_type],
+            case_type, self._get_sequence(case_type),
+            special_code[0], special_code[1], special_code[2], special_code[3],
+            nhi_utils.INS_CLASS, nhi_utils.get_start_date(self.database, row), row['CaseDate'].date(),
+            row['Birthday'], string_utils.xstr(row['ID']), card,
             nhi_utils.INJURY_DICT[string_utils.xstr(row['Injury'])],
             nhi_utils.get_diag_share_code(
                 self.database,
@@ -294,18 +333,15 @@ class InsApplyGenerateFile(QtWidgets.QMainWindow):
                 row,
             ),
             first_visit,
-            string_utils.xstr(row['DiseaseCode1']),
-            string_utils.xstr(row['DiseaseCode2']),
+            string_utils.xstr(row['DiseaseCode1']), string_utils.xstr(row['DiseaseCode2']),
             string_utils.xstr(row['DiseaseCode3']),
-            pres_days,
-            nhi_utils.get_pres_type(pres_days),
+            pres_days, nhi_utils.get_pres_type(pres_days),
             string_utils.xstr(row['Doctor']),
             personnel_utils.get_personnel_field_value(
                 self.database, string_utils.xstr(row['Doctor']), 'ID'
             ),
             nhi_utils.get_pharmacist_id(self.database, self.system_settings, row),
-            drug_fee, treat_fee,
-            diag_code, diag_fee,
+            drug_fee, treat_fee, diag_code, diag_fee,
             nhi_utils.get_pharmacy_code(
                 self.system_settings,
                 row, pres_days,
@@ -314,29 +350,17 @@ class InsApplyGenerateFile(QtWidgets.QMainWindow):
             number_utils.get_integer(row['AgentFee']),
             number_utils.get_integer(row['PatientKey']),
             string_utils.xstr(row['Name']),
-            treat_records[0]['CaseKey'],
-            treat_records[0]['TreatCode'],
-            treat_records[0]['TreatFee'],
+            treat_records[0]['CaseKey'], treat_records[0]['TreatCode'], treat_records[0]['TreatFee'],
             treat_records[0]['Percent'],
-            treat_records[1]['CaseKey'],
-            treat_records[1]['TreatCode'],
-            treat_records[1]['TreatFee'],
+            treat_records[1]['CaseKey'], treat_records[1]['TreatCode'], treat_records[1]['TreatFee'],
             treat_records[1]['Percent'],
-            treat_records[2]['CaseKey'],
-            treat_records[2]['TreatCode'],
-            treat_records[2]['TreatFee'],
+            treat_records[2]['CaseKey'], treat_records[2]['TreatCode'], treat_records[2]['TreatFee'],
             treat_records[2]['Percent'],
-            treat_records[3]['CaseKey'],
-            treat_records[3]['TreatCode'],
-            treat_records[3]['TreatFee'],
+            treat_records[3]['CaseKey'], treat_records[3]['TreatCode'], treat_records[3]['TreatFee'],
             treat_records[3]['Percent'],
-            treat_records[4]['CaseKey'],
-            treat_records[4]['TreatCode'],
-            treat_records[4]['TreatFee'],
+            treat_records[4]['CaseKey'], treat_records[4]['TreatCode'], treat_records[4]['TreatFee'],
             treat_records[4]['Percent'],
-            treat_records[5]['CaseKey'],
-            treat_records[5]['TreatCode'],
-            treat_records[5]['TreatFee'],
+            treat_records[5]['CaseKey'], treat_records[5]['TreatCode'], treat_records[5]['TreatFee'],
             treat_records[5]['Percent'],
             ', '.join(message),
         ]

@@ -65,11 +65,9 @@ class MedicalRecordFees(QtWidgets.QMainWindow):
 
         return QtWidgets.QTableWidget.keyPressEvent(self.ui.tableWidget_cash_fees, event)
 
-
     def _set_table_width(self):
         self.table_widget_ins_fees.set_table_heading_width([75])
         self.table_widget_cash_fees.set_table_heading_width([75])
-
 
     def _read_fees(self):
         sql = '''
@@ -171,12 +169,14 @@ class MedicalRecordFees(QtWidgets.QMainWindow):
                     QtGui.QColor('red')
                 )
 
-
     def calculate_fees(self):
         self.calculate_ins_fees()
         self.calculate_self_fees(self.parent.tab_list, self.ui.checkBox_disable_calculate)
 
     def calculate_ins_fees(self):
+        if self.parent.tab_registration.ui.comboBox_apply_type.currentText() == '補報差額':
+            return
+
         if self.parent.tab_list[0] is None:
             return
 

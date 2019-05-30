@@ -3,19 +3,19 @@
 #coding: utf-8
 
 from PyQt5 import QtWidgets, QtCore
-from PyQt5.QtWidgets import QMessageBox, QPushButton
-import sys
 
 from libs import ui_utils
 from libs import string_utils
 from libs import number_utils
-from libs import case_utils
+from libs import personnel_utils
 from dialog import dialog_debt
 from classes import table_widget
 
 
 # 欠還款作業
 class Debt(QtWidgets.QMainWindow):
+    program_name = '欠還款作業'
+
     # 初始化
     def __init__(self, parent=None, *args):
         super(Debt, self).__init__(parent)
@@ -24,8 +24,11 @@ class Debt(QtWidgets.QMainWindow):
         self.system_settings = args[1]
         self.ui = None
 
+        self.user_name = self.system_settings.field('使用者')
+
         self._set_ui()
         self._set_signal()
+        self._set_permission()
 
     # 解構
     def __del__(self):
@@ -50,6 +53,15 @@ class Debt(QtWidgets.QMainWindow):
         self.ui.action_open_medical_record.triggered.connect(self.open_medical_record)
         self.ui.tableWidget_debt.doubleClicked.connect(self.open_medical_record)
 
+    def _set_permission(self):
+        if self.user_name == '超級使用者':
+            return
+
+        if personnel_utils.get_permission(self.database, self.program_name, '現金還款', self.user_name) != 'Y':
+            self.ui.action_pay_back.setEnabled(False)
+        if personnel_utils.get_permission(self.database, self.program_name, '調閱病歷', self.user_name) != 'Y':
+            self.ui.action_open_medical_record.setEnabled(False)
+
     # 設定欄位寬度
     def _set_table_width(self):
         width = [80, 100, 40, 120, 100, 120, 60, 80, 80, 180, 120, 120, 120, 400]
@@ -72,6 +84,8 @@ class Debt(QtWidgets.QMainWindow):
 
         self.ui.action_open_medical_record.setEnabled(enabled)
         self.ui.action_pay_back.setEnabled(enabled)
+
+        self._set_permission()
 
     def _set_table_data(self, rec_no, rec):
         case_key = number_utils.get_integer(rec['CaseKey'])
@@ -135,6 +149,10 @@ class Debt(QtWidgets.QMainWindow):
             self._set_table_data(self.ui.tableWidget_debt.currentRow(), rows[0])
 
     def open_medical_record(self):
+        if (self.user_name != '超級使用者' and
+                personnel_utils.get_permission(self.database, self.program_name, '調閱病歷', self.user_name) != 'Y'):
+            return
+
         case_key = self.table_widget_debt.field_value(1)
         self.parent.open_medical_record(case_key, '病歷查詢')
 

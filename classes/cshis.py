@@ -1,7 +1,7 @@
 
 # 讀卡機作業 2018.05.03
 from PyQt5 import QtCore
-from PyQt5.QtCore import QThread
+from PyQt5.QtCore import QThread, pyqtSignal
 from PyQt5.QtWidgets import QMessageBox, QPushButton
 
 import ctypes
@@ -18,13 +18,20 @@ from libs import prescript_utils
 from libs import string_utils
 from libs import nhi_utils
 from libs import system_utils
+from libs import dialog_utils
 
 
 # 健保ICD卡 2018.03.31
-class CSHIS:
+class CSHIS(QThread):
+    signal = pyqtSignal()
+
     def __init__(self, database, system_settings):
+        super(QThread, self).__init__()
+        # super().__init__()
+
         self.database = database
-        self.com_port = number_utils.get_integer(system_settings.field('健保卡讀卡機連接埠')) - 1  # com1=0, com2=1, com3=2,...
+        self.com_port = number_utils.get_integer(
+            system_settings.field('健保卡讀卡機連接埠')) - 1  # com1=0, com2=1, com3=2,...
         try:
             self.cshis = ctypes.cdll.LoadLibrary('/nhi/lib/cshis50.so')
         except OSError as e:
@@ -38,6 +45,12 @@ class CSHIS:
 
         self.basic_data = cshis_utils.BASIC_DATA
         self.treat_data = cshis_utils.TREAT_DATA
+
+    def run(self):
+        try:
+            self.update_hc_card()
+        finally:
+            self.signal.emit()
 
     def __del__(self):
         if self.cshis is not None:
@@ -97,18 +110,24 @@ class CSHIS:
         )
 
     def update_hc(self,  show_message=True):
-        error_code = 0
+        self.start()
 
-        self._open_com()
+    def update_hc_card(self,  show_message=False):
         try:
+            self._open_com()
             error_code = self.cshis.csUpdateHCContents()
-        except:
-            pass
         finally:
             self._close_com()
 
         if show_message or error_code != 0:
-            cshis_utils.show_ic_card_message(error_code, '健保IC卡卡片內容更新')
+            msg_box = dialog_utils.message_box_with_button(
+                '健保卡內容更新未完成'.format('0'),
+                '<font size="4" color="red"><b>健保卡內容更新作業未完成, 錯誤代碼: {0}</b></font>'.format(error_code),
+                '錯誤原因: {0}'.format(cshis_utils.ERROR_MESSAGE[error_code][0])
+            )
+            msg_box.exec_()
+
+            # cshis_utils.show_ic_card_message(error_code, '健保IC卡卡片內容更新')
 
     def verify_hc_pin(self):
         self._open_com()
@@ -714,7 +733,25 @@ class CSHIS:
             SELECT * FROM patient WHERE
             PatientKey = {0}
         '''.format(patient_key)
-        row = self.database.select_record(sql)[0]
+        rows = self.database.select_record(sql)
+        if len(rows) <= 0:
+            msg_box = QMessageBox()
+            msg_box.setIcon(QMessageBox.Critical)
+            msg_box.setWindowTitle('病患資料有誤')
+            msg_box.setText(
+                '''
+                <font size="4" color="red">
+                    <b>找不到病歷號{0}, 請重新插卡.</b>
+                </font>
+                '''.format(patient_key)
+            )
+            msg_box.setInformativeText("請確定插入的健保卡是否為此病患所有.")
+            msg_box.addButton(QPushButton("確定"), QMessageBox.YesRole)
+            msg_box.exec_()
+
+            return False
+
+        row = rows[0]
         if self.basic_data['patient_id'] != string_utils.xstr(row['ID']):
             msg_box = QMessageBox()
             msg_box.setIcon(QMessageBox.Critical)
@@ -945,3 +982,23 @@ class CSHIS:
             self.write_medicine_signature(case_row, patient_row, prescript_rows, dosage_row)
 
 
+# class UpdateHCCard(QThread):
+#     signal = pyqtSignal()
+#
+#     def __init__(self):
+#         super(QThread, self).__init__()
+#
+#     def __del__(self):
+#         self.wait()
+#
+#     def run(self):
+#         import cshis50
+#
+#         try:
+#             cshis50.csOpenCom(0)
+#             cshis50.csUpdateHCContents()
+#             cshis50.csCloseCom()
+#         except cshis50.CshisError:
+#             pass
+#         finally:
+#             self.signal.emit()

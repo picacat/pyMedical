@@ -978,11 +978,15 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
         self.ui.tableWidget_prescript.clearContents()
         self.ui.tableWidget_prescript.setRowCount(0)
         sql = '''
-            SELECT * FROM prescript WHERE 
-                CaseKey = {0} AND 
-                MedicineSet = {1} AND
-                MedicineType in ("單方", "複方") 
-                ORDER BY PrescriptKey'''.format(case_key, self.medicine_set)
+            SELECT * FROM prescript 
+            WHERE 
+                CaseKey = {case_key} AND 
+                MedicineSet = {medicine_set}
+            ORDER BY PrescriptKey
+        '''.format(
+            case_key=case_key,
+            medicine_set=self.medicine_set,
+        )
         rows = self.database.select_record(sql)
         for row_no, row in zip(range(len(rows)), rows):
             if row['MedicineName'] is None:

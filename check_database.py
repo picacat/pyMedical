@@ -121,6 +121,7 @@ class CheckDatabase(QtWidgets.QDialog):
             self.database.check_field_exists('medicine', 'add', 'Dosage', 'decimal(10,2) AFTER Unit'),
             self.database.check_field_exists('medicine', 'add', 'Charged', 'varchar(4) AFTER InPrice'),
             self.database.check_field_exists('medicine', 'add', 'HitRate', 'int DEFAULT 0 AFTER Description'),
+            self.database.check_field_exists('medicine', 'add', 'Commission', 'varchar(10) AFTER InPrice'),
             self.database.check_field_exists('medicine', 'change', ['location', 'Location'], 'varchar(20)'),
             self.database.check_field_exists('drug', 'change', ['Supplier', 'Supplier'], 'varchar(50)'),
             self.database.check_field_exists('drug', 'add', 'MedicineType', 'varchar(10) AFTER DrugName'),

@@ -167,6 +167,12 @@ class DialogMedicalRecordPastHistory(QtWidgets.QDialog):
                     QtGui.QColor('blue')
                 )
 
+            if row['Continuance'] == 1:
+                self.ui.tableWidget_past_history.item(
+                    row_no, column).setBackground(
+                    QtGui.QColor('lightgray')
+                )
+
     def _set_group_box_title(self, row):
         self.ui.groupBox_history_list.setTitle(
             '{0} 過去病歷一覽表'.format(string_utils.xstr(row['Name'])),
@@ -213,8 +219,7 @@ class DialogMedicalRecordPastHistory(QtWidgets.QDialog):
                 SELECT PrescriptKey FROM prescript 
                 WHERE 
                     CaseKey = {case_key} AND 
-                    MedicineSet = 1 AND
-                    MedicineType IN ("單方", "複方") 
+                    MedicineSet = 1 
             '''.format(
                 case_key=case_key,
             )

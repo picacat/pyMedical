@@ -173,25 +173,6 @@ def insert_ins_care_item(database, case_key, case_date, ins_code):
     database.insert_record('prescript', fields, data)
 
 
-# 解開成方
-'''
-prescript_row = [
-    [0, '-1'],
-    [1, string_utils.xstr(self.ui.tableWidget_prescript.currentRow() + 1)],
-    [2, string_utils.xstr(self.case_key)],
-    [3, string_utils.xstr(self.case_date)],
-    [4, string_utils.xstr(self.medicine_set)],
-    [5, string_utils.xstr(row['MedicineType'])],
-    [6, string_utils.xstr(row['MedicineKey'])],
-    [7, string_utils.xstr(row['InsCode'])],
-    [8, self.system_settings.field('劑量模式')],
-    [9, string_utils.xstr(row['MedicineName'])],
-    [10, string_utils.xstr(dosage)],
-    [11, string_utils.xstr(row['Unit'])],
-    [12, None],
-]
-
-'''
 def extract_compound(database, prescript_row, table_widget_prescript, table_widget_treat=None):
     medicine_key = prescript_row[6][1]
     sql = '''
@@ -212,6 +193,9 @@ def extract_compound(database, prescript_row, table_widget_prescript, table_widg
 
 
 def get_medicine_description(database, medicine_key):
+    if medicine_key == '':
+        return None
+
     sql = '''
         SELECT Description FROM medicine
         WHERE

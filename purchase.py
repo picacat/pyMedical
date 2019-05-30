@@ -14,7 +14,7 @@ from classes import table_widget
 from dialog import dialog_medical_record_picker
 
 
-# 主視窗
+# 櫃台購藥
 class Purchase(QtWidgets.QMainWindow):
     # 初始化
     def __init__(self, parent=None, *args):
@@ -200,7 +200,6 @@ class Purchase(QtWidgets.QMainWindow):
 
         self.ui.tableWidget_medicine.resizeRowsToContents()
         self.ui.tableWidget_medicine.setCurrentCell(0, 0)
-
 
     def _set_prescript(self):
         current_row = self.ui.tableWidget_medicine.currentRow()

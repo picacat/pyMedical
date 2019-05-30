@@ -16,6 +16,7 @@ from libs import patient_utils
 from libs import registration_utils
 from libs import export_utils
 from libs import system_utils
+from libs import personnel_utils
 from classes import table_widget
 from dialog import dialog_reservation_booking
 from dialog import dialog_reservation_modify
@@ -24,6 +25,8 @@ from dialog import dialog_reservation_query
 
 # 主視窗
 class Reservation(QtWidgets.QMainWindow):
+    program_name = '預約掛號'
+
     # 初始化
     def __init__(self, parent=None, *args):
         super(Reservation, self).__init__(parent)
@@ -38,8 +41,11 @@ class Reservation(QtWidgets.QMainWindow):
         self.table_header_width = [70, 50, 100, 60]
         self.tab_name = '預約一覽表'
 
+        self.user_name = self.system_settings.field('使用者')
+
         self._set_ui()
         self._set_signal()
+        self._set_permission()
         self.read_reservation()
 
     # 解構
@@ -77,6 +83,7 @@ class Reservation(QtWidgets.QMainWindow):
         self.ui.action_modify_reservation.setEnabled(False)
         # self.ui.action_reservation_arrival.setEnabled(False)
 
+        self._set_permission()
         self._set_combo_box_doctor()
 
     # 設定信號
@@ -114,6 +121,25 @@ class Reservation(QtWidgets.QMainWindow):
         self.ui.dateEdit_reservation_date.dateChanged.connect(self._set_week_day)
 
         self.ui.tableWidget_calendar.cellClicked.connect(self._calendar_changed)
+
+    def _set_permission(self):
+        if self.user_name == '超級使用者':
+            return
+
+        if personnel_utils.get_permission(self.database, self.program_name, '新增預約', self.user_name) != 'Y':
+            self.ui.action_add_reservation.setEnabled(False)
+        if personnel_utils.get_permission(self.database, self.program_name, '更改預約', self.user_name) != 'Y':
+            self.ui.action_modify_reservation.setEnabled(False)
+        if personnel_utils.get_permission(self.database, self.program_name, '刪除預約', self.user_name) != 'Y':
+            self.ui.action_cancel_reservation.setEnabled(False)
+        if personnel_utils.get_permission(self.database, self.program_name, '預約報到', self.user_name) != 'Y':
+            self.ui.action_reservation_arrival.setEnabled(False)
+        if personnel_utils.get_permission(self.database, self.program_name, '查詢預約', self.user_name) != 'Y':
+            self.ui.action_reservation_query.setEnabled(False)
+        if personnel_utils.get_permission(self.database, self.program_name, '匯出預約名單', self.user_name) != 'Y':
+            self.ui.action_export_reservation_excel.setEnabled(False)
+        if personnel_utils.get_permission(self.database, self.program_name, '班表設定', self.user_name) != 'Y':
+            self.ui.menu_reservation_table.setEnabled(False)
 
     # 設定欄位寬度
     def _set_table_width(self):
@@ -458,6 +484,7 @@ class Reservation(QtWidgets.QMainWindow):
 
             self.ui.action_cancel_reservation.setEnabled(enabled)
             self.ui.action_modify_reservation.setEnabled(enabled)
+            self._set_permission()
 
     def _read_reservation_list(self):
         self.ui.tableWidget_reservation_list.setRowCount(1)
@@ -489,6 +516,8 @@ class Reservation(QtWidgets.QMainWindow):
             self.ui.action_reservation_arrival.setEnabled(True)
         else:
             self.ui.action_reservation_arrival.setEnabled(True)
+
+        self._set_permission()
 
     def _set_table_data(self, row_no, row_data):
         if string_utils.xstr(row_data['Arrival']) == 'True':
@@ -672,6 +701,8 @@ class Reservation(QtWidgets.QMainWindow):
         if reserve_date != datetime.datetime.today():
             self.ui.action_reservation_arrival.setEnabled(False)
 
+        self._set_permission()
+
     def _set_action_add_reservation(self):
         current_row = self.ui.tableWidget_reservation.currentRow()
         current_column = self.ui.tableWidget_reservation.currentColumn()
@@ -701,6 +732,8 @@ class Reservation(QtWidgets.QMainWindow):
             if time != '' and reservation_no != '' and name == '':
                 self.ui.action_add_reservation.setEnabled(True)
 
+        self._set_permission()
+
     def reservation_arrival(self):
         if self.tab_name == '預約一覽表':
             self._arrival_by_table()
@@ -710,8 +743,8 @@ class Reservation(QtWidgets.QMainWindow):
     # 預約一覽表報到
     def _arrival_by_table(self):
         current_column = self.ui.tableWidget_reservation.currentColumn()
-        header = self.ui.tableWidget_reservation.horizontalHeaderItem(current_column).text()
-        if header != '姓名':
+        header = self.ui.tableWidget_reservation.horizontalHeaderItem(current_column)
+        if header is None or header.text() != '姓名':
             return
 
         current_row = self.ui.tableWidget_reservation.currentRow()
@@ -933,6 +966,7 @@ class Reservation(QtWidgets.QMainWindow):
 
         self.ui.action_cancel_reservation.setEnabled(enabled)
         self.ui.action_modify_reservation.setEnabled(enabled)
+        self._set_permission()
 
         enabled = True
         reserve_date = self.ui.tableWidget_reservation_list.item(
@@ -948,6 +982,7 @@ class Reservation(QtWidgets.QMainWindow):
             enabled = False
 
         self.ui.action_reservation_arrival.setEnabled(enabled)
+        self._set_permission()
 
     def _reservation_query(self):
         dialog = dialog_reservation_query.DialogReservationQuery(self, self.database, self.system_settings)

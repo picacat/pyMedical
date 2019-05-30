@@ -157,7 +157,7 @@ class InsApplyList(QtWidgets.QMainWindow):
             string_utils.xstr(row['ApplyPeriod']),
             string_utils.xstr(row['ApplyType']),
             string_utils.xstr(row['CaseType']),
-            string_utils.xstr(row['Sequence']),
+            row['Sequence'],
             string_utils.xstr(row['SpecialCode1']),
             string_utils.xstr(row['SpecialCode2']),
             string_utils.xstr(row['SpecialCode3']),
@@ -165,7 +165,7 @@ class InsApplyList(QtWidgets.QMainWindow):
             string_utils.xstr(row['Class']),
             string_utils.xstr(row['CaseDate']),
             string_utils.xstr(row['StopDate']),
-            string_utils.xstr(row['PatientKey']),
+            row['PatientKey'],
             string_utils.xstr(row['Name']),
             string_utils.xstr(row['Birthday']),
             string_utils.xstr(row['ID']),
@@ -181,30 +181,33 @@ class InsApplyList(QtWidgets.QMainWindow):
             string_utils.xstr(row['DoctorName']),
             string_utils.xstr(row['DoctorID']),
             string_utils.xstr(row['PharmacistID']),
-            string_utils.xstr(row['DrugFee']),
-            string_utils.xstr(row['TreatFee']),
+            row['DrugFee'],
+            row['TreatFee'],
             string_utils.xstr(row['DiagCode']),
-            string_utils.xstr(row['DiagFee']),
+            row['DiagFee'],
             string_utils.xstr(row['PharmacyCode']),
-            string_utils.xstr(row['PharmacyFee']),
-            string_utils.xstr(row['InsTotalFee']),
-            string_utils.xstr(row['ShareFee']),
-            string_utils.xstr(row['InsApplyFee']),
-            string_utils.xstr(row['AgentFee']),
+            row['PharmacyFee'],
+            row['InsTotalFee'],
+            row['ShareFee'],
+            row['InsApplyFee'],
+            row['AgentFee'],
             string_utils.xstr(row['Message']),
         ]
 
-        for column in range(0, len(ins_apply_row)):
+        for col_no in range(0, len(ins_apply_row)):
+            item = QtWidgets.QTableWidgetItem()
+            item.setData(QtCore.Qt.EditRole, ins_apply_row[col_no])
             self.ui.tableWidget_ins_apply_list.setItem(
-                row_no, column, QtWidgets.QTableWidgetItem(ins_apply_row[column]))
-            if column in [1]:
+                row_no, col_no, item,
+            )
+            if col_no in [1]:
                 self.ui.tableWidget_ins_apply_list.item(
-                    row_no, column).setTextAlignment(
+                    row_no, col_no).setTextAlignment(
                     QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
                 )
             if row['Note'] is not None:
                 self.ui.tableWidget_ins_apply_list.item(
-                    row_no, column).setForeground(
+                    row_no, col_no).setForeground(
                     QtGui.QColor('blue')
                 )
 

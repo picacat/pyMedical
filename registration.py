@@ -37,6 +37,8 @@ else:
 
 # 門診掛號 2018.01.22
 class Registration(QtWidgets.QMainWindow):
+    program_name = '門診掛號'
+
     # 初始化
     def __init__(self, parent=None, *args):
         super(Registration, self).__init__(parent)
@@ -49,8 +51,11 @@ class Registration(QtWidgets.QMainWindow):
         self.socket_client = udp_socket_client.UDPSocketClient()
         self.reserve_key = None
 
+        self.user_name = self.system_settings.field('使用者')
+
         self._set_ui()
         self._set_signal()
+        self._set_permission()
         # self.read_wait()   # activate by pymedical.py->tab_changed
 
     # 解構
@@ -139,6 +144,51 @@ class Registration(QtWidgets.QMainWindow):
         self.ui.toolButton_write_ic.clicked.connect(self.write_ic_treatment)
         self.ui.toolButton_rewrite_ic_prescript.clicked.connect(self.rewrite_ic_card)
 
+    def _set_permission(self):
+        if self.user_name == '超級使用者':
+            return
+
+        if personnel_utils.get_permission(self.database, '預約掛號', '執行預約掛號', self.user_name) != 'Y':
+            self.ui.action_reservation.setEnabled(False)
+
+        if personnel_utils.get_permission(self.database, self.program_name, '修正候診名單', self.user_name) != 'Y':
+            self.ui.toolButton_modify_wait.setEnabled(False)
+            self.ui.toolButton_edit_cases.setEnabled(False)
+
+        if personnel_utils.get_permission(self.database, self.program_name, '刪除候診名單', self.user_name) != 'Y':
+            self.ui.toolButton_delete_wait.setEnabled(False)
+
+        if personnel_utils.get_permission(self.database, self.program_name, '健保卡退掛', self.user_name) != 'Y':
+            self.ui.toolButton_ic_cancel.setEnabled(False)
+            self.ui.toolButton_ic_cancel_2.setEnabled(False)
+
+        if personnel_utils.get_permission(self.database, self.program_name, '健保卡寫卡', self.user_name) != 'Y':
+            self.ui.toolButton_write_ic.setEnabled(False)
+            self.ui.toolButton_rewrite_ic_prescript.setEnabled(False)
+
+        if personnel_utils.get_permission(self.database, self.program_name, '病患資料修正', self.user_name) != 'Y':
+            self.ui.toolButton_modify_patient.setEnabled(False)
+            self.ui.toolButton_modify_patient2.setEnabled(False)
+
+        if personnel_utils.get_permission(self.database, self.program_name, '補印收據', self.user_name) != 'Y':
+            self.ui.toolButton_print_wait.setEnabled(False)
+            self.ui.toolButton_print_wait_2.setEnabled(False)
+
+        if personnel_utils.get_permission(self.database, self.program_name, '初診掛號', self.user_name) != 'Y':
+            self.ui.action_new_patient.setEnabled(False)
+
+        if personnel_utils.get_permission(self.database, self.program_name, '清除非本日候診名單', self.user_name) != 'Y':
+            self.ui.action_clear_wait.setEnabled(False)
+
+        if personnel_utils.get_permission(self.database, self.program_name, '開啟雲端藥歷', self.user_name) != 'Y':
+            self.ui.action_med_vpn.setEnabled(False)
+
+        if personnel_utils.get_permission(self.database, self.program_name, '健保卡掛號', self.user_name) != 'Y':
+            self.ui.action_ic_card.setEnabled(False)
+
+        if personnel_utils.get_permission(self.database, self.program_name, '人工手動掛號', self.user_name) != 'Y':
+            self.ui.groupBox_search_patient.setEnabled(False)
+
     def _registration_by_ic_card(self):
         ic_card = cshis.CSHIS(self.database, self.system_settings)
         if ic_card.cshis is None:
@@ -154,11 +204,12 @@ class Registration(QtWidgets.QMainWindow):
             return
 
         available_date, available_count = ic_card.get_card_status()
-        if available_count <= 1:
-            ic_card.update_hc()
-
         ic_card.basic_data['card_valid_date'] = available_date
         ic_card.basic_data['card_available_count'] = available_count
+
+        # if available_count <= 0:
+        #     ic_card.update_hc()
+
         sql = 'SELECT * FROM patient WHERE ID = "{0}"'.format(ic_card.basic_data['patient_id'])
         row = self.database.select_record(sql)
         if not row:  # 找不到資料
@@ -323,6 +374,8 @@ class Registration(QtWidgets.QMainWindow):
         if self.system_settings.field('使用讀卡機') == 'N':
             self.ui.toolButton_ic_cancel.setEnabled(False)
 
+        self._set_permission()
+
     def _set_wait_completed_tool_button(self, enabled):
         self.ui.toolButton_edit_cases.setEnabled(enabled)
         self.ui.toolButton_write_ic.setEnabled(enabled)
@@ -332,6 +385,8 @@ class Registration(QtWidgets.QMainWindow):
         if self.system_settings.field('使用讀卡機') == 'N':
             self.ui.toolButton_write_ic.setEnabled(False)
             self.ui.toolButton_ic_cancel_2.setEnabled(False)
+
+        self._set_permission()
 
     # 設定掛號模式
     def _set_reg_mode(self, enabled, ic_card=None):
@@ -362,6 +417,8 @@ class Registration(QtWidgets.QMainWindow):
 
         self._clear_group_box_patient()
         self._clear_group_box_registration()
+
+        self._set_permission()
 
     # 清除病患資料欄位
     def _clear_group_box_patient(self):
@@ -566,6 +623,10 @@ class Registration(QtWidgets.QMainWindow):
 
     # 掛號修正
     def _modify_wait(self):
+        if (self.user_name != '超級使用者' and
+            personnel_utils.get_permission(self.database, self.program_name, '修正候診名單', self.user_name) != 'Y'):
+            return
+
         tab_name = self.ui.tabWidget_list.tabText(
             self.ui.tabWidget_list.currentIndex()
         )
@@ -677,7 +738,19 @@ class Registration(QtWidgets.QMainWindow):
     # 自動連續療程 - 30天內
     def _completion_course(self, patient_key):
         today = datetime.date.today()
-        last_treat_date = (today - datetime.timedelta(days=30)).strftime('%Y-%m-%d 00:00:00')
+        last_treat_date = (today - datetime.timedelta(days=30-1)).strftime('%Y-%m-%d 00:00:00')
+        # sql = '''
+        #     SELECT Continuance FROM cases WHERE
+        #     (CaseDate >= "{0}") AND
+        #     (PatientKey = {1}) AND
+        #     (InsType = "健保") AND
+        #     (Continuance = 1)
+        #     ORDER BY CaseDate DESC LIMIT 1
+        # '''.format(last_treat_date, patient_key)
+        # rows = self.database.select_record(sql)
+        # if len(rows) <= 0:  # 療程首次已經超過30天
+        #     return
+
         sql = '''
             SELECT TreatType, Card, Continuance, Share, Injury, XCard FROM cases WHERE
             (CaseDate >= "{0}") AND
@@ -1136,7 +1209,7 @@ class Registration(QtWidgets.QMainWindow):
         ic_card = self._process_ic_card(card)
 
         if ic_card is None:  # 不須讀卡
-            if card ==  '自動取得':
+            if card == '自動取得':
                 system_utils.show_message_box(
                     QMessageBox.Critical,
                     '卡序有誤',
@@ -1191,13 +1264,13 @@ class Registration(QtWidgets.QMainWindow):
         if message is not None:
             warning_message.append(message)
 
-        message = registration_utils.check_course_complete(
-            self.database, patient_key, course)
+        message = registration_utils.check_course_complete_in_days(
+            self.database, patient_key, card, course, 14)
         if message is not None:
             warning_message.append(message)
 
-        message = registration_utils.check_course_complete_in_two_weeks(
-            self.database, patient_key, card, course)
+        message = registration_utils.check_course_complete(
+            self.database, patient_key, course)
         if message is not None:
             warning_message.append(message)
 
@@ -1244,6 +1317,14 @@ class Registration(QtWidgets.QMainWindow):
 
     def _write_ic_card(self, treat_after_check):
         ic_card = cshis.CSHIS(self.database, self.system_settings)
+
+        available_date, available_count = ic_card.get_card_status()
+        if available_count is None:
+            return False
+
+        if available_count <= 0:
+            ic_card.update_hc(False)
+
         ic_card_ok = ic_card.write_ic_card(
             '掛號寫卡',
             self.ui.lineEdit_patient_key.text(),
@@ -1716,6 +1797,8 @@ class Registration(QtWidgets.QMainWindow):
         if ic_wrote == '否':
             self.ui.toolButton_write_ic.setEnabled(True)
 
+        self._set_permission()
+
     def write_ic_treatment(self):
         msg_box = dialog_utils.get_message_box(
             '寫入健保卡就醫資料', QMessageBox.Question,
@@ -1727,8 +1810,6 @@ class Registration(QtWidgets.QMainWindow):
             return
 
         case_key = self.table_widget_wait_completed.field_value(1)
-
-
         card = string_utils.xstr(self.table_widget_wait_completed.field_value(9))
 
         if card == '':
@@ -1788,7 +1869,7 @@ class Registration(QtWidgets.QMainWindow):
         card = string_utils.xstr(self.table_widget_wait_completed.field_value(9))
         course = number_utils.get_integer(self.table_widget_wait_completed.field_value(10))
 
-        if card == '':
+        if course == 0:
             course = None
 
         ic_card = cshis.CSHIS(self.database, self.system_settings)

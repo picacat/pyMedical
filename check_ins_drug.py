@@ -58,7 +58,15 @@ class CheckInsDrug(QtWidgets.QMainWindow):
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_CHECK_INS_DRUG, self)
+        self.center()
         self._set_table_widget()
+
+    def center(self):
+        frame_geometry = self.frameGeometry()
+        screen = QtWidgets.QApplication.desktop().screenNumber(QtWidgets.QApplication.desktop().cursor().pos())
+        center_point = QtWidgets.QApplication.desktop().screenGeometry(screen).center()
+        frame_geometry.moveCenter(center_point)
+        self.move(frame_geometry.topLeft())
 
     def _set_table_widget(self):
         self.table_widget_prescript = table_widget.TableWidget(
@@ -83,6 +91,8 @@ class CheckInsDrug(QtWidgets.QMainWindow):
         self.parent.open_medical_record(case_key)
 
     def read_data(self):
+        apply_type_sql = nhi_utils.get_apply_type_sql(self.apply_type)
+
         sql = '''
             SELECT 
                 prescript.PrescriptKey, prescript.MedicineName, prescript.Dosage, prescript.InsCode, 
@@ -91,31 +101,38 @@ class CheckInsDrug(QtWidgets.QMainWindow):
             FROM prescript 
                 LEFT JOIN cases ON cases.CaseKey = prescript.CaseKey
             WHERE
-                (cases.CaseDate BETWEEN "{0}" AND "{1}") AND
+                (cases.CaseDate BETWEEN "{start_date}" AND "{end_date}") AND
                 (cases.InsType = "健保") AND
                 (cases.Card != "欠卡") AND
-                (cases.ApplyType = "{2}") AND
+                ({apply_type_sql}) AND
                 (prescript.MedicineSet = 1) AND
-                (prescript.MedicineType IN ("單方", "複方")) AND
                 (prescript.InsCode IS NOT NULL AND TRIM(prescript.InsCode) != "")
             ORDER BY cases.CaseDate, cases.CaseKey, prescript.PrescriptKey
-        '''.format(self.start_date, self.end_date, self.apply_type)
+        '''.format(
+            start_date=self.start_date,
+            end_date=self.end_date,
+            apply_type_sql=apply_type_sql,
+        )
         self.rows = self.database.select_record(sql)
 
     def row_count(self):
         return len(self.rows)
 
     def start_check(self):
-        self.parent.ui.label_progress.setText('檢查進度: 健保碼檢查')
         self.read_data()
+        if self.row_count() <= 0:
+            return
 
-        self.parent.ui.progressBar.setMaximum(self.row_count()-1)
-        self.parent.ui.progressBar.setValue(0)
+        progress_dialog = QtWidgets.QProgressDialog(
+            '正在執行健保碼檢查中, 請稍後...', '取消', 0, self.row_count(), self
+        )
+        progress_dialog.setWindowModality(QtCore.Qt.WindowModal)
+        progress_dialog.setValue(0)
 
         self.ui.tableWidget_prescript.setRowCount(0)
         for row_no, row in zip(range(len(self.rows)), self.rows):
+            progress_dialog.setValue(row_no)
             error_messages = []
-
             sql = '''
                 SELECT Supplier, DrugName, ValidDate FROM drug
                 WHERE
@@ -126,9 +143,6 @@ class CheckInsDrug(QtWidgets.QMainWindow):
             if len(drug_rows) <= 0:
                 error_messages.append('查無健保藥品資料')
                 self._insert_error_record(row_no, row, drug_rows, error_messages)
-                self.parent.ui.progressBar.setValue(
-                    self.parent.ui.progressBar.value() + 1
-                )
                 continue
 
             error_messages += self._check_valid_date(row, drug_rows)
@@ -136,9 +150,7 @@ class CheckInsDrug(QtWidgets.QMainWindow):
 
             self._insert_error_record(row_no, row, drug_rows, error_messages)
 
-            self.parent.ui.progressBar.setValue(
-                self.parent.ui.progressBar.value() + 1
-            )
+        progress_dialog.setValue(self.row_count())
 
         self.ui.tableWidget_prescript.setAlternatingRowColors(True)
         if self.errors <= 0:
@@ -146,7 +158,6 @@ class CheckInsDrug(QtWidgets.QMainWindow):
         else:
             self.ui.toolButton_find_error.setEnabled(True)
 
-        self.parent.ui.label_progress.setText('檢查進度: 檢查完成')
         self.ui.tableWidget_prescript.resizeRowsToContents()
 
     def _check_valid_date(self, row, drug_rows):

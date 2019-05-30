@@ -10,6 +10,7 @@ from libs import string_utils
 from libs import number_utils
 from libs import printer_utils
 from libs import system_utils
+from libs import personnel_utils
 from dialog import dialog_medical_record_list
 from classes import table_widget
 from printer import print_prescription
@@ -20,6 +21,8 @@ from dialog import dialog_medical_record_done
 
 # 主視窗
 class MedicalRecordList(QtWidgets.QMainWindow):
+    program_name = '病歷查詢'
+
     # 初始化
     def __init__(self, parent=None, *args):
         super(MedicalRecordList, self).__init__(parent)
@@ -40,8 +43,11 @@ class MedicalRecordList(QtWidgets.QMainWindow):
         }
         self.ui = None
 
+        self.user_name = self.system_settings.field('使用者')
+
         self._set_ui()
         self._set_signal()
+        self._set_permission()
 
     # 解構
     def __del__(self):
@@ -75,6 +81,25 @@ class MedicalRecordList(QtWidgets.QMainWindow):
         self.ui.action_set_check.triggered.connect(self._set_check)
         self.ui.action_set_uncheck.triggered.connect(self._set_check)
         self.ui.tableWidget_medical_record_list.doubleClicked.connect(self.open_medical_record)
+
+    def _set_permission(self):
+        if self.user_name == '超級使用者':
+            return
+
+        if personnel_utils.get_permission(self.database, self.program_name, '調閱病歷', self.user_name) != 'Y':
+            self.ui.action_open_record.setEnabled(False)
+        if personnel_utils.get_permission(self.database, self.program_name, '病歷刪除', self.user_name) != 'Y':
+            self.ui.action_delete_record.setEnabled(False)
+        if personnel_utils.get_permission(self.database, self.program_name, '匯出實體病歷', self.user_name) != 'Y':
+            self.ui.action_export_cases_pdf.setEnabled(False)
+        if personnel_utils.get_permission(self.database, self.program_name, '匯出收費明細', self.user_name) != 'Y':
+            self.ui.action_export_fees_pdf.setEnabled(False)
+        if personnel_utils.get_permission(self.database, self.program_name, '列印單據', self.user_name) != 'Y':
+            self.ui.action_print_prescript.setEnabled(False)
+            self.ui.action_print_receipt.setEnabled(False)
+        if personnel_utils.get_permission(self.database, self.program_name, '列印報表', self.user_name) != 'Y':
+            self.ui.action_print_cases.setEnabled(False)
+            self.ui.action_print_fees.setEnabled(False)
 
         # 設定欄位寬度
     def _set_table_width(self):
@@ -140,6 +165,8 @@ class MedicalRecordList(QtWidgets.QMainWindow):
         self.ui.action_delete_record.setEnabled(enabled)
         self.ui.action_print_prescript.setEnabled(enabled)
         self.ui.action_print_receipt.setEnabled(enabled)
+
+        self._set_permission()
 
     def _set_table_data(self, row_no, row):
         if row['InsType'] == '健保':
@@ -303,6 +330,10 @@ class MedicalRecordList(QtWidgets.QMainWindow):
         self.ui.tableWidget_medical_record_list.removeRow(current_row)
 
     def open_medical_record(self):
+        if (self.user_name != '超級使用者' and
+                personnel_utils.get_permission(self.database, self.program_name, '調閱病歷', self.user_name) != 'Y'):
+            return
+
         case_key = self.table_widget_medical_record_list.field_value(0)
         self.parent.open_medical_record(case_key, '病歷查詢')
 

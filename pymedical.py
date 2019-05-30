@@ -55,8 +55,12 @@ class PyMedical(QtWidgets.QMainWindow):
         self._set_ui()
         self._set_signal()
         self._start_udp_socket_server()
+        self._set_user_name()
 
         self.reset_wait()
+
+    def _set_user_name(self):
+        self.user_name = self.system_settings.field('使用者')
 
     # 解構
     def __del__(self):
@@ -74,7 +78,7 @@ class PyMedical(QtWidgets.QMainWindow):
         quit_app = msg_box.exec_()
 
         if quit_app:
-            if self.system_settings.field('使用者') != '超級使用者':
+            if self.user_name != '超級使用者':
                 backup_process = backup.Backup(
                     self, self.database, self.system_settings)
                 backup_process.start_backup()
@@ -521,7 +525,7 @@ class PyMedical(QtWidgets.QMainWindow):
 
     # 設定權限
     def set_root_permission(self):
-        if self.system_settings.field('使用者') != '超級使用者':
+        if self.user_name != '超級使用者':
             self.action_convert.setEnabled(False)
         else:
             self.action_convert.setEnabled(True)
@@ -593,8 +597,9 @@ class PyMedical(QtWidgets.QMainWindow):
     def set_permission(self):
         self._authorize_all_permission()
 
-        user_name = self.system_settings.field('使用者')
-        if user_name == '超級使用者':
+        self._set_user_name()
+
+        if self.user_name == '超級使用者':
             return
 
         import copy
@@ -716,7 +721,7 @@ class PyMedical(QtWidgets.QMainWindow):
                 continue
 
             if personnel_utils.get_permission(
-                    self.database, string_utils.xstr(item[0]), string_utils.xstr(item[1]), user_name) != 'Y':
+                    self.database, string_utils.xstr(item[0]), string_utils.xstr(item[1]), self.user_name) != 'Y':
                 if type(action) is list:
                     for act in action:
                         act.setEnabled(False)
@@ -745,6 +750,7 @@ class PyMedical(QtWidgets.QMainWindow):
 
         user_name = login_dialog.user_name
         self.system_settings.post('使用者', user_name)
+        self._set_user_name()
         self.refresh_status_bar()
         self.set_root_permission()
         self.set_permission()

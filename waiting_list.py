@@ -15,14 +15,16 @@ from libs import string_utils
 from libs import nhi_utils
 from libs import case_utils
 from libs import statistics_utils
+from libs import personnel_utils
 from libs import patient_utils
 from printer import print_prescription
 from printer import print_receipt
 
 
-
 # 候診名單 2018.01.31
 class WaitingList(QtWidgets.QMainWindow):
+    program_name = '醫師看診作業'
+
     # 初始化
     def __init__(self, parent=None, *args):
         super(WaitingList, self).__init__(parent)
@@ -32,8 +34,13 @@ class WaitingList(QtWidgets.QMainWindow):
         self.statistics_dicts = args[2]
         self.ui = None
 
+        self.tab_name = '候診名單'
+        self.user_name = self.system_settings.field('使用者')
+
         self._set_ui()
         self._set_signal()
+        self._set_permission()
+
         # self.read_wait()   # activate by pymedical.py->tab_changed
 
     # 解構
@@ -77,6 +84,13 @@ class WaitingList(QtWidgets.QMainWindow):
         self.ui.tableWidget_reservation_list.itemSelectionChanged.connect(self._show_last_medical_record)
         self.ui.toolButton_print_prescript.clicked.connect(self._print_prescript)
         self.ui.toolButton_print_receipt.clicked.connect(self._print_receipt)
+
+    def _set_permission(self):
+        if self.user_name == '超級使用者':
+            return
+
+        if personnel_utils.get_permission(self.database, self.program_name, '病歷登錄', self.user_name) != 'Y':
+            self.ui.action_medical_record.setEnabled(False)
 
     def _set_table_width(self):
         width = [70, 70,
@@ -130,6 +144,7 @@ class WaitingList(QtWidgets.QMainWindow):
 
     def _set_tool_button(self, enabled):
         self.ui.action_medical_record.setEnabled(enabled)
+        self._set_permission()
 
     def _set_table_data(self, row_no, row):
         registration_time = row['CaseDate'].strftime('%H:%M')
@@ -190,8 +205,13 @@ class WaitingList(QtWidgets.QMainWindow):
                 )
 
     def open_medical_record(self):
+        if (self.user_name != '超級使用者' and
+                personnel_utils.get_permission(self.database, self.program_name, '病歷登錄', self.user_name) != 'Y'):
+            return
+
         self.tab_name = self.ui.tabWidget_waiting_list.tabText(
             self.ui.tabWidget_waiting_list.currentIndex())
+
         if self.tab_name == '候診名單':
             case_key = self.table_widget_waiting_list.field_value(1)
             call_from = '醫師看診作業'

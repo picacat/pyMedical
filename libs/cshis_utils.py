@@ -292,6 +292,7 @@ def decode_treat_data(buffer):
 
 def decode_xml_data(buffer):
     xml_feedback_data_info = XML_FEEDBACK_DATA
+
     xml_feedback_data_info['sam_id'] = buffer[:12].decode('ascii').strip()
     xml_feedback_data_info['clinic_id'] = buffer[12:22].decode('ascii').strip()
     xml_feedback_data_info['upload_time'] = '{0}-{1}-{2} {3}:{4}:{5}'.format(

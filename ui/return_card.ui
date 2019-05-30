@@ -165,10 +165,10 @@
      <normaloff>../icons/document-new.svg</normaloff>../icons/document-new.svg</iconset>
    </property>
    <property name="text">
-    <string>IC卡還卡</string>
+    <string>健保還卡</string>
    </property>
    <property name="toolTip">
-    <string>IC卡還卡</string>
+    <string>I還卡</string>
    </property>
   </action>
   <action name="action_close">

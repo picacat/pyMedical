@@ -73,9 +73,22 @@ class DialogReservationBooking(QtWidgets.QDialog):
         self.ui.lineEdit_query.returnPressed.connect(self._query_patient)
 
     def accepted_button_clicked(self):
+        patient_key = self.ui.lineEdit_patient_key.text()
+        name = self.ui.lineEdit_name.text()
+        reservation_date = self.ui.lineEdit_reservation_date.text()
         period = self.ui.lineEdit_period.text()
         doctor = self.ui.lineEdit_doctor.text()
         room = registration_utils.get_room(self.database, period, doctor)
+        reserve_no = self.ui.lineEdit_reserve_no.text()
+
+        if registration_utils.is_reservation_full(self.database, reservation_date, period, reserve_no, doctor):
+            system_utils.show_message_box(
+                QMessageBox.Critical,
+                '預約已滿',
+                '<font size="4" color="red"><b>在剛剛此時段已被網路預約者預約, 請選擇其他時段.</b></font>',
+                '很不巧, 有網路的預約者已搶先預約.'
+            )
+            return
 
         fields = [
             'PatientKey', 'Name', 'ReserveDate', 'Period',
@@ -83,15 +96,10 @@ class DialogReservationBooking(QtWidgets.QDialog):
         ]
 
         data = [
-            self.ui.lineEdit_patient_key.text(),
-            self.ui.lineEdit_name.text(),
-            self.ui.lineEdit_reservation_date.text(),
-            period,
-            room,
-            doctor,
-            self.ui.lineEdit_reserve_no.text(),
-            '現場預約',
+            patient_key, name, reservation_date, period,
+            room, doctor, reserve_no, '現場預約',
         ]
+
         self.database.insert_record('reserve', fields, data)
 
     # 開始查詢病患資料

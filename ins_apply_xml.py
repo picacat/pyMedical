@@ -187,7 +187,6 @@ class InsApplyXML(QtWidgets.QMainWindow):
         d9 = ET.SubElement(dbody, 'd9')
         d9.text = date_utils.west_date_to_nhi_date(row['CaseDate'])
 
-        # if string_utils.xstr(row['CaseType']) == '29':
         d10 = ET.SubElement(dbody, 'd10')
         d10.text = date_utils.west_date_to_nhi_date(row['StopDate'])
 
@@ -195,6 +194,20 @@ class InsApplyXML(QtWidgets.QMainWindow):
         if birthday is not None:
             d11 = ET.SubElement(dbody, 'd11')
             d11.text = date_utils.west_date_to_nhi_date(birthday)
+
+        if string_utils.xstr(row['ApplyType']) == '2':  # 補報
+            for course in range(1, nhi_utils.MAX_COURSE+1):
+                case_key = number_utils.get_integer(row['CaseKey{0}'.format(course)])
+                if case_key <= 0:
+                    continue
+
+                case_row = self._get_case_rows(case_key)[0]
+                remedy_type_code = nhi_utils.REMEDY_TYPE_CODE[
+                    string_utils.xstr(case_row['ApplyType'])
+                ]
+                d12 = ET.SubElement(dbody, 'd12')
+                d12.text = string_utils.xstr(remedy_type_code)
+                break
 
         d14 = ET.SubElement(dbody, 'd14')
         d14.text = string_utils.xstr(row['Injury'])
@@ -273,8 +286,7 @@ class InsApplyXML(QtWidgets.QMainWindow):
             return
 
         self.sequence = 0
-        max_course = 6
-        for course in range(1, max_course+1):
+        for course in range(1, nhi_utils.MAX_COURSE+1):
             case_key = number_utils.get_integer(row['CaseKey{0}'.format(course)])
             if case_key <= 0:
                 continue
@@ -617,17 +629,24 @@ class InsApplyXML(QtWidgets.QMainWindow):
         p20.text = string_utils.xstr(row['Class'])
 
     def _add_auxiliary_case(self, dbody, row):
+        apply_type_sql = nhi_utils.get_apply_type_sql(self.apply_type)
+
         sql = '''
             SELECT * FROM cases
             WHERE
                 (InsType = "健保") AND
                 (Card != "欠卡") AND
                 (TreatType = "腦血管疾病") AND
-                (PatientKey = {0}) AND
-                (CaseDate BETWEEN "{1}" AND "{2}") AND
-                (ApplyType = "{3}")
+                (PatientKey = {patient_key}) AND
+                (CaseDate BETWEEN "{start_date}" AND "{end_date}") AND
+                ({apply_type_sql})
             ORDER BY CaseDate
-        '''.format(row['PatientKey'], self.start_date, self.end_date, self.apply_type)
+        '''.format(
+            patient_key=row['PatientKey'],
+            start_date=self.start_date,
+            end_date=self.end_date,
+            apply_type_sql=apply_type_sql,
+        )
         rows = self.database.select_record(sql)
 
         self.sequence = 0
@@ -686,11 +705,13 @@ class InsApplyXML(QtWidgets.QMainWindow):
         sql = '''
             SELECT * FROM prescript
             WHERE
-                CaseKey = {0} AND
+                CaseKey = {case_key} AND
                 MedicineSet = 11 AND
                 MedicineType = "照護"
             ORDER BY PrescriptKey
-        '''.format(case_row['CaseKey'])
+        '''.format(
+            case_key=case_row['CaseKey'],
+        )
         rows = self.database.select_record(sql)
 
         for care_row in rows:
@@ -740,16 +761,18 @@ class InsApplyXML(QtWidgets.QMainWindow):
 
     def _get_ins_rows(self):
         sql = '''
-            SELECT *
-            FROM insapply
+            SELECT * FROM insapply
             WHERE
-                ApplyDate = "{0}" AND
-                ApplyType = "{1}" AND
-                ApplyPeriod = "{2}" AND
-                ClinicID = "{3}"
-                ORDER BY CaseType, Sequence
+                (ClinicID = "{clinic_id}") AND
+                (ApplyDate = "{apply_date}") AND
+                (ApplyPeriod = "{apply_period}") AND
+                (ApplyType = "{apply_type}")
+            ORDER BY CaseType, Sequence
         '''.format(
-            self.apply_date, self.apply_type_code, self.period, self.clinic_id,
+            clinic_id=self.clinic_id,
+            apply_date=self.apply_date,
+            apply_period=self.period,
+            apply_type=self.apply_type_code,
         )
         rows = self.database.select_record(sql)
 
@@ -757,11 +780,12 @@ class InsApplyXML(QtWidgets.QMainWindow):
 
     def _get_case_rows(self, case_key):
         sql = '''
-            SELECT *
-            FROM cases
+            SELECT * FROM cases
             WHERE
-                CaseKey = "{0}"
-        '''.format(case_key)
+                CaseKey = "{case_key}"
+        '''.format(
+            case_key=case_key,
+        )
 
         rows = self.database.select_record(sql)
 

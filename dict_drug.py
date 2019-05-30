@@ -4,7 +4,7 @@
 import sys
 
 from PyQt5 import QtWidgets, QtCore
-from PyQt5.QtWidgets import QInputDialog, QMessageBox, QPushButton
+from PyQt5.QtWidgets import QInputDialog, QMessageBox
 from libs import ui_utils
 from libs import string_utils
 from libs import dialog_utils
@@ -64,9 +64,10 @@ class DictDrug(QtWidgets.QMainWindow):
 
     # 設定欄位寬度
     def _set_table_width(self):
-        dict_groups_width = [100, 50, 150]
-        dict_drug_width = [100, 150, 100, 250, 100, 50, 80, 80, 150, 80, 100, 100, 80, 80]
+        dict_groups_width = [100, 50, 115, 60]
         self.table_widget_dict_groups.set_table_heading_width(dict_groups_width)
+
+        dict_drug_width = [100, 150, 80, 250, 90, 50, 50, 80, 120, 80, 80, 80, 80, 80, 90]
         self.table_widget_dict_drug.set_table_heading_width(dict_drug_width)
 
     def _read_drug(self):
@@ -107,17 +108,31 @@ class DictDrug(QtWidgets.QMainWindow):
         self.table_widget_dict_groups.set_db_data(sql, self._set_dict_groups_data)
 
     def _set_dict_groups_data(self, row_no, row):
+        if row['DictGroupsLevel2'] is None:
+            percent = ''
+        else:
+            try:
+                percent = '{0}%'.format(number_utils.get_integer(row['DictGroupsLevel2']))
+            except ValueError:
+                percent = string_utils.xstr(row['DictGroupsLevel2'])
+
         dict_groups_row = [
             string_utils.xstr(row['DictGroupsKey']),
             string_utils.xstr(row['DictOrderNo']),
             string_utils.xstr(row['DictGroupsName']),
+            percent,
         ]
 
         for column in range(len(dict_groups_row)):
+            item = QtWidgets.QTableWidgetItem()
+            item.setData(QtCore.Qt.EditRole, dict_groups_row[column])
             self.ui.tableWidget_dict_groups.setItem(
-                row_no, column,
-                QtWidgets.QTableWidgetItem(dict_groups_row[column])
+                row_no, column, item,
             )
+            if column in [3]:
+                self.ui.tableWidget_dict_groups.item(row_no, column).setTextAlignment(
+                    QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
+                )
 
     def dict_groups_changed(self):
         dict_groups_type = self.table_widget_dict_groups.field_value(2)
@@ -147,22 +162,24 @@ class DictDrug(QtWidgets.QMainWindow):
             string_utils.xstr(row['MedicineName']),
             string_utils.xstr(row['InsCode']),
             string_utils.xstr(row['Unit']),
-            string_utils.xstr(row['Dosage']),
+            number_utils.get_float(row['Dosage']),
             string_utils.xstr(row['MedicineMode']),
             string_utils.xstr(row['MedicineAlias']),
             string_utils.xstr(row['Location']),
-            string_utils.xstr(row['InPrice']),
-            string_utils.xstr(row['SalePrice']),
-            string_utils.xstr(row['Quantity']),
-            string_utils.xstr(row['SafeQuantity']),
+            number_utils.get_float(row['InPrice']),
+            number_utils.get_float(row['SalePrice']),
+            number_utils.get_integer(row['Quantity']),
+            number_utils.get_integer(row['SafeQuantity']),
+            string_utils.xstr(row['Commission']),
         ]
 
         for column in range(len(dict_drug_row)):
+            item = QtWidgets.QTableWidgetItem()
+            item.setData(QtCore.Qt.EditRole, dict_drug_row[column])
             self.ui.tableWidget_dict_drug.setItem(
-                row_no, column,
-                QtWidgets.QTableWidgetItem(dict_drug_row[column])
+                row_no, column, item,
             )
-            if column in [6, 10, 11, 12, 13]:
+            if column in [6, 10, 11, 12, 13, 14]:
                 self.ui.tableWidget_dict_drug.item(row_no, column).setTextAlignment(
                     QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
                 )
@@ -180,6 +197,16 @@ class DictDrug(QtWidgets.QMainWindow):
             return
 
         dict_groups = input_dialog.textValue()
+        if dict_groups == '':
+            return
+
+        input_dialog = dialog_utils.get_dialog(
+            '{0}類別'.format(self.dict_type), '請輸入「{0}類別」的抽成'.format(dict_groups),
+            None, QInputDialog.TextInput, 320, 200)
+        if not input_dialog.exec_():
+            return
+
+        dict_groups_percent = input_dialog.textValue().strip('%')
 
         sql = '''
             SELECT * FROM dict_groups
@@ -191,13 +218,14 @@ class DictDrug(QtWidgets.QMainWindow):
         last_dict_order_no = number_utils.get_integer(rows[0]['DictOrderNo'])
 
         field = [
-            'DictGroupsType', 'DictOrderNo', 'DictGroupsName'
+            'DictGroupsType', 'DictOrderNo', 'DictGroupsName', 'DictGroupsLevel2'
         ]
 
         data = [
             '{0}類別'.format(self.dict_type),
             last_dict_order_no+1,
             dict_groups,
+            dict_groups_percent,
         ]
         self.database.insert_record('dict_groups', field, data)
         self._read_dict_groups()
@@ -221,17 +249,31 @@ class DictDrug(QtWidgets.QMainWindow):
     # 更改處方類別
     def _edit_dict_groups(self):
         old_groups = self.table_widget_dict_groups.field_value(2)
+
         input_dialog = dialog_utils.get_dialog(
             '{0}類別'.format(self.dict_type), '請輸入{0}類別'.format(self.dict_type),
             old_groups,
             QInputDialog.TextInput, 320, 200)
-        ok = input_dialog.exec_()
-        if not ok:
+        if not input_dialog.exec_():
             return
 
         dict_groups_name = input_dialog.textValue()
+        if dict_groups_name == '':
+            return
+
+        old_percent = self.table_widget_dict_groups.field_value(3).strip('%')
+        input_dialog = dialog_utils.get_dialog(
+            '{0}類別'.format(self.dict_type), '請輸入「{0}類別」的抽成'.format(dict_groups_name),
+            old_percent,
+            QInputDialog.TextInput, 320, 200)
+        if not input_dialog.exec_():
+            return
+
+        dict_groups_percent = input_dialog.textValue().strip('%')
+
         data = [
             dict_groups_name,
+            dict_groups_percent,
         ]
 
         sql = '''
@@ -240,46 +282,86 @@ class DictDrug(QtWidgets.QMainWindow):
         '''.format(dict_groups_name, self.dict_type, old_groups)
         self.database.exec_sql(sql)
 
-        fields = ['DictGroupsName']
-        self.database.update_record('dict_groups', fields, 'DictGroupsKey',
-                                    self.table_widget_dict_groups.field_value(0), data)
-        self.ui.tableWidget_dict_groups.item(self.ui.tableWidget_dict_groups.currentRow(), 1).setText(dict_groups_name)
+        fields = ['DictGroupsName', 'DictGroupsLevel2']
+        self.database.update_record(
+            'dict_groups', fields, 'DictGroupsKey',
+            self.table_widget_dict_groups.field_value(0), data
+        )
+
+        sql = '''
+            SELECT * FROM dict_groups
+            WHERE
+                DictGroupsKey = {0}
+        '''.format(self.table_widget_dict_groups.field_value(0))
+        row = self.database.select_record(sql)[0]
+        self._set_dict_groups_data(self.ui.tableWidget_dict_groups.currentRow(), row)
+
+        sql = '''
+            UPDATE medicine
+            SET
+                MedicineType = "{dict_groups_name}"
+            WHERE
+                MedicineType = "{old_groups}"
+        '''.format(
+            dict_groups_name=dict_groups_name,
+            old_groups=old_groups,
+        )
+        self.database.exec_sql(sql)
 
     # 新增處方
     def _add_drug(self):
         dialog = dialog_input_drug.DialogInputDrug(self, self.database, self.system_settings)
         if dialog.exec_():
-            current_row = self.ui.tableWidget_dict_drug.rowCount()
-            self.ui.tableWidget_dict_drug.insertRow(current_row)
-            dict_groups_type = self.table_widget_dict_groups.field_value(2)
-            fields = [
-                'MedicineType', 'MedicineCode', 'InputCode', 'MedicineName', 'Unit', 'MedicineMode', 'InsCode',
-                'Dosage', 'MedicineAlias', 'Location', 'InPrice', 'SalePrice', 'Quantity', 'SafeQuantity',
-                'Description',
-            ]
-            data = [
-                dict_groups_type,
-                dialog.ui.lineEdit_medicine_code.text(),
-                dialog.ui.lineEdit_input_code.text(),
-                dialog.ui.lineEdit_medicine_name.text(),
-                dialog.ui.comboBox_unit.currentText(),
-                dialog.ui.comboBox_medicine_mode.currentText(),
-                dialog.ui.lineEdit_ins_code.text(),
-                dialog.ui.lineEdit_dosage.text(),
-                dialog.ui.lineEdit_medicine_alias.text(),
-                dialog.ui.lineEdit_location.text(),
-                dialog.ui.lineEdit_in_price.text(),
-                dialog.ui.lineEdit_sale_price.text(),
-                dialog.ui.lineEdit_quantity.text(),
-                dialog.ui.lineEdit_safe_quantity.text(),
-                dialog.ui.textEdit_description.toPlainText(),
-            ]
-            string_utils.str_to_none(data)
-            self.database.insert_record('medicine', fields, data)
-            self._read_dict_drug(dict_groups_type)
+            medicine_key = self._save_drug(dialog)
+            self._save_commission(dialog, medicine_key)
 
         dialog.close_all()
         dialog.deleteLater()
+
+    def _save_drug(self, dialog):
+        current_row = self.ui.tableWidget_dict_drug.rowCount()
+        self.ui.tableWidget_dict_drug.insertRow(current_row)
+        dict_groups_type = self.table_widget_dict_groups.field_value(2)
+        fields = [
+            'MedicineType', 'MedicineCode', 'InputCode', 'MedicineName', 'Unit', 'MedicineMode', 'InsCode',
+            'Dosage', 'MedicineAlias', 'Location', 'InPrice', 'SalePrice', 'Commission',
+            'Quantity', 'SafeQuantity',
+            'Description',
+        ]
+        data = [
+            dict_groups_type,
+            dialog.ui.lineEdit_medicine_code.text(),
+            dialog.ui.lineEdit_input_code.text(),
+            dialog.ui.lineEdit_medicine_name.text(),
+            dialog.ui.comboBox_unit.currentText(),
+            dialog.ui.comboBox_medicine_mode.currentText(),
+            dialog.ui.lineEdit_ins_code.text(),
+            dialog.ui.lineEdit_dosage.text(),
+            dialog.ui.lineEdit_medicine_alias.text(),
+            dialog.ui.lineEdit_location.text(),
+            dialog.ui.lineEdit_in_price.text(),
+            dialog.ui.lineEdit_sale_price.text(),
+            dialog.ui.lineEdit_commission.text(),
+            dialog.ui.lineEdit_quantity.text(),
+            dialog.ui.lineEdit_safe_quantity.text(),
+            dialog.ui.textEdit_description.toPlainText(),
+        ]
+        string_utils.str_to_none(data)
+        medicine_key = self.database.insert_record('medicine', fields, data)
+        self._read_dict_drug(dict_groups_type)
+
+        return medicine_key
+
+    def _save_commission(self, dialog, medicine_key):
+        fields = ['MedicineKey', 'Name', 'Commission', 'Remark']
+
+        for row_no in range(dialog.ui.tableWidget_commission.rowCount()):
+            name = dialog.ui.tableWidget_commission.item(row_no, 0).text()
+            commission = dialog.ui.tableWidget_commission.item(row_no, 1).text()
+            remark = dialog.ui.tableWidget_commission.item(row_no, 2).text()
+
+            data = [medicine_key, name, commission, remark]
+            self.database.insert_record('commission', fields, data)
 
     # 移除處方
     def _remove_drug(self):
@@ -295,6 +377,7 @@ class DictDrug(QtWidgets.QMainWindow):
 
         key = self.table_widget_dict_drug.field_value(0)
         self.database.delete_record('medicine', 'MedicineKey', key)
+        self.database.delete_record('commission', 'MedicineKey', key)
         self.ui.tableWidget_dict_drug.removeRow(self.ui.tableWidget_dict_drug.currentRow())
 
     # 更改處方

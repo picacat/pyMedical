@@ -5,6 +5,7 @@
 from PyQt5 import QtWidgets, QtPrintSupport
 
 from libs import ui_utils
+from libs import personnel_utils
 
 from dialog import dialog_income
 import income_cash_flow
@@ -15,6 +16,8 @@ from printer import print_income
 
 # 掛號櫃台結帳
 class Income(QtWidgets.QMainWindow):
+    program_name = '掛號櫃台結帳'
+
     # 初始化
     def __init__(self, parent=None, *args):
         super(Income, self).__init__(parent)
@@ -23,8 +26,11 @@ class Income(QtWidgets.QMainWindow):
         self.system_settings = args[1]
         self.ui = None
 
+        self.user_name = self.system_settings.field('使用者')
+
         self._set_ui()
         self._set_signal()
+        self._set_permission()
 
     # 解構
     def __del__(self):
@@ -55,6 +61,15 @@ class Income(QtWidgets.QMainWindow):
         self.ui.action_requery.triggered.connect(self.open_dialog)
         self.ui.action_print.triggered.connect(self._print_income)
         self.ui.action_print_pdf.triggered.connect(self._print_income)
+
+    def _set_permission(self):
+        if self.user_name == '超級使用者':
+            return
+
+        if personnel_utils.get_permission(self.database, self.program_name, '列印日報表', self.user_name) != 'Y':
+            self.ui.action_print.setEnabled(False)
+        if personnel_utils.get_permission(self.database, self.program_name, '匯出日報表', self.user_name) != 'Y':
+            self.ui.action_print_pdf.setEnabled(False)
 
     # 讀取病歷
     def open_dialog(self):

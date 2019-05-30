@@ -59,6 +59,7 @@ class CheckMedicalRecordCount(QtWidgets.QMainWindow):
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_CHECK_MEDICAL_RECORD_COUNT, self)
+        self.center()
         self._set_table_widget()
         self.ui.label_treat_limit.setText(
             '針傷次數限制: {0}次'.format(self.treat_limit)
@@ -66,6 +67,13 @@ class CheckMedicalRecordCount(QtWidgets.QMainWindow):
         self.ui.label_diag_limit.setText(
             '首次次數限制: {0}次'.format(self.diag_limit)
         )
+
+    def center(self):
+        frame_geometry = self.frameGeometry()
+        screen = QtWidgets.QApplication.desktop().screenNumber(QtWidgets.QApplication.desktop().cursor().pos())
+        center_point = QtWidgets.QApplication.desktop().screenGeometry(screen).center()
+        frame_geometry.moveCenter(center_point)
+        self.move(frame_geometry.topLeft())
 
     def _set_table_widget(self):
         self.table_widget_patient_treat = table_widget.TableWidget(
@@ -92,7 +100,6 @@ class CheckMedicalRecordCount(QtWidgets.QMainWindow):
         self.ui.toolButton_diag_unapply.clicked.connect(self._set_diag_apply)
         self.ui.toolButton_diag_apply.clicked.connect(self._set_diag_apply)
 
-
     def _get_case_key(self, table_widget_name):
         if table_widget_name == 'tableWidget_medical_record_treat':
             case_key = self.table_widget_medical_record_treat.field_value(0)
@@ -106,64 +113,86 @@ class CheckMedicalRecordCount(QtWidgets.QMainWindow):
         self.parent.open_medical_record(case_key)
 
     def start_check(self):
-        self.parent.ui.label_progress.setText('檢查進度: 門診次數檢查')
+        progress_dialog = QtWidgets.QProgressDialog(
+            '正在執行門診次數檢查中, 請稍後...', '取消', 0, 2, self
+        )
+        progress_dialog.setWindowModality(QtCore.Qt.WindowModal)
+        progress_dialog.setValue(0)
+
         self._check_medical_record_treat()
+        progress_dialog.setValue(1)
         self._check_medical_record_diag()
-        self.parent.ui.label_progress.setText('檢查進度: 檢查完成')
+        progress_dialog.setValue(2)
 
     def error_count(self):
         return (self.ui.tableWidget_patient_treat.rowCount() +
                 self.ui.tableWidget_patient_diag.rowCount())
 
     def _check_medical_record_treat(self):
+        apply_type_sql = nhi_utils.get_apply_type_sql(self.apply_type)
+
         sql = '''
             SELECT 
                PatientKey, Name, Count(PatientKey) AS Count 
             FROM cases 
             WHERE
-                (CaseDate BETWEEN "{0}" AND "{1}") AND
+                (CaseDate BETWEEN "{start_date}" AND "{end_date}") AND
                 (cases.InsType = "健保") AND
                 (Card != "欠卡") AND 
-                (Treatment IS NOT NULL)
+                (Treatment IS NOT NULL) AND
+                ({apply_type_sql})
             GROUP BY PatientKey
-            HAVING COUNT(PatientKey) > {2}
-        '''.format(self.start_date, self.end_date, self.treat_limit)
+            HAVING COUNT(PatientKey) > {treat_limit}
+        '''.format(
+            start_date=self.start_date,
+            end_date=self.end_date,
+            apply_type_sql=apply_type_sql,
+            treat_limit=self.treat_limit,
+        )
 
         self.table_widget_patient_treat.set_db_data(sql, self._set_patient_treat_data)
 
-    def _set_patient_treat_data(self, rec_no, rec):
-        exceed_count = number_utils.get_integer(rec['Count']) - self.treat_limit
+    def _set_patient_treat_data(self, row_no, row):
+        exceed_count = number_utils.get_integer(row['Count']) - self.treat_limit
         patient_row = [
-            string_utils.xstr(rec['PatientKey']),
-            string_utils.xstr(rec['Name']),
-            string_utils.xstr(rec['Count']),
+            string_utils.xstr(row['PatientKey']),
+            string_utils.xstr(row['Name']),
+            string_utils.xstr(row['Count']),
             str(exceed_count)
         ]
 
         for column in range(len(patient_row)):
             self.ui.tableWidget_patient_treat.setItem(
-                rec_no, column,
+                row_no, column,
                 QtWidgets.QTableWidgetItem(patient_row[column])
             )
             if column in [0, 2, 3]:
                 self.ui.tableWidget_patient_treat.item(
-                    rec_no, column).setTextAlignment(
+                    row_no, column).setTextAlignment(
                     QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
                 )
 
     def _check_medical_record_diag(self):
+        apply_type_sql = nhi_utils.get_apply_type_sql(self.apply_type)
+
         sql = '''
             SELECT 
                PatientKey, Name, Count(PatientKey) AS Count 
             FROM cases 
             WHERE
-                (CaseDate BETWEEN "{0}" AND "{1}") AND
+                (CaseDate BETWEEN "{start_date}" AND "{end_date}") AND
                 (cases.InsType = "健保") AND
                 (Card != "欠卡") AND 
-                ((Continuance IS NULL) OR (Continuance <= 1))
+                ((Continuance IS NULL) OR (Continuance <= 1)) AND
+                ({apply_type_sql})
             GROUP BY PatientKey
-            HAVING COUNT(PatientKey) > {2}
-        '''.format(self.start_date, self.end_date, self.diag_limit)
+            HAVING COUNT(PatientKey) > {diag_limit}
+        '''.format(
+            start_date=self.start_date,
+            end_date=self.end_date,
+            apply_type_sql=apply_type_sql,
+            diag_limit=self.diag_limit,
+        )
 
         self.table_widget_patient_diag.set_db_data(sql, self._set_patient_diag_data)
 
@@ -247,6 +276,7 @@ class CheckMedicalRecordCount(QtWidgets.QMainWindow):
                     rec_no, column).setTextAlignment(
                     QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
                 )
+
     def _patient_diag_changed(self):
         patient_key = self.table_widget_patient_diag.field_value(0)
 

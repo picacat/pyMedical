@@ -53,7 +53,15 @@ class CheckCourse(QtWidgets.QMainWindow):
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_CHECK_COURSE, self)
+        self.center()
         self._set_table_widget()
+
+    def center(self):
+        frame_geometry = self.frameGeometry()
+        screen = QtWidgets.QApplication.desktop().screenNumber(QtWidgets.QApplication.desktop().cursor().pos())
+        center_point = QtWidgets.QApplication.desktop().screenGeometry(screen).center()
+        frame_geometry.moveCenter(center_point)
+        self.move(frame_geometry.topLeft())
 
     def _set_table_widget(self):
         self.table_widget_errors = table_widget.TableWidget(self.ui.tableWidget_errors, self.database)
@@ -90,25 +98,31 @@ class CheckCourse(QtWidgets.QMainWindow):
         end_date = date_utils.get_end_date_by_year_month(
             self.apply_year, self.apply_month)
 
+        apply_type_sql = nhi_utils.get_apply_type_sql(self.apply_type)
+
         sql = '''
             SELECT 
                 *
             FROM cases 
             WHERE
-                (CaseDate BETWEEN "{0}" AND "{1}") AND
+                (CaseDate BETWEEN "{start_date}" AND "{end_date}") AND
                 (cases.InsType = "健保") AND
                 (Card != "欠卡") AND
                 (Continuance >= 1) AND
-                (ApplyType = "{2}") 
+                ({apply_type_sql}) 
             ORDER BY PatientKey, CaseDate
-        '''.format(start_date, end_date, self.apply_type)
+        '''.format(
+            start_date=start_date,
+            end_date=end_date,
+            apply_type_sql=apply_type_sql,
+        )
+
         self.rows = self.database.select_record(sql)
 
     def row_count(self):
         return len(self.rows)
 
     def start_check(self):
-        self.parent.ui.label_progress.setText('檢查進度: 療程檢查')
         self.read_data()
 
         self.ui.tableWidget_errors.setRowCount(0)
@@ -159,10 +173,17 @@ class CheckCourse(QtWidgets.QMainWindow):
         return delta
 
     def _check_course(self):
-        self.parent.ui.progressBar.setMaximum(self.ui.tableWidget_errors.rowCount()-1)
-        self.parent.ui.progressBar.setValue(0)
+        row_count = self.ui.tableWidget_errors.rowCount()
+        if row_count <= 0:
+            return
 
-        for row_no in range(self.ui.tableWidget_errors.rowCount()):
+        progress_dialog = QtWidgets.QProgressDialog(
+            '正在執行療程檢查中, 請稍後...', '取消', 0, row_count, self
+        )
+        progress_dialog.setWindowModality(QtCore.Qt.WindowModal)
+        progress_dialog.setValue(0)
+
+        for row_no in range(row_count):
             case_date = self.ui.tableWidget_errors.item(row_no, 1).text()
             if date_utils.str_to_date(case_date).month != self.apply_month:
                 continue
@@ -203,7 +224,7 @@ class CheckCourse(QtWidgets.QMainWindow):
                 if next_course >= 2:
                     next_error_message.append('療程未見首次')
 
-                if course >= 2 and delta.days > 30:
+                if course >= 2 and delta.days + 1 > 30:  # 當天也算一天 +1
                     error_message.append('療程已超過30日')
             else:
                 if card != next_card:  # 換新療程
@@ -213,7 +234,7 @@ class CheckCourse(QtWidgets.QMainWindow):
                     next_delta = self._get_first_course_delta(  # 以下一筆為檢查資料
                         row_no, patient_key, course, next_case_date,
                     )
-                    if course >= 2 and delta.days + 1 > 30:
+                    if course >= 2 and delta.days + 1 > 30:  # 當天也算一天 +1
                         error_message.append('療程已超過30日')
 
                     if course < 6:
@@ -229,7 +250,7 @@ class CheckCourse(QtWidgets.QMainWindow):
                     delta = self._get_first_course_delta(
                         row_no, patient_key, course, case_date,
                     )
-                    if course >= 2 and delta.days > 30:
+                    if course >= 2 and delta.days + 1 > 30:  # 當天也算一天 +1
                         error_message.append('療程已超過30日')
 
                     if next_course == course:
@@ -260,9 +281,9 @@ class CheckCourse(QtWidgets.QMainWindow):
                 self.errors += 1
                 self._set_row_error_message(row_no+1, 13, next_error_message)
 
-            self.parent.ui.progressBar.setValue(
-                self.parent.ui.progressBar.value() + 1
-            )
+            progress_dialog.setValue(row_no)
+
+        progress_dialog.setValue(row_count)
 
     def _set_row_error_message(self, row_no, col_no, error_message):
         self.ui.tableWidget_errors.setItem(

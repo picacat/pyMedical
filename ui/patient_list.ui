@@ -165,7 +165,7 @@
    <addaction name="action_open_record"/>
    <addaction name="action_delete_record"/>
    <addaction name="separator"/>
-   <addaction name="action_print_patient_list"/>
+   <addaction name="action_export_patient_list"/>
    <addaction name="separator"/>
    <addaction name="action_close"/>
   </widget>
@@ -178,7 +178,7 @@
     <string>調閱資料</string>
    </property>
    <property name="toolTip">
-    <string>調閱病歷</string>
+    <string>調閱資料</string>
    </property>
   </action>
   <action name="action_delete_record">
@@ -190,13 +190,13 @@
     <string>資料刪除</string>
    </property>
   </action>
-  <action name="action_print_patient_list">
+  <action name="action_export_patient_list">
    <property name="icon">
     <iconset>
-     <normaloff>../icons/document-print.svg</normaloff>../icons/document-print.svg</iconset>
+     <normaloff>../icons/document-export.svg</normaloff>../icons/document-export.svg</iconset>
    </property>
    <property name="text">
-    <string>列印名單</string>
+    <string>匯出名單</string>
    </property>
   </action>
   <action name="action_requery">

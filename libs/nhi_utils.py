@@ -26,6 +26,10 @@ APPLY_TYPE_CODE = {
     '申報': '1',
     '補報': '2',
 }
+REMEDY_TYPE_CODE = {
+    '補報整筆': '1',
+    '補報差額': '2',
+}
 
 MAX_COURSE = 6  # 療程次數
 
@@ -65,7 +69,11 @@ TREAT_SECTION2 = 45
 
 INS_CLASS = '60'  # 60-中醫科
 INS_TYPE = ['健保', '自費']
-APPLY_TYPE = ['申報', '不申報', '補報']
+
+REMEDY_TYPE = ['補報整筆', '補報差額']
+APPLY_TYPE = ['申報', '不申報'] + REMEDY_TYPE
+
+PHARMACY_APPLY_TYPE = ['申報', '不申報']
 VISIT = ['複診', '初診']
 REG_TYPE = ['一般門診', '預約門診', '夜間急診']
 GENERAL_INJURY_TYPE = ['普通疾病']
@@ -1551,19 +1559,28 @@ def get_brain_treat_code(record_count):
 # 取得療程開始日期
 def get_start_date(database, row):
     case_date = row['CaseDate'].date()
+    if number_utils.get_integer(row['Continuance']) <= 1:  # 內科或療程首次日期
+        return case_date
+
     card = string_utils.xstr(row['Card'])
     last_month = datetime.date(case_date.year, case_date.month, 1) - datetime.timedelta(1)
     start_date = last_month.replace(day=1).strftime('%Y-%m-%d 00:00:00')
-    if number_utils.get_integer(row['Continuance']) <= 1:
-        return case_date
 
     sql = '''
         SELECT CaseDate FROM cases
         WHERE
-            CaseDate BETWEEN "{0}" AND "{1}" AND
-            Card = "{2}" AND
+            CaseDate BETWEEN "{start_date}" AND "{current_date}" AND
+            CaseDate < "{current_date}" AND
+            PatientKey = {patient_key} AND
+            Card = "{card}" AND
             Continuance <= 1
-    '''.format(start_date, row['CaseDate'], card)
+        ORDER BY CaseDate DESC LIMIT 1
+    '''.format(
+        start_date=start_date,
+        current_date=row['CaseDate'],
+        patient_key=row['PatientKey'],
+        card=card,
+    )
     rows = database.select_record(sql)
     if len(rows) <= 0:
         return case_date
@@ -1827,4 +1844,14 @@ def NHI_SendB_thread(out_queue, system_settings, type_code, dest_file):
     )
 
     out_queue.put((error_code, local_id, nhi_id))
+
+
+def get_apply_type_sql(apply_type):
+    sql = 'ApplyType = "{0}"'.format(apply_type)
+
+    if apply_type == '補報':
+        sql = 'ApplyType IN {0}'.format(tuple(REMEDY_TYPE))
+
+    return sql
+
 

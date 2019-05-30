@@ -463,8 +463,7 @@ class PrintInsApplyOrder:
             return html
 
         html = ''
-        max_course = 6
-        for course in range(1, max_course+1):
+        for course in range(1, nhi_utils.MAX_COURSE+1):
             case_key = number_utils.get_integer(row['CaseKey{0}'.format(course)])
             if case_key <= 0:
                 continue

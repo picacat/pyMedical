@@ -700,7 +700,25 @@ class CSHIS:
             SELECT * FROM patient WHERE
             PatientKey = {0}
         '''.format(patient_key)
-        row = self.database.select_record(sql)[0]
+        rows = self.database.select_record(sql)
+        if len(rows) <= 0:
+            msg_box = QMessageBox()
+            msg_box.setIcon(QMessageBox.Critical)
+            msg_box.setWindowTitle('病患資料有誤')
+            msg_box.setText(
+                '''
+                <font size="4" color="red">
+                    <b>找不到病歷號{0}, 請重新插卡.</b>
+                </font>
+                '''.format(patient_key)
+            )
+            msg_box.setInformativeText("請確定插入的健保卡是否為此病患所有.")
+            msg_box.addButton(QPushButton("確定"), QMessageBox.YesRole)
+            msg_box.exec_()
+
+            return False
+
+        row = rows[0]
         if self.basic_data['patient_id'] != string_utils.xstr(row['ID']):
             msg_box = QMessageBox()
             msg_box.setIcon(QMessageBox.Critical)

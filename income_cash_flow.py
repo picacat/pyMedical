@@ -10,10 +10,13 @@ from libs import string_utils
 from libs import number_utils
 from libs import case_utils
 from libs import nhi_utils
+from libs import personnel_utils
 
 
 # 掛號櫃台結帳
 class IncomeCashFlow(QtWidgets.QMainWindow):
+    program_name = '掛號櫃台結帳'
+
     # 初始化
     def __init__(self, parent=None, *args):
         super(IncomeCashFlow, self).__init__(parent)
@@ -27,8 +30,12 @@ class IncomeCashFlow(QtWidgets.QMainWindow):
         self.cashier = args[6]
         self.ui = None
 
+        self.user_name = self.system_settings.field('使用者')
+
         self._set_ui()
         self._set_signal()
+        self._set_permission()
+
         self.read_data()
 
     # 解構
@@ -61,6 +68,10 @@ class IncomeCashFlow(QtWidgets.QMainWindow):
         self.ui.tableWidget_registration.doubleClicked.connect(self.open_medical_record)
         self.ui.tableWidget_charge.doubleClicked.connect(self.open_medical_record)
 
+    def _set_permission(self):
+        if self.user_name == '超級使用者':
+            return
+
     # 設定欄位寬度
     def _set_table_width(self):
         width = [100, 120, 50, 80, 100, 60, 80, 100, 80, 90, 90, 90, 90, 90, 90, 90, 100]
@@ -69,6 +80,10 @@ class IncomeCashFlow(QtWidgets.QMainWindow):
         self.table_widget_charge.set_table_heading_width(width)
 
     def open_medical_record(self):
+        if (self.user_name != '超級使用者' and
+                personnel_utils.get_permission(self.database, self.program_name, '進入病歷', self.user_name) != 'Y'):
+            return
+
         sender_name = self.sender().objectName()
 
         if sender_name == 'tableWidget_registration':

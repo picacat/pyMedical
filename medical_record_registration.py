@@ -123,7 +123,7 @@ class MedicalRecordRegistration(QtWidgets.QMainWindow):
             personnel_utils.get_personnel(self.database, '推拿師父'), None,
         )
         ui_utils.set_combo_box(self.ui.comboBox_apply_type, nhi_utils.APPLY_TYPE, None)
-        ui_utils.set_combo_box(self.ui.comboBox_pharmacy_type, nhi_utils.APPLY_TYPE, None)
+        ui_utils.set_combo_box(self.ui.comboBox_pharmacy_type, nhi_utils.PHARMACY_APPLY_TYPE, None)
         ui_utils.set_combo_box(self.ui.comboBox_share_type, nhi_utils.SHARE_TYPE, None)
         ui_utils.set_combo_box(self.ui.comboBox_treat_type, nhi_utils.TREAT_TYPE, None)
         ui_utils.set_combo_box(self.ui.comboBox_injury_type, nhi_utils.INJURY_TYPE, None)

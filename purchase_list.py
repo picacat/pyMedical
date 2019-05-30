@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# 病歷查詢 2014.09.22
+# 櫃台購藥 2014.09.22
 #coding: utf-8
 
 from PyQt5 import QtWidgets, QtCore
@@ -8,13 +8,16 @@ import datetime
 
 from libs import ui_utils
 from libs import string_utils
+from libs import personnel_utils
 from dialog import dialog_purchase_list
 from classes import table_widget
 from printer import print_receipt
 
 
-# 主視窗
+# 櫃台購藥
 class PurchaseList(QtWidgets.QMainWindow):
+    program_name = '櫃台購藥'
+
     # 初始化
     def __init__(self, parent=None, *args):
         super(PurchaseList, self).__init__(parent)
@@ -23,8 +26,12 @@ class PurchaseList(QtWidgets.QMainWindow):
         self.system_settings = args[1]
         self.ui = None
 
+        self.user_name = self.system_settings.field('使用者')
+
         self._set_ui()
         self._set_signal()
+        self._set_permission()
+
         self.read_purchase_today()
 
     # 解構
@@ -52,6 +59,19 @@ class PurchaseList(QtWidgets.QMainWindow):
         self.ui.action_print_receipt.triggered.connect(self._print_receipt)
         self.ui.action_print_purchase_list.triggered.connect(self._print_purchase_list)
         self.ui.tableWidget_purchase_list.doubleClicked.connect(self.open_medical_record)
+
+    def _set_permission(self):
+        if self.user_name == '超級使用者':
+            return
+
+        if personnel_utils.get_permission(self.database, self.program_name, '購買商品', self.user_name) != 'Y':
+            self.ui.action_purchase.setEnabled(False)
+        if personnel_utils.get_permission(self.database, self.program_name, '購藥明細', self.user_name) != 'Y':
+            self.ui.action_open_record.setEnabled(False)
+        if personnel_utils.get_permission(self.database, self.program_name, '資料刪除', self.user_name) != 'Y':
+            self.ui.action_delete_record.setEnabled(False)
+        if personnel_utils.get_permission(self.database, self.program_name, '列印名單', self.user_name) != 'Y':
+            self.ui.action_print_purchase_list.setEnabled(False)
 
     # 設定欄位寬度
     def _set_table_width(self):
@@ -115,6 +135,8 @@ class PurchaseList(QtWidgets.QMainWindow):
         self.ui.action_print_receipt.setEnabled(enabled)
         self.ui.action_print_purchase_list.setEnabled(enabled)
         self.ui.action_open_record.setEnabled(enabled)
+
+        self._set_permission()
 
     def _set_table_data(self, row_no, row):
         content = self._get_purchase_content(row['CaseKey'])

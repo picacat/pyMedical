@@ -43,6 +43,7 @@ if sys.platform == 'win32':
 else:
     from classes import cshis
 
+
 # 病歷資料 2018.01.31
 class MedicalRecord(QtWidgets.QMainWindow):
     # 初始化
@@ -141,6 +142,55 @@ class MedicalRecord(QtWidgets.QMainWindow):
 
         self.disease_code_changed()
         self.tab_registration.set_special_code()
+
+        self._set_timer()
+
+    # 看診時間提醒
+    def _set_timer(self):
+        if self.call_from != '醫師看診作業':
+            self.ui.lcdNumber.setVisible(False)
+            return
+
+        self.BLINKING_TIME = 8  # 看診警告時間
+        self.ui.lcdNumber.display('00:00')
+        self.timer = QtCore.QTimer(self)
+        self.set_blinking = False
+        self.minutes = 0
+        self.seconds = 0
+        self.timer.start(1000)
+        self.timer.timeout.connect(self._timeout)
+
+    def _timeout(self):
+        self.seconds += 1
+        if self.seconds >= 60:
+            self.minutes += 1
+            self.seconds = 0
+
+        self.ui.lcdNumber.display('{minutes:0>2}:{seconds:0>2}'.format(
+            minutes=self.minutes, seconds=self.seconds,
+        ))
+
+        if self.minutes >= self.BLINKING_TIME and not self.set_blinking:
+            self.set_blinking = True
+            self.ui.lcdNumber.setStyleSheet('color: red')
+            self._set_blinking_timer()
+
+    def _set_blinking_timer(self):
+        self.micro_seconds = 0
+
+        self.blink_timer = QtCore.QTimer(self)
+        self.blink_timer.start(100)
+        self.blink_timer.timeout.connect(self._blink_timeout)
+
+    def _blink_timeout(self):
+        self.micro_seconds += 1
+        if self.micro_seconds >= 5:
+            self.micro_seconds = 0
+
+        if self.micro_seconds == 0:
+            self.ui.lcdNumber.hide()
+        else:
+            self.ui.lcdNumber.show()
 
     # 設定信號
     def _set_signal(self):

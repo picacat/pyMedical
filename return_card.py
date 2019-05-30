@@ -10,12 +10,15 @@ import datetime
 from libs import ui_utils
 from libs import string_utils
 from libs import system_utils
+from libs import personnel_utils
 from classes import table_widget
 from dialog import dialog_return_card
 
 
 # 樣板 2018.01.31
 class ReturnCard(QtWidgets.QMainWindow):
+    program_name = '健保卡欠還卡'
+
     # 初始化
     def __init__(self, parent=None, *args):
         super(ReturnCard, self).__init__(parent)
@@ -24,8 +27,11 @@ class ReturnCard(QtWidgets.QMainWindow):
         self.system_settings = args[1]
         self.ui = None
 
+        self.user_name = self.system_settings.field('使用者')
+
         self._set_ui()
         self._set_signal()
+        self._set_permission()
         # self.read_return_card()   # activate by pymedical.py->tab_changed
 
     # 解構
@@ -59,6 +65,17 @@ class ReturnCard(QtWidgets.QMainWindow):
         self.ui.action_undo.triggered.connect(self._undo_return_card)
         self.ui.tableWidget_return_card.doubleClicked.connect(self.open_medical_record)
         self.ui.tableWidget_return_card.itemSelectionChanged.connect(self._return_card_item_changed)
+
+    def _set_permission(self):
+        if self.user_name == '超級使用者':
+            return
+
+        if personnel_utils.get_permission(self.database, self.program_name, '健保還卡', self.user_name) != 'Y':
+            self.ui.action_return_card.setEnabled(False)
+        if personnel_utils.get_permission(self.database, self.program_name, '調閱病歷', self.user_name) != 'Y':
+            self.ui.action_open_medical_record.setEnabled(False)
+        if personnel_utils.get_permission(self.database, self.program_name, '還原欠卡', self.user_name) != 'Y':
+            self.ui.action_undo.setEnabled(False)
 
     # 設定欄位寬度
     def _set_table_width(self):
@@ -95,6 +112,8 @@ class ReturnCard(QtWidgets.QMainWindow):
         self.ui.action_open_medical_record.setEnabled(enabled)
         self.ui.action_return_card.setEnabled(enabled)
         self.ui.action_undo.setEnabled(enabled)
+
+        self._set_permission()
 
     def _set_deposit_data(self, row_no, row):
         if string_utils.xstr(row['DoctorDone']) == 'True':
@@ -186,6 +205,10 @@ class ReturnCard(QtWidgets.QMainWindow):
         dialog.deleteLater()
 
     def open_medical_record(self):
+        if (self.user_name != '超級使用者' and
+                personnel_utils.get_permission(self.database, self.program_name, '調閱病歷', self.user_name) != 'Y'):
+            return
+
         case_key = self.table_widget_return_card.field_value(1)
         self.parent.open_medical_record(case_key, '欠還卡作業')
 
@@ -237,4 +260,6 @@ class ReturnCard(QtWidgets.QMainWindow):
 
         self.ui.action_return_card.setEnabled(not enabled)
         self.ui.action_undo.setEnabled(enabled)
+
+        self._set_permission()
 

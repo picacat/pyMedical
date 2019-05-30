@@ -8,12 +8,15 @@ import sys
 
 from libs import ui_utils
 from libs import string_utils
+from libs import personnel_utils
 from dialog import dialog_patient_list
 from classes import table_widget
 
 
 # 主視窗
 class PatientList(QtWidgets.QMainWindow):
+    program_name = '病患查詢'
+
     # 初始化
     def __init__(self, parent=None, *args):
         super(PatientList, self).__init__(parent)
@@ -22,8 +25,11 @@ class PatientList(QtWidgets.QMainWindow):
         self.system_settings = args[1]
         self.ui = None
 
+        self.user_name = self.system_settings.field('使用者')
+
         self._set_ui()
         self._set_signal()
+        self._set_permission()
 
     # 解構
     def __del__(self):
@@ -46,8 +52,19 @@ class PatientList(QtWidgets.QMainWindow):
         self.ui.action_delete_record.triggered.connect(self.delete_patient_record)
         self.ui.action_open_record.triggered.connect(self.open_patient_record)
         self.ui.action_close.triggered.connect(self.close_patient_list)
-        self.ui.action_print_patient_list.triggered.connect(self.print_patient_list)
+        self.ui.action_export_patient_list.triggered.connect(self.export_patient_list)
         self.ui.tableWidget_patient_list.doubleClicked.connect(self.open_patient_record)
+
+    def _set_permission(self):
+        if self.user_name == '超級使用者':
+            return
+
+        if personnel_utils.get_permission(self.database, self.program_name, '調閱資料', self.user_name) != 'Y':
+            self.ui.action_open_record.setEnabled(False)
+        if personnel_utils.get_permission(self.database, self.program_name, '資料刪除', self.user_name) != 'Y':
+            self.ui.action_delete_record.setEnabled(False)
+        if personnel_utils.get_permission(self.database, self.program_name, '匯出名單', self.user_name) != 'Y':
+            self.ui.action_export_patient_list.setEnabled(False)
 
     # 設定欄位寬度
     def _set_table_width(self):
@@ -82,7 +99,9 @@ class PatientList(QtWidgets.QMainWindow):
 
         self.ui.action_delete_record.setEnabled(enabled)
         self.ui.action_open_record.setEnabled(enabled)
-        self.ui.action_print_patient_list.setEnabled(enabled)
+        self.ui.action_export_patient_list.setEnabled(enabled)
+
+        self._set_permission()
 
     def _set_table_data(self, rec_no, rec):
         patient_record = [
@@ -137,6 +156,10 @@ class PatientList(QtWidgets.QMainWindow):
         self.ui.tableWidget_patient_list.removeRow(current_row)
 
     def open_patient_record(self):
+        if (self.user_name != '超級使用者' and
+                personnel_utils.get_permission(self.database, self.program_name, '調閱資料', self.user_name) != 'Y'):
+            return
+
         patient_key = self.table_widget_patient_list.field_value(0)
         self.parent.open_patient_record(patient_key, '病患查詢')
 
@@ -156,5 +179,5 @@ class PatientList(QtWidgets.QMainWindow):
         self.close_all()
         self.close_tab()
 
-    def print_patient_list(self):
+    def export_patient_list(self):
         pass

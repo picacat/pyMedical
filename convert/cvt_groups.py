@@ -39,10 +39,10 @@ def cvt_pymedical_groups(database):
     data = ['治則類別', None, '傷骨科']
     database.insert_record('dict_groups', fields, data)
 
-    data = ['健保藥品類別', None, '單方']
-    database.insert_record('dict_groups', fields, data)
-    data = ['健保藥品類別', None, '複方']
-    database.insert_record('dict_groups', fields, data)
+    # data = ['健保藥品類別', None, '單方']
+    # database.insert_record('dict_groups', fields, data)
+    # data = ['健保藥品類別', None, '複方']
+    # database.insert_record('dict_groups', fields, data)
 
     data = ['藥品類別', None, '單方']
     database.insert_record('dict_groups', fields, data)
@@ -65,6 +65,7 @@ def cvt_pymedical_groups(database):
     database.insert_record('dict_groups', fields, data)
     data = ['成方類別', None, '成方']
     database.insert_record('dict_groups', fields, data)
+
 
 def cvt_groups_name(database, source_db, product_type, progress_bar):
     fields = [
@@ -112,6 +113,7 @@ def cvt_groups_name(database, source_db, product_type, progress_bar):
         ]
         database.insert_record('dict_groups', fields, data)
 
+
 def cvt_tongue_groups(database, source_db, progress_bar):
     fields = [
         'DictGroupsType', 'DictGroupsTopLevel', 'DictGroupsName'
@@ -145,13 +147,16 @@ def cvt_tongue_groups(database, source_db, progress_bar):
         ]
         database.insert_record('dict_groups', fields, data)
 
+
 def cvt_pulse_groups(source_db):
     sql = 'UPDATE clinic SET groups = "一般" WHERE ClinicType = "脈象"'
     source_db.exec_sql(sql)
 
+
 def cvt_remark_groups(source_db):
     sql = 'UPDATE clinic SET groups = "一般" WHERE ClinicType = "備註"'
     source_db.exec_sql(sql)
+
 
 def cvt_pymedical_disease_groups(database):
     fields = [
@@ -1602,6 +1607,7 @@ def cvt_pymedical_disease_groups(database):
     data = ['病名', disease_type, 'Y84醫療處置引起病人異常反應']
     database.insert_record('dict_groups', fields, data)
 
+
 def cvt_pymedical_other_groups(source_db):
     sql = 'UPDATE clinic SET ClinicType = "辨證" WHERE ClinicType = "內辨"'
     source_db.exec_sql(sql)
@@ -1611,6 +1617,7 @@ def cvt_pymedical_other_groups(source_db):
     source_db.exec_sql(sql)
     sql = 'UPDATE clinic SET ClinicType = "治則" WHERE ClinicType = "傷治"'
     source_db.exec_sql(sql)
+
 
 def cvt_disease_treat(database):
     sql = 'DELETE FROM dict_groups WHERE DictGroupsType IN ("傷骨科病名類別", "傷骨科病名")'

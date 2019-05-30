@@ -15,6 +15,7 @@ from libs import number_utils
 from libs import case_utils
 from libs import registration_utils
 from libs import cshis_utils
+from libs import personnel_utils
 from printer import print_prescription
 from printer import print_receipt
 
@@ -23,8 +24,11 @@ if sys.platform == 'win32':
 else:
     from classes import cshis
 
+
 # 批價作業
 class Cashier(QtWidgets.QMainWindow):
+    program_name = '批價作業'
+
     # 初始化
     def __init__(self, parent=None, *args):
         super(Cashier, self).__init__(parent)
@@ -33,8 +37,12 @@ class Cashier(QtWidgets.QMainWindow):
         self.system_settings = args[1]
         self.ui = None
 
+        self.user_name = self.system_settings.field('使用者')
+
         self._set_ui()
         self._set_signal()
+        self._set_permission()
+
         self._read_charge_list('未批價')
 
     # 解構
@@ -73,6 +81,13 @@ class Cashier(QtWidgets.QMainWindow):
         self.ui.lineEdit_receipt_fee.textChanged.connect(self._calculate_receipt_fee)
 
         self.ui.tableWidget_charge_list.doubleClicked.connect(self._open_medical_record)
+
+    def _set_permission(self):
+        if self.user_name == '超級使用者':
+            return
+
+        if personnel_utils.get_permission(self.database, self.program_name, '調閱病歷', self.user_name) != 'Y':
+            self.ui.action_open_medical_record.setEnabled(False)
 
     def close_tab(self):
         current_tab = self.parent.ui.tabWidget_window.currentIndex()
@@ -132,6 +147,8 @@ class Cashier(QtWidgets.QMainWindow):
             self.ui.action_open_medical_record.setEnabled(False)
         else:
             self.ui.action_open_medical_record.setEnabled(True)
+
+        self._set_permission()
 
     def _set_table_data(self, rec_no, rec):
         age_year, age_month = date_utils.get_age(
@@ -396,5 +413,9 @@ class Cashier(QtWidgets.QMainWindow):
             ic_card.write_ic_medical_record(case_key, cshis_utils.NORMAL_CARD)
 
     def _open_medical_record(self):
+        if (self.user_name != '超級使用者' and
+                personnel_utils.get_permission(self.database, self.program_name, '調閱病歷', self.user_name) != 'Y'):
+            return
+
         case_key = self.table_widget_charge_list.field_value(1)
         self.parent.open_medical_record(case_key, '病歷查詢')

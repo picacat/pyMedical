@@ -8,7 +8,7 @@ from classes import table_widget
 from libs import ui_utils
 from libs import string_utils
 from libs import number_utils
-from libs import case_utils
+from libs import personnel_utils
 from libs import nhi_utils
 
 from dialog import dialog_income
@@ -16,6 +16,8 @@ from dialog import dialog_income
 
 # 掛號櫃台結帳 - 收費一覽表
 class IncomeList(QtWidgets.QMainWindow):
+    program_name = '掛號櫃台結帳'
+
     # 初始化
     def __init__(self, parent=None, *args):
         super(IncomeList, self).__init__(parent)
@@ -26,8 +28,12 @@ class IncomeList(QtWidgets.QMainWindow):
         self.tableWidget_charge = args[3]
         self.ui = None
 
+        self.user_name = self.system_settings.field('使用者')
+
         self._set_ui()
         self._set_signal()
+        self._set_permission()
+
         self._merge_table_widgets()
 
     # 解構
@@ -57,6 +63,10 @@ class IncomeList(QtWidgets.QMainWindow):
     def _set_signal(self):
         self.ui.tableWidget_income.doubleClicked.connect(self.open_medical_record)
 
+    def _set_permission(self):
+        if self.user_name == '超級使用者':
+            return
+
     # 設定欄位寬度
     def _set_table_width(self):
         width = [
@@ -67,6 +77,10 @@ class IncomeList(QtWidgets.QMainWindow):
         self.table_widget_income.set_table_heading_width(width)
 
     def open_medical_record(self):
+        if (self.user_name != '超級使用者' and
+                personnel_utils.get_permission(self.database, self.program_name, '進入病歷', self.user_name) != 'Y'):
+            return
+
         case_key = self.table_widget_income.field_value(0)
         self.parent.open_medical_record(case_key, '病歷查詢')
 

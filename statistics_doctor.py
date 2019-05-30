@@ -7,6 +7,7 @@ from libs import ui_utils
 from dialog import dialog_statistics_doctor
 import statistics_doctor_count
 import statistics_doctor_income
+import statistics_doctor_sale
 
 
 # 醫師統計 2019.05.02
@@ -80,6 +81,7 @@ class StatisticsDoctor(QtWidgets.QMainWindow):
 
         self._add_statistic_doctor_count(start_date, end_date, ins_type, doctor)
         self._add_statistic_doctor_income(start_date, end_date, ins_type, doctor)
+        self._add_statistic_doctor_sale(start_date, end_date, doctor)
 
     # 醫師門診人數統計
     def _add_statistic_doctor_count(self, start_date, end_date, ins_type, doctor):
@@ -99,10 +101,21 @@ class StatisticsDoctor(QtWidgets.QMainWindow):
         self.tab_statistics_doctor_income.start_calculate()
         self.ui.tabWidget_statistics_doctor.addTab(self.tab_statistics_doctor_income, '門診收入統計')
 
+    # 醫師自費銷售統計
+    def _add_statistic_doctor_sale(self, start_date, end_date, doctor):
+        self.tab_statistics_doctor_sale = statistics_doctor_sale.StatisticsDoctorSale(
+            self, self.database, self.system_settings,
+            start_date, end_date, doctor,
+        )
+        self.tab_statistics_doctor_sale.start_calculate()
+        self.ui.tabWidget_statistics_doctor.addTab(self.tab_statistics_doctor_sale, '自費銷售統計')
+
     def _export_to_excel(self):
         if self.ui.tabWidget_statistics_doctor.currentIndex() == 0:
             self.tab_statistics_doctor_count.export_to_excel()
         elif self.ui.tabWidget_statistics_doctor.currentIndex() == 1:
             self.tab_statistics_doctor_income.export_to_excel()
+        elif self.ui.tabWidget_statistics_doctor.currentIndex() == 2:
+            self.tab_statistics_doctor_sale.export_to_excel()
 
 

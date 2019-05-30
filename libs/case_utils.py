@@ -492,6 +492,10 @@ def copy_past_medical_record(
             line_edit_disease[i][0].setText(disease_code)
             line_edit_disease[i][1].setText(disease_name)
 
+        medical_record.tab_registration.ui.lineEdit_special_code.setText(
+            string_utils.xstr(row['SpecialCode'])
+        )
+
     medical_record.close_all_self_prescript_tabs()
     if copy_ins_prescript:
         if copy_ins_prescript_to == '健保處方':

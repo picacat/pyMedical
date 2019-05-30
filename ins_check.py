@@ -29,6 +29,10 @@ class InsCheck(QtWidgets.QMainWindow):
         self.apply_month = None
         self.apply_type = None
 
+        self.duplicated_days = 0
+        self.treat_limit = 15
+        self.diag_limit = 6
+
         self._set_ui()
         self._set_signal()
 
@@ -152,19 +156,19 @@ class InsCheck(QtWidgets.QMainWindow):
     def _set_tab_icon(self):
         tab_icon_list = [ui_utils.ICON_OK for i in range(self.ui.tabWidget_ins_data.count())]
 
-        if (self.tab_check_errors.error_count() > 0):
+        if self.tab_check_errors.error_count() > 0:
             tab_icon_list[0] = ui_utils.ICON_NO
-        if (self.tab_check_course.error_count() > 0):
+        if self.tab_check_course.error_count() > 0:
             tab_icon_list[1] = ui_utils.ICON_NO
-        if (self.tab_check_card.error_count() > 0):
+        if self.tab_check_card.error_count() > 0:
             tab_icon_list[2] = ui_utils.ICON_NO
-        if (self.tab_check_medical_record_count.error_count() > 0):
+        if self.tab_check_medical_record_count.error_count() > 0:
             tab_icon_list[3] = ui_utils.ICON_NO
-        if (self.tab_check_prescript_days.error_count() > 0):
+        if self.tab_check_prescript_days.error_count() > 0:
             tab_icon_list[4] = ui_utils.ICON_NO
-        if (self.tab_check_ins_drug.error_count() > 0):
+        if self.tab_check_ins_drug.error_count() > 0:
             tab_icon_list[5] = ui_utils.ICON_NO
-        if (self.tab_check_ins_treat.error_count() > 0):
+        if self.tab_check_ins_treat.error_count() > 0:
             tab_icon_list[6] = ui_utils.ICON_NO
 
         for i, icon in zip(range(len(tab_icon_list)), tab_icon_list):

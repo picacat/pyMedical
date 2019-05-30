@@ -6,12 +6,15 @@ from PyQt5.QtWidgets import QMessageBox, QPushButton
 from classes import table_widget
 from libs import ui_utils
 from libs import string_utils
+from libs import personnel_utils
 from dialog import dialog_input_user
 from dialog import dialog_permission
 
 
 # 使用者管理 2018.06.26
 class Users(QtWidgets.QMainWindow):
+    program_name = '使用者管理'
+
     # 初始化
     def __init__(self, parent=None, *args):
         super(Users, self).__init__(parent)
@@ -21,8 +24,12 @@ class Users(QtWidgets.QMainWindow):
         self.system_settings = args[1]
         self.ui = None
 
+        self.user_name = self.system_settings.field('使用者')
+
         self._set_ui()
         self._set_signal()
+        self._set_permission()
+
         self._read_users()
 
     # 解構
@@ -46,7 +53,20 @@ class Users(QtWidgets.QMainWindow):
         self.ui.toolButton_add_user.clicked.connect(self.add_user)
         self.ui.toolButton_remove_user.clicked.connect(self.remove_user)
         self.ui.toolButton_edit_user.clicked.connect(self.open_user_dialog)
-        self.ui.toolButton_permission.clicked.connect(self._set_permission)
+        self.ui.toolButton_permission.clicked.connect(self._open_permission_dialog)
+
+    def _set_permission(self):
+        if self.user_name == '超級使用者':
+            return
+
+        if personnel_utils.get_permission(self.database, self.program_name, '新增使用者', self.user_name) != 'Y':
+            self.ui.toolButton_add_user.setEnabled(False)
+        if personnel_utils.get_permission(self.database, self.program_name, '刪除使用者', self.user_name) != 'Y':
+            self.ui.toolButton_remove_user.setEnabled(False)
+        if personnel_utils.get_permission(self.database, self.program_name, '編輯使用者', self.user_name) != 'Y':
+            self.ui.toolButton_edit_user.setEnabled(False)
+        if personnel_utils.get_permission(self.database, self.program_name, '設定權限', self.user_name) != 'Y':
+            self.ui.toolButton_permission.setEnabled(False)
 
     def close_tab(self):
         current_tab = self.parent.ui.tabWidget_window.currentIndex()
@@ -76,9 +96,10 @@ class Users(QtWidgets.QMainWindow):
         self.table_widget_users.set_db_data(sql, self._set_user_data)
 
     def _set_user_data(self, row_no, row):
-        password = string_utils.xstr(row['Password'])
-        if self.system_settings.field('使用者') != '超級使用者':
-            password = '********'
+        password = '********'
+        if (self.system_settings.field('使用者') == '超級使用者' or
+                personnel_utils.get_permission(self.database, self.program_name, '查看使用者密碼', self.user_name) == 'Y'):
+            password = string_utils.xstr(row['Password'])
 
         users_rec = [
             string_utils.xstr(row['PersonKey']),
@@ -116,6 +137,10 @@ class Users(QtWidgets.QMainWindow):
                 )
 
     def open_user_dialog(self):
+        if (self.user_name != '超級使用者' and
+                personnel_utils.get_permission(self.database, self.program_name, '編輯使用者', self.user_name) != 'Y'):
+            return
+
         person_key = self.table_widget_users.field_value(0)
         dialog = dialog_input_user.DialogInputUser(
             self, self.database, self.system_settings, person_key)
@@ -165,7 +190,7 @@ class Users(QtWidgets.QMainWindow):
         self.open_user_dialog()
 
     # 設定權限
-    def _set_permission(self):
+    def _open_permission_dialog(self):
         person_key = self.table_widget_users.field_value(0)
         if person_key is None:
             return

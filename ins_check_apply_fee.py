@@ -106,7 +106,6 @@ class InsCheckApplyFee(QtWidgets.QMainWindow):
                 if item is not None:
                     item.setTextAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
 
-
     def _parse_ins_calculated_data(self):
         row_no = 0
         self.ui.tableWidget_xml.setItem(
