@@ -19,6 +19,7 @@ from libs import personnel_utils
 from libs import string_utils
 
 from dialog import dialog_system_settings
+from dialog import dialog_hosts
 from dialog import dialog_ic_card
 from dialog import dialog_export_emr_xml
 
@@ -152,9 +153,10 @@ class PyMedical(QtWidgets.QMainWindow):
         self.ui.pushButton_medical_record_statistics.clicked.connect(self._open_subroutine)      # 病歷統計
 
         self.ui.pushButton_settings.clicked.connect(self.open_settings)                     # 系統設定
-        self.ui.pushButton_charge.clicked.connect(self._open_subroutine)                 # 收費設定
-        self.ui.pushButton_diagnostic.clicked.connect(self._open_subroutine)             # 診察資料
-        self.ui.pushButton_medicine.clicked.connect(self._open_subroutine)               # 處方資料
+        self.ui.action_hosts.triggered.connect(self.open_hosts_settings)                    # 分院連線設定
+        self.ui.pushButton_charge.clicked.connect(self._open_subroutine)                    # 收費設定
+        self.ui.pushButton_diagnostic.clicked.connect(self._open_subroutine)                # 診察資料
+        self.ui.pushButton_medicine.clicked.connect(self._open_subroutine)                  # 處方資料
         self.ui.pushButton_ic_card.clicked.connect(self.open_ic_card)                       # 健保卡讀卡機
 
         self.ui.pushButton_logout.clicked.connect(self.logout)                              # 登出
@@ -175,6 +177,7 @@ class PyMedical(QtWidgets.QMainWindow):
         self.ui.action_patient_list.triggered.connect(self._open_subroutine)
         self.ui.action_ins_record_upload.triggered.connect(self._open_subroutine)
         self.ui.action_update.triggered.connect(self._update_files)
+        self.ui.action_restore_records.triggered.connect(self._open_subroutine)
 
         self.ui.action_waiting_list.triggered.connect(self._open_subroutine)
         self.ui.action_medical_record_list.triggered.connect(self._open_subroutine)
@@ -268,6 +271,7 @@ class PyMedical(QtWidgets.QMainWindow):
             '掛號櫃台結帳',
             '病患查詢',
             '病歷查詢',
+            '病歷統計',
             '健保IC卡資料上傳',
             '申報檢查',
             '健保申報',
@@ -374,10 +378,21 @@ class PyMedical(QtWidgets.QMainWindow):
 
     # 開啟病歷資料
     def open_medical_record(self, case_key, call_from=None):
+        if case_key is None:
+            system_utils.show_message_box(
+                QMessageBox.Critical,
+                '查無病歷資料',
+                '<font color="red"><h3>病歷主鍵遺失, 請重新查詢!</h3></font>',
+                '請至病歷查詢確認此筆資料是否存在.'
+            )
+            return
+
         script = '''
-            SELECT CaseKey, CaseDate, PatientKey, Name 
+            SELECT 
+                CaseKey, CaseDate, PatientKey, Name, InsType 
             FROM cases 
-            WHERE CaseKey = {0}
+            WHERE 
+                CaseKey = {0}
         '''.format(case_key)
 
         rows = self.database.select_record(script)
@@ -403,12 +418,21 @@ class PyMedical(QtWidgets.QMainWindow):
             )
             return
 
-        tab_name = '{0}-{1}-病歷資料-{2}'.format(
-            string_utils.xstr(row['PatientKey']),
-            string_utils.xstr(row['Name']),
-            string_utils.xstr(row['CaseDate'].date()),
+        tab_name = '{case_key}-{name}-{ins_type}病歷資料-{case_date}'.format(
+            case_key=string_utils.xstr(row['CaseKey']),
+            name=string_utils.xstr(row['Name']),
+            case_date=string_utils.xstr(row['CaseDate'].date()),
+            ins_type=string_utils.xstr(row['InsType']),
         )
         self._add_tab(tab_name, self.database, self.system_settings, row['CaseKey'], call_from)
+
+    # 新增自費病歷
+    def append_self_medical_record(self, case_key, patient_key, name):
+        tab_name = '{patient_key}-{name}-自費病歷資料'.format(
+            patient_key=patient_key,
+            name=name,
+        )
+        self._add_tab(tab_name, self.database, self.system_settings, case_key, '新增自費病歷')
 
     # 開啟病患資料
     def open_patient_record(self, patient_key, call_from=None, ic_card=None):
@@ -484,6 +508,9 @@ class PyMedical(QtWidgets.QMainWindow):
                 current_tab = self.ui.tabWidget_window.widget(i)
                 break
 
+        if current_tab is None:
+            return
+
         current_tab.ui.lineEdit_query.setText(str(new_patient_key))
         current_tab.query_patient()
 
@@ -495,6 +522,12 @@ class PyMedical(QtWidgets.QMainWindow):
         self.system_settings = system_settings.SystemSettings(self.database)
         self.label_station_no.setText('工作站編號: {0}'.format(self.system_settings.field('工作站編號')))
         self._set_button_enabled()
+
+    # 系統設定
+    def open_hosts_settings(self):
+        dialog = dialog_hosts.DialogHosts(self.ui, self.database, self.system_settings)
+        dialog.exec_()
+        dialog.deleteLater()
 
     # 健保卡讀卡機
     def open_ic_card(self):
@@ -578,6 +611,7 @@ class PyMedical(QtWidgets.QMainWindow):
 
             self.ui.action_export_emr_xml,
             self.ui.action_update,
+            self.ui.action_restore_records,
 
             self.ui.action_certificate_diagnosis,
             self.ui.action_certificate_payment,
@@ -695,6 +729,8 @@ class PyMedical(QtWidgets.QMainWindow):
                 item.append(self.ui.action_export_emr_xml)
             elif string_utils.xstr(item[1]) == '執行醫療軟體更新':
                 item.append(self.ui.action_update)
+            elif string_utils.xstr(item[1]) == '執行資料回復':
+                item.append(self.ui.action_restore_records)
 
             elif string_utils.xstr(item[1]) == '執行診斷證明書':
                 item.append(self.ui.action_certificate_diagnosis)

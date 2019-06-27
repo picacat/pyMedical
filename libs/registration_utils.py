@@ -262,7 +262,9 @@ def check_diag_fee_times(database, system_settings, patient_key):
 # 檢查欠卡
 def check_deposit(database, patient_key):
     message = None
-    start_date = datetime.datetime.now().strftime("%Y-%m-01 00:00:00")
+    present = datetime.datetime.now()
+    start_date = datetime.date(present.year, present.month, 1) - datetime.timedelta(10)
+    start_date = start_date.strftime("%Y-%m-%d 00:00:00")
     end_date = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d 23:59:59")
     sql = '''
         SELECT CaseDate FROM cases WHERE
@@ -275,9 +277,10 @@ def check_deposit(database, patient_key):
 
     if len(rows) > 0:
         row = rows[0]
-        message = '* 欠卡提醒: 本月{0}月{1}日門診尚有欠卡未還.'.format(
-            row['CaseDate'].month,
-            row['CaseDate'].day,
+        message = '* 欠卡提醒: {year}年{month}月{day}日門診尚有欠卡未還.'.format(
+            year=row['CaseDate'].year,
+            month=row['CaseDate'].month,
+            day=row['CaseDate'].day,
         )
 
     return message
@@ -326,24 +329,35 @@ def check_card_yesterday(database, patient_key, course=None):
 
 
 # 檢查上次給藥是否用完
-def check_prescription_finished(database, patient_key, in_date=None):
+def check_prescription_finished(database, case_key, patient_key, in_date=None):
     message = None
     if in_date is None:
         in_date = datetime.date.today()
     else:
         in_date = in_date.date()
 
+    if case_key is None:
+        case_condition = ''
+    else:
+        case_condition = '(cases.CaseKey != {case_key}) AND '.format(case_key=case_key)
+
     end_date = (in_date - datetime.timedelta(days=1)).strftime("%Y-%m-%d 23:59:59")
     sql = '''
         SELECT cases.CaseDate, cases.Name, dosage.Days FROM cases
         LEFT JOIN dosage on dosage.CaseKey = cases.CaseKey
         WHERE
-            (cases.PatientKey = {0}) AND
-            (cases.CaseDate <= "{1}") AND
+            {case_condition}
+            (cases.PatientKey = {patient_key}) AND
+            (cases.CaseDate <= "{end_date}") AND
             (cases.InsType = "健保") AND
             (dosage.MedicineSet = 1) AND (dosage.Days > 0)
         ORDER BY CaseDate DESC LIMIT 1
-    '''.format(patient_key, end_date)
+    '''.format(
+        case_condition=case_condition,
+        case_key=case_key,
+        patient_key=patient_key,
+        end_date=end_date,
+    )
     rows = database.select_record(sql)
 
     if len(rows) > 0:
@@ -503,19 +517,25 @@ def get_doctor(database, period, room):
 def is_reservation_full(database, reservation_date, period, reserve_no, doctor):
     is_full = False
 
+    reservation_date = reservation_date.split(' ')[0]
+    start_date = '{reservation_date} 00:00:00'.format(reservation_date=reservation_date)
+    end_date = '{reservation_date} 23:59:59'.format(reservation_date=reservation_date)
+
     sql = '''
         SELECT ReserveKey FROM reserve
         WHERE
-            ReserveDate = "{reservation_date}" AND
+            ReserveDate BETWEEN "{start_date}" AND "{end_date}" AND
             Period = "{period}" AND
             ReserveNo = {reserve_no} AND
             Doctor = "{doctor}"
     '''.format(
-        reservation_date=reservation_date,
+        start_date=start_date,
+        end_date=end_date,
         period=period,
         reserve_no=reserve_no,
         doctor=doctor,
     )
+
     rows = database.select_record(sql)
 
     if len(rows) > 0:

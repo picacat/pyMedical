@@ -103,7 +103,6 @@ class CheckInsDrug(QtWidgets.QMainWindow):
             WHERE
                 (cases.CaseDate BETWEEN "{start_date}" AND "{end_date}") AND
                 (cases.InsType = "健保") AND
-                (cases.Card != "欠卡") AND
                 ({apply_type_sql}) AND
                 (prescript.MedicineSet = 1) AND
                 (prescript.InsCode IS NOT NULL AND TRIM(prescript.InsCode) != "")

@@ -285,19 +285,37 @@ class Reservation(QtWidgets.QMainWindow):
                 if reserve_no.text() == '':
                     continue
 
-                reservation_date = '{0} {1}'.format(
-                    self.ui.dateEdit_reservation_date.date().toString('yyyy-MM-dd'),
-                    time.text()
-                )
+                # reservation_date = '{0} {1}'.format(
+                #     self.ui.dateEdit_reservation_date.date().toString('yyyy-MM-dd'),
+                #     time.text()
+                # )
+                # sql = '''
+                #     SELECT * FROM reserve
+                #     WHERE
+                #         ReserveDate = "{reservation_date}" AND
+                #         Period = "{period}" AND
+                #         Doctor = "{doctor}" AND
+                #         ReserveNo = {reserve_no}
+                # '''.format(
+                #     reservation_date=reservation_date,
+                #     period=period,
+                #     doctor=doctor,
+                #     reserve_no=reserve_no.text(),
+                # )
+
+                reservation_date = self.ui.dateEdit_reservation_date.date().toString('yyyy-MM-dd')
+                start_date = '{reservation_date} 00:00:00'.format(reservation_date=reservation_date)
+                end_date = '{reservation_date} 23:59:59'.format(reservation_date=reservation_date)
                 sql = '''
                     SELECT * FROM reserve 
                     WHERE
-                        ReserveDate = "{reservation_date}" AND
+                        ReserveDate BETWEEN "{start_date}" AND "{end_date}" AND
                         Period = "{period}" AND
                         Doctor = "{doctor}" AND
                         ReserveNo = {reserve_no}
                 '''.format(
-                    reservation_date=reservation_date,
+                    start_date=start_date,
+                    end_date=end_date,
                     period=period,
                     doctor=doctor,
                     reserve_no=reserve_no.text(),
@@ -414,8 +432,11 @@ class Reservation(QtWidgets.QMainWindow):
         current_column = self.ui.tableWidget_reservation.currentColumn()
         current_row = self.ui.tableWidget_reservation.currentRow()
 
-        header = self.ui.tableWidget_reservation.horizontalHeaderItem(current_column).text()
-        if header != '姓名':
+        header = self.ui.tableWidget_reservation.horizontalHeaderItem(current_column)
+        if header is None:
+            return
+
+        if header.text() != '姓名':
             return
 
         name = self.ui.tableWidget_reservation.item(current_row, current_column)
@@ -1049,7 +1070,7 @@ class Reservation(QtWidgets.QMainWindow):
                 calendar_list[start_day+i][1],
                 QtWidgets.QTableWidgetItem(
                     str(day) + '\n' +
-                    reservation1 + '\n'+
+                    reservation1 + '\n' +
                     reservation2 + '\n' +
                     reservation3
                 )

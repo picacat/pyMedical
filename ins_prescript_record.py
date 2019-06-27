@@ -981,7 +981,8 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
             SELECT * FROM prescript 
             WHERE 
                 CaseKey = {case_key} AND 
-                MedicineSet = {medicine_set}
+                MedicineSet = {medicine_set} AND
+                MedicineType NOT IN ("穴道", "處置", "檢驗")
             ORDER BY PrescriptKey
         '''.format(
             case_key=case_key,

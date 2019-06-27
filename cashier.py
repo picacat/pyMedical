@@ -227,7 +227,7 @@ class Cashier(QtWidgets.QMainWindow):
 
     def _show_medical_record(self):
         case_key = self.table_widget_charge_list.field_value(1)
-        if case_key is None:
+        if case_key in [None, '']:
             return
 
         sql = 'SELECT * FROM cases WHERE CaseKey = {0}'.format(case_key)
@@ -303,6 +303,12 @@ class Cashier(QtWidgets.QMainWindow):
     def _save_records(self):
         wait_key = self.table_widget_charge_list.field_value(0)
         case_key = self.table_widget_charge_list.field_value(1)
+
+        if wait_key in [None, '']:
+            return
+
+        if case_key in [None, '']:
+            return
 
         self.database.exec_sql('UPDATE wait SET ChargeDone = "True" WHERE WaitKey = {0}'.format(wait_key))
 

@@ -54,6 +54,9 @@ class MedicalRecordCheck(QtWidgets.QDialog):
         pass
 
     def check_medical_record(self):
+        if self.patient_record is None:  # 無病患資料不檢查
+            return True
+
         if self.treat_type == '腦血管疾病':
             check_ok = self._check_brain()
         elif self.treat_type == '助孕照護':
@@ -414,6 +417,10 @@ class MedicalRecordCheck(QtWidgets.QDialog):
         if not check_ok:
             return check_ok
 
+        check_ok = self._check_same_disease_pres_days()
+        if not check_ok:
+            return check_ok
+
         check_ok = self._check_ins_medicine()
         if not check_ok:
             return check_ok
@@ -602,6 +609,85 @@ class MedicalRecordCheck(QtWidgets.QDialog):
 
         return check_ok
 
+    def _check_same_disease_pres_days(self):
+        check_ok = True
+
+        if self.pres_days <= 0:
+            return check_ok
+
+        error_message = []
+        case_date = self.medical_record['CaseDate']
+        sql = '''
+            SELECT 
+                CaseKey, Name, CaseDate, Card, DiseaseCode1, DiseaseName1 FROM cases 
+            WHERE
+                (CaseKey != {case_key}) AND
+                (PatientKey = {patient_key}) AND
+                (CaseDate < "{case_date}") AND
+                (InsType = "健保") AND
+                (DiseaseCode1 = "{disease_code1}") 
+            ORDER BY CaseDate DESC LIMIT 1
+        '''.format(
+            case_key=self.medical_record['CaseKey'],
+            patient_key=self.medical_record['PatientKey'],
+            case_date=case_date,
+            disease_code1=self.disease_code1,
+        )
+        rows = self.database.select_record(sql)
+        if len(rows) <= 0:
+            return check_ok
+
+        row = rows[0]
+
+        last_case_key = row['CaseKey']
+        last_pres_days = case_utils.get_pres_days(self.database, last_case_key)
+        if self.pres_days < last_pres_days:
+            error_message.append(
+                '''
+                    本次病歷主診斷碼與{case_date}相同, 給藥天數少於上次病歷!<br>
+                    <font color="navy">
+                    上次病歷為:<br><br>
+                    病患姓名: {name}<br>
+                    門診日期: {case_date}<br>
+                    健保卡序: {card}<br>
+                    主診斷碼: {disease_code1}<br>
+                    中文名稱: {disease_name1}<br>
+                    給藥天數: {last_pres_days}<br>
+                    </font>
+                '''.format(
+                    name=string_utils.xstr(row['Name']),
+                    case_date=string_utils.xstr(row['CaseDate'].date()),
+                    card=string_utils.xstr(row['Card']),
+                    disease_code1=string_utils.xstr(row['DiseaseCode1']),
+                    disease_name1=string_utils.xstr(row['DiseaseName1']),
+                    last_pres_days=last_pres_days,
+                )
+            )
+
+        if len(error_message) > 0:
+            msg_box = QMessageBox()
+            msg_box.setIcon(QMessageBox.Warning)
+            msg_box.setWindowTitle('診斷碼檢查提示')
+            msg_box.setText(
+                '''
+                    <font size="4" color="red">
+                      <b>
+                        診斷碼檢查提示如下:<br>
+                        <br>
+                        {0}
+                      </b>
+                    </font>
+                '''.format('<br>'.join(error_message)),
+            )
+            msg_box.setInformativeText("請確定本次給藥天數是否正確.")
+            msg_box.addButton(QPushButton("繼續存檔"), QMessageBox.YesRole)
+            msg_box.addButton(QPushButton("取消"), QMessageBox.NoRole)
+            save_file = msg_box.exec_()
+            if save_file == QMessageBox.RejectRole:
+                check_ok = False
+
+        return check_ok
+
     def _check_empty_prescript(self):
         check_ok = True
         error_message = []
@@ -717,7 +803,8 @@ class MedicalRecordCheck(QtWidgets.QDialog):
             return check_ok
 
         message = registration_utils.check_prescription_finished(
-            self.database, self.patient_record['PatientKey'],
+            self.database, self.medical_record['CaseKey'],
+            self.patient_record['PatientKey'],
             self.medical_record['CaseDate']
         )
 

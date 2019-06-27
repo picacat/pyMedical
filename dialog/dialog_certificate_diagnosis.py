@@ -16,7 +16,8 @@ from libs import nhi_utils
 from libs import string_utils
 from libs import registration_utils
 
-# 主視窗
+
+# 診斷證明
 class DialogCertificateDiagnosis(QtWidgets.QDialog):
     # 初始化
     def __init__(self, parent=None, *args):
@@ -113,7 +114,7 @@ class DialogCertificateDiagnosis(QtWidgets.QDialog):
 
     def _patient_key_changed(self):
         patient_key = self.ui.lineEdit_patient_key.text()
-        if patient_key == '':
+        if patient_key.strip() == '':
             self._clear_patient_data()
             self._set_group_box(False)
             return

@@ -203,6 +203,19 @@ class CSHIS(QThread):
 
         return True
 
+    def _update_patient(self, patient_key):
+        if not self.read_basic_data():
+            return '', ''
+
+        patient_id = self.basic_data['patient_id']
+        patient_birthday = self.basic_data['birthday']
+
+        fields = ['ID', 'Birthday']
+        data = [patient_id, patient_birthday]
+        self.database.update_record('patient', fields, 'PatientKey', patient_key, data)
+
+        return patient_id, patient_birthday
+
     def get_card_status(self):
         available_count = None
         available_date = None
@@ -907,11 +920,16 @@ class CSHIS(QThread):
             PatientKey = {0} 
         '''.format(case_row['PatientKey'])
         patient_row = self.database.select_record(sql)[0]
+        patient_key = case_row['PatientKey']
 
         registration_datetime = case_utils.extract_security_xml(case_row['Security'], '寫卡時間')
         registration_nhi_datetime = date_utils.west_datetime_to_nhi_datetime(registration_datetime)
         patient_id = string_utils.xstr(patient_row['ID'])
         patient_birthday = string_utils.xstr(patient_row['Birthday'])
+
+        if patient_id == '' or patient_birthday == '':
+            patient_id, patient_birthday = self._update_patient(patient_key)
+
         birthday_nhi_datetime = date_utils.west_date_to_nhi_date(patient_birthday)
 
         disease_code1 = string_utils.xstr(case_row['DiseaseCode1'])

@@ -1370,7 +1370,6 @@ def get_pharmacist_id(database, system_settings, row):
     if string_utils.xstr(row['PharmacyType']) != '申報':
         return None
 
-
     if number_utils.get_integer(row['PharmacyFee']) <= 0:
         return None
 
@@ -1627,6 +1626,7 @@ def nurse_schedule_on_duty(database, case_key, doctor_name):
 
     return on_duty
 
+
 def get_ins_xml_file_name(apply_type, apply_date, prefix=None):
     xml_file_name = '{0}/{1}-{2}'.format(
         XML_OUT_PATH,
@@ -1640,10 +1640,12 @@ def get_ins_xml_file_name(apply_type, apply_date, prefix=None):
 
     return xml_file_name
 
+
 def get_apply_date(apply_year, apply_month):
     apply_date = '{0:0>3}{1:0>2}'.format(apply_year-1911, apply_month)
 
     return apply_date
+
 
 def extract_pharmacy_code(pharmacy_code_str):
     pharmacy_count = 0
@@ -1669,6 +1671,7 @@ def get_usage(instruction):
         usage = 'PC'
 
     return usage
+
 
 def get_disease_rows(database, disease_list):
     disease_rows = []

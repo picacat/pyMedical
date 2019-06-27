@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1115</width>
+    <width>1144</width>
     <height>865</height>
    </rect>
   </property>
@@ -55,20 +55,6 @@
               </property>
              </widget>
             </item>
-            <item row="0" column="0">
-             <widget class="QToolButton" name="toolButton_modify_wait">
-              <property name="text">
-               <string>掛號修正</string>
-              </property>
-              <property name="icon">
-               <iconset>
-                <normaloff>../icons/accessories-text-editor.png</normaloff>../icons/accessories-text-editor.png</iconset>
-              </property>
-              <property name="toolButtonStyle">
-               <enum>Qt::ToolButtonTextBesideIcon</enum>
-              </property>
-             </widget>
-            </item>
             <item row="0" column="4">
              <widget class="QToolButton" name="toolButton_print_wait">
               <property name="text">
@@ -95,6 +81,20 @@
                </size>
               </property>
              </spacer>
+            </item>
+            <item row="0" column="0">
+             <widget class="QToolButton" name="toolButton_modify_wait">
+              <property name="text">
+               <string>掛號修正</string>
+              </property>
+              <property name="icon">
+               <iconset>
+                <normaloff>../icons/accessories-text-editor.png</normaloff>../icons/accessories-text-editor.png</iconset>
+              </property>
+              <property name="toolButtonStyle">
+               <enum>Qt::ToolButtonTextBesideIcon</enum>
+              </property>
+             </widget>
             </item>
             <item row="0" column="1">
              <widget class="QToolButton" name="toolButton_delete_wait">
@@ -231,6 +231,19 @@
          <layout class="QVBoxLayout" name="verticalLayout_2">
           <item>
            <layout class="QGridLayout" name="gridLayout_7">
+            <item row="0" column="6">
+             <spacer name="horizontalSpacer_2">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
             <item row="0" column="0">
              <widget class="QToolButton" name="toolButton_edit_cases">
               <property name="text">
@@ -253,20 +266,6 @@
               <property name="icon">
                <iconset>
                 <normaloff>../icons/document-open.svg</normaloff>../icons/document-open.svg</iconset>
-              </property>
-              <property name="toolButtonStyle">
-               <enum>Qt::ToolButtonTextBesideIcon</enum>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="5">
-             <widget class="QToolButton" name="toolButton_print_wait_2">
-              <property name="text">
-               <string>補印收據</string>
-              </property>
-              <property name="icon">
-               <iconset>
-                <normaloff>../icons/document-print.svg</normaloff>../icons/document-print.svg</iconset>
               </property>
               <property name="toolButtonStyle">
                <enum>Qt::ToolButtonTextBesideIcon</enum>
@@ -301,18 +300,19 @@
               </property>
              </widget>
             </item>
-            <item row="0" column="6">
-             <spacer name="horizontalSpacer_2">
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
+            <item row="0" column="5">
+             <widget class="QToolButton" name="toolButton_print_wait_2">
+              <property name="text">
+               <string>補印收據</string>
               </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>40</width>
-                <height>20</height>
-               </size>
+              <property name="icon">
+               <iconset>
+                <normaloff>../icons/document-print.svg</normaloff>../icons/document-print.svg</iconset>
               </property>
-             </spacer>
+              <property name="toolButtonStyle">
+               <enum>Qt::ToolButtonTextBesideIcon</enum>
+              </property>
+             </widget>
             </item>
             <item row="0" column="3">
              <widget class="QToolButton" name="toolButton_rewrite_ic_prescript">
@@ -325,6 +325,20 @@
               </property>
               <property name="toolButtonStyle">
                <enum>Qt::ToolButtonTextBesideIcon</enum>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="7">
+             <widget class="QToolButton" name="toolButton_quick_ic_card">
+              <property name="toolTip">
+               <string>快速寫卡</string>
+              </property>
+              <property name="text">
+               <string>...</string>
+              </property>
+              <property name="icon">
+               <iconset>
+                <normaloff>../icons/ic_card.jpg</normaloff>../icons/ic_card.jpg</iconset>
               </property>
              </widget>
             </item>
@@ -412,6 +426,11 @@
             <column>
              <property name="text">
               <string>IC寫卡</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>主治醫師</string>
              </property>
             </column>
             <column>
@@ -1299,8 +1318,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1115</width>
-     <height>21</height>
+     <width>1144</width>
+     <height>26</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu">

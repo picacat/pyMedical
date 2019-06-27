@@ -229,3 +229,19 @@ def get_zip_code(database, address_str):
         pass
 
     return zip_code
+
+
+def get_patient_id(database, patient_key):
+    sql = '''
+        SELECT ID FROM patient
+        WHERE
+            PatientKey = {patient_key}
+    '''.format(
+        patient_key=patient_key,
+    )
+    rows = database.select_record(sql)
+
+    if len(rows) <= 0:
+        return None
+
+    return string_utils.xstr(rows[0]['ID'])

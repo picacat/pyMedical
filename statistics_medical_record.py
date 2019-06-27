@@ -5,16 +5,14 @@ from PyQt5 import QtWidgets
 
 from libs import ui_utils
 from dialog import dialog_statistics_doctor
-import statistics_doctor_count
-import statistics_doctor_income
-import statistics_doctor_sale
+import statistics_medical_record_diag_time_length
 
 
-# 醫師統計 2019.05.02
-class StatisticsDoctor(QtWidgets.QMainWindow):
+# 病歷統計 2019.06.10
+class StatisticsMedicalRecord(QtWidgets.QMainWindow):
     # 初始化
     def __init__(self, parent=None, *args):
-        super(StatisticsDoctor, self).__init__(parent)
+        super(StatisticsMedicalRecord, self).__init__(parent)
         self.parent = parent
         self.database = args[0]
         self.system_settings = args[1]
@@ -41,7 +39,7 @@ class StatisticsDoctor(QtWidgets.QMainWindow):
 
     # 設定GUI
     def _set_ui(self):
-        self.ui = ui_utils.load_ui_file(ui_utils.UI_STATISTICS_DOCTOR, self)
+        self.ui = ui_utils.load_ui_file(ui_utils.UI_STATISTICS_MEDICAL_RECORD, self)
 
     # 設定信號
     def _set_signal(self):
@@ -95,7 +93,7 @@ class StatisticsDoctor(QtWidgets.QMainWindow):
         self._set_tab_widget(start_date, end_date, ins_type, doctor)
 
     def _set_tab_widget(self, start_date, end_date, ins_type, doctor):
-        self.ui.tabWidget_statistics_doctor.clear()
+        self.ui.tabWidget_statistics_medical_record.clear()
 
         self.ui.statusbar.showMessage(
             ' 統計期間: 從 {start_date} 至 {end_date} 保險: {ins_type} 醫師: {doctor}'.format(
@@ -106,43 +104,22 @@ class StatisticsDoctor(QtWidgets.QMainWindow):
             )
         )
 
-        self._add_statistic_doctor_count(start_date, end_date, ins_type, doctor)
-        self._add_statistic_doctor_income(start_date, end_date, ins_type, doctor)
-        self._add_statistic_doctor_sale(start_date, end_date, doctor)
+        self._add_statistic_medical_record_diag_time_length(start_date, end_date, ins_type, doctor)
 
     # 醫師門診人數統計
-    def _add_statistic_doctor_count(self, start_date, end_date, ins_type, doctor):
-        self.tab_statistics_doctor_count = statistics_doctor_count.StatisticsDoctorCount(
-            self, self.database, self.system_settings,
-            start_date, end_date, ins_type, doctor,
+    def _add_statistic_medical_record_diag_time_length(self, start_date, end_date, ins_type, doctor):
+        self.tab_statistics_medical_record_diag_time_length = \
+            statistics_medical_record_diag_time_length.StatisticsMedicalRecordDiagTimeLength(
+                self, self.database, self.system_settings,
+                start_date, end_date, ins_type, doctor,
+            )
+        self.tab_statistics_medical_record_diag_time_length.start_calculate()
+        self.ui.tabWidget_statistics_medical_record.addTab(
+            self.tab_statistics_medical_record_diag_time_length, '看診時間統計'
         )
-        self.tab_statistics_doctor_count.start_calculate()
-        self.ui.tabWidget_statistics_doctor.addTab(self.tab_statistics_doctor_count, '門診人數統計')
-
-    # 醫師門診收入統計
-    def _add_statistic_doctor_income(self, start_date, end_date, ins_type, doctor):
-        self.tab_statistics_doctor_income = statistics_doctor_income.StatisticsDoctorIncome(
-            self, self.database, self.system_settings,
-            start_date, end_date, ins_type, doctor,
-        )
-        self.tab_statistics_doctor_income.start_calculate()
-        self.ui.tabWidget_statistics_doctor.addTab(self.tab_statistics_doctor_income, '門診收入統計')
-
-    # 醫師自費銷售統計
-    def _add_statistic_doctor_sale(self, start_date, end_date, doctor):
-        self.tab_statistics_doctor_sale = statistics_doctor_sale.StatisticsDoctorSale(
-            self, self.database, self.system_settings,
-            start_date, end_date, doctor,
-        )
-        self.tab_statistics_doctor_sale.start_calculate()
-        self.ui.tabWidget_statistics_doctor.addTab(self.tab_statistics_doctor_sale, '自費銷售統計')
 
     def _export_to_excel(self):
-        if self.ui.tabWidget_statistics_doctor.currentIndex() == 0:
+        if self.ui.tabWidget_statistics_medical_record.currentIndex() == 0:
             self.tab_statistics_doctor_count.export_to_excel()
-        elif self.ui.tabWidget_statistics_doctor.currentIndex() == 1:
-            self.tab_statistics_doctor_income.export_to_excel()
-        elif self.ui.tabWidget_statistics_doctor.currentIndex() == 2:
-            self.tab_statistics_doctor_sale.export_to_excel()
 
 

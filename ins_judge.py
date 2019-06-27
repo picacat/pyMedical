@@ -3,13 +3,16 @@
 
 import sys
 
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtWidgets import QMessageBox, QPushButton
 
 from libs import ui_utils
+from libs import date_utils
 from libs import number_utils
 from libs import string_utils
-from libs import system_utils
+from libs import printer_utils
+from libs import nhi_utils
+from libs import dialog_utils
 import ins_apply_tab
 from dialog import dialog_ins_judge
 import ins_upload_emr
@@ -26,8 +29,12 @@ class InsJudge(QtWidgets.QMainWindow):
 
         self.apply_year = None
         self.apply_month = None
+        self.apply_date = None
+        self.apply_upload_date = None
+        self.apply_type = None
         self.clinic_id = None
         self.period = '全月'
+
         self.ui = None
 
         self._set_ui()
@@ -57,6 +64,9 @@ class InsJudge(QtWidgets.QMainWindow):
     def _set_signal(self):
         self.ui.action_requery.triggered.connect(self.open_dialog)
         self.ui.action_upload_emr.triggered.connect(self._upload_emr)
+        self.ui.action_print_ins_order_mark.triggered.connect(self._print_ins_order_mark)
+        self.ui.action_print_medical_record_mark.triggered.connect(self._print_medical_record_mark)
+        self.ui.action_print_chart_mark.triggered.connect(self._print_chart_mark)
         self.ui.action_close.triggered.connect(self.close_app)
 
     def open_medical_record(self, case_key):
@@ -104,7 +114,6 @@ class InsJudge(QtWidgets.QMainWindow):
 
         self.ui.tabWidget_ins_data.addTab(self.tab_ins_apply_tab, '申報資料')
 
-
     # 電子化抽審
     def _upload_emr(self):
         msg_box = QMessageBox()
@@ -127,4 +136,181 @@ class InsJudge(QtWidgets.QMainWindow):
 
         ins_emr.upload_emr_files()
         del ins_emr
+
+    # 列印醫令註記
+    def _print_ins_order_mark(self):
+        if self.apply_date is None:
+            return
+
+        msg_box = dialog_utils.get_message_box(
+            '列印醫令註記', QMessageBox.Question,
+            '<font size="4" color="red"><b>確定列印所有的醫令註記?</b></font>',
+            '資料將直接輸出至印表機'
+        )
+        print_record = msg_box.exec_()
+        if not print_record:
+            return
+
+        sql = '''
+            SELECT InsApplyKey
+            FROM insapply 
+            WHERE
+                ApplyDate = "{apply_date}" AND
+                ApplyType = "{apply_type}" AND
+                ApplyPeriod = "{apply_period}" AND
+                ClinicID = "{clinic_id}" AND
+                Note = "*" 
+            ORDER BY CaseType, Sequence
+        '''.format(
+            apply_date=self.apply_date,
+            apply_type=nhi_utils.APPLY_TYPE_CODE[self.apply_type],
+            apply_period=self.period,
+            clinic_id=self.clinic_id,
+        )
+
+        rows = self.database.select_record(sql)
+        record_count = len(rows)
+        if record_count <= 0:
+            return
+
+        progress_dialog = QtWidgets.QProgressDialog(
+            '正在列印醫令中, 請稍後...', '取消', 0, record_count, self
+        )
+        progress_dialog.setWindowModality(QtCore.Qt.WindowModal)
+        progress_dialog.setValue(0)
+        for row_no, row in zip(range(record_count), rows):
+            progress_dialog.setValue(row_no)
+            if progress_dialog.wasCanceled():
+                break
+
+            ins_apply_key = row['InsApplyKey']
+            printer_utils.print_ins_apply_order(
+                self, self.database, self.system_settings,
+                self.apply_year, self.apply_month,
+                self.apply_type, ins_apply_key, 'print'
+            )
+        progress_dialog.setValue(record_count)
+
+    # 列印雙月病歷註記
+    def _print_medical_record_mark(self):
+        if self.apply_date is None:
+            return
+
+        msg_box = dialog_utils.get_message_box(
+            '列印雙月病歷註記', QMessageBox.Question,
+            '<font size="4" color="red"><b>確定列印所有的雙月病歷註記?</b></font>',
+            '資料將直接輸出至印表機'
+        )
+        print_record = msg_box.exec_()
+        if not print_record:
+            return
+
+        patient_key_list = []
+        sql = '''
+            SELECT InsApplyKey, PatientKey
+            FROM insapply 
+            WHERE
+                ApplyDate = "{apply_date}" AND
+                ApplyType = "{apply_type}" AND
+                ApplyPeriod = "{apply_period}" AND
+                ClinicID = "{clinic_id}" AND
+                Note = "*" 
+            ORDER BY CaseType, Sequence
+        '''.format(
+            apply_date=self.apply_date,
+            apply_type=nhi_utils.APPLY_TYPE_CODE[self.apply_type],
+            apply_period=self.period,
+            clinic_id=self.clinic_id,
+        )
+
+        rows = self.database.select_record(sql)
+        record_count = len(rows)
+        if record_count <= 0:
+            return
+
+        progress_dialog = QtWidgets.QProgressDialog(
+            '正在列印雙月病歷中, 請稍後...', '取消', 0, record_count, self
+        )
+        progress_dialog.setWindowModality(QtCore.Qt.WindowModal)
+        progress_dialog.setValue(0)
+        for row_no, row in zip(range(record_count), rows):
+            progress_dialog.setValue(row_no)
+            if progress_dialog.wasCanceled():
+                break
+
+            patient_key = row['PatientKey']
+            if patient_key in patient_key_list:
+                continue
+
+            patient_key_list.append(patient_key)
+            start_date, end_date = date_utils.get_two_month_date(
+                self.database, patient_key,
+                self.apply_year, self.apply_month,
+            )
+
+            printer_utils.print_medical_records(
+                self, self.database, self.system_settings,
+                patient_key, None, start_date, end_date, 'print'
+            )
+
+        progress_dialog.setValue(record_count)
+
+    # 列印病歷首頁註記
+    def _print_chart_mark(self):
+        if self.apply_date is None:
+            return
+
+        msg_box = dialog_utils.get_message_box(
+            '列印病歷首頁註記', QMessageBox.Question,
+            '<font size="4" color="red"><b>確定列印所有的病歷首頁註記?</b></font>',
+            '資料將直接輸出至印表機'
+        )
+        print_record = msg_box.exec_()
+        if not print_record:
+            return
+
+        patient_key_list = []
+        sql = '''
+            SELECT InsApplyKey, PatientKey
+            FROM insapply 
+            WHERE
+                ApplyDate = "{apply_date}" AND
+                ApplyType = "{apply_type}" AND
+                ApplyPeriod = "{apply_period}" AND
+                ClinicID = "{clinic_id}" AND
+                Note = "*" 
+            ORDER BY CaseType, Sequence
+        '''.format(
+            apply_date=self.apply_date,
+            apply_type=nhi_utils.APPLY_TYPE_CODE[self.apply_type],
+            apply_period=self.period,
+            clinic_id=self.clinic_id,
+        )
+
+        rows = self.database.select_record(sql)
+        record_count = len(rows)
+        if record_count <= 0:
+            return
+
+        progress_dialog = QtWidgets.QProgressDialog(
+            '正在列印病歷首頁中, 請稍後...', '取消', 0, record_count, self
+        )
+        progress_dialog.setWindowModality(QtCore.Qt.WindowModal)
+        progress_dialog.setValue(0)
+        for row_no, row in zip(range(record_count), rows):
+            progress_dialog.setValue(row_no)
+            if progress_dialog.wasCanceled():
+                break
+
+            patient_key = row['PatientKey']
+            if patient_key in patient_key_list:
+                continue
+
+            patient_key_list.append(patient_key)
+            printer_utils.print_medical_chart(
+                self, self.database, self.system_settings,
+                patient_key, self.apply_date, 'print'
+            )
+
+        progress_dialog.setValue(record_count)
 

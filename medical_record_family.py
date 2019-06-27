@@ -102,17 +102,17 @@ class MedicalRecordFamily(QtWidgets.QMainWindow):
 
         telephone = string_utils.xstr(self.patient_row['Telephone'])
         if telephone != '':
-            condition.append('Telephone Like "%{telephone}%"'.format(
+            condition.append('(Telephone LIKE "%{telephone}%" OR Cellphone LIKE "%{telephone}%")'.format(
                 telephone=telephone,
             ))
         cellphone = string_utils.xstr(self.patient_row['Cellphone'])
         if cellphone != '':
-            condition.append('Cellphone Like "%{cellphone}%"'.format(
+            condition.append('(Cellphone LIKE "%{cellphone}%" OR Telephone LIKE "%{cellphone}%")'.format(
                 cellphone=cellphone,
             ))
         address = string_utils.xstr(self.patient_row['Address'])
-        if cellphone != '':
-            condition.append('Address Like "%{address}%"'.format(
+        if address != '':
+            condition.append('(Address Like "%{address}%")'.format(
                 address=address,
             ))
 

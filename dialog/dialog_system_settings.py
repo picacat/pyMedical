@@ -204,6 +204,7 @@ class DialogSettings(QtWidgets.QDialog):
     def _read_doctor_settings(self):
         self.ui.spinBox_room.setValue(number_utils.get_integer(self.system_settings.field('診療室')))
         self._set_check_box(self.ui.checkBox_copy_past, '自動顯示過去病歷')
+        self._set_check_box(self.ui.checkBox_auto_cashier, '自動完成批價作業')
         self.ui.spinBox_packages.setValue(number_utils.get_integer(self.system_settings.field('給藥包數')))
         self.ui.spinBox_days.setValue(number_utils.get_integer(self.system_settings.field('給藥天數')))
         self.ui.comboBox_instruction.setCurrentText(self.system_settings.field('用藥指示'))
@@ -371,6 +372,7 @@ class DialogSettings(QtWidgets.QDialog):
     def _save_doctor_settings(self):
         self.system_settings.post('診療室', self.ui.spinBox_room.value())
         self._save_check_box(self.ui.checkBox_copy_past, '自動顯示過去病歷')
+        self._save_check_box(self.ui.checkBox_auto_cashier, '自動完成批價作業')
         self.system_settings.post('給藥包數', self.ui.spinBox_packages.value())
         self.system_settings.post('給藥天數', self.ui.spinBox_days.value())
         self.system_settings.post('用藥指示', self.ui.comboBox_instruction.currentText())

@@ -61,7 +61,9 @@ class CheckErrors(QtWidgets.QMainWindow):
 
     def center(self):
         frame_geometry = self.frameGeometry()
-        screen = QtWidgets.QApplication.desktop().screenNumber(QtWidgets.QApplication.desktop().cursor().pos())
+        screen = QtWidgets.QApplication.desktop().screenNumber(
+            QtWidgets.QApplication.desktop().cursor().pos()
+        )
         center_point = QtWidgets.QApplication.desktop().screenGeometry(screen).center()
         frame_geometry.moveCenter(center_point)
         self.move(frame_geometry.topLeft())
@@ -101,8 +103,7 @@ class CheckErrors(QtWidgets.QMainWindow):
             WHERE
                 (CaseDate BETWEEN "{start_date}" AND "{end_date}") AND
                 (cases.InsType = "健保") AND
-                (Card != "欠卡") AND
-                ({apply_type_sql})
+                (({apply_type_sql}) OR (ApplyType IS NULL) OR (LENGTH(ApplyType) <= 0))
             ORDER BY CaseDate
         '''.format(
             start_date=start_date,
@@ -241,8 +242,15 @@ class CheckErrors(QtWidgets.QMainWindow):
     def _check_medical_record(self, row):
         error_messages = []
 
+        if row['ApplyType'] not in nhi_utils.APPLY_TYPE:
+            error_messages.append('申報類別有誤')
+        elif row['ApplyType'] is None:
+            error_messages.append('申報類別空白')
+
         if string_utils.xstr(row['Card']) == '':
             error_messages.append('卡序空白')
+        elif string_utils.xstr(row['Card']) == '欠卡':
+            error_messages.append('欠卡未還')
 
         if string_utils.xstr(row['Doctor']) == '':
             error_messages.append('無醫師')
@@ -257,6 +265,10 @@ class CheckErrors(QtWidgets.QMainWindow):
         if (number_utils.get_integer(row['Continuance']) >= 1 and
                 string_utils.xstr(row['Treatment']) not in nhi_utils.INS_TREAT):
             error_messages.append('療程內無處置')
+
+        if (string_utils.xstr(row['TreatType']) in nhi_utils.TREAT_DICT and
+                string_utils.xstr(row['Treatment']) not in nhi_utils.INS_TREAT):
+            error_messages.append('就醫類別錯誤')
 
         if string_utils.xstr(row['DiseaseCode1']) == '':
             error_messages.append('無主診斷碼')

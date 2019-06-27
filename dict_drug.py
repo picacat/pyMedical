@@ -9,6 +9,7 @@ from libs import ui_utils
 from libs import string_utils
 from libs import dialog_utils
 from libs import number_utils
+from libs import personnel_utils
 from classes import table_widget
 from dialog import dialog_input_drug
 
@@ -24,9 +25,12 @@ class DictDrug(QtWidgets.QMainWindow):
         self.ui = None
         self.dict_type = '藥品'
 
+        self.user_name = self.system_settings.field('使用者')
+
         self._set_ui()
         self._set_signal()
         self._read_drug()
+        self._set_permission()
 
     # 解構
     def __del__(self):
@@ -44,6 +48,14 @@ class DictDrug(QtWidgets.QMainWindow):
         self.table_widget_dict_drug = table_widget.TableWidget(self.ui.tableWidget_dict_drug, self.database)
         self.table_widget_dict_drug.set_column_hidden([0])
         self._set_table_width()
+
+    def _set_permission(self):
+        if self.user_name == '超級使用者':
+            return
+
+        if personnel_utils.get_permission(self.database, '處方資料', '更改抽成', self.user_name) != 'Y':
+            self.table_widget_dict_groups.set_column_hidden([3])
+            self.table_widget_dict_drug.set_column_hidden([14])
 
     # 設定信號
     def _set_signal(self):
@@ -140,15 +152,31 @@ class DictDrug(QtWidgets.QMainWindow):
         self.ui.tableWidget_dict_groups.setFocus(True)
 
     def _read_dict_drug(self, dict_groups_type, keyword=None):
+        if dict_groups_type is None:
+            medicine_type_condition = ''
+        else:
+            medicine_type_condition = 'MedicineType = "{medicine_type}"'.format(
+                medicine_type=dict_groups_type,
+            )
+
+        if keyword is None:
+            keyword_condition = ''
+        else:
+            keyword_condition = '{keyword}'.format(keyword=keyword)
+
+        if medicine_type_condition != '' and keyword_condition != '':
+            keyword_condition = ' AND ' + keyword_condition
+
         sql = '''
             SELECT * FROM medicine 
             WHERE 
-                MedicineType = "{0}" 
-        '''.format(dict_groups_type)
-        if keyword is not None:
-            sql += keyword
-
-        sql += ' ORDER BY MedicineCode, MedicineName'
+                {medicine_type_condition}
+                {keyword_condition}
+            ORDER BY MedicineCode, MedicineName
+        '''.format(
+            medicine_type_condition=medicine_type_condition,
+            keyword_condition=keyword_condition,
+        )
 
         self.table_widget_dict_drug.set_db_data(sql, self._set_dict_drug_data)
         medicine_key = self.table_widget_dict_drug.field_value(0)
@@ -455,7 +483,6 @@ class DictDrug(QtWidgets.QMainWindow):
         if dict_groups_type == item:
             self._read_dict_drug(dict_groups_type)
 
-
     def dict_drug_changed(self):
         medicine_key = self.table_widget_dict_drug.field_value(0)
         self._read_drug_description(medicine_key)
@@ -492,10 +519,13 @@ class DictDrug(QtWidgets.QMainWindow):
         if keyword == '':
             self._read_dict_drug(dict_groups_type)
         else:
+            if self.ui.checkBox_find_all.isChecked():
+                dict_groups_type = None
+
             script = '''
-                AND 
                 (InputCode LIKE "{0}%" OR MedicineName LIKE "%{0}%")
             '''.format(keyword)
+
             self._read_dict_drug(dict_groups_type, script)
 
         self.ui.lineEdit_search_drug.setFocus(True)

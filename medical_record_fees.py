@@ -24,7 +24,10 @@ class MedicalRecordFees(QtWidgets.QMainWindow):
 
         self._set_ui()
         self._set_signal()
-        self._read_fees()
+        if self.case_key <= 0:
+            self._set_new_self_medical_fees()
+        else:
+            self._read_fees()
 
     # 解構
     def __del__(self):
@@ -68,6 +71,60 @@ class MedicalRecordFees(QtWidgets.QMainWindow):
     def _set_table_width(self):
         self.table_widget_ins_fees.set_table_heading_width([75])
         self.table_widget_cash_fees.set_table_heading_width([75])
+
+    def _set_new_self_medical_fees(self):
+        ins_fees = [
+            [-1, None],
+            [0, None],
+            [1, None],
+            [2, None],
+            [3, None],
+            [4, None],
+            [5, None],
+            [6, None],
+            [7, None],
+            [8, None],
+            [9, None],
+        ]
+
+        cash_fees = [
+            [-1, None],
+            [0, None],
+            [1, None],
+            [2, None],
+            [3, None],
+            [4, None],
+            [5, None],
+            [6, None],
+            [7, None],
+            [8, None],
+            [9, None],
+            [10, None],
+            [11, None],
+            [12, None],
+            [13, None],
+            [14, None],
+            [15, None],
+        ]
+
+        for fees in ins_fees:
+            if fees[1] is None:
+                fees[1] = 0
+            self.ui.tableWidget_ins_fees.setItem(
+                fees[0], 1,
+                QtWidgets.QTableWidgetItem(string_utils.xstr(fees[1])))
+
+        for fees in cash_fees:
+            if fees[1] is None:
+                fees[1] = 0
+            self.ui.tableWidget_cash_fees.setItem(
+                fees[0], 1,
+                QtWidgets.QTableWidgetItem(string_utils.xstr(fees[1])))
+
+        self.ui.tableWidget_ins_fees.setAlternatingRowColors(True)
+        self.ui.tableWidget_cash_fees.setAlternatingRowColors(True)
+
+        self._adjust_table_widget_align()
 
     def _read_fees(self):
         sql = '''
@@ -219,6 +276,9 @@ class MedicalRecordFees(QtWidgets.QMainWindow):
                 QtWidgets.QTableWidgetItem(string_utils.xstr(fee[1]))
             )
 
+        if self.system_settings.field('自動完成批價作業') == 'Y':
+            self.auto_cashier()
+
         self._adjust_table_widget_align()
 
     # 自費批價
@@ -251,6 +311,10 @@ class MedicalRecordFees(QtWidgets.QMainWindow):
             )
 
         self._calculate_own_expense_total()
+
+        if self.system_settings.field('自動完成批價作業') == 'Y':
+            self.auto_cashier()
+
         self._adjust_table_widget_align()
 
     def _calculate_own_expense_total(self):
@@ -286,4 +350,20 @@ class MedicalRecordFees(QtWidgets.QMainWindow):
         )
 
         self._adjust_table_widget_align()
+
+    def auto_cashier(self):
+        receipt_drug_share_fee = number_utils.get_integer(
+            charge_utils.get_table_widget_item_fee(self.ui.tableWidget_ins_fees, 8, 0)
+        )
+        total_fee = number_utils.get_integer(
+            charge_utils.get_table_widget_item_fee(self.ui.tableWidget_cash_fees, 14, 0)
+        )
+        self.ui.tableWidget_cash_fees.setItem(
+            2, 0,
+            QtWidgets.QTableWidgetItem(string_utils.xstr(receipt_drug_share_fee))
+        )
+        self.ui.tableWidget_cash_fees.setItem(
+            15, 0,
+            QtWidgets.QTableWidgetItem(string_utils.xstr(total_fee))
+        )
 

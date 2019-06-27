@@ -101,7 +101,6 @@ class CheckInsTreat(QtWidgets.QMainWindow):
             WHERE
                 (cases.CaseDate BETWEEN "{start_date}" AND "{end_date}") AND
                 (cases.InsType = "健保") AND
-                (cases.Card != "欠卡") AND
                 (Treatment IS NOT NULL AND Treatment != "") AND
                 ({apply_type_sql})
             ORDER BY PatientKey, CaseDate

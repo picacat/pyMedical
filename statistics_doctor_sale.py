@@ -346,7 +346,7 @@ class StatisticsDoctorSale(QtWidgets.QMainWindow):
             slice.setExploded()
             slice.setLabelVisible()
 
-        if self.ui.tableWidget_sale_summary.rowCount() >= 10:
+        if self.ui.tableWidget_sale_summary.rowCount() > 10:
             series.append('其他', total_amount)
             slice = series.slices()[10]
             slice.setExploded()

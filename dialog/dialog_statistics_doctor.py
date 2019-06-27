@@ -2,14 +2,12 @@
 # 病歷查詢 2014.09.22
 #coding: utf-8
 
-from PyQt5 import QtWidgets
-from PyQt5.QtWidgets import QMessageBox
+from PyQt5 import QtWidgets, QtCore
 import datetime
-import re
+import calendar
 
 from libs import ui_utils
 from libs import system_utils
-from libs import date_utils
 
 
 # 病歷查詢視窗
@@ -53,6 +51,14 @@ class DialogStatisticsDoctor(QtWidgets.QDialog):
     # 設定信號
     def _set_signal(self):
         self.ui.buttonBox.accepted.connect(self.accepted_button_clicked)
+        self.ui.dateEdit_start_date.dateChanged.connect(self._start_date_changed)
+
+    def _start_date_changed(self):
+        year = self.ui.dateEdit_start_date.date().year()
+        month = self.ui.dateEdit_start_date.date().month()
+        last_day = calendar.monthrange(year, month)[1]
+
+        self.ui.dateEdit_end_date.setDate(QtCore.QDate(year, month, last_day))
 
     # 設定comboBox
     def _set_combo_box(self):

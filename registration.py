@@ -117,6 +117,10 @@ class Registration(QtWidgets.QMainWindow):
         self.ui.toolButton_modify_patient2.clicked.connect(self._modify_patient)
         self.ui.toolButton_modify_wait.clicked.connect(self._modify_wait)
         self.ui.toolButton_edit_cases.clicked.connect(self._modify_wait)
+        self.ui.toolButton_ic_cancel_2.clicked.connect(self.cancel_ic_card)
+        self.ui.toolButton_write_ic.clicked.connect(self.write_ic_treatment)
+        self.ui.toolButton_rewrite_ic_prescript.clicked.connect(self.rewrite_ic_card)
+        self.ui.toolButton_quick_ic_card.clicked.connect(self._quick_write_ic_treatment)
 
         self.ui.tableWidget_wait.doubleClicked.connect(self._modify_wait)
         self.ui.tableWidget_wait_completed.doubleClicked.connect(self._modify_wait)
@@ -140,9 +144,6 @@ class Registration(QtWidgets.QMainWindow):
         self.ui.lineEdit_traditional_health_care_fee.textChanged.connect(self._selection_changed)
         self.ui.tabWidget_list.currentChanged.connect(self._waiting_list_tab_changed)                   # 切換分頁
         self.ui.tableWidget_wait_completed.itemSelectionChanged.connect(self._wait_completed_table_item_changed)
-        self.ui.toolButton_ic_cancel_2.clicked.connect(self.cancel_ic_card)
-        self.ui.toolButton_write_ic.clicked.connect(self.write_ic_treatment)
-        self.ui.toolButton_rewrite_ic_prescript.clicked.connect(self.rewrite_ic_card)
 
     def _set_permission(self):
         if self.user_name == '超級使用者':
@@ -302,6 +303,7 @@ class Registration(QtWidgets.QMainWindow):
         self.table_widget_wait.set_table_heading_width(width)
         width = [
             100, 100, 70, 90, 45, 50, 80, 80, 65, 80, 45, 30, 50, 60,
+            80,
             80, 80, 80, 80, 200,
         ]
         self.table_widget_wait_completed.set_table_heading_width(width)
@@ -824,7 +826,9 @@ class Registration(QtWidgets.QMainWindow):
             warning_message.append(message)
 
         # 檢查上次健保給藥是否服藥完畢
-        message = registration_utils.check_prescription_finished(self.database, patient_key)
+        message = registration_utils.check_prescription_finished(
+            self.database, None, patient_key
+        )
         if message is not None:
             warning_message.append(message)
 
@@ -832,7 +836,7 @@ class Registration(QtWidgets.QMainWindow):
             system_utils.show_message_box(
                 QMessageBox.Warning,
                 '掛號檢查結果提醒',
-                '<h4><font color="red">{0}</font></h4>'.format('\n'.join(warning_message)),
+                '<h4><font color="red">{0}</font></h4>'.format('<br>'.join(warning_message)),
                 '請注意! 以上的狀況提示並非資料發生錯誤, 若有疑問, 請至 [病歷查詢] 檢查該筆資料的內容.'
             )
 
@@ -1701,17 +1705,17 @@ class Registration(QtWidgets.QMainWindow):
             self._read_wait_completed()
 
     def _read_wait_completed(self):
-        sort = 'ORDER BY FIELD(cases.Period, "晚班", "午班", "早班"), cases.RegistNo DESC'
-
         sql = '''
-            SELECT wait.WaitKey, cases.*, patient.Gender FROM wait
-            LEFT JOIN patient ON wait.PatientKey = patient.PatientKey
-            LEFT JOIN cases ON wait.CaseKey = cases.CaseKey
+            SELECT 
+                wait.WaitKey, cases.*, patient.Gender 
+            FROM wait
+                LEFT JOIN patient ON wait.PatientKey = patient.PatientKey
+                LEFT JOIN cases ON wait.CaseKey = cases.CaseKey
             WHERE 
-            cases.DoctorDone = "True"
+                cases.TreatType NOT IN ("自購") AND
+                cases.DoctorDone = "True"
+            ORDER BY FIELD(cases.Period, "晚班", "午班", "早班"), cases.RegistNo DESC
         '''
-        sql += sort
-
         self.table_widget_wait_completed.set_db_data(sql, self._set_wait_completed_data)
         row_count = self.table_widget_wait_completed.row_count()
 
@@ -1749,6 +1753,7 @@ class Registration(QtWidgets.QMainWindow):
             row['Room'],
             row['RegistNo'],
             string_utils.xstr(ic_wrote),
+            string_utils.xstr(row['Doctor']),
             number_utils.get_integer(row['RegistFee']),
             number_utils.get_integer(row['SDiagShareFee']),
             number_utils.get_integer(row['DrugShareFee']),
@@ -1763,7 +1768,7 @@ class Registration(QtWidgets.QMainWindow):
             self.ui.tableWidget_wait_completed.setItem(
                 row_no, col_no, item,
             )
-            if col_no in [2, 11, 12, 14, 15, 16, 17]:
+            if col_no in [2, 11, 12, 15, 16, 17, 18]:
                 self.ui.tableWidget_wait_completed.item(
                     row_no, col_no).setTextAlignment(
                     QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
@@ -1799,6 +1804,64 @@ class Registration(QtWidgets.QMainWindow):
 
         self._set_permission()
 
+    def _quick_write_ic_treatment(self):
+        current_row = self.ui.tableWidget_wait_completed.currentRow()
+        ic_card = cshis.CSHIS(self.database, self.system_settings)
+        if not ic_card.read_basic_data():
+            return
+
+        patient_found = False
+        for row_no in range(self.ui.tableWidget_wait_completed.rowCount()):
+            self.ui.tableWidget_wait_completed.setCurrentCell(row_no, 2)
+            ins_type = self.table_widget_wait_completed.field_value(5)
+            if ins_type != '健保':
+                continue
+
+            patient_key = self.table_widget_wait_completed.field_value(2)
+            patient_id = patient_utils.get_patient_id(self.database, patient_key)
+
+            if ic_card.basic_data['patient_id'] == patient_id:
+                patient_found = True
+                break
+
+        if not patient_found:
+            name = ic_card.basic_data['name']
+            system_utils.show_message_box(
+                QMessageBox.Critical,
+                '找不到此人的病歷',
+                '''<font size="4" color="red"><b>找不到{name}的病歷, 
+                    無法執行健保卡就醫資料寫入作業.</b></font>'''.format(
+                   name=name,
+                ),
+                '請確定插入的健保卡是否正確.'
+            )
+            self.ui.tableWidget_wait_completed.setCurrentCell(current_row, 2)
+            return
+
+        if self.table_widget_wait_completed.field_value(13) == '是':
+            name = self.table_widget_wait_completed.field_value(3)
+            system_utils.show_message_box(
+                QMessageBox.Critical,
+                '健保卡病歷已寫入',
+                '''<font size="4" color="red"><b>{name}的健保卡病歷已寫入, 
+                    不需要再執行健保卡就醫資料寫入作業.</b></font>'''.format(
+                    name=name,
+                ),
+                '請取出健保卡.'
+            )
+            return
+
+        case_key = self.table_widget_wait_completed.field_value(1)
+        card = string_utils.xstr(self.table_widget_wait_completed.field_value(9))
+
+        if card == '':
+            self.rewrite_ic_card()
+            self._read_wait_completed()
+            return
+
+        ic_card.write_ic_medical_record(case_key, cshis_utils.NORMAL_CARD)
+        self._read_wait_completed()
+
     def write_ic_treatment(self):
         msg_box = dialog_utils.get_message_box(
             '寫入健保卡就醫資料', QMessageBox.Question,
@@ -1819,7 +1882,6 @@ class Registration(QtWidgets.QMainWindow):
 
         ic_card = cshis.CSHIS(self.database, self.system_settings)
         ic_card.write_ic_medical_record(case_key, cshis_utils.NORMAL_CARD)
-
         self._read_wait_completed()
 
     def _clear_wait(self):

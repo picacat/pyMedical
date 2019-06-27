@@ -5,12 +5,15 @@
 import sys
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtWidgets import QMessageBox, QPushButton
+import  datetime
+
 from libs import ui_utils
 from libs import string_utils
 from libs import number_utils
 from libs import printer_utils
 from libs import system_utils
 from libs import personnel_utils
+from libs import case_utils
 from dialog import dialog_medical_record_list
 from classes import table_widget
 from printer import print_prescription
@@ -103,8 +106,10 @@ class MedicalRecordList(QtWidgets.QMainWindow):
 
         # 設定欄位寬度
     def _set_table_width(self):
-        width = [70, 10, 160, 50, 40, 40, 40, 50, 80, 80, 40, 120, 50, 80, 80, 70, 40, 40, 80, 200,
-                 80, 80, 80, 80, 80]
+        width = [
+            70, 10, 160, 50, 40, 40, 40, 50, 80, 80, 40, 120, 50, 80, 80, 70, 40, 40, 80, 200,
+            80, 80, 80, 80, 80
+        ]
         self.table_widget_medical_record_list.set_table_heading_width(width)
 
     # 讀取病歷
@@ -321,9 +326,16 @@ class MedicalRecordList(QtWidgets.QMainWindow):
             return
 
         case_key = self.table_widget_medical_record_list.field_value(0)
+
+        case_utils.backup_medical_record(
+            self.database, case_key, self.system_settings.field('使用者'),
+            datetime.datetime.now(),
+        )  # 備份資料
+
         self.database.delete_record('cases', 'CaseKey', case_key)
         self.database.delete_record('wait', 'CaseKey', case_key)
         self.database.delete_record('prescript', 'CaseKey', case_key)
+        self.database.delete_record('dosage', 'CaseKey', case_key)
         self.database.delete_record('deposit', 'CaseKey', case_key)
         self.database.delete_record('debt', 'CaseKey', case_key)
         current_row = self.ui.tableWidget_medical_record_list.currentRow()

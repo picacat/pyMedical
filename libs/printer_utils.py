@@ -1253,7 +1253,10 @@ def get_prescript_count(database, case_key, medicine_set):
         medicine_type_script=medicine_type_script,
     )
 
-    rows = database.select_record(sql)
-    prescript_count = len(rows)
+    try:
+        rows = database.select_record(sql)
+        prescript_count = len(rows)
+    except:
+        prescript_count = 0
 
     return prescript_count

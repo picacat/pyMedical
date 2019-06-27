@@ -35,6 +35,10 @@ class MedicalRecordRegistration(QtWidgets.QMainWindow):
         self._read_case_registration()
         self._set_signal()  # 先讀完資料才設定信號
 
+        if self.call_from == '新增自費病歷':
+            self._set_new_self_medical_record()
+            self.case_key = -1
+
     # 解構
     def __del__(self):
         self.close_all()
@@ -349,7 +353,6 @@ class MedicalRecordRegistration(QtWidgets.QMainWindow):
 
         self.database.update_record('cases', fields, 'CaseKey', self.case_key, data)
 
-
         if self.cshis_data_changed:
             upload_type = self.ui.comboBox_upload_type.currentText().split('-')[0]
             treat_after_check = self.ui.comboBox_treat_after_check.currentText().split('-')[0]
@@ -363,3 +366,34 @@ class MedicalRecordRegistration(QtWidgets.QMainWindow):
 
     def _cshis_data_changed(self):
         self.cshis_data_changed = True
+
+    def _set_new_self_medical_record(self):
+        user_name = self.system_settings.field('使用者')
+
+        self.ui.comboBox_ins_type.setCurrentText('自費')
+        self.ui.lineEdit_completion_time.setText('')
+        self.ui.lineEdit_charge_time.setText('')
+
+        self.ui.comboBox_registrar.setCurrentText(user_name)
+        self.ui.comboBox_doctor.setCurrentText(user_name)
+        self.ui.comboBox_cashier.setCurrentText(user_name)
+        self.ui.comboBox_charge_period.setCurrentText(None)
+
+        self.ui.comboBox_upload_type.setCurrentText('1-正常上傳')
+        self.ui.comboBox_treat_after_check.setCurrentText('1-正常')
+        self.ui.lineEdit_clinic_id.setText('')
+        self.ui.lineEdit_sam_id.setText('')
+        self.ui.lineEdit_ic_registration.setText('')
+        self.ui.lineEdit_seq_number.setText('')
+        self.ui.lineEdit_prescript_sign_time.setText('')
+        self.ui.lineEdit_upload_time.setText('')
+        self.ui.textEdit_signature.setPlainText('')
+
+        self.ui.comboBox_reg_type.setCurrentText('內科')
+        self.ui.comboBox_card.setCurrentText('不需取得')
+        self.ui.comboBox_course.setCurrentText(None)
+        self.ui.comboBox_xcard.setCurrentText(None)
+        self.ui.lineEdit_special_code.setText('')
+        self.ui.lineEdit_ins_total_fee.setText('')
+
+        self.ui.tableWidget_prescript_sign.setRowCount(0)

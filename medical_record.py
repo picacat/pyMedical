@@ -3,7 +3,7 @@
 
 from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QMessageBox
+from PyQt5.QtWidgets import QMessageBox, QAction
 import sip
 import sys
 
@@ -20,6 +20,7 @@ from libs import dialog_utils
 from libs import registration_utils
 
 from printer import print_prescription
+from printer import print_receipt
 
 import ins_prescript_record
 import ins_care_record
@@ -37,6 +38,8 @@ from dialog import dialog_diagnosis
 from dialog import dialog_disease
 from dialog import dialog_medicine
 from dialog import dialog_medical_record_past_history
+from dialog import dialog_medical_record_reference
+from dialog import dialog_medical_record_hosts
 
 if sys.platform == 'win32':
     from classes import cshis_win32 as cshis
@@ -57,6 +60,8 @@ class MedicalRecord(QtWidgets.QMainWindow):
 
         self.medical_record = None
         self.patient_record = None
+        self.patient_key = None
+        self.ins_type = None
         self.record_saved = False
         self.first_record = None
         self.last_record = None
@@ -71,21 +76,6 @@ class MedicalRecord(QtWidgets.QMainWindow):
         self._set_ui()
         self._set_signal()
         self._set_data()
-        self._read_prescript()
-
-        if self.call_from == '醫師看診作業':  # 這個一定要先執行
-            self._read_recently_history()
-            self._read_fees()
-        else:
-            self._read_fees()
-            self._read_recently_history()
-
-        if self.call_from == '醫師看診作業':  # 這個要在 read_fees 之後才能執行
-            if self.system_settings.field('自動顯示過去病歷') == 'Y':
-                self._open_past_history()
-
-            if self.medical_record['InsType'] == '健保':
-                self._medical_record_precheck()
 
     def _init_tab(self):
         self.tab_ins_prescript = None
@@ -144,6 +134,7 @@ class MedicalRecord(QtWidgets.QMainWindow):
         self.tab_registration.set_special_code()
 
         self._set_timer()
+        self._set_hosts()
 
     # 看診時間提醒
     def _set_timer(self):
@@ -151,7 +142,7 @@ class MedicalRecord(QtWidgets.QMainWindow):
             self.ui.lcdNumber.setVisible(False)
             return
 
-        self.BLINKING_TIME = 8  # 看診警告時間
+        self.BLINKING_TIME = 9999  # 看診警告時間
         self.ui.lcdNumber.display('00:00')
         self.timer = QtCore.QTimer(self)
         self.set_blinking = False
@@ -192,14 +183,64 @@ class MedicalRecord(QtWidgets.QMainWindow):
         else:
             self.ui.lcdNumber.show()
 
+    def _set_hosts(self):
+        sql = '''
+            SELECT * FROM hosts
+            ORDER BY HostsKey
+        '''
+        rows = self.database.select_record(sql)
+        if len(rows) <= 0:
+            self.ui.action_open_hosts.setVisible(False)
+
+    def _open_medical_record_hosts(self):
+        patient_id = string_utils.xstr(self.patient_record['ID'])
+        if patient_id == '':
+            return
+
+        dialog = dialog_medical_record_hosts.DialogMedicalRecordHosts(
+            self, self.database, self.system_settings, patient_id,
+        )
+
+        dialog.exec_()
+        dialog.deleteLater()
+
+    def _set_hosts_menu_items(self):
+        sql = '''
+            SELECT * FROM hosts
+            ORDER BY HostsKey
+        '''
+        rows = self.database.select_record(sql)
+
+        menu_item = []
+        for row_no, row in zip(range(len(rows)), rows):
+            clinic_name = string_utils.xstr(row['ClinicName'])
+            menu_item.append(QAction(
+                QtGui.QIcon('./icons/network-server.png'),
+                clinic_name, self
+            ))
+            menu_item[row_no].setStatusTip('開啟分院的病歷資料')
+            menu_item[row_no].triggered.connect(self._open_hosts_medical_records)
+            self.ui.menu_hosts.addAction(menu_item[row_no])
+
+    def _open_hosts_medical_records(self):
+        patient_id = string_utils.xstr(self.patient_record['ID'])
+
+        if patient_id == '':
+            return
+
+        clinic_name = self.sender().text()
+
     # 設定信號
     def _set_signal(self):
         self.ui.action_past_history.triggered.connect(self._open_past_history)
         self.ui.action_save.triggered.connect(self.save_medical_record)
         self.ui.action_save_and_print.triggered.connect(self.save_medical_record)
         self.ui.action_dictionary.triggered.connect(self.open_dictionary)
+        self.ui.action_reference.triggered.connect(self._open_medical_record_reference)
         self.ui.action_close.triggered.connect(self.close_medical_record)
         self.ui.action_patient.triggered.connect(self.modify_patient)
+        self.ui.action_append_self_medical_record.triggered.connect(self._append_new_self_medical_record)
+        self.ui.action_open_hosts.triggered.connect(self._open_medical_record_hosts)
 
         self.ui.lineEdit_disease_code1.textChanged.connect(self.disease_code_changed)
         self.ui.lineEdit_disease_code1.returnPressed.connect(self.disease_code_return_pressed)
@@ -330,8 +371,7 @@ class MedicalRecord(QtWidgets.QMainWindow):
         self.close_tab()
 
     def modify_patient(self):
-        patient_key = self.patient_record['PatientKey']
-        self.parent.open_patient_record(patient_key, '門診掛號')
+        self.parent.open_patient_record(self.patient_key, '門診掛號')
 
     def disease_code_editing_finished(self):
         disease_list = [
@@ -472,11 +512,11 @@ class MedicalRecord(QtWidgets.QMainWindow):
         line_edit_disease_name.setText(disease_name)
 
     def _read_data(self):
-        read_success = True
-
+        read_result = True
         try:
             sql = 'SELECT * FROM cases WHERE CaseKey = {0}'.format(self.case_key)
             self.medical_record = self.database.select_record(sql)[0]
+            self.ins_type = string_utils.xstr(self.medical_record['InsType'])
         except IndexError:
             system_utils.show_message_box(
                 QtWidgets.QMessageBox.Critical,
@@ -484,34 +524,46 @@ class MedicalRecord(QtWidgets.QMainWindow):
                 '<font size="4" color="red"><b>找不到病歷資料, 請重新掛號.</b></font>',
                 '資料不明原因遺失.'
             )
-            read_success = False
+            read_result = False
 
         if self.medical_record['PatientKey'] == 0:
-            return read_success
+            return read_result
 
         try:
             sql = 'SELECT * FROM patient WHERE PatientKey = {0}'.format(self.medical_record['PatientKey'])
             self.patient_record = self.database.select_record(sql)[0]
+            self.patient_key = self.patient_record['PatientKey']
         except IndexError:
             system_utils.show_message_box(
                 QtWidgets.QMessageBox.Critical,
                 '資料遺失',
-                '<font size="4" color="red"><b>找不到病患資料, 請新掛號.</b></font>',
+                '<font size="4" color="red"><b>找不到病患資料, 請更新病歷內的病歷號碼.</b></font>',
                 '資料不明原因遺失.'
             )
-            read_success = False
+            # read_result = False
 
-        return read_success
+        return read_result
 
     def _set_data(self):
         self._set_patient_data()
+        if self.call_from == '新增自費病歷':
+            self._read_recently_history()
+            self.case_key = -1
+            self.ins_type = '自費'
+            self._read_fees()
+            self.add_prescript_tab(2)
+            return
+
         self._set_medical_record()
+        self._set_prescripts()
+        self._set_fees()
+        self._set_misc()
 
     def _set_patient_data(self):
         if self.patient_record is None:
             name = string_utils.xstr(self.medical_record['Name'])
             self.ui.label_case_date.setText(string_utils.xstr(self.medical_record['CaseDate']))
-            self.ui.label_ins_type.setText(string_utils.xstr(self.medical_record['InsType']))
+            self.ui.label_ins_type.setText(self.ins_type)
             self.ui.label_patient_name.setText(string_utils.xstr(name))
             self.ui.label_regist_no.setText('')
             self.ui.label_share_type.setText('')
@@ -540,26 +592,11 @@ class MedicalRecord(QtWidgets.QMainWindow):
             card += '-' + string_utils.xstr(self.medical_record['Continuance'])
 
         self.ui.label_case_date.setText(string_utils.xstr(self.medical_record['CaseDate']))
-        self.ui.label_ins_type.setText(string_utils.xstr(self.medical_record['InsType']))
+        self.ui.label_ins_type.setText(string_utils.xstr(self.ins_type))
         self.ui.label_patient_name.setText(string_utils.xstr(name))
         self.ui.label_regist_no.setText(string_utils.xstr(self.medical_record['RegistNo']))
         self.ui.label_share_type.setText(string_utils.xstr(self.medical_record['Share']))
         self.ui.label_card.setText(string_utils.xstr(card))
-
-    # 顯示病歷
-    def _set_medical_record(self):
-        self.ui.textEdit_symptom.setText(string_utils.get_str(self.medical_record['Symptom'], 'utf8'))
-        self.ui.textEdit_tongue.setText(string_utils.get_str(self.medical_record['Tongue'], 'utf8'))
-        self.ui.textEdit_pulse.setText(string_utils.get_str(self.medical_record['Pulse'], 'utf8'))
-        self.ui.textEdit_remark.setText(string_utils.get_str(self.medical_record['Remark'], 'utf8'))
-        self.ui.lineEdit_disease_code1.setText(string_utils.get_str(self.medical_record['DiseaseCode1'], 'utf8'))
-        self.ui.lineEdit_disease_name1.setText(string_utils.get_str(self.medical_record['DiseaseName1'], 'utf8'))
-        self.ui.lineEdit_disease_code2.setText(string_utils.get_str(self.medical_record['DiseaseCode2'], 'utf8'))
-        self.ui.lineEdit_disease_name2.setText(string_utils.get_str(self.medical_record['DiseaseName2'], 'utf8'))
-        self.ui.lineEdit_disease_code3.setText(string_utils.get_str(self.medical_record['DiseaseCode3'], 'utf8'))
-        self.ui.lineEdit_disease_name3.setText(string_utils.get_str(self.medical_record['DiseaseName3'], 'utf8'))
-        self.ui.lineEdit_distinguish.setText(string_utils.get_str(self.medical_record['Distincts'], 'utf8'))
-        self.ui.lineEdit_cure.setText(string_utils.get_str(self.medical_record['Cure'], 'utf8'))
 
     def close_tab(self):
         current_tab = self.parent.ui.tabWidget_window.currentIndex()
@@ -697,8 +734,29 @@ class MedicalRecord(QtWidgets.QMainWindow):
         dialog.exec_()
         dialog.deleteLater()
 
-    def _read_prescript(self):
-        if self.medical_record['InsType'] == '健保':  # 健保一定要開啟
+    # 顯示病歷
+    def _set_medical_record(self):
+        self.ui.textEdit_symptom.setText(string_utils.get_str(self.medical_record['Symptom'], 'utf8'))
+        self.ui.textEdit_tongue.setText(string_utils.get_str(self.medical_record['Tongue'], 'utf8'))
+        self.ui.textEdit_pulse.setText(string_utils.get_str(self.medical_record['Pulse'], 'utf8'))
+        self.ui.textEdit_remark.setText(string_utils.get_str(self.medical_record['Remark'], 'utf8'))
+        self.ui.lineEdit_disease_code1.setText(string_utils.get_str(self.medical_record['DiseaseCode1'], 'utf8'))
+        self.ui.lineEdit_disease_name1.setText(string_utils.get_str(self.medical_record['DiseaseName1'], 'utf8'))
+        self.ui.lineEdit_disease_code2.setText(string_utils.get_str(self.medical_record['DiseaseCode2'], 'utf8'))
+        self.ui.lineEdit_disease_name2.setText(string_utils.get_str(self.medical_record['DiseaseName2'], 'utf8'))
+        self.ui.lineEdit_disease_code3.setText(string_utils.get_str(self.medical_record['DiseaseCode3'], 'utf8'))
+        self.ui.lineEdit_disease_name3.setText(string_utils.get_str(self.medical_record['DiseaseName3'], 'utf8'))
+        self.ui.lineEdit_distinguish.setText(string_utils.get_str(self.medical_record['Distincts'], 'utf8'))
+        self.ui.lineEdit_cure.setText(string_utils.get_str(self.medical_record['Cure'], 'utf8'))
+
+        if self.medical_record['Reference'] == 'True':
+            self.ui.checkBox_reference.setChecked(True)
+        else:
+            self.ui.checkBox_reference.setChecked(False)
+
+    # 顯示處方
+    def _set_prescripts(self):
+        if self.ins_type == '健保':  # 健保一定要開啟
             self.add_prescript_tab(1)
 
         # 讀取自費資料
@@ -716,6 +774,25 @@ class MedicalRecord(QtWidgets.QMainWindow):
 
         for row in rows:
             self.add_prescript_tab(row['MedicineSet'])
+
+    def _set_fees(self):
+        if self.call_from == '醫師看診作業':
+            self._read_recently_history()
+            self._read_fees()
+        else:
+            self._read_fees()
+            self._read_recently_history()
+
+    # 設定雜項 (這個要在 _set_fees 之後才能執行)
+    def _set_misc(self):
+        if self.call_from != '醫師看診作業':
+            return
+
+        if self.system_settings.field('自動顯示過去病歷') == 'Y':
+            self._open_past_history()
+
+        if self.ins_type == '健保':
+            self._medical_record_precheck()
 
     def _get_new_tab(self, max_medicine_set):
         tab_name = None
@@ -775,6 +852,7 @@ class MedicalRecord(QtWidgets.QMainWindow):
         for i in range(1, self.max_tab):
             if tab_name == '自費{0}'.format(i):
                 self.tab_list[i] = new_tab
+                self.tab_list[i].append_null_medicine()
                 current_tab = self.tab_list[i]
 
         if current_tab is None:
@@ -810,9 +888,87 @@ class MedicalRecord(QtWidgets.QMainWindow):
         self.ui.tabWidget_past_record.addTab(self.tab_medical_record_fees, '批價明細')
         self.calculate_ins_fees()
 
+    # 新增自費病歷
+    def save_new_self_medical_record(self):
+        self.record_saved = True
+        self._set_doctor()
+
+        case_key = self._insert_medical_record()
+        self.update_diagnosis_data(case_key)
+        self.tab_registration.case_key = case_key
+        self.tab_registration.data_changed = True
+        self.tab_registration.save_record()
+        self.update_cash_fees_data(case_key)
+        self._set_doctor_done(case_key)
+        self._set_charge_done(case_key)
+
+        self._insert_wait_record(case_key)
+        self._set_wait_done(case_key)
+
+        for medicine_set, tab_prescript in zip(range(1, self.max_tab+1), self.tab_list):
+            if tab_prescript is not None:
+                try:
+                    tab_prescript.case_key = case_key
+                except RuntimeError:  # 關閉處方頁, 刪除整個處方
+                    self.remove_prescript(medicine_set)
+            else:
+                self.remove_prescript(medicine_set)
+
+        self.save_prescript()
+
+        if self.sender().text() == '存檔列印':
+            self._print()
+
+        socket_client = udp_socket_client.UDPSocketClient()
+        socket_client.send_data('醫師看診作業完成')
+
+        self.close_all()
+        self.close_tab()
+
+    # 新增自費病歷
+    def _insert_medical_record(self):
+        fields = [
+            'PatientKey', 'CaseDate',
+        ]
+
+        data = [
+            self.patient_key,
+            self.tab_registration.lineEdit_case_date.text(),
+        ]
+        case_key = self.database.insert_record('cases', fields, data)
+
+        return case_key
+
+    # 新增自費病歷候診名單
+    def _insert_wait_record(self, case_key):
+        fields = ['CaseKey', 'CaseDate', 'PatientKey', 'Name', 'Visit', 'RegistType',
+                  'TreatType', 'Share', 'InsType', 'Period',
+                  'Room', 'RegistNo', 'Doctor', 'Massager']
+        data = [
+            case_key,
+            self.tab_registration.lineEdit_case_date.text(),
+            self.patient_key,
+            self.tab_registration.lineEdit_name.text(),
+            self.tab_registration.comboBox_visit.currentText(),
+            self.tab_registration.comboBox_reg_type.currentText(),
+            self.tab_registration.comboBox_treat_type.currentText(),
+            self.tab_registration.comboBox_share_type.currentText(),
+            self.tab_registration.comboBox_ins_type.currentText(),
+            self.tab_registration.comboBox_period.currentText(),
+            self.tab_registration.comboBox_room.currentText(),
+            self.tab_registration.lineEdit_regist_no.text(),
+            self.tab_registration.comboBox_doctor.currentText(),
+            self.tab_registration.comboBox_massager.currentText(),
+        ]
+        self.database.insert_record('wait', fields, data)
+
     # 病歷存檔
     def save_medical_record(self):
-        if (self.medical_record['InsType'] == '健保' and
+        if self.call_from == '新增自費病歷':
+            self.save_new_self_medical_record()
+            return
+
+        if (self.ins_type == '健保' and
                 self.tab_registration.comboBox_ins_type.currentText() == '健保'):
             treat_type = self.tab_registration.ui.comboBox_treat_type.currentText()
             special_code = self.tab_registration.ui.lineEdit_special_code.text()
@@ -853,17 +1009,17 @@ class MedicalRecord(QtWidgets.QMainWindow):
         self.record_saved = True
         self._set_necessary_fields()
 
-        doctor_done = False
+        set_doctor_done = False
         if self.call_from == '醫師看診作業':
-            doctor_done = True
+            set_doctor_done = True
 
-        self.update_medical_record(doctor_done)
+        self.update_medical_record(set_doctor_done)
         if self.sender().text() == '存檔列印':
             self._print()
 
         card = string_utils.xstr(self.medical_record['Card'])
         xcard = string_utils.xstr(self.medical_record['XCard'])
-        if ((self.medical_record['InsType'] == '健保') and
+        if ((self.ins_type == '健保') and
                 (self.call_from == '醫師看診作業') and
                 (self.system_settings.field('產生醫令簽章位置') == '診療') and
                 (self.system_settings.field('使用讀卡機') == 'Y') and
@@ -883,12 +1039,18 @@ class MedicalRecord(QtWidgets.QMainWindow):
 
         del print_prescript
 
+        if self.system_settings.field('自動完成批價作業') == 'Y':
+            print_charge = print_receipt.PrintReceipt(
+                self, self.database, self.system_settings, self.case_key, '系統設定')
+            print_charge.print()
+            del print_charge
+
     # 設定必要欄位
     def _set_necessary_fields(self):
-        if (self.call_from == '醫師看診作業'):  # 所有病歷都要設定
+        if self.call_from == '醫師看診作業':  # 所有病歷都要設定
             self._set_doctor()
 
-        if (string_utils.xstr(self.medical_record['InsType']) == '健保'):
+        if self.ins_type == '健保':
             self._set_treatment_and_course()
 
     # 設定主治醫師姓名
@@ -913,7 +1075,7 @@ class MedicalRecord(QtWidgets.QMainWindow):
                 self.tab_registration.ui.comboBox_course.setCurrentText(None)
 
     # 病歷存檔
-    def update_medical_record(self, doctor_done=False):
+    def update_medical_record(self, set_doctor_done=False):
         self.update_diagnosis_data()
         self.update_treat_data()
         self.update_ins_fees_data()
@@ -921,34 +1083,85 @@ class MedicalRecord(QtWidgets.QMainWindow):
         self.tab_registration.save_record()
         self.save_prescript()
 
-        if doctor_done:
+        if set_doctor_done:
             self._set_doctor_done()
+            self._set_charge_done()
             self._set_wait_done()
             socket_client = udp_socket_client.UDPSocketClient()
             socket_client.send_data('醫師看診作業完成')
 
-    def _set_doctor_done(self):
+    def _set_doctor_done(self, case_key=None):
+        if case_key is None:
+            case_key = self.case_key
+
         self.database.exec_sql(
             'UPDATE cases SET DoctorDone = "True", DoctorDate = "{0}" WHERE CaseKey = {1}'.format(
-                date_utils.now_to_str(), self.case_key))
+                date_utils.now_to_str(), case_key))
 
-    def _set_wait_done(self):
-        self.database.exec_sql(
-            'UPDATE wait SET DoctorDone = "True" WHERE CaseKey = {0}'.format(self.case_key))
+    def _set_charge_done(self, case_key=None):
+        if self.system_settings.field('自動完成批價作業') != 'Y':
+            return
+
+        if case_key is None:
+            case_key = self.case_key
+
+        sql = '''
+            UPDATE cases 
+            SET 
+                ChargeDone = "True", 
+                ChargeDate = "{charge_date}", 
+                ChargePeriod = "{charge_period}",
+                Cashier = "{cashier}"
+            WHERE 
+                CaseKey = {case_key}
+        '''.format(
+            charge_date=date_utils.now_to_str(),
+            charge_period=registration_utils.get_period(self.system_settings),
+            cashier=self.system_settings.field('使用者'),
+            case_key=case_key,
+        )
+
+        self.database.exec_sql(sql)
+
+    def _set_wait_done(self, case_key=None):
+        if case_key is None:
+            case_key = self.case_key
+
+        if self.system_settings.field('自動完成批價作業') == 'Y':
+            sql = '''
+                UPDATE wait 
+                SET 
+                    DoctorDone = "True", ChargeDone = "True" 
+                WHERE CaseKey = {case_key}
+            '''.format(
+                case_key=case_key
+            )
+        else:
+            sql = 'UPDATE wait SET DoctorDone = "True" WHERE CaseKey = {0}'.format(case_key)
+
+        self.database.exec_sql(sql)
 
     # 診斷資料存檔
-    def update_diagnosis_data(self):
+    def update_diagnosis_data(self, case_key=None):
+        if case_key is None:
+            case_key = self.case_key
+
         fields = [
             'Symptom', 'Tongue', 'Pulse', 'Remark',
             'DiseaseCode1', 'DiseaseCode2', 'DiseaseCode3',
             'DiseaseName1', 'DiseaseName2', 'DiseaseName3',
             'Distincts', 'Cure',
-            'Treatment',
+            'Treatment', 'Reference',
         ]
 
         treatment = None
-        if self.medical_record['InsType'] == '健保':
+        if self.ins_type == '健保':
             treatment = string_utils.xstr(self.tab_list[0].combo_box_treatment.currentText())
+
+        if self.ui.checkBox_reference.isChecked():
+            reference = 'True'
+        else:
+            reference = 'False'
 
         data = [
             self.ui.textEdit_symptom.toPlainText(),
@@ -963,10 +1176,10 @@ class MedicalRecord(QtWidgets.QMainWindow):
             self.ui.lineEdit_disease_name3.text(),
             self.ui.lineEdit_distinguish.text(),
             self.ui.lineEdit_cure.text(),
-            treatment,
+            treatment, reference,
         ]
 
-        self.database.update_record('cases', fields, 'CaseKey', self.case_key, data)
+        self.database.update_record('cases', fields, 'CaseKey', case_key, data)
 
     # 處置資料存檔
     def update_treat_data(self):
@@ -977,7 +1190,7 @@ class MedicalRecord(QtWidgets.QMainWindow):
 
         package1, pres_days1, instruction1 = None, None, None
         treatment = None
-        if self.medical_record['InsType'] == '健保':
+        if self.ins_type == '健保':
             package1 = string_utils.xstr(self.tab_list[0].ui.comboBox_package.currentText())
             pres_days1 = string_utils.xstr(self.tab_list[0].ui.comboBox_pres_days.currentText())
             instruction1 = string_utils.xstr(self.tab_list[0].ui.comboBox_instruction.currentText())
@@ -1007,7 +1220,10 @@ class MedicalRecord(QtWidgets.QMainWindow):
         self.database.update_record('cases', fields, 'CaseKey', self.case_key, data)
 
     # 自費批價資料存檔
-    def update_cash_fees_data(self):
+    def update_cash_fees_data(self, case_key=None):
+        if case_key is None:
+            case_key = self.case_key
+
         fields = [
             'RegistFee', 'SDiagShareFee', 'SDrugShareFee', 'DepositFee', 'RefundFee',
             'SDiagFee', 'SDrugFee', 'SHerbFee', 'SExpensiveFee',
@@ -1020,7 +1236,7 @@ class MedicalRecord(QtWidgets.QMainWindow):
             for i in range(len(fields))
         ]
 
-        self.database.update_record('cases', fields, 'CaseKey', self.case_key, data)
+        self.database.update_record('cases', fields, 'CaseKey', case_key, data)
 
     def save_prescript(self):
         for medicine_set, tab_prescript in zip(range(1, self.max_tab+1), self.tab_list):
@@ -1063,10 +1279,18 @@ class MedicalRecord(QtWidgets.QMainWindow):
 
     # 顯示拷貝過去病歷視窗
     def _open_past_history(self):
-        patient_key = self.patient_record['PatientKey']
         dialog = dialog_medical_record_past_history.DialogMedicalRecordPastHistory(
             self, self.database, self.system_settings, self.case_key,
-            patient_key,
+            self.patient_key,
+        )
+
+        dialog.exec_()
+        dialog.deleteLater()
+
+    # 顯示參考病歷
+    def _open_medical_record_reference(self):
+        dialog = dialog_medical_record_reference.DialogMedicalRecordReference(
+            self, self.database, self.system_settings, self.case_key,
         )
 
         dialog.exec_()
@@ -1177,7 +1401,7 @@ class MedicalRecord(QtWidgets.QMainWindow):
     # 檢查上次健保給藥是否服藥完畢
     def _check_pres_days(self):
         message = registration_utils.check_prescription_finished(
-            self.database, self.patient_record['PatientKey']
+            self.database, self.case_key, self.patient_key
         )
         if message is not None:
             system_utils.show_message_box(
@@ -1186,3 +1410,12 @@ class MedicalRecord(QtWidgets.QMainWindow):
                 '<h3><font color="red">{0}</font></h3>'.format(message),
                 '請注意用藥重複.'
             )
+
+    # 新增自費
+    def _append_new_self_medical_record(self):
+        self.parent.append_self_medical_record(
+            self.case_key,
+            self.patient_key,
+            self.patient_record['Name'],
+        )
+

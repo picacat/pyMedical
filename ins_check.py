@@ -33,6 +33,14 @@ class InsCheck(QtWidgets.QMainWindow):
         self.treat_limit = 15
         self.diag_limit = 6
 
+        self.check_errors = True
+        self.check_course = True
+        self.check_card = True
+        self.check_medical_record_count = True
+        self.check_prescript_days = True
+        self.check_ins_drug = True
+        self.check_ins_treat = True
+
         self._set_ui()
         self._set_signal()
 
@@ -86,90 +94,134 @@ class InsCheck(QtWidgets.QMainWindow):
             self.treat_limit = dialog.ui.spinBox_treat_limit.value()
             self.diag_limit = dialog.ui.spinBox_diag_limit.value()
 
+            self.check_errors = dialog.ui.checkBox_check_errors.isChecked()
+            self.check_course = dialog.ui.checkBox_check_course.isChecked()
+            self.check_card = dialog.ui.checkBox_check_card.isChecked()
+            self.check_medical_record_count = dialog.ui.checkBox_check_medical_record_count.isChecked()
+            self.check_prescript_days = dialog.ui.checkBox_check_prescript_days.isChecked()
+            self.check_ins_drug = dialog.ui.checkBox_check_ins_drug.isChecked()
+            self.check_ins_treat = dialog.ui.checkBox_check_ins_treat.isChecked()
+
             self._check_ins_data()
 
         dialog.close_all()
         dialog.deleteLater()
 
+    # 開始申報檢查
     def _check_ins_data(self):
-        self._create_tabs()
-        self._start_check()
-
-    def _create_tabs(self):
         self.ui.tabWidget_ins_data.clear()
+        self.tab_icon_list = []
 
-        self.tab_check_errors = check_errors.CheckErrors(
-            self, self.database, self.system_settings,
-            self.apply_year, self.apply_month, self.apply_type
-        )
-        self.tab_check_course = check_course.CheckCourse(
-            self, self.database, self.system_settings,
-            self.apply_year, self.apply_month, self.apply_type
-        )
-        self.tab_check_card = check_card.CheckCard(
-            self, self.database, self.system_settings,
-            self.apply_year, self.apply_month, self.apply_type
-        )
-        self.tab_check_medical_record_count = check_medical_record_count.CheckMedicalRecordCount(
-            self, self.database, self.system_settings,
-            self.apply_year, self.apply_month, self.apply_type, self.treat_limit, self.diag_limit,
-        )
-        self.tab_check_prescript_days = check_prescript_days.CheckPrescriptDays(
-            self, self.database, self.system_settings,
-            self.apply_year, self.apply_month, self.apply_type, self.duplicated_days,
-        )
-        self.tab_check_ins_drug = check_ins_drug.CheckInsDrug(
-            self, self.database, self.system_settings,
-            self.apply_year, self.apply_month, self.apply_type,
-        )
-        self.tab_check_ins_treat = check_ins_treat.CheckInsTreat(
-            self, self.database, self.system_settings,
-            self.apply_year, self.apply_month, self.apply_type,
-        )
-
-    def _start_check(self):
-        self.tab_check_errors.start_check()
-        self.ui.tabWidget_ins_data.addTab(self.tab_check_errors, '欄位錯誤檢查')
-
-        self.tab_check_course.start_check()
-        self.ui.tabWidget_ins_data.addTab(self.tab_check_course, '療程檢查')
-
-        self.tab_check_card.start_check()
-        self.ui.tabWidget_ins_data.addTab(self.tab_check_card, '卡序檢查')
-
-        self.tab_check_medical_record_count.start_check()
-        self.ui.tabWidget_ins_data.addTab(self.tab_check_medical_record_count, '門診次數檢查')
-
-        self.tab_check_prescript_days.start_check()
-        self.ui.tabWidget_ins_data.addTab(self.tab_check_prescript_days, '用藥天數檢查')
-
-        self.tab_check_ins_drug.start_check()
-        self.ui.tabWidget_ins_data.addTab(self.tab_check_ins_drug, '健保藥碼檢查')
-
-        self.tab_check_ins_treat.start_check()
-        self.ui.tabWidget_ins_data.addTab(self.tab_check_ins_treat, '健保處置檢查')
-
-        self.ui.tabWidget_ins_data.setCurrentIndex(0)
+        self._check_errors()
+        self._check_course()
+        self._check_card()
+        self._check_medical_record_count()
+        self._check_prescript_days()
+        self._check_ins_drug()
+        self._check_ins_treat()
 
         self._set_tab_icon()
 
+        self.ui.tabWidget_ins_data.setCurrentIndex(0)
+
+    # 欄位錯誤檢查
+    def _check_errors(self):
+        if not self.check_errors:
+            return
+
+        tab_check_errors = check_errors.CheckErrors(
+            self, self.database, self.system_settings,
+            self.apply_year, self.apply_month, self.apply_type
+        )
+        tab_check_errors.start_check()
+        self.ui.tabWidget_ins_data.addTab(tab_check_errors, '欄位錯誤檢查')
+        self._check_icon(tab_check_errors)
+
+    # 療程檢查
+    def _check_course(self):
+        if not self.check_course:
+            return
+
+        tab_check_course = check_course.CheckCourse(
+            self, self.database, self.system_settings,
+            self.apply_year, self.apply_month, self.apply_type
+        )
+        tab_check_course.start_check()
+        self.ui.tabWidget_ins_data.addTab(tab_check_course, '療程檢查')
+        self._check_icon(tab_check_course)
+
+    # 卡序檢查
+    def _check_card(self):
+        if not self.check_card:
+            return
+
+        tab_check_card = check_card.CheckCard(
+            self, self.database, self.system_settings,
+            self.apply_year, self.apply_month, self.apply_type
+        )
+        tab_check_card.start_check()
+        self.ui.tabWidget_ins_data.addTab(tab_check_card, '卡序檢查')
+        self._check_icon(tab_check_card)
+
+    # 門診次數檢查
+    def _check_medical_record_count(self):
+        if not self.check_medical_record_count:
+            return
+
+        tab_check_medical_record_count = check_medical_record_count.CheckMedicalRecordCount(
+            self, self.database, self.system_settings,
+            self.apply_year, self.apply_month, self.apply_type, self.treat_limit, self.diag_limit,
+        )
+        tab_check_medical_record_count.start_check()
+        self.ui.tabWidget_ins_data.addTab(tab_check_medical_record_count, '門診次數檢查')
+        self._check_icon(tab_check_medical_record_count)
+
+    # 用藥天數檢查
+    def _check_prescript_days(self):
+        if not self.check_prescript_days:
+            return
+
+        tab_check_prescript_days = check_prescript_days.CheckPrescriptDays(
+            self, self.database, self.system_settings,
+            self.apply_year, self.apply_month, self.apply_type, self.duplicated_days,
+        )
+        tab_check_prescript_days.start_check()
+        self.ui.tabWidget_ins_data.addTab(tab_check_prescript_days, '用藥天數檢查')
+        self._check_icon(tab_check_prescript_days)
+
+    # 健保藥碼檢查
+    def _check_ins_drug(self):
+        if not self.check_ins_drug:
+            return
+
+        tab_check_ins_drug = check_ins_drug.CheckInsDrug(
+            self, self.database, self.system_settings,
+            self.apply_year, self.apply_month, self.apply_type,
+        )
+        tab_check_ins_drug.start_check()
+        self.ui.tabWidget_ins_data.addTab(tab_check_ins_drug, '健保藥碼檢查')
+        self._check_icon(tab_check_ins_drug)
+
+    # 健保處置檢查
+    def _check_ins_treat(self):
+        if not self.check_ins_treat:
+            return
+
+        tab_check_ins_treat = check_ins_treat.CheckInsTreat(
+            self, self.database, self.system_settings,
+            self.apply_year, self.apply_month, self.apply_type,
+        )
+        tab_check_ins_treat.start_check()
+        self.ui.tabWidget_ins_data.addTab(tab_check_ins_treat, '健保處置檢查')
+        self._check_icon(tab_check_ins_treat)
+
+    def _check_icon(self, tab):
+        icon = ui_utils.ICON_OK
+        if tab.error_count() > 0:
+            icon = ui_utils.ICON_NO
+
+        self.tab_icon_list.append(icon)
+
     def _set_tab_icon(self):
-        tab_icon_list = [ui_utils.ICON_OK for i in range(self.ui.tabWidget_ins_data.count())]
-
-        if self.tab_check_errors.error_count() > 0:
-            tab_icon_list[0] = ui_utils.ICON_NO
-        if self.tab_check_course.error_count() > 0:
-            tab_icon_list[1] = ui_utils.ICON_NO
-        if self.tab_check_card.error_count() > 0:
-            tab_icon_list[2] = ui_utils.ICON_NO
-        if self.tab_check_medical_record_count.error_count() > 0:
-            tab_icon_list[3] = ui_utils.ICON_NO
-        if self.tab_check_prescript_days.error_count() > 0:
-            tab_icon_list[4] = ui_utils.ICON_NO
-        if self.tab_check_ins_drug.error_count() > 0:
-            tab_icon_list[5] = ui_utils.ICON_NO
-        if self.tab_check_ins_treat.error_count() > 0:
-            tab_icon_list[6] = ui_utils.ICON_NO
-
-        for i, icon in zip(range(len(tab_icon_list)), tab_icon_list):
+        for i, icon in zip(range(len(self.tab_icon_list)), self.tab_icon_list):
             self.ui.tabWidget_ins_data.setTabIcon(i, icon)

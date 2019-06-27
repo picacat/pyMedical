@@ -10,7 +10,7 @@ import dict_treat
 import dict_compound
 
 
-# 樣板 2018.01.31
+# 處方詞庫 2019.06.12
 class DictMedicine(QtWidgets.QMainWindow):
     # 初始化
     def __init__(self, parent=None, *args):

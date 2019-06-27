@@ -270,5 +270,4 @@ class ChargeSettingsRegist(QtWidgets.QMainWindow):
         old_man_age = number_utils.get_integer(self.system_settings.field('老人優待年齡'))
 
         if age != old_man_age:  # 資料被修改過才寫檔
-            print(age)
             self.system_settings.post('老人優待年齡', age)

@@ -208,7 +208,8 @@ class DialogReservationBooking(QtWidgets.QDialog):
                 ReserveDate >= "{start_date}" AND
                 Arrival = "False" AND
                 PatientKey = {patient_key} AND
-                Name = "{name}"
+                Name = "{name}" AND
+                Source != "網路初診預約"
         '''.format(
             start_date=start_date,
             patient_key=patient_key,

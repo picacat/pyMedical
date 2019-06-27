@@ -106,7 +106,6 @@ class CheckCard(QtWidgets.QMainWindow):
             WHERE
                 (CaseDate BETWEEN "{start_date}" AND "{end_date}") AND
                 (cases.InsType = "健保") AND
-                (Card != "欠卡") AND
                 ({apply_type_sql}) 
             ORDER BY PatientKey, CaseDate
         '''.format(
@@ -166,10 +165,14 @@ class CheckCard(QtWidgets.QMainWindow):
                 next_patient_key = self.ui.tableWidget_errors.item(row_no+1, 3).text()
                 next_share_type = self.ui.tableWidget_errors.item(row_no+1, 5).text()
                 next_card = self.ui.tableWidget_errors.item(row_no+1, 6).text()
-                next_course = number_utils.get_integer(self.ui.tableWidget_errors.item(row_no+1, 7).text())
+                next_course = number_utils.get_integer(
+                    self.ui.tableWidget_errors.item(row_no+1, 7).text()
+                )
                 next_disease_code = self.ui.tableWidget_errors.item(row_no+1, 8).text()
                 next_treat_type = self.ui.tableWidget_errors.item(row_no+1, 10).text()
-                next_pres_days = number_utils.get_integer(self.ui.tableWidget_errors.item(row_no+1, 12).text())
+                next_pres_days = number_utils.get_integer(
+                    self.ui.tableWidget_errors.item(row_no+1, 12).text()
+                )
             except AttributeError:
                 next_case_date = None
                 next_patient_key = 0
@@ -181,9 +184,14 @@ class CheckCard(QtWidgets.QMainWindow):
                 next_pres_days = 0
 
             error_message = []
+            if next_card == '':
+                error_message.append('卡序空白')
+            # elif next_card == '欠卡':
+            #     error_message.append('欠卡')
+
             if next_patient_key == 0:
                 pass
-            elif (patient_key != next_patient_key):  # 換人
+            elif patient_key != next_patient_key:  # 換人
                 pass
             else:  # 同一人
                 if treat_type != next_treat_type and next_course <= 1 and 1 <= course <= 5:

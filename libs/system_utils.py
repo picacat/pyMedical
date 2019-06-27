@@ -68,6 +68,7 @@ def show_message_box(message_icon, title, text, informative):
     msg_box.addButton(QPushButton("確定"), QMessageBox.YesRole)
     msg_box.exec_()
 
+
 def set_keyboard_layout(lang):
     if sys.platform != 'win32':
         return

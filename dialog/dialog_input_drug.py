@@ -27,11 +27,15 @@ class DialogInputDrug(QtWidgets.QDialog):
 
         self.ui = None
 
+        self.user_name = self.system_settings.field('使用者')
+
         self._set_ui()
         self._set_signal()
         if self.medicine_key is not None:
             self._edit_medicine()
             self._edit_commission()
+
+        self._set_permission()
 
     # 解構
     def __del__(self):
@@ -63,6 +67,16 @@ class DialogInputDrug(QtWidgets.QDialog):
         self.ui.buttonBox.accepted.connect(self.accepted_button_clicked)
         self.ui.toolButton_add_commission.clicked.connect(self._add_commission)
         self.ui.toolButton_remove_commission.clicked.connect(self._remove_commission)
+
+    def _set_permission(self):
+        if self.user_name == '超級使用者':
+            return
+
+        if personnel_utils.get_permission(self.database, '處方資料', '更改抽成', self.user_name) != 'Y':
+            self.ui.lineEdit_commission.setVisible(False)
+            self.ui.label_commission.setVisible(False)
+            self.ui.label_commission_hint.setVisible(False)
+            self.ui.groupBox_commission.setVisible(False)
 
     # 設定 comboBox
     def _set_combo_box(self):

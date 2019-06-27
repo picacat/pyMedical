@@ -4,7 +4,7 @@ import calendar
 
 # 取得年齡
 def get_age(birth_date, current_date=datetime.datetime.now()):
-    if birth_date is None:
+    if birth_date is None or current_date is None:
         return None, None
 
     year = current_date.year - birth_date.year - \

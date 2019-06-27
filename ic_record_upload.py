@@ -214,8 +214,6 @@ class ICRecordUpload(QtWidgets.QMainWindow):
             error_message.append('無補卡註記')
         if string_utils.xstr(row['Card']) == '':
             error_message.append('無卡序')
-        if len(string_utils.xstr(row['Card'])) >= 5:
-            error_message.append('卡序超過4碼')
 
         doctor_id = personnel_utils.get_personnel_field_value(
             self.database, string_utils.xstr(row['Doctor']), 'ID')
@@ -422,7 +420,6 @@ class ICRecordUpload(QtWidgets.QMainWindow):
                 number_utils.get_integer(medical_record['DrugShareFee'])
         )
 
-
         if upload_type in ['1', '3']:
             a11 = ET.SubElement(mb1, 'A11')
             a11.text = string_utils.xstr(patient_record['CardNo'])
@@ -551,7 +548,7 @@ class ICRecordUpload(QtWidgets.QMainWindow):
     def add_medicine(self, mb, medical_record, upload_type):
         case_key = string_utils.xstr(medical_record['CaseKey'])
 
-        if upload_type == '1':
+        if upload_type in ['1', '3']:  # 正常卡序
             sql = '''
                 SELECT 
                     prescript.MedicineName, prescript.InsCode, prescript.Dosage, 
@@ -566,7 +563,7 @@ class ICRecordUpload(QtWidgets.QMainWindow):
                     presextend.Content IS NOT NULL
                 ORDER BY prescript.PrescriptNo, prescript.PrescriptKey
             '''.format(case_key)
-        else:
+        else:  # 異常卡序
             sql = '''
                 SELECT  *
                 FROM prescript

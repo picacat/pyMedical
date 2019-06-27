@@ -107,7 +107,6 @@ class CheckCourse(QtWidgets.QMainWindow):
             WHERE
                 (CaseDate BETWEEN "{start_date}" AND "{end_date}") AND
                 (cases.InsType = "健保") AND
-                (Card != "欠卡") AND
                 (Continuance >= 1) AND
                 ({apply_type_sql}) 
             ORDER BY PatientKey, CaseDate

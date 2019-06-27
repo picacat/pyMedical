@@ -14,6 +14,7 @@ from libs import printer_utils
 from libs import date_utils
 
 from dialog import dialog_course_list
+from dialog import dialog_ins_list_edit
 
 
 # 候診名單 2018.01.31
@@ -73,6 +74,7 @@ class InsApplyList(QtWidgets.QMainWindow):
         self.ui.toolButton_print_order.clicked.connect(self._print_order)
         self.ui.toolButton_print_medical_records.clicked.connect(self._print_medical_records)
         self.ui.toolButton_print_medical_chart.clicked.connect(self._print_medical_chart)
+        self.ui.toolButton_edit_ins_list.clicked.connect(self._edit_ins_list)
 
     def open_medical_record(self):
         ins_apply_key = self.table_widget_ins_apply_list.field_value(0)
@@ -133,7 +135,6 @@ class InsApplyList(QtWidgets.QMainWindow):
         return case_key
 
     def read_data(self):
-
         sql = '''
             SELECT *
             FROM insapply 
@@ -276,7 +277,7 @@ class InsApplyList(QtWidgets.QMainWindow):
 
         printer_utils.print_medical_records(
             self, self.database, self.system_settings,
-            patient_key, None, start_date, end_date,
+            patient_key, None, start_date, end_date, 'print'
         )
 
     # 列印病歷首頁
@@ -308,3 +309,27 @@ class InsApplyList(QtWidgets.QMainWindow):
     def _find_error(self):
         self.table_widget_ins_apply_list.find_error(41)
 
+    def _edit_ins_list(self):
+        ins_apply_key = self.table_widget_ins_apply_list.field_value(0)
+        sequence = self.table_widget_ins_apply_list.field_value(7)
+        case_date = self.table_widget_ins_apply_list.field_value(13)
+        end_date = self.table_widget_ins_apply_list.field_value(14)
+        dialog = dialog_ins_list_edit.DialogInsListEdit(
+            self, self.database, self.system_settings,
+            ins_apply_key, sequence, case_date, end_date,
+        )
+
+        dialog.exec_()
+        dialog.deleteLater()
+
+        sql = '''
+            SELECT *
+            FROM insapply 
+            WHERE
+                InsApplyKey = {ins_apply_key}
+        '''.format(
+            ins_apply_key=ins_apply_key,
+        )
+        row = self.database.select_record(sql)[0]
+        row_no = self.ui.tableWidget_ins_apply_list.currentRow()
+        self._set_table_data(row_no, row)

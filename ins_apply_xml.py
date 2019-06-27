@@ -202,9 +202,11 @@ class InsApplyXML(QtWidgets.QMainWindow):
                     continue
 
                 case_row = self._get_case_rows(case_key)[0]
-                remedy_type_code = nhi_utils.REMEDY_TYPE_CODE[
-                    string_utils.xstr(case_row['ApplyType'])
-                ]
+                apply_type = string_utils.xstr(case_row['ApplyType'])
+                if apply_type not in nhi_utils.REMEDY_TYPE:
+                    continue
+
+                remedy_type_code = nhi_utils.REMEDY_TYPE_CODE[apply_type]
                 d12 = ET.SubElement(dbody, 'd12')
                 d12.text = string_utils.xstr(remedy_type_code)
                 break
@@ -808,9 +810,10 @@ class InsApplyXML(QtWidgets.QMainWindow):
         return rows
 
     def _zip_xml_file(self, xml_file):
-        zip_file = '{0}/{1}.zip'.format(
-            nhi_utils.XML_OUT_PATH,
-            self.ins_total_fee['apply_date'],
+        zip_file = '{zip_file_dir}/{zip_file_name}-{apply_type}.zip'.format(
+            zip_file_dir=nhi_utils.XML_OUT_PATH,
+            zip_file_name=self.ins_total_fee['apply_date'],
+            apply_type=self.apply_type_code,
         )
 
         cmd = ['7z', 'a', '-tzip', zip_file, xml_file, '-o{0}'.format(nhi_utils.XML_OUT_PATH)]

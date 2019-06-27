@@ -573,9 +573,12 @@
     <property name="title">
      <string>系統作業</string>
     </property>
-    <addaction name="action_convert"/>
-    <addaction name="action_export_emr_xml"/>
     <addaction name="action_update"/>
+    <addaction name="separator"/>
+    <addaction name="action_export_emr_xml"/>
+    <addaction name="action_restore_records"/>
+    <addaction name="separator"/>
+    <addaction name="action_convert"/>
    </widget>
    <widget class="QMenu" name="menu_5">
     <property name="title">
@@ -591,6 +594,7 @@
      <string>設定</string>
     </property>
     <addaction name="action_settings"/>
+    <addaction name="action_hosts"/>
     <addaction name="action_charge"/>
     <addaction name="action_doctor_schedule"/>
     <addaction name="action_doctor_nurse_table"/>
@@ -921,6 +925,24 @@
    </property>
    <property name="toolTip">
     <string>回診率統計</string>
+   </property>
+  </action>
+  <action name="action_restore_records">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/undo.svg</normaloff>../icons/undo.svg</iconset>
+   </property>
+   <property name="text">
+    <string>資料回復</string>
+   </property>
+  </action>
+  <action name="action_hosts">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/network-workgroup.png</normaloff>../icons/network-workgroup.png</iconset>
+   </property>
+   <property name="text">
+    <string>分院連線設定</string>
    </property>
   </action>
  </widget>

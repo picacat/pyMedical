@@ -24,6 +24,8 @@ from dict_ins_drug import *
 from medical_record_list import *
 from patient import *
 
+from restore_records import *
+
 from ins_check import *
 from ins_apply import *
 from ins_judge import *
@@ -31,10 +33,10 @@ from ins_judge import *
 from certificate_diagnosis import *
 from certificate_payment import *
 
+from statistics_medical_record import *
 from statistics_doctor import *
 from statistics_return_rate import *
 
-from template import *
 
 module_dict = {
     '門診掛號': Registration,
@@ -50,7 +52,7 @@ module_dict = {
 
     '醫師看診作業': WaitingList,
     '病歷資料': MedicalRecord,
-    '病歷統計': Template,
+    '病歷統計': StatisticsMedicalRecord,
 
     '收費設定': ChargeSettings,
     '醫師班表': DoctorSchedule,
@@ -72,6 +74,8 @@ module_dict = {
 
     '醫師統計': StatisticsDoctor,
     '回診率統計': StatisticsReturnRate,
+
+    '資料回復': RestoreRecords,
 }
 
 

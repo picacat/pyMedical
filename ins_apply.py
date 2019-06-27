@@ -47,7 +47,6 @@ class InsApply(QtWidgets.QMainWindow):
         self.period = '全月'
         self.ins_calculated_table = []
 
-
         self._set_ui()
         self._set_signal()
         # self.read_wait()   # activate by pymedical.py->tab_changed

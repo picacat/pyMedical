@@ -76,7 +76,7 @@ class InsUploadEMR(QtWidgets.QMainWindow):
                 ApplyPeriod = "{apply_period}" AND
                 ClinicID = "{clinic_id}" AND
                 Note = "*"
-            ORDER BY InsApplyKey
+            ORDER BY CaseType, Sequence
         '''.format(
             apply_date=self.apply_date,
             apply_type=self.apply_type_code,
@@ -124,7 +124,7 @@ class InsUploadEMR(QtWidgets.QMainWindow):
 
         printer_utils.print_medical_records(
             self, self.database, self.system_settings,
-            patient_key, start_date, end_date, 'pdf'
+            patient_key, None, start_date, end_date, 'pdf'
         )
 
         printer_utils.print_medical_chart(
@@ -141,6 +141,8 @@ class InsUploadEMR(QtWidgets.QMainWindow):
         medical_records_file = '{0}/case_{1}.pdf'.format(self.EXPORT_DIR, patient_key)
 
         pdfs = [chart_file, medical_records_file, ins_order_file]
+        if self.system_settings.field('健保業務') == '台北業務組':
+            pdfs = [chart_file, medical_records_file]
 
         merger = PdfFileMerger()
 
@@ -170,7 +172,7 @@ class InsUploadEMR(QtWidgets.QMainWindow):
         att_file = 'ATT{0}_{1}{2:0>8}.7z'.format(
             self.system_settings.field('院所代號'),
             datetime.datetime.now().strftime('%Y%m%d'),
-            row_no+1001,  # 應該是 +1, 暫時的，for 抽審測試
+            row_no+1,  # 應該是 +1, 暫時的，for 抽審測試
         )
 
         zip_file = '{0}/{1}'.format(self.EXPORT_DIR, att_file)
@@ -188,7 +190,7 @@ class InsUploadEMR(QtWidgets.QMainWindow):
             self.EXPORT_DIR,
             self.system_settings.field('院所代號'),
             datetime.datetime.now().strftime('%Y%m%d'),
-            row_no+1001,  # 應該是 +1, 暫時的，for 抽審測試
+            row_no+1,  # 應該是 +1, 暫時的，for 抽審測試
         )
 
         root = ET.Element('feereview')

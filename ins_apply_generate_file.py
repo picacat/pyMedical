@@ -93,7 +93,7 @@ class InsApplyGenerateFile(QtWidgets.QMainWindow):
     def _get_medical_records(self):
         start_date = self.start_date.toString("yyyy-MM-dd 00:00:00")
         end_date = self.end_date.toString("yyyy-MM-dd 23:59:59")
-        apply_type_sql = nhi_utils.get_apply_type_sql(self.apply_type)
+        apply_type_sql = nhi_utils.get_apply_type_sql(self.apply_type)  # 只取得申報類別為申報或補報的資料,不申報不讀取
 
         sql = '''
             SELECT 
@@ -103,7 +103,6 @@ class InsApplyGenerateFile(QtWidgets.QMainWindow):
             WHERE
                 (CaseDate BETWEEN "{start_date}" AND "{end_date}") AND
                 (cases.InsType = "健保") AND
-                (Card != "欠卡") AND
                 ({apply_type_sql}) 
             ORDER BY CaseDate
         '''.format(
@@ -127,6 +126,9 @@ class InsApplyGenerateFile(QtWidgets.QMainWindow):
             progress_dialog.setValue(row_no)
             if progress_dialog.wasCanceled():
                 break
+
+            if string_utils.xstr(row['Card']) == '欠卡':  # 欠卡不報
+                continue
 
             if string_utils.xstr(row['TreatType']) == '腦血管疾病':
                 ins_apply_row = self._need_merge_brain_record(row)
@@ -242,6 +244,8 @@ class InsApplyGenerateFile(QtWidgets.QMainWindow):
             message.append('病患身份證空白')
         if row['Card'] is None:
             message.append('卡序空白')
+        if string_utils.xstr(row['Card']) == '欠卡':
+            message.append('欠卡')
         if row['DiseaseCode1'] is None:
             message.append('主診斷碼空白')
         if doctor_name == '':
@@ -405,6 +409,11 @@ class InsApplyGenerateFile(QtWidgets.QMainWindow):
                 number_utils.get_integer(case_row['DrugShareFee'])
         )
 
+        doctor_name = string_utils.xstr(case_row['Doctor'])
+        doctor_id = personnel_utils.get_personnel_field_value(
+            self.database, doctor_name, 'ID'
+        )
+
         drug_fee = (number_utils.get_integer(ins_apply_row['DrugFee']) +
                     number_utils.get_integer(case_row['InterDrugFee']))
         pharmacy_fee = (number_utils.get_integer(ins_apply_row['PharmacyFee']) +
@@ -414,12 +423,12 @@ class InsApplyGenerateFile(QtWidgets.QMainWindow):
             pharmacist_id = nhi_utils.get_pharmacist_id(self.database, self.system_settings, case_row)
 
         ins_apply_fee = ins_total_fee - share_fee
-
         share_code = string_utils.xstr(ins_apply_row['ShareCode'])
         if share_code == '009' and share_fee > 0:  # 療程中開藥
             share_code = 'S20'
 
         fields = [
+            'DoctorName', 'DoctorID',
             'StopDate', 'PresDays', 'PresType',
             'DrugFee', 'TreatFee', 'PharmacyCode', 'PharmacyFee', 'PharmacistID',
             'ShareCode',
@@ -433,6 +442,7 @@ class InsApplyGenerateFile(QtWidgets.QMainWindow):
         ]
 
         data = [
+            doctor_name, doctor_id,
             case_row['CaseDate'].date(),
             (number_utils.get_integer(ins_apply_row['PresDays']) + pres_days),
             pres_type,

@@ -104,7 +104,6 @@ class CheckPrescriptDays(QtWidgets.QMainWindow):
             WHERE
                 (CaseDate BETWEEN "{start_date}" AND "{end_date}") AND
                 (cases.InsType = "健保") AND
-                (Card != "欠卡") AND
                 (dosage.MedicineSet = 1) AND
                 (dosage.Days > 0) AND
                 ({apply_type_sql})

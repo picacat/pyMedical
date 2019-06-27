@@ -136,7 +136,6 @@ class StatisticsReturnRateDoctor(QtWidgets.QMainWindow):
             ', '.join(return_days_list)
         ]
 
-
         for column in range(len(medical_record)):
             self.ui.tableWidget_return_rate_doctor.setItem(
                 row_no, column,

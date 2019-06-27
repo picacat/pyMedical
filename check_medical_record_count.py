@@ -138,7 +138,6 @@ class CheckMedicalRecordCount(QtWidgets.QMainWindow):
             WHERE
                 (CaseDate BETWEEN "{start_date}" AND "{end_date}") AND
                 (cases.InsType = "健保") AND
-                (Card != "欠卡") AND 
                 (Treatment IS NOT NULL) AND
                 ({apply_type_sql})
             GROUP BY PatientKey

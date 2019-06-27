@@ -133,6 +133,19 @@ class CSHIS:
         self._close_com()
         cshis_utils.show_ic_card_message(error_code, '讀卡機重新啟動')
 
+    def _update_patient(self, patient_key):
+        if not self.read_basic_data():
+            return '', ''
+
+        patient_id = self.basic_data['patient_id']
+        patient_birthday = self.basic_data['birthday']
+
+        fields = ['ID', 'Birthday']
+        data = [patient_id, patient_birthday]
+        self.database.update_record('patient', fields, 'PatientKey', patient_key, data)
+
+        return patient_id, patient_birthday
+
     def read_basic_data(self):
         buffer_size = 72
         buffer = ctypes.c_buffer(buffer_size)  # c: char *
@@ -809,9 +822,13 @@ class CSHIS:
             return
 
         for row, prescript_sign in zip(prescript_rows, prescript_sign_list):
-            self.database.exec_sql(
-                'DELETE FROM presextend WHERE PrescriptKey = {0} AND ExtendType = "處方簽章"'.format(row['PrescriptKey'])
-            )
+            sql = '''
+                DELETE FROM presextend 
+                WHERE 
+                    PrescriptKey = {prescript_key} AND 
+                    ExtendType = "處方簽章"
+            '''.format(prescript_key=row['PrescriptKey'])
+            self.database.exec_sql(sql)
             fields = [
                 'PrescriptKey', 'ExtendType', 'Content',
             ]
@@ -871,17 +888,22 @@ class CSHIS:
             CaseKey = {0} 
         '''.format(case_key)
         case_row = self.database.select_record(sql)[0]
+        patient_key = case_row['PatientKey']
 
         sql = '''
             SELECT ID, Birthday FROM patient WHERE
-            PatientKey = {0} 
-        '''.format(case_row['PatientKey'])
+            PatientKey = {patient_key} 
+        '''.format(patient_key=patient_key)
         patient_row = self.database.select_record(sql)[0]
 
         registration_datetime = case_utils.extract_security_xml(case_row['Security'], '寫卡時間')
         registration_nhi_datetime = date_utils.west_datetime_to_nhi_datetime(registration_datetime)
         patient_id = string_utils.xstr(patient_row['ID'])
         patient_birthday = string_utils.xstr(patient_row['Birthday'])
+
+        if patient_id == '' or patient_birthday == '':
+            patient_id, patient_birthday = self._update_patient(patient_key)
+
         birthday_nhi_datetime = date_utils.west_date_to_nhi_date(patient_birthday)
 
         disease_code1 = string_utils.xstr(case_row['DiseaseCode1'])
@@ -896,7 +918,9 @@ class CSHIS:
             ' ' * 7,
             ' ' * 7,
             )
-        doctor_id = self.write_treatment_code(registration_nhi_datetime, patient_id, birthday_nhi_datetime, data_write)
+        doctor_id = self.write_treatment_code(
+            registration_nhi_datetime, patient_id, birthday_nhi_datetime, data_write
+        )
         if doctor_id is None:
             return doctor_id
 

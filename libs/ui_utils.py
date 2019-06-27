@@ -57,6 +57,9 @@ UI_INS_APPLY_TOTAL_FEE = "ins_apply_total_fee.ui"
 UI_INS_CHECK_APPLY_FEE = "ins_check_apply_fee.ui"
 UI_INS_APPLY_SCHEDULE_TABLE = "ins_apply_schedule_table.ui"
 
+UI_STATISTICS_MEDICAL_RECORD = "statistics_medical_record.ui"
+UI_STATISTICS_MEDICAL_RECORD_DIAG_TIME_LENGTH = "statistics_medical_record_diag_time_length.ui"
+
 UI_STATISTICS_DOCTOR = "statistics_doctor.ui"
 UI_STATISTICS_DOCTOR_COUNT = "statistics_doctor_count.ui"
 UI_STATISTICS_DOCTOR_INCOME = "statistics_doctor_income.ui"
@@ -97,14 +100,18 @@ UI_DIALOG_INPUT_DISEASE = "dialog_input_disease.ui"
 UI_DIALOG_INPUT_MEDICINE = "dialog_input_medicine.ui"
 UI_DIALOG_INPUT_DRUG = "dialog_input_drug.ui"
 UI_DIALOG_INPUT_USER = "dialog_input_user.ui"
+UI_DIALOG_INPUT_HOST = "dialog_input_host.ui"
 UI_DIALOG_EDIT_DISEASE = "dialog_edit_disease.ui"
 UI_DIALOG_RICH_TEXT = "dialog_rich_text.ui"
 UI_DIALOG_COMMISSION = "dialog_commission.ui"
+UI_DIALOG_INS_LIST_EDIT = "dialog_ins_list_edit.ui"
 
 UI_DIALOG_MEDICAL_RECORD_LIST = "dialog_medical_record_list.ui"
 UI_DIALOG_MEDICAL_RECORD_PAST_HISTORY = "dialog_medical_record_past_history.ui"
+UI_DIALOG_MEDICAL_RECORD_HOSTS = "dialog_medical_record_hosts.ui"
 UI_DIALOG_MEDICAL_RECORD_PICKER = "dialog_medical_record_picker.ui"
 UI_DIALOG_MEDICAL_RECORD_DONE = "dialog_medical_record_done.ui"
+UI_DIALOG_MEDICAL_RECORD_REFERENCE = "dialog_medical_record_reference.ui"
 UI_DIALOG_MEDICINE = "dialog_medicine.ui"
 
 UI_DIALOG_STATISTICS_DOCTOR = "dialog_statistics_doctor.ui"
@@ -140,6 +147,7 @@ UI_DIALOG_PURCHASE_LIST = "dialog_purchase_list.ui"
 UI_DIALOG_EXPORT_EMR_XML = "dialog_export_emr_xml.ui"
 UI_DIALOG_DATE_PICKER = "dialog_date_picker.ui"
 UI_DIALOG_PERMISSION = "dialog_permission.ui"
+UI_DIALOG_HOSTS = "dialog_hosts.ui"
 
 UI_DIALOG_INS_CHECK = "dialog_ins_check.ui"
 UI_DIALOG_INS_APPLY = "dialog_ins_apply.ui"
@@ -167,6 +175,9 @@ UI_DICT_INS_DRUG = "dict_ins_drug.ui"
 UI_USERS = "users.ui"
 UI_CONVERT = "convert.ui"
 UI_IC_RECORD_UPLOAD = 'ic_record_upload.ui'
+
+UI_RESTORE_RECORDS = "restore_records.ui"
+UI_RESTORE_MEDICAL_RECORDS = "restore_medical_records.ui"
 
 THEME = ['Fusion', 'Windows', 'Cleanlooks', 'gtk2', 'motif', 'plastic', 'cde', 'qt5-ct-style']
 WIN32_THEME = ['Fusion', 'Windows', 'WindowsXP', 'WindowsVista']
@@ -217,6 +228,7 @@ def set_combo_box_item_color(combobox, colors):
         combobox.setItemData(
             item_no, colors[item_no], QtCore.Qt.TextColorRole)
 
+
 # 設定輸入文字補全
 def set_completer(database, sql, field, widget):
     rows = database.select_record(sql)
@@ -242,6 +254,7 @@ def set_completer(database, sql, field, widget):
             w.setCompleter(completer)
     else:
         widget.setCompleter(completer)
+
 
 def set_table_widget_field_icon(table_widget, row_no, col_no, icon_file_name,
                                 property_name, property_value, function_call):

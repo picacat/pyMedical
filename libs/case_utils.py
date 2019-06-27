@@ -3,6 +3,7 @@ from lxml import etree as ET
 from libs import string_utils
 from libs import number_utils
 from libs import prescript_utils
+from libs import db_utils
 
 
 INJURY_LIST = [
@@ -210,6 +211,10 @@ def get_medical_record_html(database, system_settings, case_key):
         medical_record += '<b>舌診</b>: {0}<hr>'.format(string_utils.get_str(row['Tongue'], 'utf8'))
     if row['Pulse'] is not None:
         medical_record += '<b>脈象</b>: {0}<hr>'.format(string_utils.get_str(row['Pulse'], 'utf8'))
+    if row['Distincts'] is not None:
+        medical_record += '<b>辨證</b>: {0}<hr>'.format(string_utils.xstr(row['Distincts']))
+    if row['Cure'] is not None:
+        medical_record += '<b>治則</b>: {0}<hr>'.format(string_utils.xstr(row['Cure']))
     if row['Remark'] is not None:
         medical_record += '<b>備註</b>: {0}<hr>'.format(string_utils.get_str(row['Remark'], 'utf8'))
     if row['DiseaseCode1'] is not None and len(str(row['DiseaseCode1']).strip()) > 0:
@@ -471,6 +476,8 @@ def copy_past_medical_record(
         ui.textEdit_symptom.setText(string_utils.get_str(row['Symptom'], 'utf8'))
         ui.textEdit_tongue.setText(string_utils.get_str(row['Tongue'], 'utf8'))
         ui.textEdit_pulse.setText(string_utils.get_str(row['Pulse'], 'utf8'))
+        ui.lineEdit_distinguish.setText(string_utils.xstr(row['Distincts']))
+        ui.lineEdit_cure.setText(string_utils.xstr(row['Cure']))
 
     if copy_remark:
         ui.textEdit_remark.setText(string_utils.get_str(row['Remark'], 'utf8'))
@@ -697,156 +704,104 @@ def get_disease_special_code(database, disease_code):
     return string_utils.xstr(rows[0]['SpecialCode']).strip()
 
 
-# def get_security_xml_dict(root):
-#     security_xml_dict = {
-#         '寫卡時間': root[0].text,
-#         '健保卡序': root[1].text,
-#         '院所代號': root[2].text,
-#         '安全簽章': root[3].text,
-#         '安全模組': root[4].text,
-#         '同日就診': root[5].text,
-#         '上傳時間': root[6].text,
-#         '資料格式': root[7].text,
-#         '補卡註記': root[8].text,
-#         '醫令時間': root[9].text,
-#     }
-#
-#     return security_xml_dict
+def backup_cases(database, case_key, deleter, delete_datetime):
+    sql = '''
+        SELECT * FROM cases
+        WHERE
+            CaseKey = {case_key}
+    '''.format(
+        case_key=case_key,
+    )
+    rows = database.select_record(sql)
+
+    json_data = db_utils.mysql_to_json(rows)
+    if len(json_data) <= 0:
+        return
+
+    fields = [
+        'TableName', 'KeyField', 'KeyValue', 'JSON',
+        'Deleter', 'DeleteDateTime',
+    ]
+
+    data = [
+        'cases',
+        'CaseKey',
+        case_key,
+        json_data[0],
+        deleter,
+        delete_datetime,
+    ]
+
+    database.insert_record('backup_records', fields, data)
 
 
-# def get_treat_data_xml_dict(xml_string):
-#     security_xml_dict = create_treat_data_xml_dict()
-#
-#     try:
-#         root = ET.fromstring(xml_string)[0]
-#         for child in root:
-#             security_xml_dict[child.tag] = child.text
-#     except ET.ParseError:
-#         pass
-#
-#     return security_xml_dict
+def backup_prescript(database, case_key, deleter, delete_datetime):
+    sql = '''
+        SELECT * FROM prescript
+        WHERE
+            CaseKey = {case_key}
+        ORDER BY PrescriptKey
+    '''.format(
+        case_key=case_key,
+    )
+    rows = database.select_record(sql)
+
+    json_data = db_utils.mysql_to_json(rows)
+    if len(json_data) <= 0:
+        return
+
+    fields = [
+        'TableName', 'KeyField', 'KeyValue', 'JSON',
+        'Deleter', 'DeleteDateTime',
+    ]
+
+    for row in json_data:
+        data = [
+            'prescript',
+            'CaseKey',
+            case_key,
+            row,
+            deleter,
+            delete_datetime,
+        ]
+        database.insert_record('backup_records', fields, data)
 
 
-# 取出病歷檔安全簽章XML
-# def extract_security_xml(xml_field, field):
-#     ic_card_xml = ''.join(string_utils.get_str(xml_field, 'utf-8'))
-#     try:
-#         root = ET.fromstring(ic_card_xml)[0]
-#     except ET.ParseError:
-#         return ''
-#
-#     security_xml_dict = get_security_xml_dict(root)
-#
-#     return security_xml_dict[field]
+def backup_dosage(database, case_key, deleter, delete_datetime):
+    sql = '''
+        SELECT * FROM dosage
+        WHERE
+            CaseKey = {case_key}
+        ORDER BY DosageKey
+    '''.format(
+        case_key=case_key,
+    )
+    rows = database.select_record(sql)
+
+    json_data = db_utils.mysql_to_json(rows)
+    if len(json_data) <= 0:
+        return
+
+    fields = [
+        'TableName', 'KeyField', 'KeyValue', 'JSON',
+        'Deleter', 'DeleteDateTime',
+    ]
+
+    for row in json_data:
+        data = [
+            'dosage',
+            'CaseKey',
+            case_key,
+            row,
+            deleter,
+            delete_datetime,
+        ]
+        database.insert_record('backup_records', fields, data)
 
 
-# 寫入病歷檔安全簽章XML
-# def update_xml_doc(database, xml_field, field_name, field_value):
-#     sql = """
-#         SELECT UPDATEXML('{0}', '{1}', '{2}')
-#     """.format(
-#         xml_field,
-#         '//{0}'.format(field_name),
-#         '<{0}>{1}</{0}>'.format(field_name, field_value)
-#     )
-#     row = database.select_record(sql, False)[0]
-#
-#     return row[0]
+def backup_medical_record(database, case_key, deleter, delete_datetime):
+    backup_cases(database, case_key, deleter, delete_datetime)
+    backup_prescript(database, case_key, deleter, delete_datetime)
+    backup_dosage(database, case_key, deleter, delete_datetime)
 
-
-# def extract_xml(database, case_key, xml_field):
-#     sql = '''
-#             SELECT ExtractValue(Security, "//{0}") AS xml_value
-#             FROM cases WHERE
-#                 CaseKey = {1}
-#         '''.format(xml_field, case_key)
-#     row = database.select_record(sql)[0]
-#     xml_value =string_utils.get_str(row['xml_value'], 'utf-8')  # 1-正常上傳 2-異常上傳 3-正常補正 4-異常補正
-#
-#     return xml_value
-
-
-# def create_security_xml(treat_data=None):
-#     if treat_data is None:
-#         treat_data = create_treat_data_xml_dict()
-#
-#     doc = Document()
-#     document = doc.createElement('DOCUMENT')
-#     document.setAttribute('content', 'cshis')
-#
-#     doc.appendChild(document)
-#     security = doc.createElement('treat_data')
-#     document.appendChild(security)
-#
-#     registered_date = doc.createElement('registered_date')
-#     registered_date_value = doc.createTextNode(
-#         treat_data['registered_date']
-#     )
-#     registered_date.appendChild(registered_date_value)
-#     security.appendChild(registered_date)
-#
-#     seq_number = doc.createElement('seq_number')
-#     seq_number_value = doc.createTextNode(
-#         treat_data['seq_number']
-#     )
-#     seq_number.appendChild(seq_number_value)
-#     security.appendChild(seq_number)
-#
-#     clinic_id = doc.createElement('clinic_id')
-#     clinic_id_value = doc.createTextNode(
-#         treat_data['clinic_id']
-#     )
-#     clinic_id.appendChild(clinic_id_value)
-#     security.appendChild(clinic_id)
-#
-#     security_signature = doc.createElement('security_signature')
-#     security_signature_value = doc.createTextNode(
-#         treat_data['security_signature']
-#     )
-#     security_signature.appendChild(security_signature_value)
-#     security.appendChild(security_signature)
-#
-#     sam_id = doc.createElement('sam_id')
-#     sam_id_value = doc.createTextNode(
-#         treat_data['sam_id']
-#     )
-#     sam_id.appendChild(sam_id_value)
-#     security.appendChild(sam_id)
-#
-#     register_duplicated = doc.createElement('register_duplicated')
-#     register_duplicated_value = doc.createTextNode(
-#         treat_data['register_duplicated']
-#     )
-#     register_duplicated.appendChild(register_duplicated_value)
-#     security.appendChild(register_duplicated)
-#
-#     upload_time = doc.createElement('upload_time')
-#     upload_time_value = doc.createTextNode(
-#         treat_data['upload_time']
-#     )
-#     upload_time.appendChild(upload_time_value)
-#     security.appendChild(upload_time)
-#
-#     upload_type = doc.createElement('upload_type')
-#     upload_type_value = doc.createTextNode(
-#         treat_data['upload_type']
-#     )
-#     upload_type.appendChild(upload_type_value)
-#     security.appendChild(upload_type)
-#
-#     treat_after_check = doc.createElement('treat_after_check')
-#     treat_after_check_value = doc.createTextNode(
-#         treat_data['treat_after_check']
-#     )
-#     treat_after_check.appendChild(treat_after_check_value)
-#     security.appendChild(treat_after_check)
-#
-#     prescript_sign_time = doc.createElement('prescript_sign_time')
-#     prescript_sign_time_value = doc.createTextNode(
-#         treat_data['prescript_sign_time']
-#     )
-#     prescript_sign_time.appendChild(prescript_sign_time_value)
-#     security.appendChild(prescript_sign_time)
-#
-#     return doc
 
