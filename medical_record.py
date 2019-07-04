@@ -917,7 +917,7 @@ class MedicalRecord(QtWidgets.QMainWindow):
         self.save_prescript()
 
         if self.sender().text() == '存檔列印':
-            self._print()
+            self._print(case_key)
 
         socket_client = udp_socket_client.UDPSocketClient()
         socket_client.send_data('醫師看診作業完成')
@@ -1032,16 +1032,19 @@ class MedicalRecord(QtWidgets.QMainWindow):
         self.close_all()
         self.close_tab()
 
-    def _print(self):
+    def _print(self, case_key=None):
+        if case_key is None:
+            case_key = self.case_key
+
         print_prescript = print_prescription.PrintPrescription(
-            self, self.database, self.system_settings, self.case_key, '系統設定')
+            self, self.database, self.system_settings, case_key, '系統設定')
         print_prescript.print()
 
         del print_prescript
 
         if self.system_settings.field('自動完成批價作業') == 'Y':
             print_charge = print_receipt.PrintReceipt(
-                self, self.database, self.system_settings, self.case_key, '系統設定')
+                self, self.database, self.system_settings, case_key, '系統設定')
             print_charge.print()
             del print_charge
 

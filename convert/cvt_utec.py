@@ -38,6 +38,8 @@ class CvtUtec():
     def _convert_med2000(self):
         if self.parent.ui.checkBox_groups.isChecked():
             self._cvt_groups()
+        if self.parent.ui.checkBox_disease_treat.isChecked():
+            self._cvt_disease_treat()
         if self.parent.ui.checkBox_dosage.isChecked():
             self._cvt_med2000_dosage()
         if self.parent.ui.checkBox_medical_record.isChecked():

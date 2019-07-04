@@ -201,6 +201,8 @@
     <addaction name="action_export_cases_pdf"/>
     <addaction name="action_export_fees_pdf"/>
     <addaction name="separator"/>
+    <addaction name="action_export_excel"/>
+    <addaction name="separator"/>
     <addaction name="action_close"/>
    </widget>
    <widget class="QMenu" name="menu_2">
@@ -356,6 +358,15 @@
    </property>
    <property name="text">
     <string>匯出收費明細PDF</string>
+   </property>
+  </action>
+  <action name="action_export_excel">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/extract-archive.svg</normaloff>../icons/extract-archive.svg</iconset>
+   </property>
+   <property name="text">
+    <string>匯出日報表 Excel</string>
    </property>
   </action>
  </widget>

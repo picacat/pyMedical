@@ -194,7 +194,11 @@ class DialogDisease(QtWidgets.QDialog):
 
         self.ui.tableWidget_groups.resizeRowsToContents()
         self.ui.tableWidget_groups.setCurrentCell(0, 0)
-        groups = self.ui.tableWidget_groups.selectedItems()[0].text()
+        groups = self.ui.tableWidget_groups.selectedItems()
+        if len(groups) <= 0:
+            return
+
+        groups = groups[0].text()
         self._read_groups_name(groups)
         groups_name = self.table_widget_groups_name.field_value(1)
 

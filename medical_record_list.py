@@ -4,7 +4,7 @@
 
 import sys
 from PyQt5 import QtWidgets, QtGui, QtCore
-from PyQt5.QtWidgets import QMessageBox, QPushButton
+from PyQt5.QtWidgets import QMessageBox, QPushButton, QFileDialog
 import  datetime
 
 from libs import ui_utils
@@ -14,6 +14,8 @@ from libs import printer_utils
 from libs import system_utils
 from libs import personnel_utils
 from libs import case_utils
+from libs import export_utils
+
 from dialog import dialog_medical_record_list
 from classes import table_widget
 from printer import print_prescription
@@ -83,6 +85,7 @@ class MedicalRecordList(QtWidgets.QMainWindow):
         self.ui.action_export_fees_pdf.triggered.connect(self._print_fees)
         self.ui.action_set_check.triggered.connect(self._set_check)
         self.ui.action_set_uncheck.triggered.connect(self._set_check)
+        self.ui.action_export_excel.triggered.connect(self._export_to_excel)
         self.ui.tableWidget_medical_record_list.doubleClicked.connect(self.open_medical_record)
 
     def _set_permission(self):
@@ -399,7 +402,6 @@ class MedicalRecordList(QtWidgets.QMainWindow):
 
         del print_charge
 
-
     def _set_check(self):
         sender_name = self.sender().objectName()
         if sender_name == 'action_set_check':
@@ -521,3 +523,31 @@ class MedicalRecordList(QtWidgets.QMainWindow):
                 self, self.database, self.system_settings,
                 patient_key, sql, 'pdf_by_dialog',
             )
+
+    # 匯出日報表 2019.07.01
+    def _export_to_excel(self):
+        options = QFileDialog.Options()
+        excel_file_name, _ = QFileDialog.getSaveFileName(
+            self.parent,
+            "匯出日報表",
+            '{0}至{1}{2}門診日報表.xlsx'.format(
+                self.dialog_setting['start_date'].toString('yyyy-MM-dd'),
+                self.dialog_setting['end_date'].toString('yyyy-MM-dd'),
+                self.dialog_setting['person'],
+            ),
+            "excel檔案 (*.xlsx);;Text Files (*.txt)", options = options
+        )
+        if not excel_file_name:
+            return
+
+        export_utils.export_daily_medical_records_to_excel(
+            self.database, self.system_settings, excel_file_name, self.ui.tableWidget_medical_record_list,
+        )
+
+        system_utils.show_message_box(
+            QMessageBox.Information,
+            '資料匯出完成',
+            '<h3>門診日報表{0}匯出完成.</h3>'.format(excel_file_name),
+            'Microsoft Excel 格式.'
+        )
+

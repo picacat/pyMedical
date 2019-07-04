@@ -516,7 +516,7 @@ class PyMedical(QtWidgets.QMainWindow):
 
     # 系統設定
     def open_settings(self):
-        dialog = dialog_system_settings.DialogSettings(self.ui, self.database, self.system_settings)
+        dialog = dialog_system_settings.DialogSystemSettings(self.ui, self.database, self.system_settings)
         dialog.exec_()
         dialog.deleteLater()
         self.system_settings = system_settings.SystemSettings(self.database)

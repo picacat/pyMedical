@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 #coding: utf-8
 
-import sys
-
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtWidgets import QInputDialog, QMessageBox
 from libs import ui_utils
@@ -204,9 +202,7 @@ class DictDrug(QtWidgets.QMainWindow):
         for column in range(len(dict_drug_row)):
             item = QtWidgets.QTableWidgetItem()
             item.setData(QtCore.Qt.EditRole, dict_drug_row[column])
-            self.ui.tableWidget_dict_drug.setItem(
-                row_no, column, item,
-            )
+            self.ui.tableWidget_dict_drug.setItem(row_no, column, item)
             if column in [6, 10, 11, 12, 13, 14]:
                 self.ui.tableWidget_dict_drug.item(row_no, column).setTextAlignment(
                     QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter

@@ -708,6 +708,49 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
             self ._calculate_total_dosage()
             self ._calculate_total_costs()
 
+    # 拷貝過去病歷的處方
+    def copy_host_prescript(self, database, case_key, medicine_set=None):
+        self.ui.tableWidget_prescript.clearContents()
+        self.ui.tableWidget_prescript.setRowCount(0)
+        if medicine_set is None:
+            medicine_set = self.medicine_set
+
+        pres_days = case_utils.get_host_pres_days(database, case_key, medicine_set)
+        packages = case_utils.get_host_packages(database, case_key, medicine_set)
+        instruction = case_utils.get_host_instruction(database, case_key, medicine_set)
+
+        medicine_type_script = ''
+        if medicine_set == 1:
+            medicine_type_script = ' AND MedicineType IN ("單方", "複方") '  # 拷貝健保至自費, 只讀取健保藥
+        sql = '''
+            SELECT * FROM prescript 
+            WHERE 
+                CaseKey = {case_key} AND 
+                MedicineSet = {medicine_set} 
+                {medicine_type_script}
+            ORDER BY PrescriptKey
+        '''.format(
+            case_key=case_key,
+            medicine_set=medicine_set,
+            medicine_type_script=medicine_type_script,
+        )
+        rows = database.select_record(sql)
+        for row_no, row in zip(range(len(rows)), rows):
+            if row['MedicineName'] is None:
+                continue
+
+            self.append_null_medicine()
+            self.append_prescript(row, row['Dosage'])
+            self._set_dosage_format(row_no, prescript_utils.SELF_PRESCRIPT_COL_NO['Dosage'])
+            self._set_dosage_format(row_no, prescript_utils.SELF_PRESCRIPT_COL_NO['Price'])
+            self._set_dosage_format(row_no, prescript_utils.SELF_PRESCRIPT_COL_NO['Amount'])
+
+        self.ui.comboBox_pres_days.setCurrentText(string_utils.xstr(pres_days))
+        self.ui.comboBox_package.setCurrentText(string_utils.xstr(packages))
+        self.ui.comboBox_instruction.setCurrentText(instruction)
+
+        self.ui.tableWidget_prescript.resizeRowsToContents()
+
     def _calculate_total_price(self, row_no, item):
         sale_price_item = self.ui.tableWidget_prescript.item(row_no, prescript_utils.SELF_PRESCRIPT_COL_NO['Price'])
         if sale_price_item is None:

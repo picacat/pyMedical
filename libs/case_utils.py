@@ -132,6 +132,17 @@ def update_xml(database, table_name, field_name, xml_field, field_value, primary
     database.exec_sql(sql)
 
 
+def get_dosage_row(database, case_key, medicine_set=1):
+    sql = '''
+        SELECT * FROM dosage WHERE 
+            CaseKey = {0} AND
+            MedicineSet = {1}
+    '''.format(case_key, medicine_set)
+    rows = database.select_record(sql)
+
+    return rows
+
+
 def get_pres_days(database, case_key, medicine_set=1):
     sql = '''
         SELECT Days FROM dosage WHERE 
@@ -163,6 +174,7 @@ def get_packages(database, case_key, medicine_set=1):
 
     return package
 
+
 def get_instruction(database, case_key, medicine_set=1):
     sql = '''
         SELECT Instruction FROM dosage WHERE 
@@ -173,6 +185,71 @@ def get_instruction(database, case_key, medicine_set=1):
 
     if len(rows) > 0:
         instruction = string_utils.xstr(rows[0]['Instruction'])
+    else:
+        instruction = None
+
+    return instruction
+
+
+def get_host_pres_days(database, case_key, medicine_set=1):
+    if medicine_set >= 4:
+        return 0
+
+    sql = '''
+        SELECT PresDays{medicine_set} FROM cases WHERE 
+            CaseKey = {case_key}
+    '''.format(
+        case_key=case_key,
+        medicine_set=medicine_set
+    )
+    rows = database.select_record(sql)
+
+    if len(rows) > 0:
+        pres_days = number_utils.get_integer(rows[0]['PresDays{0}'.format(medicine_set)])
+    else:
+        pres_days = 0
+
+    return pres_days
+
+
+def get_host_packages(database, case_key, medicine_set=1):
+    if medicine_set >= 4:
+        return 0
+
+    sql = '''
+        SELECT Package{medicine_set} FROM cases 
+        WHERE 
+            CaseKey = {case_key}
+    '''.format(
+        case_key=case_key,
+        medicine_set=medicine_set
+    )
+    rows = database.select_record(sql)
+
+    if len(rows) > 0:
+        package = number_utils.get_integer(rows[0]['Package{0}'.format(medicine_set)])
+    else:
+        package = 0
+
+    return package
+
+
+def get_host_instruction(database, case_key, medicine_set=1):
+    if medicine_set >= 4:
+        return None
+
+    sql = '''
+        SELECT Instruction{medicine_set} FROM cases 
+        WHERE 
+            CaseKey = {case_key}
+    '''.format(
+        case_key=case_key,
+        medicine_set=medicine_set
+    )
+    rows = database.select_record(sql)
+
+    if len(rows) > 0:
+        instruction = string_utils.xstr(rows[0]['Instruction{0}'.format(medicine_set)])
     else:
         instruction = None
 
@@ -205,17 +282,17 @@ def get_medical_record_html(database, system_settings, case_key):
         string_utils.xstr(row['Doctor']),
     )
 
-    if row['Symptom'] is not None:
+    if row['Symptom'] is not None and string_utils.xstr(row['Symptom']) != '':
         medical_record += '<b>主訴</b>: {0}<hr>'.format(string_utils.get_str(row['Symptom'], 'utf8'))
-    if row['Tongue'] is not None:
+    if row['Tongue'] is not None and string_utils.xstr(row['Tongue']) != '':
         medical_record += '<b>舌診</b>: {0}<hr>'.format(string_utils.get_str(row['Tongue'], 'utf8'))
-    if row['Pulse'] is not None:
+    if row['Pulse'] is not None and string_utils.xstr(row['Pulse']) != '':
         medical_record += '<b>脈象</b>: {0}<hr>'.format(string_utils.get_str(row['Pulse'], 'utf8'))
-    if row['Distincts'] is not None:
+    if row['Distincts'] is not None and string_utils.xstr(row['Distincts']) != '':
         medical_record += '<b>辨證</b>: {0}<hr>'.format(string_utils.xstr(row['Distincts']))
-    if row['Cure'] is not None:
+    if row['Cure'] is not None and string_utils.xstr(row['Cure']) != '':
         medical_record += '<b>治則</b>: {0}<hr>'.format(string_utils.xstr(row['Cure']))
-    if row['Remark'] is not None:
+    if row['Remark'] is not None and string_utils.xstr(row['Remark']) != '':
         medical_record += '<b>備註</b>: {0}<hr>'.format(string_utils.get_str(row['Remark'], 'utf8'))
     if row['DiseaseCode1'] is not None and len(str(row['DiseaseCode1']).strip()) > 0:
         medical_record += '<b>主診斷</b>: {0} {1}<br>'.format(str(row['DiseaseCode1']), str(row['DiseaseName1']))
@@ -280,7 +357,7 @@ def get_prescript_html_data(database, system_settings, case_key, medicine_set, t
             CaseKey = {case_key} AND
             MedicineSet = {medicine_set}
             {treatment_script}
-        ORDER BY PrescriptNo, PrescriptKey
+        ORDER BY PrescriptKey
     '''.format(
         case_key=case_key,
         medicine_set=medicine_set,
@@ -339,28 +416,56 @@ def get_prescript_html_data(database, system_settings, case_key, medicine_set, t
 def get_dosage_html(database, case_key, medicine_set, total_dosage):
     dosage_data = ''
 
-    sql = '''
-        SELECT * FROM dosage 
-        WHERE
-            CaseKey = {0} AND MedicineSet = {1} 
-    '''.format(case_key, medicine_set)
-    rows = database.select_record(sql)
-    dosage_row = rows[0] if len(rows) > 0 else None
-    if dosage_row is not None:
-        packages = number_utils.get_integer(dosage_row['Packages'])
-        pres_days = number_utils.get_integer(dosage_row['Days'])
-        instruction = string_utils.xstr(dosage_row['Instruction'])
+    try:
+        rows = get_dosage_row(database, case_key, medicine_set)
+        if len(rows) <= 0:
+            return dosage_data
+    except:
+        if medicine_set >= 4:
+            return dosage_data
 
-        if packages > 0 and pres_days > 0:
-            dosage_data = '''
-                <tr>
-                    <td style="text-align: left; padding-left: 30px;" colspan="4">
-                        用法: {0}包 {1}日份 {2}服用 總量: {3}
-                    </td>
-                </tr>
-            '''.format(
-                packages, pres_days, instruction, total_dosage
-            )
+        rows = [{}]
+        sql = '''
+            SELECT 
+                PresDays{medicine_set}, Package{medicine_set}, Instruction{medicine_set}
+            FROM cases
+            WHERE
+                CaseKey = {case_key}
+        '''.format(
+            medicine_set=medicine_set,
+            case_key=case_key,
+        )
+        dosage_row = database.select_record(sql)
+        if len(dosage_row) <= 0:
+            return dosage_data
+
+        rows[0]['Days'] = number_utils.get_integer(
+            dosage_row[0]['PresDays{0}'.format(medicine_set)]
+        )
+        rows[0]['Packages'] = number_utils.get_integer(
+            dosage_row[0]['Package{0}'.format(medicine_set)]
+        )
+        rows[0]['Instruction'] = string_utils.xstr(
+            dosage_row[0]['Instruction{0}'.format(medicine_set)]
+        )
+
+    pres_days = number_utils.get_integer(rows[0]['Days'])
+    packages = number_utils.get_integer(rows[0]['Packages'])
+
+    if packages > 0 and pres_days > 0:
+        instruction = string_utils.xstr(rows[0]['Instruction'])
+        dosage_data = '''
+            <tr>
+                <td style="text-align: left; padding-left: 30px;" colspan="4">
+                    用法: {packages}包 {pres_days}日份 {instruction}服用 總量: {total_dosage}
+                </td>
+            </tr>
+        '''.format(
+            packages=packages,
+            pres_days=pres_days,
+            instruction=instruction,
+            total_dosage=total_dosage,
+        )
 
     return dosage_data
 
@@ -543,6 +648,94 @@ def copy_past_medical_record(
                     tab_index += 1
 
             medical_record.tab_list[tab_index].copy_past_prescript(case_key, medicine_set)
+
+    if medical_record.tab_list[1] is None:  # 2019.04.27 拷貝完, 清除所有自費處方後, 自動新增自費處方1
+        medical_record.add_prescript_tab()
+        medical_record.ui.tabWidget_prescript.setCurrentIndex(0)
+
+
+# 拷貝過去病歷
+def copy_host_medical_record(
+        database, medical_record, case_key, copy_diagnostic, copy_remark, copy_disease,
+        copy_ins_prescript, copy_ins_prescript_to, copy_ins_treat, copy_self_prescript):
+    sql = 'SELECT * FROM cases WHERE CaseKey = {0}'.format(case_key)
+    rows = database.select_record(sql)
+    if len(rows) <= 0:
+        return
+
+    row = rows[0]
+    ui = medical_record.ui
+    if copy_diagnostic:
+        ui.textEdit_symptom.setText(string_utils.get_str(row['Symptom'], 'utf8'))
+        ui.textEdit_tongue.setText(string_utils.get_str(row['Tongue'], 'utf8'))
+        ui.textEdit_pulse.setText(string_utils.get_str(row['Pulse'], 'utf8'))
+        ui.lineEdit_distinguish.setText(string_utils.xstr(row['Distincts']))
+        ui.lineEdit_cure.setText(string_utils.xstr(row['Cure']))
+
+    if copy_remark:
+        ui.textEdit_remark.setText(string_utils.get_str(row['Remark'], 'utf8'))
+
+    if copy_disease:
+        line_edit_disease = [
+            [ui.lineEdit_disease_code1, ui.lineEdit_disease_name1],
+            [ui.lineEdit_disease_code2, ui.lineEdit_disease_name2],
+            [ui.lineEdit_disease_code3, ui.lineEdit_disease_name3],
+        ]
+
+        for i in range(3):
+            disease_code = string_utils.get_str(row['DiseaseCode{0}'.format(i+1)], 'utf8')
+            disease_name = string_utils.get_str(row['DiseaseName{0}'.format(i+1)], 'utf8')
+
+            if disease_code.isdigit():
+                disease_code = icd9_to_icd10(database, disease_code)
+
+            line_edit_disease[i][0].setText(disease_code)
+            line_edit_disease[i][1].setText(disease_name)
+
+        medical_record.tab_registration.ui.lineEdit_special_code.setText(
+            string_utils.xstr(row['SpecialCode'])
+        )
+
+    medical_record.close_all_self_prescript_tabs()
+    if copy_ins_prescript:
+        if copy_ins_prescript_to == '健保處方':
+            if medical_record.tab_list[0] is not None:
+                medical_record.tab_list[0].copy_host_prescript(database, case_key, '病歷拷貝')
+        else:
+            if medical_record.tab_list[1] is None:
+                medical_record.add_prescript_tab(2)
+
+            medical_record.tab_list[1].copy_host_prescript(database, case_key, 1)
+
+    if copy_ins_treat:
+        if medical_record.tab_list[0] is not None:
+            medical_record.tab_list[0].copy_host_treat(database, case_key, '病歷拷貝')
+
+    if copy_self_prescript:
+        sql = '''
+            SELECT MedicineSet FROM prescript 
+            WHERE 
+                CaseKey = {0} AND
+                MedicineSet >= 2
+            GROUP BY MedicineSet ORDER BY MedicineSet
+        '''.format(case_key)
+        rows = database.select_record(sql)
+
+        for row in rows:
+            medicine_set = row['MedicineSet']
+
+            if medicine_set == 11:
+                continue
+
+            tab_index = medicine_set - 1
+            if medical_record.tab_list[tab_index] is None:
+                medical_record.add_prescript_tab(medicine_set)
+            else:
+                if medical_record.tab_list[tab_index].tableWidget_prescript.rowCount() > 0:  # 原本的自費處方已被拷貝佔用
+                    medical_record.add_prescript_tab(medicine_set+1)
+                    tab_index += 1
+
+            medical_record.tab_list[tab_index].copy_host_prescript(database, case_key, medicine_set)
 
     if medical_record.tab_list[1] is None:  # 2019.04.27 拷貝完, 清除所有自費處方後, 自動新增自費處方1
         medical_record.add_prescript_tab()

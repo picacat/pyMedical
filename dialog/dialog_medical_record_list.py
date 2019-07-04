@@ -175,8 +175,10 @@ class DialogMedicalRecordList(QtWidgets.QDialog):
             script += 'WHERE {condition}'.format(
                 condition=' AND '.join(condition),
             )
-
-        script += " ORDER BY CaseDate, cases.Room, cases.RegistNo"
+        # script += " ORDER BY CaseDate, cases.Room, cases.RegistNo"
+        script += ' ORDER BY DATE(CaseDate), FIELD(Period, {period}), cases.RegistNo, cases.Room'.format(
+            period=str(nhi_utils.PERIOD)[1:-1],
+        )
 
         if self.ui.radioButton_all_date.isChecked() and self.ui.lineEdit_patient_key.text() == '':
             script = ''

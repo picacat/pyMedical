@@ -11,6 +11,7 @@ from libs import number_utils
 from libs import prescript_utils
 from libs import db_utils
 from libs import system_utils
+from libs import case_utils
 
 from classes import table_widget
 from dialog import dialog_input_medicine
@@ -967,13 +968,6 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
 
         self.ui.tableWidget_prescript.resizeRowsToContents()
 
-    # 拷貝過去病歷的處方
-    def copy_past_treat(self, case_key, copy_from=None):
-        self.copy_from = copy_from
-        self._copy_past_treat(case_key)
-
-        self.ui.tableWidget_treat.resizeRowsToContents()
-
     def _copy_past_medicine(self, case_key):
         self.ui.tableWidget_prescript.clearContents()
         self.ui.tableWidget_prescript.setRowCount(0)
@@ -997,6 +991,13 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
             self.append_prescript(row, row['Dosage'])
             self._set_dosage_format(row_no, prescript_utils.INS_PRESCRIPT_COL_NO['Dosage'])
 
+    # 拷貝過去病歷的處方
+    def copy_past_treat(self, case_key, copy_from=None):
+        self.copy_from = copy_from
+        self._copy_past_treat(case_key)
+
+        self.ui.tableWidget_treat.resizeRowsToContents()
+
     def _copy_past_treat(self, case_key):
         self.ui.tableWidget_treat.clearContents()
         self.ui.tableWidget_treat.setRowCount(1)
@@ -1016,6 +1017,75 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
                 MedicineSet = {1} ORDER BY PrescriptKey
         '''.format(case_key, self.medicine_set)
         rows = self.database.select_record(sql)
+        for row in rows:
+            if row['MedicineName'] is None:
+                continue
+
+            self.append_null_treat()
+            self.append_treat(row)
+
+    # 拷貝過去病歷的處方
+    def copy_host_prescript(self, database, case_key, copy_from=None):
+        self.copy_from = copy_from
+        self._copy_host_medicine(database, case_key)
+        self.ui.tableWidget_prescript.resizeRowsToContents()
+
+        pres_days = case_utils.get_host_pres_days(database, case_key)
+        packages = case_utils.get_host_packages(database, case_key)
+        instruction = case_utils.get_host_instruction(database, case_key)
+        self.ui.comboBox_pres_days.setCurrentText(string_utils.xstr(pres_days))
+        self.ui.comboBox_package.setCurrentText(string_utils.xstr(packages))
+        self.ui.comboBox_instruction.setCurrentText(instruction)
+
+    def _copy_host_medicine(self, database, case_key):
+        self.ui.tableWidget_prescript.clearContents()
+        self.ui.tableWidget_prescript.setRowCount(0)
+        sql = '''
+            SELECT * FROM prescript 
+            WHERE 
+                CaseKey = {case_key} AND 
+                MedicineSet = {medicine_set} AND
+                MedicineType NOT IN ("穴道", "處置", "檢驗")
+            ORDER BY PrescriptKey
+        '''.format(
+            case_key=case_key,
+            medicine_set=self.medicine_set,
+        )
+        rows = database.select_record(sql)
+        for row_no, row in zip(range(len(rows)), rows):
+            if row['MedicineName'] is None:
+                continue
+
+            self.append_null_medicine()
+            self.append_prescript(row, row['Dosage'])
+            self._set_dosage_format(row_no, prescript_utils.INS_PRESCRIPT_COL_NO['Dosage'])
+
+    # 拷貝過去病歷的處方
+    def copy_host_treat(self, database, case_key, copy_from=None):
+        self.copy_from = copy_from
+        self._copy_host_treat(database, case_key)
+
+        self.ui.tableWidget_treat.resizeRowsToContents()
+
+    def _copy_host_treat(self, database, case_key):
+        self.ui.tableWidget_treat.clearContents()
+        self.ui.tableWidget_treat.setRowCount(1)
+        self._set_treat_ui()
+        sql = '''
+            SELECT Treatment FROM cases WHERE 
+                CaseKey = {0} 
+        '''.format(case_key)
+        row = database.select_record(sql)[0]
+        treatment = string_utils.xstr(row['Treatment'])
+        self.combo_box_treatment.setCurrentText(treatment)
+
+        sql = '''
+            SELECT * FROM prescript WHERE 
+                CaseKey = {0} AND 
+                MedicineType IN ("穴道", "處置") AND 
+                MedicineSet = {1} ORDER BY PrescriptKey
+        '''.format(case_key, self.medicine_set)
+        rows = database.select_record(sql)
         for row in rows:
             if row['MedicineName'] is None:
                 continue

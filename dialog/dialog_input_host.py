@@ -1,9 +1,5 @@
-#!/usr/bin/env python3
-# 病歷查詢 2014.09.22
-#coding: utf-8
-
-from PyQt5 import QtWidgets
 import mysql.connector as mysql
+from PyQt5 import QtWidgets
 from libs import ui_utils
 from libs import system_utils
 from libs import string_utils

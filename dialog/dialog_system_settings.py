@@ -23,10 +23,10 @@ else:
 
 
 # 系統設定 2018.03.19
-class DialogSettings(QtWidgets.QDialog):
+class DialogSystemSettings(QtWidgets.QDialog):
     # 初始化
     def __init__(self, parent=None, *args):
-        super(DialogSettings, self).__init__(parent)
+        super(DialogSystemSettings, self).__init__(parent)
         self.database = args[0]
         self.system_settings = args[1]
         self.parent = parent

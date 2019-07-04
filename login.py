@@ -1,11 +1,8 @@
-#!/usr/bin/env python3
-#coding: utf-8
+import mysql.connector
 
-
-from PyQt5 import QtWidgets, QtCore
+from PyQt5 import QtWidgets
 from PyQt5.Qt import PYQT_VERSION_STR
 import sys
-import mysql.connector
 
 from libs import ui_utils
 from libs import system_utils

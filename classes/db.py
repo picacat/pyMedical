@@ -1,8 +1,7 @@
-#coding: utf-8
+import mysql.connector as mysql
 
 from PyQt5.QtWidgets import QMessageBox, QPushButton
 import configparser
-import mysql.connector as mysql
 import os
 from libs import ui_utils
 from libs import string_utils
