@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 #coding: utf-8
 
-from PyQt5 import QtWidgets, QtCore, QtGui
+from PyQt5 import QtWidgets, QtCore, QtGui, QtChart
 from PyQt5.QtWidgets import QMessageBox, QFileDialog
-from PyQt5.QtChart import *
 
 import datetime
 
@@ -11,7 +10,6 @@ from classes import table_widget
 from libs import ui_utils
 from libs import string_utils
 from libs import number_utils
-from libs import case_utils
 from libs import export_utils
 from libs import system_utils
 
@@ -193,7 +191,7 @@ class StatisticsMedicalRecordDiagTimeLength(QtWidgets.QMainWindow):
         self._show_summary()
 
     def _plot_diag_time_cost_chart(self):
-        series = QLineSeries()
+        series = QtChart.QLineSeries()
 
         for row_no in range(self.ui.tableWidget_medical_record.rowCount()):
             item = self.ui.tableWidget_medical_record.item(row_no, 10)
@@ -203,22 +201,22 @@ class StatisticsMedicalRecordDiagTimeLength(QtWidgets.QMainWindow):
             diag_cost_time = item.text().strip('分鐘')
             series.append(row_no, number_utils.get_integer(diag_cost_time))
 
-        chart = QChart()
+        chart = QtChart.QChart()
         chart.legend().hide()
         chart.addSeries(series)
         chart.createDefaultAxes()
 
         chart.setTitle('門診時間花費統計表')
-        chart.setAnimationOptions(QChart.SeriesAnimations)
+        chart.setAnimationOptions(QtChart.QChart.SeriesAnimations)
 
-        self.chartView = QChartView(chart)
+        self.chartView = QtChart.QChartView(chart)
         self.chartView.setRenderHint(QtGui.QPainter.Antialiasing)
 
         self.chartView.setFixedWidth(650)
         self.ui.verticalLayout_chart.addWidget(self.chartView)
 
     def _plot_charge_time_cost_chart(self):
-        series = QLineSeries()
+        series = QtChart.QLineSeries()
 
         for row_no in range(self.ui.tableWidget_medical_record.rowCount()):
             item = self.ui.tableWidget_medical_record.item(row_no, 11)
@@ -228,15 +226,15 @@ class StatisticsMedicalRecordDiagTimeLength(QtWidgets.QMainWindow):
             charge_cost_time = item.text().strip('分鐘')
             series.append(row_no, number_utils.get_integer(charge_cost_time))
 
-        chart = QChart()
+        chart = QtChart.QChart()
         chart.legend().hide()
         chart.addSeries(series)
         chart.createDefaultAxes()
 
         chart.setTitle('批價時間花費統計表')
-        chart.setAnimationOptions(QChart.SeriesAnimations)
+        chart.setAnimationOptions(QtChart.QChart.SeriesAnimations)
 
-        self.chartView = QChartView(chart)
+        self.chartView = QtChart.QChartView(chart)
         self.chartView.setRenderHint(QtGui.QPainter.Antialiasing)
 
         self.chartView.setFixedWidth(650)

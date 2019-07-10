@@ -138,7 +138,7 @@ class MedicalRecord(QtWidgets.QMainWindow):
 
     # 看診時間提醒
     def _set_timer(self):
-        if self.call_from != '醫師看診作業':
+        if self.call_from not in ['醫師看診作業', '新增自費病歷']:
             self.ui.lcdNumber.setVisible(False)
             return
 

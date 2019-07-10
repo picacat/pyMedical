@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 #coding: utf-8
 
-from PyQt5 import QtWidgets, QtCore, QtGui
+from PyQt5 import QtWidgets, QtCore, QtGui, QtChart
 from PyQt5.QtWidgets import QMessageBox, QFileDialog
-from PyQt5.QtChart import *
 
 import datetime
 
@@ -11,7 +10,6 @@ from classes import table_widget
 from libs import ui_utils
 from libs import string_utils
 from libs import number_utils
-from libs import case_utils
 from libs import export_utils
 from libs import system_utils
 
@@ -385,7 +383,7 @@ class StatisticsDoctorIncome(QtWidgets.QMainWindow):
 
             case_date_list.append(case_date)
 
-        series = QBarSeries()
+        series = QtChart.QBarSeries()
         bar_set = []
         for i in range(len(case_date_list)):
             case_date = case_date_list[i]
@@ -393,19 +391,19 @@ class StatisticsDoctorIncome(QtWidgets.QMainWindow):
             subtotal = number_utils.get_integer(
                 self.ui.tableWidget_doctor_income.item(row_no, 9).text()
             )
-            bar_set.append(QBarSet(case_date_list[i][8:10]))
+            bar_set.append(QtChart.QBarSet(case_date_list[i][8:10]))
             bar_set[i].setColor(QtGui.QColor('green'))
             bar_set[i] << subtotal
             series.append([bar_set[i]])
 
-        chart = QChart()
+        chart = QtChart.QChart()
         chart.addSeries(series)
         chart.setTitle('門診收入統計表')
-        chart.setAnimationOptions(QChart.SeriesAnimations)
+        chart.setAnimationOptions(QtChart.QChart.SeriesAnimations)
 
         categories = ['門診收入']
 
-        axis = QBarCategoryAxis()
+        axis = QtChart.QBarCategoryAxis()
         axis.append(categories)
         chart.createDefaultAxes()
         chart.setAxisX(axis, series)
@@ -414,7 +412,7 @@ class StatisticsDoctorIncome(QtWidgets.QMainWindow):
         # chart.legend().setAlignment(QtCore.Qt.AlignBottom)
         chart.legend().hide()
 
-        self.chartView = QChartView(chart)
+        self.chartView = QtChart.QChartView(chart)
         self.chartView.setRenderHint(QtGui.QPainter.Antialiasing)
 
         self.chartView.setFixedWidth(750)

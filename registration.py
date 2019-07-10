@@ -214,9 +214,57 @@ class Registration(QtWidgets.QMainWindow):
         sql = 'SELECT * FROM patient WHERE ID = "{0}"'.format(ic_card.basic_data['patient_id'])
         row = self.database.select_record(sql)
         if not row:  # 找不到資料
+            if self._check_first_visit_reservation(ic_card):
+                return
+
             self._select_new_patient(ic_card)
         else:
             self._get_patient(row[0]['ID'], ic_card)
+
+    # 檢查是否有網路初診預約
+    def _check_first_visit_reservation(self, ic_card):
+        reservation_exists = False
+
+        start_date = datetime.datetime.now().strftime('%Y-%m-%d 00:00:00')
+        end_date = datetime.datetime.now().strftime('%Y-%m-%d 23:59:59')
+
+        sql = '''
+            SELECT temp_patient.*, reserve.* FROM temp_patient 
+                LEFT JOIN reserve ON temp_patient.TempPatientKey = reserve.PatientKey
+            WHERE 
+                ReserveDate BETWEEN "{start_date}" AND "{end_date}" AND
+                Arrival = "False" AND
+                temp_patient.ID = "{patient_id}" AND
+                reserve.Source = "網路初診預約"
+        '''.format(
+            start_date=start_date,
+            end_date=end_date,
+            patient_id=ic_card.basic_data['patient_id'],
+        )
+        rows = self.database.select_record(sql)
+
+        if len(rows) > 0:
+            msg_box = QMessageBox()
+            msg_box.setIcon(QMessageBox.Warning)
+            msg_box.setWindowTitle('今日已有初診預約掛號')
+            msg_box.setText(
+                '''
+                <font size="4" color="blue">
+                  <b>此人今日已已有網路初診預約掛號, 是否預約報到!<br>
+                </font>
+                '''
+            )
+            msg_box.setInformativeText('網路初診預約掛號已存在')
+            msg_box.addButton(QPushButton("取消"), QMessageBox.NoRole)
+            msg_box.addButton(QPushButton("確定"), QMessageBox.YesRole)
+            arrival = msg_box.exec_()
+            if arrival:
+                reservation_exists = True
+                self._cancel_registration()
+                reserve_key = rows[0]['ReserveKey']
+                self.parent.open_reservation(reserve_key)
+
+            return reservation_exists
 
     def _select_new_patient(self, ic_card):
         msg_box = QMessageBox()
@@ -1080,8 +1128,9 @@ class Registration(QtWidgets.QMainWindow):
             msg_box = QMessageBox()
             msg_box.setIcon(QMessageBox.Warning)
             msg_box.setWindowTitle('刪除掛號資料')
-            msg_box.setText("<font size='4' color='red'><b>確定刪除 <font color='blue'>{0}</font> 的掛號資料?</b></font>"
-                            .format(name))
+            msg_box.setText(
+                "<font size='4' color='red'><b>確定刪除 <font color='blue'>{0}</font> 的掛號資料?</b></font>".format(name)
+            )
             msg_box.setInformativeText("注意！資料刪除後, 將無法回復!")
             msg_box.addButton(QPushButton("取消"), QMessageBox.NoRole)
             msg_box.addButton(QPushButton("確定"), QMessageBox.YesRole)
@@ -1530,8 +1579,7 @@ class Registration(QtWidgets.QMainWindow):
     def _save_debt(self, case_key):
         total_amount = number_utils.get_integer(self.ui.lineEdit_total_amount.text())
         receipt_fee = number_utils.get_integer(self.ui.lineEdit_receipt_fee.text())
-        debt = total_amount - receipt_fee
-        if debt == 0:
+        if receipt_fee >= total_amount:  # 無欠款
             return
 
         fields = [
@@ -1546,7 +1594,7 @@ class Registration(QtWidgets.QMainWindow):
             string_utils.xstr(datetime.datetime.now()),
             self.ui.comboBox_period.currentText(),
             None,
-            debt,
+            total_amount - receipt_fee,
         ]
 
         self.database.insert_record('debt', fields, data)

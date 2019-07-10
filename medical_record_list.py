@@ -2,10 +2,9 @@
 # 病歷查詢 2014.09.22
 #coding: utf-8
 
-import sys
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtWidgets import QMessageBox, QPushButton, QFileDialog
-import  datetime
+import datetime
 
 from libs import ui_utils
 from libs import string_utils

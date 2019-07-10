@@ -24,6 +24,7 @@ class MedicalRecordFees(QtWidgets.QMainWindow):
 
         self._set_ui()
         self._set_signal()
+
         if self.case_key <= 0:
             self._set_new_self_medical_fees()
         else:
@@ -283,7 +284,7 @@ class MedicalRecordFees(QtWidgets.QMainWindow):
 
     # 自費批價
     def calculate_self_fees(self, tab_list, check_box_disable_calculate):
-        if check_box_disable_calculate.isChecked():  #  鎖定批價
+        if check_box_disable_calculate.isChecked():  # 鎖定批價
             return
 
         self_fee = charge_utils.get_self_fee(tab_list)
@@ -352,6 +353,9 @@ class MedicalRecordFees(QtWidgets.QMainWindow):
         self._adjust_table_widget_align()
 
     def auto_cashier(self):
+        if self.ui.checkBox_disable_calculate.isChecked():
+            return
+
         receipt_drug_share_fee = number_utils.get_integer(
             charge_utils.get_table_widget_item_fee(self.ui.tableWidget_ins_fees, 8, 0)
         )

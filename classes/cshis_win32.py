@@ -23,7 +23,11 @@ class CSHIS:
     def __init__(self, database, system_settings):
         self.database = database
         self.ic_com_port = number_utils.get_integer(system_settings.field('健保卡讀卡機連接埠')) - 1  # com1=0, com2=1, com3=2,...
-        self.cshis = ctypes.windll.LoadLibrary('cshis.dll')
+        try:
+            self.cshis = ctypes.windll.LoadLibrary('CsHis.dll')
+        except:
+            self.cshis = None
+
         self.basic_data = cshis_utils.BASIC_DATA
         self.treat_data = cshis_utils.TREAT_DATA
 

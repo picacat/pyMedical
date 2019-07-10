@@ -71,7 +71,8 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
         ui_utils.set_combo_box(self.combo_box_treatment, nhi_utils.INS_TREAT, None)
         self.ui.tableWidget_treat.setRowCount(1)
         self.ui.tableWidget_treat.setCellWidget(
-            0, prescript_utils.INS_TREAT_COL_NO['MedicineName'], self.combo_box_treatment)
+            0, prescript_utils.INS_TREAT_COL_NO['MedicineName'], self.combo_box_treatment
+        )
         self.combo_box_treatment.currentTextChanged.connect(self._combo_box_treat_changed)
 
     def _set_combo_box(self):

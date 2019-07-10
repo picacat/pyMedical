@@ -39,7 +39,7 @@ class PrintRegistrationForm5:
     # 設定GUI
     def _set_ui(self):
         font = system_utils.get_font()
-        self.font = QtGui.QFont(font, 10, QtGui.QFont.PreferQuality)
+        self.font = QtGui.QFont(font, 30, QtGui.QFont.PreferQuality)
 
     def _set_signal(self):
         pass
@@ -126,11 +126,11 @@ class PrintRegistrationForm5:
                     &nbsp; &nbsp; 
                     <b>{clinic_name}</b>
                 </p>
-                <table cellspacing=0 cellpadding=5>
+                <table cellspacing=0 cellpadding=6>
                     <tr>
                         <td width="18%" style="font-size: {font_size}px; text-align: left">
                         </td>
-                        <td width="33%" style="font-size: {font_size}px; text-align: left">
+                        <td width="33%" style="font-size: 15px; text-align: left">
                             {patient_name}
                         </td>
                         <td width="35%" style="font-size: 18px; text-align: left">

@@ -2,8 +2,9 @@
 #coding: utf-8
 
 import sys
-from PyQt5 import QtWidgets, QtGui
+from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtWidgets import QMessageBox, QPushButton
+
 import datetime
 import os
 
@@ -212,12 +213,17 @@ class PyMedical(QtWidgets.QMainWindow):
     # 候診名單歸零
     def reset_wait(self):
         today = datetime.datetime.today().strftime('%Y-%m-%d 00:00:00')
+        # sql = '''
+        #     DELETE FROM wait
+        #     WHERE
+        #         CaseDate < "{0}" AND
+        #         DoctorDone = "True" AND
+        #         ChargeDone = "True"
+        # '''.format(today)
         sql = '''
             DELETE FROM wait 
             WHERE
-                CaseDate < "{0}" AND
-                DoctorDone = "True" AND
-                ChargeDone = "True"
+                CaseDate < "{0}"
         '''.format(today)
         self.database.exec_sql(sql)
 
@@ -804,6 +810,7 @@ class PyMedical(QtWidgets.QMainWindow):
             return
 
         ic_card = cshis.CSHIS(self.database, self.system_settings)
+
         # ic_card.verify_sam()
 
     def _update_files(self):
@@ -823,6 +830,10 @@ class PyMedical(QtWidgets.QMainWindow):
 # 主程式
 def main():
     app = QtWidgets.QApplication(sys.argv)
+    app.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling, True)  # enable highdpi scaling
+    app.setAttribute(QtCore.Qt.AA_Use96Dpi, True)  # use 96 dpi
+    # app.setAttribute(QtCore.Qt.AA_UseHighDpiPixmaps, True)  # use highdpi icons
+
     py_medical = PyMedical()
     py_medical.system_settings.post('使用者', None)
 

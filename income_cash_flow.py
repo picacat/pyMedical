@@ -341,6 +341,7 @@ class IncomeCashFlow(QtWidgets.QMainWindow):
                     row_no, col_no).setTextAlignment(
                     QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
                 )
+
     def _calculate_registration_total(self):
         row_count = self.ui.tableWidget_registration.rowCount()
         regist_fee, diag_share_fee, deposit_fee, refund_fee, debt_fee, repayment, subtotal = 0, 0, 0, 0, 0, 0, 0

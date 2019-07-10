@@ -50,7 +50,7 @@ def export_table_widget_to_excel(excel_file_name, table_widget, hidden_column=No
     wb.save(excel_file_name)
 
 
-# 匯出日報表 From medical_record_list 2019.07.01
+# 匯出日報表 From medical_record_list 2019.07.01 板橋新生堂
 def export_daily_medical_records_to_excel(database, system_settings, excel_file_name, table_widget):
     row_range = [
         'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
@@ -82,13 +82,21 @@ def export_daily_medical_records_to_excel(database, system_settings, excel_file_
 
     sheet.column_dimensions['A'].width = 14
     sheet.column_dimensions['B'].width = 5
+    sheet.column_dimensions['C'].width = 10
     sheet.column_dimensions['D'].width = 5
+    sheet.column_dimensions['F'].width = 10
     sheet.column_dimensions['G'].width = 6
     sheet.column_dimensions['H'].width = 6
     sheet.column_dimensions['I'].width = 5
-    sheet.column_dimensions['M'].width = 24
-    sheet.column_dimensions['P'].width = 24
-    sheet.column_dimensions['Q'].width = 12
+    sheet.column_dimensions['K'].width = 10
+    sheet.column_dimensions['L'].width = 10
+    sheet.column_dimensions['M'].width = 30
+    sheet.column_dimensions['N'].width = 10
+    sheet.column_dimensions['O'].width = 10
+    sheet.column_dimensions['P'].width = 30
+    sheet.column_dimensions['Q'].width = 15
+    sheet.column_dimensions['R'].width = 10
+    sheet.column_dimensions['U'].width = 13
 
     total_regist_fee = 0
     total_diag_share_fee = 0
@@ -189,7 +197,7 @@ def export_daily_medical_records_to_excel(database, system_settings, excel_file_
             SELECT * FROM prescript
             WHERE
                 CaseKey = {case_key} AND
-                MedicineSet = 2 AND
+                MedicineSet >= 2 AND
                 Amount > 0
             ORDER BY PrescriptKey
         '''.format(

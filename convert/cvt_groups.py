@@ -39,10 +39,10 @@ def cvt_pymedical_groups(database):
     data = ['治則類別', None, '傷骨科']
     database.insert_record('dict_groups', fields, data)
 
-    # data = ['健保藥品類別', None, '單方']
-    # database.insert_record('dict_groups', fields, data)
-    # data = ['健保藥品類別', None, '複方']
-    # database.insert_record('dict_groups', fields, data)
+    data = ['健保藥品類別', None, '單方']
+    database.insert_record('dict_groups', fields, data)
+    data = ['健保藥品類別', None, '複方']
+    database.insert_record('dict_groups', fields, data)
 
     data = ['藥品類別', None, '單方']
     database.insert_record('dict_groups', fields, data)

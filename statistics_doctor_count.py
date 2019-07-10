@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 #coding: utf-8
 
-from PyQt5 import QtWidgets, QtCore, QtGui
+from PyQt5 import QtWidgets, QtCore, QtGui, QtChart
 from PyQt5.QtWidgets import QMessageBox, QFileDialog
-from PyQt5.QtChart import *
 
 import datetime
 
@@ -300,11 +299,11 @@ class StatisticsDoctorCount(QtWidgets.QMainWindow):
 
     def _plot_outpatient_count_chart(self):
         treat_type = ['內科', '針灸', '複針', '傷科', '複傷']
-        set0 = QBarSet(treat_type[0])
-        set1 = QBarSet(treat_type[1])
-        set2 = QBarSet(treat_type[2])
-        set3 = QBarSet(treat_type[3])
-        set4 = QBarSet(treat_type[4])
+        set0 = QtChart.QBarSet(treat_type[0])
+        set1 = QtChart.QBarSet(treat_type[1])
+        set2 = QtChart.QBarSet(treat_type[2])
+        set3 = QtChart.QBarSet(treat_type[3])
+        set4 = QtChart.QBarSet(treat_type[4])
 
         set0 << number_utils.get_integer(
             self.ui.tableWidget_doctor_count.item(self.ui.tableWidget_doctor_count.rowCount()-1, 3).text(),
@@ -322,21 +321,21 @@ class StatisticsDoctorCount(QtWidgets.QMainWindow):
             self.ui.tableWidget_doctor_count.item(self.ui.tableWidget_doctor_count.rowCount()-1, 19).text(),
         )
 
-        series = QBarSeries()
+        series = QtChart.QBarSeries()
         series.append(set0)
         series.append(set1)
         series.append(set2)
         series.append(set3)
         series.append(set4)
 
-        chart = QChart()
+        chart = QtChart.QChart()
         chart.addSeries(series)
         chart.setTitle('門診人數統計表')
-        chart.setAnimationOptions(QChart.SeriesAnimations)
+        chart.setAnimationOptions(QtChart.QChart.SeriesAnimations)
 
         categories = ['門診人數']
 
-        axis = QBarCategoryAxis()
+        axis = QtChart.QBarCategoryAxis()
         axis.append(categories)
         chart.createDefaultAxes()
         chart.setAxisX(axis, series)
@@ -344,7 +343,7 @@ class StatisticsDoctorCount(QtWidgets.QMainWindow):
         chart.legend().setVisible(True)
         chart.legend().setAlignment(QtCore.Qt.AlignBottom)
 
-        self.chartView = QChartView(chart)
+        self.chartView = QtChart.QChartView(chart)
         self.chartView.setRenderHint(QtGui.QPainter.Antialiasing)
 
         self.chartView.setFixedWidth(400)

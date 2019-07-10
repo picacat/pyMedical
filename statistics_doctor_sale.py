@@ -1,11 +1,8 @@
 #!/usr/bin/env python3
 #coding: utf-8
 
-from PyQt5 import QtWidgets, QtCore, QtGui
+from PyQt5 import QtWidgets, QtCore, QtGui, QtChart
 from PyQt5.QtWidgets import QMessageBox, QFileDialog
-from PyQt5.QtChart import *
-
-import datetime
 
 from classes import table_widget
 from libs import ui_utils
@@ -332,7 +329,7 @@ class StatisticsDoctorSale(QtWidgets.QMainWindow):
             ).text()
         )
 
-        series = QPieSeries()
+        series = QtChart.QPieSeries()
         for row_no in range(self.ui.tableWidget_sale_summary.rowCount()):
             medicine_name = self.ui.tableWidget_sale_summary.item(row_no, 0).text()
             amount = number_utils.get_float(self.ui.tableWidget_sale_summary.item(row_no, 2).text())
@@ -352,13 +349,13 @@ class StatisticsDoctorSale(QtWidgets.QMainWindow):
             slice.setExploded()
             slice.setLabelVisible()
 
-        chart = QChart()
+        chart = QtChart.QChart()
         chart.addSeries(series)
         chart.setTitle('{doctor}醫師自費銷售排行榜Top10'.format(doctor=self.doctor))
         chart.legend().hide()
-        chart.setAnimationOptions(QChart.AllAnimations)
+        chart.setAnimationOptions(QtChart.QChart.AllAnimations)
 
-        self.chartView = QChartView(chart)
+        self.chartView = QtChart.QChartView(chart)
         self.chartView.setRenderHint(QtGui.QPainter.Antialiasing)
 
         self.chartView.setFixedHeight(400)

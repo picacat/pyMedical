@@ -1,10 +1,7 @@
 #!/usr/bin/env python3
 #coding: utf-8
 
-import sys
-
-from PyQt5 import QtWidgets, QtGui, QtCore
-from PyQt5.QtChart import *
+from PyQt5 import QtWidgets, QtGui, QtCore, QtChart
 
 import datetime
 
@@ -482,23 +479,23 @@ class WaitingList(QtWidgets.QMainWindow):
         self._plot_chart(statistics_list)
 
     def _plot_chart(self, statistics_list):
-        set0 = QBarSet("內科")
-        set1 = QBarSet("針灸")
-        set2 = QBarSet("傷科")
+        set0 = QtChart.QBarSet("內科")
+        set1 = QtChart.QBarSet("針灸")
+        set2 = QtChart.QBarSet("傷科")
 
         set0 << statistics_list['本月健保內科人數']
         set1 << statistics_list['本月健保針灸人數']
         set2 << statistics_list['本月健保傷科人數']
 
-        series = QBarSeries()
+        series = QtChart.QBarSeries()
         series.append(set0)
         series.append(set1)
         series.append(set2)
 
-        chart = QChart()
+        chart = QtChart.QChart()
         chart.addSeries(series)
         chart.setTitle('本月人數統計表')
-        chart.setAnimationOptions(QChart.SeriesAnimations)
+        chart.setAnimationOptions(QtChart.QChart.SeriesAnimations)
 
         calc_date = '{0}年{1}月'.format(
             datetime.datetime.now().year,
@@ -506,7 +503,7 @@ class WaitingList(QtWidgets.QMainWindow):
         )
         categories = [calc_date]
 
-        axis = QBarCategoryAxis()
+        axis = QtChart.QBarCategoryAxis()
         axis.append(categories)
         chart.createDefaultAxes()
         chart.setAxisX(axis, series)
@@ -514,7 +511,7 @@ class WaitingList(QtWidgets.QMainWindow):
         chart.legend().setVisible(True)
         chart.legend().setAlignment(QtCore.Qt.AlignBottom)
 
-        self.chartView = QChartView(chart)
+        self.chartView = QtChart.QChartView(chart)
         self.chartView.setRenderHint(QtGui.QPainter.Antialiasing)
 
         existing_widget = self.ui.verticalLayout_chart.takeAt(0)
