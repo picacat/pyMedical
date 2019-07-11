@@ -830,9 +830,9 @@ class PyMedical(QtWidgets.QMainWindow):
 # 主程式
 def main():
     app = QtWidgets.QApplication(sys.argv)
-    app.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling, True)  # enable highdpi scaling
-    app.setAttribute(QtCore.Qt.AA_Use96Dpi, True)  # use 96 dpi
-    # app.setAttribute(QtCore.Qt.AA_UseHighDpiPixmaps, True)  # use highdpi icons
+    app.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling, True)  # enable high dpi scaling
+    app.setAttribute(QtCore.Qt.AA_UseHighDpiPixmaps, True)  # use high dpi icons
+    # app.setAttribute(QtCore.Qt.AA_Use96Dpi, True)  # use 96 dpi
 
     py_medical = PyMedical()
     py_medical.system_settings.post('使用者', None)

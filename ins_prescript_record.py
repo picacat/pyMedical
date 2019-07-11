@@ -78,7 +78,7 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
     def _set_combo_box(self):
         ui_utils.set_combo_box(self.ui.comboBox_package, nhi_utils.PACKAGE, None)
         ui_utils.set_combo_box(self.ui.comboBox_pres_days, nhi_utils.PRESDAYS, None)
-        ui_utils.set_combo_box(self.ui.comboBox_instruction, nhi_utils.INSTRUCTION, None)
+        ui_utils.set_instruction_combo_box(self.database, self.ui.comboBox_instruction)
 
     # 設定信號
     def _set_signal(self):

@@ -70,8 +70,8 @@ class MedicalRecordFees(QtWidgets.QMainWindow):
         return QtWidgets.QTableWidget.keyPressEvent(self.ui.tableWidget_cash_fees, event)
 
     def _set_table_width(self):
-        self.table_widget_ins_fees.set_table_heading_width([75])
-        self.table_widget_cash_fees.set_table_heading_width([75])
+        self.table_widget_ins_fees.set_table_heading_width([80])
+        self.table_widget_cash_fees.set_table_heading_width([80])
 
     def _set_new_self_medical_fees(self):
         ins_fees = [

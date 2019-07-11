@@ -72,7 +72,7 @@ class DialogSystemSettings(QtWidgets.QDialog):
             QtWidgets.QStyleFactory.keys()
         )
         ui_utils.set_combo_box(self.ui.comboBox_division, nhi_utils.DIVISION)
-        ui_utils.set_combo_box(self.ui.comboBox_instruction, ['飯前', '飯後', '飯後睡前'])
+        ui_utils.set_instruction_combo_box(self.database, self.ui.comboBox_instruction)
         ui_utils.set_combo_box(self.ui.comboBox_color, ['紅色','綠色', '藍色', '灰色'])
         self._set_combo_box_printer()
 

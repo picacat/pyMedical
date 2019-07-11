@@ -8,6 +8,7 @@ from libs import ui_utils
 import dict_drug
 import dict_treat
 import dict_compound
+import dict_instruction
 
 
 # 處方詞庫 2019.06.12
@@ -41,6 +42,8 @@ class DictMedicine(QtWidgets.QMainWindow):
             dict_treat.DictTreat(self, *self.args), '處置資料')
         self.ui.tabWidget_medicine.addTab(
             dict_compound.DictCompound(self, *self.args), '成方資料')
+        self.ui.tabWidget_medicine.addTab(
+            dict_instruction.DictInstruction(self, *self.args), '用藥指示')
 
     # 設定信號
     def _set_signal(self):

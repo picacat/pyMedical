@@ -3,6 +3,7 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtWidgets import QMessageBox, QPushButton
 from PyQt5 import uic
 from libs import  nhi_utils
+from libs import  string_utils
 
 ICON_NO = QtGui.QIcon('./icons/gtk-no.svg')
 ICON_OK = QtGui.QIcon('./icons/gtk-ok.svg')
@@ -168,6 +169,7 @@ UI_DICT_CURE = "dict_cure.ui"
 UI_DICT_MEDICINE = "dict_medicine.ui"
 UI_DICT_DRUG = "dict_drug.ui"
 UI_DICT_TREAT = "dict_treat.ui"
+UI_DICT_INSTRUCTION = "dict_instruction.ui"
 UI_DICT_COMPOUND = "dict_compound.ui"
 
 UI_DICT_INS_DRUG = "dict_ins_drug.ui"
@@ -266,3 +268,24 @@ def set_table_widget_field_icon(table_widget, row_no, col_no, icon_file_name,
     button.setFlat(True)
     button.clicked.connect(function_call)
     table_widget.setCellWidget(row_no, col_no, button)
+
+
+# 設定 instruction comboBox
+def set_instruction_combo_box(database, combobox):
+    set_combo_box(combobox, nhi_utils.INSTRUCTION, None)
+
+    sql = '''
+        SELECT * FROM clinic 
+        WHERE 
+            ClinicType = "指示" 
+        ORDER BY LENGTH(ClinicName), CAST(CONVERT(`ClinicName` using big5) AS BINARY)
+    '''
+    rows = database.select_record(sql)
+
+    for row in rows:
+        instruction = string_utils.xstr(row['ClinicName'])
+        if instruction in nhi_utils.INSTRUCTION:
+            continue
+
+        combobox.addItem(instruction)
+

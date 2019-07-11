@@ -90,6 +90,7 @@ def set_keyboard_layout(lang):
         keyboard
     )
 
+
 def unzip_file(zip_file, output_directory):
     cmd = ['7z', 'x', zip_file, '-o{output_directory}'.format(output_directory=output_directory)]
     sp = subprocess.Popen(cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE)

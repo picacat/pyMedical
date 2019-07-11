@@ -138,7 +138,7 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
     def _set_combo_box(self):
         ui_utils.set_combo_box(self.ui.comboBox_package, nhi_utils.PACKAGE, None)
         ui_utils.set_combo_box(self.ui.comboBox_pres_days, nhi_utils.SELF_PRESDAYS, None)
-        ui_utils.set_combo_box(self.ui.comboBox_instruction, nhi_utils.INSTRUCTION, None)
+        ui_utils.set_instruction_combo_box(self.database, self.ui.comboBox_instruction)
 
     def _table_widget_prescript_key_press(self, event):
         system_utils.set_keyboard_layout('英文')

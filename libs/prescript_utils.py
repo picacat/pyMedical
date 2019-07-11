@@ -56,6 +56,7 @@ INS_TREAT_COL_NO = {
 
 PRESCRIPT_TREAT = ['穴道', '處置']
 
+
 # 取得服藥頻率代碼
 def get_usage_code(package):
     usage_dict = {
@@ -81,6 +82,7 @@ def get_instruction_code(instruction):
         instruction_code = ''
 
     return  instruction_code
+
 
 # 檢查是否重複開立處方
 def check_prescript_duplicates(in_table_widget, medicine_type, col_no, check_value):
