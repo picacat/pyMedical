@@ -3,11 +3,12 @@
 
 import sys
 
-from PyQt5 import QtWidgets, QtGui
+from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtWidgets import QMessageBox, QPushButton, QFileDialog, QProgressBar
 
 import datetime
 from classes import table_widget
+from libs import system_utils
 from libs import ui_utils
 from libs import nhi_utils
 from libs import string_utils
@@ -48,6 +49,7 @@ class DictInsDrug(QtWidgets.QMainWindow):
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_DICT_INS_DRUG, self)
+        system_utils.set_css(self, self.system_settings)
         self.table_widget_medicine = table_widget.TableWidget(
             self.ui.tableWidget_medicine, self.database
         )
@@ -59,6 +61,8 @@ class DictInsDrug(QtWidgets.QMainWindow):
         self._set_table_width()
         self._set_combo_box_supplier()
         self._set_spin_box_valid_date()
+
+        self.ui.action_update_valid_date.setEnabled(False)
 
     def _set_combo_box_supplier(self):
         sql = '''
@@ -97,6 +101,7 @@ class DictInsDrug(QtWidgets.QMainWindow):
     def _set_signal(self):
         self.ui.action_sync_drug.triggered.connect(self._sync_drug)
         self.ui.action_close.triggered.connect(self._close_ins_drug)
+        self.ui.action_update_valid_date.triggered.connect(self._update_valid_date)
         self.ui.tableWidget_medicine.itemSelectionChanged.connect(self._medicine_item_selection_changed)
         self.ui.lineEdit_medicine_query.textChanged.connect(self._medicine_name_changed)
         self.ui.lineEdit_drug_query.textChanged.connect(self._drug_name_changed)
@@ -132,6 +137,12 @@ class DictInsDrug(QtWidgets.QMainWindow):
         medicine_key = string_utils.xstr(row['MedicineKey'])
         ins_code = string_utils.xstr(row['InsCode'])
         valid_date = string_utils.xstr(row['ValidDate'])
+        if '-' not in valid_date:
+            valid_date = '{year}-{month:0>2}-{day:0>2}'.format(
+                year=valid_date[:4],
+                month=valid_date[4:6],
+                day=valid_date[6:8],
+            )
 
         expire_date = '{valid_year}-{valid_month:0>2}-01'.format(
             valid_year=self.ui.spinBox_valid_year.value(),
@@ -260,11 +271,11 @@ class DictInsDrug(QtWidgets.QMainWindow):
         self.ui.statusbar.removeWidget(progress_bar)
 
     def _write_ins_drug(self, medicine_type, rows, progress_bar):
-        INS_CODE = self._get_field_number(rows[0], '藥品代碼')
-        DRUG_NAME = self._get_field_number(rows[0], '藥品名稱')
-        DRUG_TYPE = self._get_field_number(rows[0], '劑型')
-        SUPPLIER = self._get_field_number(rows[0], '製造廠名稱')
-        VALID_DATE = self._get_field_number(rows[0], '有效期間')
+        ins_code = self._get_field_number(rows[0], '藥品代碼')
+        drug_name = self._get_field_number(rows[0], '藥品名稱')
+        drug_type = self._get_field_number(rows[0], '劑型')
+        supplier = self._get_field_number(rows[0], '製造廠名稱')
+        valid_date = self._get_field_number(rows[0], '有效期間')
 
         for row_no, row in zip(range(len(rows)), rows):
             progress_bar.setValue(row_no+1)
@@ -272,11 +283,11 @@ class DictInsDrug(QtWidgets.QMainWindow):
                 continue
 
             try:
-                ins_code = row[INS_CODE]
-                drug_name = row[DRUG_NAME]
-                drug_type = row[DRUG_TYPE]
-                supplier = row[SUPPLIER]
-                valid_date = row[VALID_DATE]
+                ins_code = row[ins_code]
+                drug_name = row[drug_name]
+                drug_type = row[drug_type]
+                supplier = row[supplier]
+                valid_date = row[valid_date]
                 valid_date = '{0}-{1}-{2}'.format(
                     valid_date[:4],
                     valid_date[4:6],
@@ -328,7 +339,7 @@ class DictInsDrug(QtWidgets.QMainWindow):
             WHERE
                 DrugName LIKE "%{drug_name}%"
                 {supplier_script}
-            ORDER BY LENGTH(DrugName), CAST(CONVERT(`DrugName` using big5) AS BINARY), ValidDate
+            ORDER BY ValidDate DESC, LENGTH(DrugName), CAST(CONVERT(`DrugName` using big5) AS BINARY)
         '''.format(
             drug_name=drug_name,
             supplier_script=supplier_script,
@@ -414,7 +425,10 @@ class DictInsDrug(QtWidgets.QMainWindow):
         self.ui.lineEdit_medicine_query.setCursorPosition(len(medicine_name))
 
     def _filter_medicine(self):
+        self.ui.action_update_valid_date.setEnabled(True)
+
         if self.ui.radioButton_all.isChecked():
+            self.ui.action_update_valid_date.setEnabled(False)
             self._read_medicine()
             return
 
@@ -430,5 +444,39 @@ class DictInsDrug(QtWidgets.QMainWindow):
         self.ui.lineEdit_drug_query.setCursorPosition(len(drug_name))
 
     def _valid_date_changed(self):
+        self._read_medicine()
+        self._filter_medicine()
+
+    def _update_valid_date(self):
+        msg_box = QMessageBox()
+        msg_box.setIcon(QMessageBox.Warning)
+        msg_box.setWindowTitle('更新有效期限')
+        msg_box.setText("<font size='4' color='blue'><b>確定更新過期藥品的有效期限?</b></font>")
+        msg_box.setInformativeText("注意！有效期限只會更新健保藥品第一欄的資料!")
+        msg_box.addButton(QPushButton("取消"), QMessageBox.NoRole)
+        msg_box.addButton(QPushButton("確定"), QMessageBox.YesRole)
+        update_record = msg_box.exec_()
+        if not update_record:
+            return
+
+        record_count = self.ui.tableWidget_medicine.rowCount()
+
+        progress_dialog = QtWidgets.QProgressDialog(
+            '正在更新健保藥品有效期限中, 請稍後...', '取消', 0, record_count, self
+        )
+
+        progress_dialog.setWindowModality(QtCore.Qt.WindowModal)
+        progress_dialog.setValue(0)
+
+        for row_no in range(record_count):
+            progress_dialog.setValue(row_no)
+            if progress_dialog.wasCanceled():
+                break
+
+            self.ui.tableWidget_medicine.setCurrentCell(row_no, 1)
+            if self.ui.tableWidget_drug.rowCount() > 0:
+                self._set_ins_drug()
+
+        progress_dialog.setValue(record_count)
         self._read_medicine()
         self._filter_medicine()

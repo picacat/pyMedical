@@ -1,10 +1,12 @@
 # 2018.04.30
 from PyQt5.QtWidgets import QMessageBox, QPushButton
 
+import io
 from libs import date_utils
 from libs import patient_utils
 from libs import number_utils
 from libs import nhi_utils
+from libs import string_utils
 
 NORMAL_CARD = '1'
 RETURN_CARD = '2'
@@ -189,6 +191,11 @@ TREAT_DATA = {
     'register_duplicated': None,
 }
 
+TREATMENT_DATA = {
+    'critical_illness': [],
+    'treatments': [],
+}
+
 XML_FEEDBACK_DATA = {
     'sam_id': None,
     'clinic_id': None,
@@ -246,10 +253,11 @@ def get_insured_mark(insured_mark_code):
     return insured_mark
 
 
+# 取得健保卡內容
 def decode_basic_data_common(buffer):
     basic_data_info = BASIC_DATA
     basic_data_info['card_no'] = buffer[:12].decode('ascii').strip()
-    basic_data_info['name'] = buffer[12:32].decode('big5').strip()
+    basic_data_info['name'] = buffer[12:32].decode('big5', 'replace').strip()
     basic_data_info['patient_id'] = buffer[32:42].decode('ascii').strip()
     basic_data_info['birthday'] = date_utils.nhi_date_to_west_date(buffer[42:49].decode('ascii').strip())
     basic_data_info['gender'] = patient_utils.get_gender(buffer[49:50].decode('ascii').strip())
@@ -288,6 +296,37 @@ def decode_treat_data(buffer):
     treat_data_info['register_duplicated'] = buffer[295:296].decode('ascii').strip()
 
     return treat_data_info
+
+
+def decode_treatment_data(buffer):
+    treatment_data = TREATMENT_DATA
+    treatment_data['critical_illness'].clear()
+    treatment_data['treatments'].clear()
+
+    s = io.BytesIO(buffer)
+    for x in range(6):
+        treatment_data['critical_illness'].append({
+            'ci_validity_start': s.read(7).decode('ascii'),
+            'ci_validity_end': s.read(7).decode('ascii')
+        })
+
+    for x in range(6):
+        item = {}
+        item['treat_item'] = s.read(2).decode('ascii')
+        item['treat_newborn'] = s.read(1).decode('ascii')
+        item['treat_date_time'] = s.read(13).decode('ascii')
+        item['treat_after_check'] = s.read(1).decode('ascii')
+        item['card'] = s.read(4).decode('ascii')
+        item['treat_hosp_code'] = s.read(10).decode('ascii')
+        item['treat_ot_tot_fee'] = int(s.read(8).decode('ascii'))
+        item['hc_treat_ot_co_fee'] = int(s.read(8).decode('ascii'))
+        item['treat_ot_inpa_fee'] = int(s.read(8).decode('ascii'))
+        item['treat_ot_inpa_30'] = int(s.read(7).decode('ascii'))
+        item['treat_ot_inpa_180'] = int(s.read(7).decode('ascii'))
+
+        treatment_data['treatments'].append(item)
+
+    return treatment_data
 
 
 def decode_xml_data(buffer):
@@ -350,4 +389,89 @@ def show_ic_card_message(error_code, process_name=None):
     msg_box.exec_()
 
 
+def get_host_name(database, hosp_id):
+    sql = '''
+        SELECT * FROM hospid
+        WHERE
+            HospID = "{hosp_id}"    
+    '''.format(
+        hosp_id=hosp_id,
+    )
 
+    rows = database.select_record(sql)
+    if len(rows) <= 0:
+        return hosp_id
+
+    return string_utils.xstr(rows[0]['HospName'])
+
+
+def get_treatments_html(database, treatment_data):
+    treatments = treatment_data['treatments']
+    if len(treatments) <= 0:
+        return '<br><br><br><center>無健保卡就醫資料</center>'
+
+    records = ''
+    for row_no, treatment in zip(range(1, len(treatments)+1), treatments):
+        treat_item = string_utils.xstr(treatment['treat_item']).strip()
+        treat_date_time = string_utils.xstr(treatment['treat_date_time']).strip()
+        treat_after_check = string_utils.xstr(treatment['treat_after_check']).strip()
+        card = string_utils.xstr(treatment['card']).strip()
+        treat_hosp_code = string_utils.xstr(treatment['treat_hosp_code']).strip()
+
+        try:
+            treat_item = nhi_utils.TREAT_ITEM[treat_item]
+        except KeyError:
+            pass
+
+        try:
+            treat_date_time = date_utils.nhi_datetime_to_west_datetime(treat_date_time)
+        except ValueError:
+            treat_date_time = ''
+
+        if treat_after_check == '1':
+            treat_after_check = '正常'
+        else:
+            treat_after_check = '補卡'
+
+        card = card.zfill(4)
+        hosp_name = get_host_name(database, treat_hosp_code)
+
+        records += '''
+            <tr>
+                <td align="center">{row_no}</td>
+                <td align="center">{treat_item}</td>
+                <td>{treat_date_time}</td>
+                <td align="center">{treat_after_check}</td>
+                <td align="center">{card}</td>
+                <td>{hosp_name}</td>
+            </tr>
+        '''.format(
+            row_no=row_no,
+            treat_item=treat_item,
+            treat_date_time=treat_date_time,
+            treat_after_check=treat_after_check,
+            card=card,
+            hosp_name=hosp_name,
+        )
+
+    html = '''
+        <table align=center cellpadding="2" cellspacing="0" width="98%" style="border-width: 1px; border-style: solid;">
+            <thead>
+                <tr bgcolor="LightGray">
+                    <th style="text-align: center; padding-left: 8px" width="5%">序</th>
+                    <th style="padding-left: 8px" width="15%" align="center">類別</th>
+                    <th style="padding-right: 8px" align="center" width="25%">就醫日期</th>
+                    <th style="padding-left: 8px" align="center" width="10%">讀卡</th>
+                    <th style="padding-left: 8px" align="center" width="10%">卡序</th>
+                    <th style="padding-left: 8px" align="center" width="35%">就醫院所</th>
+                </tr>
+            </thead>
+            <tbody>
+                {records}
+            </tbody>
+        </table>
+    '''.format(
+        records=records,
+    )
+
+    return html

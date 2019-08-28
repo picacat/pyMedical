@@ -544,7 +544,7 @@
      <x>0</x>
      <y>0</y>
      <width>1234</width>
-     <height>26</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu">
@@ -568,6 +568,9 @@
     <addaction name="action_waiting_list"/>
     <addaction name="action_medical_record_list"/>
     <addaction name="action_medical_record_statistics"/>
+    <addaction name="separator"/>
+    <addaction name="action_examination"/>
+    <addaction name="action_examination_list"/>
    </widget>
    <widget class="QMenu" name="menu_4">
     <property name="title">
@@ -579,6 +582,7 @@
     <addaction name="action_restore_records"/>
     <addaction name="separator"/>
     <addaction name="action_convert"/>
+    <addaction name="action_database_repair"/>
    </widget>
    <widget class="QMenu" name="menu_5">
     <property name="title">
@@ -603,6 +607,7 @@
     <addaction name="separator"/>
     <addaction name="action_diagnostic"/>
     <addaction name="action_medicine"/>
+    <addaction name="action_misc"/>
     <addaction name="action_ins_drug"/>
     <addaction name="separator"/>
     <addaction name="action_ic_card"/>
@@ -623,6 +628,7 @@
     </property>
     <addaction name="action_statistics_doctor"/>
     <addaction name="action_statistics_return_rate"/>
+    <addaction name="action_statistics_medicine"/>
    </widget>
    <addaction name="menu"/>
    <addaction name="menu_2"/>
@@ -943,6 +949,57 @@
    </property>
    <property name="text">
     <string>分院連線設定</string>
+   </property>
+  </action>
+  <action name="action_database_repair">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/drive-multidisk.png</normaloff>../icons/drive-multidisk.png</iconset>
+   </property>
+   <property name="text">
+    <string>資料庫修復</string>
+   </property>
+  </action>
+  <action name="action_misc">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/applications-other.png</normaloff>../icons/applications-other.png</iconset>
+   </property>
+   <property name="text">
+    <string>其他資料</string>
+   </property>
+  </action>
+  <action name="action_statistics_medicine">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/emblem-documents.png</normaloff>../icons/emblem-documents.png</iconset>
+   </property>
+   <property name="text">
+    <string>用藥統計</string>
+   </property>
+  </action>
+  <action name="action_examination_list">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/applications-engineering.png</normaloff>../icons/applications-engineering.png</iconset>
+   </property>
+   <property name="text">
+    <string>檢驗報告查詢</string>
+   </property>
+   <property name="toolTip">
+    <string>檢驗報告查詢</string>
+   </property>
+  </action>
+  <action name="action_examination">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/accessories-text-editor.png</normaloff>../icons/accessories-text-editor.png</iconset>
+   </property>
+   <property name="text">
+    <string>檢驗報告登錄</string>
+   </property>
+   <property name="toolTip">
+    <string>檢驗報告登錄</string>
    </property>
   </action>
  </widget>

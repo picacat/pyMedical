@@ -15,6 +15,7 @@ from libs import nhi_utils
 from libs import date_utils
 from libs import string_utils
 from libs import xml_utils
+from libs import system_utils
 
 
 # 健保電子化抽審 2018.11.05
@@ -31,6 +32,7 @@ class InsUploadEMR(QtWidgets.QMainWindow):
         self.clinic_id = args[5]
         self.apply_upload_date = args[6]
         self.ui = None
+        self.start_no = 1
 
         self.apply_type_code = nhi_utils.APPLY_TYPE_CODE[self.apply_type]
         self.apply_year = int(self.apply_date[:3]) + 1911
@@ -57,11 +59,30 @@ class InsUploadEMR(QtWidgets.QMainWindow):
         pass
 
     def upload_emr_files(self):
-        self._generate_emr_files()
+        apply_date = '{0}-{1:0>2}'.format(self.apply_year, self.apply_month)
+
+        sql = '''
+            SELECT * FROM system_log
+            WHERE
+                LogType = "抽審日期" AND
+                LogName = "{apply_date}"
+        '''.format(
+            apply_date=apply_date,
+        )
+        rows = self.database.select_record(sql)
+        self.start_no += len(rows) * 1000
+
+        if not self._generate_emr_files():
+            return
 
         type_code = '15'  # 費用抽審批次上傳
         zip_file = self._get_zip_file_name()
         nhi_utils.NHI_SendB(self.system_settings, type_code, zip_file)
+
+        generate_date = datetime.date.today().strftime("%Y-%m-%d")
+        fields = ['LogType', 'LogName', 'Log']
+        data = ['抽審日期', apply_date, generate_date]
+        self.database.insert_record('system_log', fields, data)
 
     def _generate_emr_files(self):
         shutil.rmtree(self.EXPORT_DIR, ignore_errors=True)
@@ -87,6 +108,16 @@ class InsUploadEMR(QtWidgets.QMainWindow):
         rows = self.database.select_record(sql)
 
         row_count = len(rows)
+
+        if row_count <= 0:
+            system_utils.show_message_box(
+                QtWidgets.QMessageBox.Critical,
+                '無抽審資料',
+                '<font size="4" color="red"><b>找不到註記的資料, 請註記流水號後再執行抽審上傳作業.</b></font>',
+                '請確定讀卡機是否連接, 或VPN網路是否暢通.'
+            )
+            return False
+
         progress_dialog = QtWidgets.QProgressDialog(
             '正在產生電子抽審檔中, 請稍後...', '取消', 0, row_count, self
         )
@@ -105,6 +136,8 @@ class InsUploadEMR(QtWidgets.QMainWindow):
 
         progress_dialog.setValue(row_count)
         self._zip_all_files()
+
+        return True
 
     # 建立抽審用pdf檔
     def _create_pdf_files(self, row):
@@ -172,7 +205,7 @@ class InsUploadEMR(QtWidgets.QMainWindow):
         att_file = 'ATT{0}_{1}{2:0>8}.7z'.format(
             self.system_settings.field('院所代號'),
             datetime.datetime.now().strftime('%Y%m%d'),
-            row_no+1,  # 應該是 +1, 暫時的，for 抽審測試
+            row_no+self.start_no,  # 應該是 +1, 暫時的，for 抽審測試
         )
 
         zip_file = '{0}/{1}'.format(self.EXPORT_DIR, att_file)
@@ -190,7 +223,7 @@ class InsUploadEMR(QtWidgets.QMainWindow):
             self.EXPORT_DIR,
             self.system_settings.field('院所代號'),
             datetime.datetime.now().strftime('%Y%m%d'),
-            row_no+1,  # 應該是 +1, 暫時的，for 抽審測試
+            row_no+self.start_no,  # 應該是 +1, 暫時的，for 抽審測試
         )
 
         root = ET.Element('feereview')

@@ -20,6 +20,7 @@ class DialogDistinguish(QtWidgets.QDialog):
         self.system_settings = args[1]
         self.groups = args[2]
         self.text_edit = args[3]
+        self.text_edit_cure = args[4]
 
         self.ui = None
         self.diagnostic_type = '辨證'
@@ -50,7 +51,7 @@ class DialogDistinguish(QtWidgets.QDialog):
     # 設定信號
     def _set_signal(self):
         self.ui.tableWidget_groups.itemSelectionChanged.connect(self.groups_name_changed)
-        self.ui.tableWidget_distinguish.clicked.connect(self.add_distinguish)
+        self.ui.tableWidget_distinguish.clicked.connect(self.add_dict)
         self.ui.tableWidget_groups.keyPressEvent = self._table_widget_key_press
         self.ui.tableWidget_distinguish.keyPressEvent = self._table_widget_key_press
 
@@ -63,8 +64,8 @@ class DialogDistinguish(QtWidgets.QDialog):
 
     # 設定欄位寬度
     def _set_table_width(self):
-        groups_width = [100, 200]
-        distinguish_width = [100, 800]
+        groups_width = [100, 120]
+        distinguish_width = [100, 200, 190]
         self.table_widget_groups.set_table_heading_width(groups_width)
         self.table_widget_distinguish.set_table_heading_width(distinguish_width)
 
@@ -100,22 +101,29 @@ class DialogDistinguish(QtWidgets.QDialog):
         self.table_widget_distinguish.set_db_data(sql, self._set_distinguish_data)
 
     def _set_distinguish_data(self, rec_no, rec):
-        distinguish_rec = [
+        distinguish_row = [
             string_utils.xstr(rec['ClinicKey']),
             string_utils.xstr(rec['ClinicName']),
+            string_utils.xstr(rec['Position']),
         ]
 
-        for column in range(len(distinguish_rec)):
+        for column in range(len(distinguish_row)):
             self.ui.tableWidget_distinguish.setItem(
                 rec_no, column,
-                QtWidgets.QTableWidgetItem(distinguish_rec[column])
+                QtWidgets.QTableWidgetItem(distinguish_row[column])
             )
 
-    def add_distinguish(self):
+    def add_dict(self):
         selected_distinguish = self.table_widget_distinguish.field_value(1)
-        distinguish = self.text_edit.text()
-        distinguish += '，' + selected_distinguish \
-            if str(distinguish).strip()[-1:] not in ['，', ',', ':', '='] and len(str(distinguish).strip()) > 0 \
-            else selected_distinguish
-        self.text_edit.setText(string_utils.get_str(distinguish, 'utf8'))
-        self.text_edit.setModified(True)
+        selected_cure = self.table_widget_distinguish.field_value(2)
+
+        self._add_dict_to_text_edit(self.text_edit, selected_distinguish)
+        self._add_dict_to_text_edit(self.text_edit_cure, selected_cure)
+
+    def _add_dict_to_text_edit(self, text_edit, selected_text):
+        text = text_edit.text()
+        text += '，' + selected_text \
+            if str(text).strip()[-1:] not in ['，', ',', ':', '='] and len(str(text).strip()) > 0 \
+            else selected_text
+        text_edit.setText(string_utils.get_str(text, 'utf8'))
+        text_edit.setModified(True)

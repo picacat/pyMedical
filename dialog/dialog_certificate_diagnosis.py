@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-# 病歷查詢 2014.09.22
 #coding: utf-8
 
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtWidgets import QInputDialog
 
 import datetime
 
 from classes import table_widget
 from dialog import dialog_select_patient
+from dialog import dialog_medical_record_past_history
 
 from libs import ui_utils
 from libs import system_utils
@@ -26,6 +26,7 @@ class DialogCertificateDiagnosis(QtWidgets.QDialog):
         self.database = args[0]
         self.system_settings = args[1]
         self.ui = None
+        self.dialog_past_history = None
 
         self._set_ui()
         self._set_signal()
@@ -36,7 +37,9 @@ class DialogCertificateDiagnosis(QtWidgets.QDialog):
 
     # 關閉
     def close_all(self):
-        pass
+        if self.dialog_past_history is not None:
+            self.dialog_past_history.deleteLater()
+            self.dialog_past_history = None
 
     # 設定GUI
     def _set_ui(self):
@@ -65,13 +68,15 @@ class DialogCertificateDiagnosis(QtWidgets.QDialog):
         self.ui.dateEdit_end_date.dateChanged.connect(self._read_medical_record)
         self.ui.comboBox_ins_type.currentTextChanged.connect(self._read_medical_record)
         self.ui.comboBox_treat_type.currentTextChanged.connect(self._read_medical_record)
+        self.ui.comboBox_doctor.currentTextChanged.connect(self._read_medical_record)
         self.ui.toolButton_import_diagnosis.clicked.connect(self._import_diagnosis)
         self.ui.toolButton_doctor_comment.clicked.connect(self._import_doctor_comment)
         self.ui.textEdit_diagnosis.textChanged.connect(self._check_diagnosis_completed)
         self.ui.textEdit_doctor_comment.textChanged.connect(self._check_diagnosis_completed)
+        self.ui.toolButton_open_past_history.clicked.connect(self._open_past_history)
 
     def _set_table_width(self):
-        width = [100, 120, 60, 240, 120]
+        width = [100, 10, 110, 50, 400, 90]
         self.table_widget_medical_record.set_table_heading_width(width)
 
     def _set_group_box(self, enabled):
@@ -96,9 +101,27 @@ class DialogCertificateDiagnosis(QtWidgets.QDialog):
     def _set_combo_box(self):
         ui_utils.set_combo_box(self.ui.comboBox_ins_type, nhi_utils.INS_TYPE, '全部')
         ui_utils.set_combo_box(self.ui.comboBox_treat_type, ['針傷科', '針灸科', '傷骨科', '內科'], '全部')
+        self._set_doctor()
+
+    def _set_doctor(self):
+        script = 'select * from person where Position IN("醫師", "支援醫師") '
+        rows = self.database.select_record(script)
+        doctor_list = []
+        for row in rows:
+            doctor_list.append(row['Name'])
+
+        ui_utils.set_combo_box(self.ui.comboBox_doctor, doctor_list, '全部')
 
     def accepted_button_clicked(self):
-        self._write_certificate()
+        self._save_files()
+
+    def _save_files(self):
+        case_key = self._write_medical_record()
+        self._write_prescript(case_key)
+        self._write_wait(case_key)
+
+        certificate_key = self._write_certificate(case_key)
+        self._write_certificate_items(certificate_key)
 
     def _select_patient(self):
         patient_key = self.ui.lineEdit_patient_key.text()
@@ -155,7 +178,6 @@ class DialogCertificateDiagnosis(QtWidgets.QDialog):
         self.ui.lineEdit_address.setText(string_utils.xstr(row['Address']))
 
     def _start_date_changed(self):
-        self.ui.dateEdit_end_date.setDate(self.ui.dateEdit_start_date.date())
         self._read_medical_record()
 
     def _read_medical_record(self):
@@ -172,6 +194,7 @@ class DialogCertificateDiagnosis(QtWidgets.QDialog):
         condition = ''
         ins_type = self.ui.comboBox_ins_type.currentText()
         treat_type = self.ui.comboBox_treat_type.currentText()
+        doctor = self.ui.comboBox_doctor.currentText()
 
         if ins_type in ['健保', '自費']:
             condition = ' AND InsType = "{0}" '.format(ins_type)
@@ -181,41 +204,39 @@ class DialogCertificateDiagnosis(QtWidgets.QDialog):
         elif treat_type != '全部':
             condition += ' AND TreatType IN {0} '.format(tuple(treat_type_dict[treat_type]))
 
+        if doctor not in ['全部', '']:
+            condition += ' AND Doctor = "{0}" '.format(doctor)
+
         sql = '''
-            SELECT CaseKey, CaseDate, InsType, Doctor, DiseaseName1 FROM cases
+            SELECT CaseKey, CaseDate, InsType, Doctor, DiseaseName1, DiseaseName2 FROM cases
             WHERE
-                CaseDate BETWEEN "{0}" AND "{1}" AND
-                PatientKey = {2}
-                {3}
+                CaseDate BETWEEN "{start_date}" AND "{end_date}" AND
+                PatientKey = {patient_key} AND
+                TreatType != "自購"
+                {condition}
+            GROUP BY DATE(CaseDate)
             ORDER BY CaseDate
-        '''.format(start_date, end_date, patient_key, condition)
+        '''.format(
+            start_date=start_date,
+            end_date=end_date,
+            patient_key=patient_key,
+            condition=condition,
+        )
         self.table_widget_medical_record.set_db_data(sql, self._set_table_data, set_focus=False)
         self.ui.label_record_count.setText('門診次數: {0}次'.format(self.table_widget_medical_record.row_count()))
-        self._set_doctor()
         self._check_diagnosis_completed()
 
-    def _set_doctor(self):
-        doctor_list = []
-        for row_no in range(self.ui.tableWidget_medical_record.rowCount()):
-            doctor_item = self.ui.tableWidget_medical_record.item(row_no, 4)
-            if doctor_item is None:
-                continue
-
-            doctor = doctor_item.text()
-            if doctor == '':
-                continue
-
-            if doctor not in doctor_list:
-                doctor_list.append(doctor)
-
-        ui_utils.set_combo_box(self.ui.comboBox_doctor, doctor_list)
-
     def _set_table_data(self, row_no, row):
+        disease_list = [
+            string_utils.xstr(row['DiseaseName1']),
+            string_utils.xstr(row['DiseaseName2']),
+        ]
         medical_record = [
             string_utils.xstr(row['CaseKey']),
+            None,
             string_utils.xstr(row['CaseDate'].date()),
             string_utils.xstr(row['InsType']),
-            string_utils.xstr(row['DiseaseName1']),
+            ', '.join(disease_list),
             string_utils.xstr(row['Doctor']),
         ]
 
@@ -224,6 +245,16 @@ class DialogCertificateDiagnosis(QtWidgets.QDialog):
                 row_no, column,
                 QtWidgets.QTableWidgetItem(medical_record[column])
             )
+
+            if column in [3]:
+                self.ui.tableWidget_medical_record.item(
+                    row_no, column).setTextAlignment(
+                    QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
+                )
+
+        check_box = QtWidgets.QCheckBox(self.ui.tableWidget_medical_record)
+        check_box.setChecked(True)
+        self.ui.tableWidget_medical_record.setCellWidget(row_no, 1, check_box)
 
     def _import_diagnosis(self):
         case_key = self.table_widget_medical_record.field_value(0)
@@ -272,19 +303,16 @@ class DialogCertificateDiagnosis(QtWidgets.QDialog):
         else:
             self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setEnabled(False)
 
-    def _write_certificate(self):
-        case_key = self._write_medical_record()
-        self._write_prescript(case_key)
-        self._write_wait(case_key)
-
+    def _write_certificate(self, case_key):
         fields = [
             'CaseKey', 'PatientKey', 'Name', 'CertificateDate', 'CertificateType',
-            'InsType', 'StartDate', 'EndDate', 'Doctor', 'Diagnosis', 'DoctorComment', 'CertificateFee',
+            'InsType', 'TreatType', 'StartDate', 'EndDate', 'Doctor',
+            'Diagnosis', 'DoctorComment', 'CertificateFee',
         ]
 
-        start_date = self.ui.tableWidget_medical_record.item(0, 1).text()
+        start_date = self.ui.tableWidget_medical_record.item(0, 2).text()
         end_date = self.ui.tableWidget_medical_record.item(
-            self.ui.tableWidget_medical_record.rowCount()-1, 1).text()
+            self.ui.tableWidget_medical_record.rowCount()-1, 2).text()
 
         data = [
             case_key,
@@ -293,6 +321,7 @@ class DialogCertificateDiagnosis(QtWidgets.QDialog):
             datetime.datetime.now().strftime('%Y-%m-%d'),
             '診斷證明',
             self.ui.comboBox_ins_type.currentText(),
+            self.ui.comboBox_treat_type.currentText(),
             start_date,
             end_date,
             self.ui.comboBox_doctor.currentText(),
@@ -301,7 +330,32 @@ class DialogCertificateDiagnosis(QtWidgets.QDialog):
             self.ui.spinBox_certificate_fee.value(),
         ]
 
-        self.database.insert_record('certificate', fields, data)
+        certificate_key = self.database.insert_record('certificate', fields, data)
+
+        return certificate_key
+
+    def _write_certificate_items(self, certificate_key):
+        fields = [
+            'CertificateKey', 'CaseKey', 'CaseDate', 'InsType',
+        ]
+
+        row_count = self.ui.tableWidget_medical_record.rowCount()
+        for row_no in range(row_count):
+            check_box = self.ui.tableWidget_medical_record.cellWidget(row_no, 1)
+            if not check_box.isChecked():
+                continue
+
+            case_key = self.ui.tableWidget_medical_record.item(row_no, 0).text()
+            case_date = self.ui.tableWidget_medical_record.item(row_no, 2).text()
+            ins_type = self.ui.tableWidget_medical_record.item(row_no, 3).text()
+            data = [
+                certificate_key,
+                case_key,
+                case_date,
+                ins_type,
+            ]
+
+            self.database.insert_record('certificate_items', fields, data)
 
     def _write_medical_record(self):
         certificate_fee = self.ui.spinBox_certificate_fee.value()
@@ -379,5 +433,13 @@ class DialogCertificateDiagnosis(QtWidgets.QDialog):
 
         self.database.insert_record('wait', fields, data)
 
+    def _open_past_history(self):
+        patient_key = self.ui.lineEdit_patient_key.text()
+        # self.dialog_past_history = dialog_past_history.DialogPastHistory(self, self.database, self.system_settings)
+        # self.dialog_past_history.show_past_history(patient_key, None)
+        dialog = dialog_medical_record_past_history.DialogMedicalRecordPastHistory(
+            self, self.database, self.system_settings, None, patient_key, '病歷查詢'
+        )
 
-
+        dialog.exec_()
+        dialog.deleteLater()

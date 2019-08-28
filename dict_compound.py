@@ -42,6 +42,7 @@ class DictCompound(QtWidgets.QMainWindow):
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_DICT_COMPOUND, self)
+        system_utils.set_css(self, self.system_settings)
         self.table_widget_dict_compound = table_widget.TableWidget(self.ui.tableWidget_dict_compound, self.database)
         self.table_widget_dict_compound.set_column_hidden([0])
         self.table_widget_dict_medicine = table_widget.TableWidget(self.ui.tableWidget_dict_medicine, self.database)

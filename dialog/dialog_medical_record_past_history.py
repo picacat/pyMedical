@@ -15,7 +15,7 @@ from libs import number_utils
 from libs import case_utils
 
 
-# 主視窗
+# 過去病歷視窗
 class DialogMedicalRecordPastHistory(QtWidgets.QDialog):
     # 初始化
     def __init__(self, parent=None, *args):
@@ -25,6 +25,8 @@ class DialogMedicalRecordPastHistory(QtWidgets.QDialog):
         self.system_settings = args[1]
         self.case_key = args[2]
         self.patient_key = args[3]
+        self.call_from = args[4]
+
         self.ui = None
         self.copy_medical_record = True
 
@@ -50,6 +52,10 @@ class DialogMedicalRecordPastHistory(QtWidgets.QDialog):
         self.table_widget_past_history = table_widget.TableWidget(self.ui.tableWidget_past_history, self.database)
         self.table_widget_past_history.set_column_hidden([0])
         self._set_table_width()
+        if self.call_from == '病歷查詢':
+            self.ui.groupBox_copy_option.setVisible(False)
+            self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setVisible(False)
+            self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Cancel).setText('關閉')
 
     # 設定欄位寬度
     def _set_table_width(self):
@@ -90,16 +96,20 @@ class DialogMedicalRecordPastHistory(QtWidgets.QDialog):
         return case_key
 
     def _read_past_history(self):
+        case_key_exclude = ''
+        if self.call_from == '病歷登錄' and self.case_key is not None:
+            case_key_exclude = 'AND CaseKey != {case_key}'.format(case_key=self.case_key)
+
         sql = '''
             SELECT cases.*, patient.Gender, patient.Birthday FROM cases
                 LEFT JOIN patient ON patient.PatientKey = cases.PatientKey
             WHERE
-                CaseKey != {case_key} AND
                 cases.PatientKey = {patient_key}
+                {case_key_exclude}
             ORDER BY CaseDate DESC, FIELD(cases.InsType, {ins_type})
         '''.format(
-            case_key=self.case_key,
             patient_key=self.patient_key,
+            case_key_exclude=case_key_exclude,
             ins_type=string_utils.xstr(nhi_utils.INS_TYPE)[1:-1],
         )
 
@@ -119,6 +129,9 @@ class DialogMedicalRecordPastHistory(QtWidgets.QDialog):
 
         self._set_group_box_title(rows[0])
         self.table_widget_past_history.set_db_data(sql, self._set_table_data)
+
+        if self.call_from == '病歷查詢' and self.case_key is not None:
+            self._locate_medical_record()
 
     def _set_table_data(self, row_no, row):
         if row['InsType'] == '健保':
@@ -245,7 +258,10 @@ class DialogMedicalRecordPastHistory(QtWidgets.QDialog):
         self.ui.checkBox_self_prescript.setEnabled(copy_self_prescript)
         self.ui.checkBox_self_prescript.setChecked(copy_self_prescript)
         if copy_self_prescript:
-            self.ui.checkBox_self_prescript.setChecked(False)  # 預設不要拷貝
+            if self.system_settings.field('預設拷貝自費處方') == 'Y':
+                self.ui.checkBox_self_prescript.setChecked(True)
+            else:
+                self.ui.checkBox_self_prescript.setChecked(False)
 
     def _edit_past_history(self):
         case_key = self.table_widget_past_history.field_value(0)
@@ -254,3 +270,11 @@ class DialogMedicalRecordPastHistory(QtWidgets.QDialog):
 
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).animateClick()
 
+    def _locate_medical_record(self):
+        for row_no in range(self.ui.tableWidget_past_history.rowCount()):
+            item = self.ui.tableWidget_past_history.item(row_no, 0)
+            self.ui.tableWidget_past_history.scrollToItem(item, QtWidgets.QAbstractItemView.PositionAtCenter)
+            self.ui.tableWidget_past_history.selectRow(row_no)
+
+            if item.text() == string_utils.xstr(self.case_key):
+                break

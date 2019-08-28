@@ -2,8 +2,7 @@
 # 病歷查詢 2014.09.22
 #coding: utf-8
 
-from PyQt5 import QtWidgets
-from PyQt5.QtCore import Qt
+from PyQt5 import QtWidgets, QtCore
 from libs import ui_utils
 from libs import system_utils
 from libs import string_utils
@@ -103,7 +102,7 @@ class DialogAddress(QtWidgets.QDialog):
         self.ui.tableWidget_city.setCurrentCell(0, 0)
 
     def _city_changed(self):
-        if self.ui.tableWidget_city.selectedItems() == []:
+        if not self.ui.tableWidget_city.selectedItems():
             return
 
         city = self.ui.tableWidget_city.selectedItems()[0].text()
@@ -135,7 +134,7 @@ class DialogAddress(QtWidgets.QDialog):
         self._read_street_index()
 
     def _read_street_index(self):
-        if self.ui.tableWidget_city.selectedItems() == []:
+        if not self.ui.tableWidget_city.selectedItems():
             return
 
         city = self.ui.tableWidget_city.selectedItems()[0].text()
@@ -175,21 +174,25 @@ class DialogAddress(QtWidgets.QDialog):
                 self.ui.tableWidget_street_index.setItem(
                     row_no, col_no, QtWidgets.QTableWidgetItem(rows[index]['Street'])
                 )
+                self.ui.tableWidget_street_index.item(
+                    row_no, col_no).setTextAlignment(
+                    QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
+                )
 
         self.ui.tableWidget_street_index.resizeRowsToContents()
         self.ui.tableWidget_street_index.setCurrentCell(0, 0)
 
     def _street_index_changed(self):
-        if self.ui.tableWidget_street_index.selectedItems() == []:
+        if not self.ui.tableWidget_street_index.selectedItems():
             return
 
         self._read_street()
 
     def _read_street(self):
-        if self.ui.tableWidget_city.selectedItems() == []:
+        if not self.ui.tableWidget_city.selectedItems():
             return
 
-        if self.ui.tableWidget_street_index.selectedItems() == []:
+        if not self.ui.tableWidget_street_index.selectedItems():
             return
 
         city = self.ui.tableWidget_city.selectedItems()[0].text()

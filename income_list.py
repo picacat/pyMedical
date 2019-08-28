@@ -3,15 +3,15 @@
 #coding: utf-8
 
 from PyQt5 import QtWidgets, QtCore, QtGui
+from PyQt5.QtWidgets import QFileDialog, QMessageBox
 
 from classes import table_widget
 from libs import ui_utils
 from libs import string_utils
 from libs import number_utils
 from libs import personnel_utils
-from libs import nhi_utils
-
-from dialog import dialog_income
+from libs import system_utils
+from libs import export_utils
 
 
 # 掛號櫃台結帳 - 收費一覽表
@@ -24,8 +24,12 @@ class IncomeList(QtWidgets.QMainWindow):
         self.parent = parent
         self.database = args[0]
         self.system_settings = args[1]
-        self.tableWidget_registration = args[2]
-        self.tableWidget_charge = args[3]
+        self.start_date = args[2]
+        self.end_date = args[3]
+        self.period = args[4]
+        self.doctor = args[5]
+        self.tableWidget_registration = args[6]
+        self.tableWidget_charge = args[7]
         self.ui = None
 
         self.user_name = self.system_settings.field('使用者')
@@ -55,6 +59,7 @@ class IncomeList(QtWidgets.QMainWindow):
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_INCOME_LIST, self)
+        system_utils.set_css(self, self.system_settings)
         self.table_widget_income = table_widget.TableWidget(self.ui.tableWidget_income, self.database)
         self.table_widget_income.set_column_hidden([0])
         self._set_table_width()
@@ -70,8 +75,8 @@ class IncomeList(QtWidgets.QMainWindow):
     # 設定欄位寬度
     def _set_table_width(self):
         width = [
-            100, 120, 50, 70, 80, 50, 80, 90, 90, 50,
-            70, 85, 85, 70, 70, 85, 85, 85, 85, 85,
+            100, 110, 45, 70, 80, 45, 80, 80, 80, 70, 50,
+            70, 80, 80, 70, 70, 80, 80, 80, 80, 80,
             80, 80,
         ]
         self.table_widget_income.set_table_heading_width(width)
@@ -125,17 +130,19 @@ class IncomeList(QtWidgets.QMainWindow):
             [4, self.tableWidget_registration.item(registration_row_no, 4)],
             [5, self.tableWidget_registration.item(registration_row_no, 5)],
             [6, self.tableWidget_registration.item(registration_row_no, 6)],
-            [7, self.tableWidget_registration.item(registration_row_no, 7)],
-            [8, self.tableWidget_registration.item(registration_row_no, 8)],
+            [7, self.tableWidget_registration.item(registration_row_no, 7)],    # 負擔類別
+            [8, self.tableWidget_registration.item(registration_row_no, 8)],    # 優待類別
 
-            [10, self.tableWidget_registration.item(registration_row_no, 9)],  # 掛號費
-            [11, self.tableWidget_registration.item(registration_row_no, 10)], # 門診負擔
-            [13, self.tableWidget_registration.item(registration_row_no, 11)], # 欠卡費
-            [14, self.tableWidget_registration.item(registration_row_no, 12)], # 還卡費
-            [15, self.tableWidget_registration.item(registration_row_no, 14)], # 自費還款
-            [18, self.tableWidget_registration.item(registration_row_no, 13)], # 掛號欠款
+            [9, self.tableWidget_registration.item(registration_row_no, 9)],    # 卡序
 
-            [20, self.tableWidget_registration.item(registration_row_no, 16)], # 掛號者
+            [11, self.tableWidget_registration.item(registration_row_no, 10)],  # 掛號費
+            [12, self.tableWidget_registration.item(registration_row_no, 11)],  # 門診負擔
+            [14, self.tableWidget_registration.item(registration_row_no, 12)],  # 欠卡費
+            [15, self.tableWidget_registration.item(registration_row_no, 13)],  # 還卡費
+            [16, self.tableWidget_registration.item(registration_row_no, 15)],  # 自費還款
+            [19, self.tableWidget_registration.item(registration_row_no, 14)],  # 掛號欠款
+
+            [21, self.tableWidget_registration.item(registration_row_no, 17)],  # 掛號者
         ]
 
         row_no = self.ui.tableWidget_income.rowCount()
@@ -155,17 +162,19 @@ class IncomeList(QtWidgets.QMainWindow):
             [4, self.tableWidget_registration.item(registration_row_no, 4)],
             [5, self.tableWidget_registration.item(registration_row_no, 5)],
             [6, self.tableWidget_registration.item(registration_row_no, 6)],
-            [7, self.tableWidget_registration.item(registration_row_no, 7)],
-            [8, self.tableWidget_registration.item(registration_row_no, 8)],
+            [7, self.tableWidget_registration.item(registration_row_no, 7)],    # 負擔類別
+            [8, self.tableWidget_registration.item(registration_row_no, 8)],    # 優待類別
 
-            [10, self.tableWidget_registration.item(registration_row_no, 9)],  # 掛號費
-            [11, self.tableWidget_registration.item(registration_row_no, 10)], # 門診負擔
-            [13, self.tableWidget_registration.item(registration_row_no, 11)], # 欠卡費
-            [14, self.tableWidget_registration.item(registration_row_no, 12)], # 還卡費
-            [15, self.tableWidget_registration.item(registration_row_no, 14)], # 自費還款
-            [18, self.tableWidget_registration.item(registration_row_no, 13)], # 掛號欠款
+            [9, self.tableWidget_registration.item(registration_row_no, 8)],    # 卡序
 
-            [20, self.tableWidget_registration.item(registration_row_no, 16)], # 掛號者
+            [11, self.tableWidget_registration.item(registration_row_no, 10)],  # 掛號費
+            [12, self.tableWidget_registration.item(registration_row_no, 11)],  # 門診負擔
+            [14, self.tableWidget_registration.item(registration_row_no, 12)],  # 欠卡費
+            [15, self.tableWidget_registration.item(registration_row_no, 13)],  # 還卡費
+            [16, self.tableWidget_registration.item(registration_row_no, 15)],  # 自費還款
+            [19, self.tableWidget_registration.item(registration_row_no, 14)],  # 掛號欠款
+
+            [21, self.tableWidget_registration.item(registration_row_no, 17)], # 掛號者
 
         ]
 
@@ -200,16 +209,18 @@ class IncomeList(QtWidgets.QMainWindow):
             [4, self.tableWidget_charge.item(charge_row_no, 4)],
             [5, self.tableWidget_charge.item(charge_row_no, 5)],
             [6, self.tableWidget_charge.item(charge_row_no, 6)],
-            [7, self.tableWidget_charge.item(charge_row_no, 7)],
-            [8, self.tableWidget_charge.item(charge_row_no, 8)],
-            [9, self.tableWidget_charge.item(charge_row_no, 9)],
+            [7, self.tableWidget_charge.item(charge_row_no, 7)],    # 負擔類別
+            [8, self.tableWidget_charge.item(charge_row_no, 8)],    # 優待類別
 
-            [12, self.tableWidget_charge.item(charge_row_no, 11)],  # 藥品負擔
-            [16, self.tableWidget_charge.item(charge_row_no, 12)],  # 自費應收
-            [17, self.tableWidget_charge.item(charge_row_no, 14)],  # 自費欠款
-            [19, self.tableWidget_charge.item(charge_row_no, 15)],  # 實收現金
+            [9, self.tableWidget_charge.item(charge_row_no, 9)],    # 卡序
+            [10, self.tableWidget_charge.item(charge_row_no, 10)],   # 藥日
 
-            [21, self.tableWidget_charge.item(charge_row_no, 16)],  # 批價員
+            [13, self.tableWidget_charge.item(charge_row_no, 12)],  # 藥品負擔
+            [17, self.tableWidget_charge.item(charge_row_no, 13)],  # 自費應收
+            [18, self.tableWidget_charge.item(charge_row_no, 15)],  # 自費欠款
+            [20, self.tableWidget_charge.item(charge_row_no, 16)],  # 實收現金
+
+            [22, self.tableWidget_charge.item(charge_row_no, 17)],  # 批價員
         ]
 
         row_no = self.ui.tableWidget_income.rowCount()
@@ -229,21 +240,32 @@ class IncomeList(QtWidgets.QMainWindow):
             [4, self.tableWidget_charge.item(charge_row_no, 4)],
             [5, self.tableWidget_charge.item(charge_row_no, 5)],
             [6, self.tableWidget_charge.item(charge_row_no, 6)],
-            [7, self.tableWidget_charge.item(charge_row_no, 7)],
-            [8, self.tableWidget_charge.item(charge_row_no, 8)],
-            [9, self.tableWidget_charge.item(charge_row_no, 9)],
+            [7, self.tableWidget_charge.item(charge_row_no, 7)],    # 負擔類別
+            [8, self.tableWidget_charge.item(charge_row_no, 8)],    # 優待類別
 
-            [12, self.tableWidget_charge.item(charge_row_no, 11)],  # 藥品負擔
-            [16, self.tableWidget_charge.item(charge_row_no, 12)],  # 自費應收
-            [17, self.tableWidget_charge.item(charge_row_no, 14)],  # 自費欠款
-            [19, self.tableWidget_charge.item(charge_row_no, 15)],  # 實收現金
+            [9, self.tableWidget_charge.item(charge_row_no, 9)],    # 卡序
+            [10, self.tableWidget_charge.item(charge_row_no, 10)],   # 藥日
 
-            [21, self.tableWidget_charge.item(charge_row_no, 16)],  # 批價員
+            [13, self.tableWidget_charge.item(charge_row_no, 12)],  # 藥品負擔
+            [17, self.tableWidget_charge.item(charge_row_no, 13)],  # 自費應收
+            [18, self.tableWidget_charge.item(charge_row_no, 15)],  # 自費欠款
+            [20, self.tableWidget_charge.item(charge_row_no, 16)],  # 實收現金
+
+            [22, self.tableWidget_charge.item(charge_row_no, 17)],  # 批價員
         ]
 
         for cell in cell_data:
             if (self.ui.tableWidget_income.item(income_row_no, cell[0]) is not None and
                     self.ui.tableWidget_income.item(income_row_no, cell[0]).text() != ''):
+                if cell[0] == 17:
+                    fee = number_utils.get_integer(
+                        self.ui.tableWidget_income.item(income_row_no, cell[0]).text()
+                    )
+                    fee += number_utils.get_integer(cell[1].text())
+                    self.ui.tableWidget_income.setItem(
+                        income_row_no, cell[0],
+                        QtWidgets.QTableWidgetItem(string_utils.xstr(fee))
+                    )
                 continue
 
             self.ui.tableWidget_income.setItem(
@@ -259,7 +281,7 @@ class IncomeList(QtWidgets.QMainWindow):
         row_count = self.ui.tableWidget_income.rowCount()
         for row_no in range(row_count):
             subtotal = 0
-            for col_no in range(10, 19):
+            for col_no in range(11, 20):
                 cell = self.ui.tableWidget_income.item(row_no, col_no)
                 if cell is None or cell.text() == '':
                     self.ui.tableWidget_income.setItem(
@@ -276,11 +298,11 @@ class IncomeList(QtWidgets.QMainWindow):
                 )
 
             self.ui.tableWidget_income.setItem(
-                row_no, 19,
+                row_no, 20,
                 QtWidgets.QTableWidgetItem(string_utils.xstr(subtotal))
             )
             self.ui.tableWidget_income.item(
-                row_no, 19).setTextAlignment(
+                row_no, 20).setTextAlignment(
                 QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
             )
 
@@ -290,21 +312,21 @@ class IncomeList(QtWidgets.QMainWindow):
         repayment, total_fee, debt_fee, regist_debt, subtotal = 0, 0, 0, 0, 0
 
         for row_no in range(row_count):
-            regist_fee += number_utils.get_integer(self.ui.tableWidget_income.item(row_no, 10).text())
-            diag_share_fee += number_utils.get_integer(self.ui.tableWidget_income.item(row_no, 11).text())
-            drug_share_fee += number_utils.get_integer(self.ui.tableWidget_income.item(row_no, 12).text())
-            deposit_fee += number_utils.get_integer(self.ui.tableWidget_income.item(row_no, 13).text())
-            refund_fee += number_utils.get_integer(self.ui.tableWidget_income.item(row_no, 14).text())
-            repayment += number_utils.get_integer(self.ui.tableWidget_income.item(row_no, 15).text())
-            total_fee += number_utils.get_integer(self.ui.tableWidget_income.item(row_no, 16).text())
-            debt_fee += number_utils.get_integer(self.ui.tableWidget_income.item(row_no, 17).text())
-            regist_debt += number_utils.get_integer(self.ui.tableWidget_income.item(row_no, 18).text())
-            subtotal += number_utils.get_integer(self.ui.tableWidget_income.item(row_no, 19).text())
+            regist_fee += number_utils.get_integer(self.ui.tableWidget_income.item(row_no, 11).text())
+            diag_share_fee += number_utils.get_integer(self.ui.tableWidget_income.item(row_no, 12).text())
+            drug_share_fee += number_utils.get_integer(self.ui.tableWidget_income.item(row_no, 13).text())
+            deposit_fee += number_utils.get_integer(self.ui.tableWidget_income.item(row_no, 14).text())
+            refund_fee += number_utils.get_integer(self.ui.tableWidget_income.item(row_no, 15).text())
+            repayment += number_utils.get_integer(self.ui.tableWidget_income.item(row_no, 16).text())
+            total_fee += number_utils.get_integer(self.ui.tableWidget_income.item(row_no, 17).text())
+            debt_fee += number_utils.get_integer(self.ui.tableWidget_income.item(row_no, 18).text())
+            regist_debt += number_utils.get_integer(self.ui.tableWidget_income.item(row_no, 19).text())
+            subtotal += number_utils.get_integer(self.ui.tableWidget_income.item(row_no, 20).text())
 
         total_record = [
             None, None, None, None,
             '合計',
-            None, None, None, None, None,
+            None, None, None, None, None, None,
             string_utils.xstr(regist_fee),
             string_utils.xstr(diag_share_fee),
             string_utils.xstr(drug_share_fee),
@@ -326,10 +348,34 @@ class IncomeList(QtWidgets.QMainWindow):
                 row_count, col_no,
                 QtWidgets.QTableWidgetItem(total_record[col_no])
             )
-            if col_no in [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]:
+            if col_no in [11, 12, 13, 14, 15, 16, 17, 18, 19, 20]:
                 self.ui.tableWidget_income.item(
                     row_count, col_no).setTextAlignment(
                     QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
                 )
             self.ui.tableWidget_income.item(row_count, col_no).setFont(font)
+
+    def export_to_excel(self):
+        options = QFileDialog.Options()
+        excel_file_name, _ = QFileDialog.getSaveFileName(
+            self.parent,
+            "匯出日報表",
+            '{0}至{1}{2}醫師門診日報表.xlsx'.format(
+                self.start_date[:10], self.end_date[:10], self.doctor
+            ),
+            "excel檔案 (*.xlsx);;Text Files (*.txt)", options = options
+        )
+        if not excel_file_name:
+            return
+
+        export_utils.export_table_widget_to_excel(
+            excel_file_name, self.ui.tableWidget_income, [0], [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+        )
+
+        system_utils.show_message_box(
+            QMessageBox.Information,
+            '資料匯出完成',
+            '<h3>醫師門診日報表{0}匯出完成.</h3>'.format(excel_file_name),
+            'Microsoft Excel 格式.'
+        )
 

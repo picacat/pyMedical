@@ -109,7 +109,21 @@
              </property>
              <property name="icon">
               <iconset>
-               <normaloff>../icons/gtk-info.svg</normaloff>../icons/gtk-info.svg</iconset>
+               <normaloff>../icons/accessories-dictionary.png</normaloff>../icons/accessories-dictionary.png</iconset>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QToolButton" name="toolButton_copy">
+             <property name="toolTip">
+              <string>拷貝處方至自費處方</string>
+             </property>
+             <property name="text">
+              <string>...</string>
+             </property>
+             <property name="icon">
+              <iconset>
+               <normaloff>../icons/gtk-copy.svg</normaloff>../icons/gtk-copy.svg</iconset>
              </property>
             </widget>
            </item>
@@ -411,6 +425,20 @@
             </widget>
            </item>
            <item>
+            <widget class="QToolButton" name="toolButton_acupuncture_point">
+             <property name="toolTip">
+              <string>針灸穴位圖</string>
+             </property>
+             <property name="text">
+              <string>...</string>
+             </property>
+             <property name="icon">
+              <iconset>
+               <normaloff>../icons/avatar-default.png</normaloff>../icons/avatar-default.png</iconset>
+             </property>
+            </widget>
+           </item>
+           <item>
             <spacer name="horizontalSpacer_4">
              <property name="orientation">
               <enum>Qt::Horizontal</enum>
@@ -536,7 +564,7 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>24</height>
+     <height>25</height>
     </rect>
    </property>
   </widget>

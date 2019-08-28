@@ -41,7 +41,13 @@ class DialogIncome(QtWidgets.QDialog):
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setText('確定')
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Cancel).setText('取消')
 
-        ui_utils.set_combo_box(self.ui.comboBox_room, nhi_utils.ROOM, '全部')
+        script = 'select * from person where Position IN("醫師", "支援醫師") '
+        rows = self.database.select_record(script)
+        doctor_list = []
+        for row in rows:
+            doctor_list.append(row['Name'])
+
+        ui_utils.set_combo_box(self.ui.comboBox_doctor, doctor_list, '全部')
         ui_utils.set_combo_box(
             self.ui.comboBox_cashier,
             personnel_utils.get_personnel(self.database, '全部'), '全部',
@@ -65,7 +71,7 @@ class DialogIncome(QtWidgets.QDialog):
         elif self.ui.radioButton_period3.isChecked():
             self.period = '晚班'
 
-        self.room = self.ui.comboBox_room.currentText()
+        self.doctor = self.ui.comboBox_doctor.currentText()
         self.cashier = self.ui.comboBox_cashier.currentText()
 
     def button_rejected(self):

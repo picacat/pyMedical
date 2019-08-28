@@ -5,15 +5,11 @@ import sys
 
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtWidgets import QMessageBox, QPushButton
-import datetime
 
-from classes import table_widget
 from libs import ui_utils
-from libs import date_utils
 from libs import string_utils
 from libs import nhi_utils
-from libs import number_utils
-from dialog import dialog_ins_apply
+from libs import system_utils
 
 import ins_apply_list
 
@@ -60,6 +56,7 @@ class InsApplyTab(QtWidgets.QMainWindow):
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_INS_APPLY_TAB, self)
+        system_utils.set_css(self, self.system_settings)
 
     # 設定信號
     def _set_signal(self):

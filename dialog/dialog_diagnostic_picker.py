@@ -9,9 +9,10 @@ from classes import table_widget
 from libs import ui_utils
 from libs import system_utils
 from libs import string_utils
+from libs import db_utils
 
 
-# 主視窗
+# 動態輸入主訴
 class DialogDiagnosticPicker(QtWidgets.QDialog):
     # 初始化
     def __init__(self, parent=None, *args):
@@ -19,11 +20,13 @@ class DialogDiagnosticPicker(QtWidgets.QDialog):
         self.parent = parent
         self.database = args[0]
         self.system_settings = args[1]
-        self.clinic_type = args[2]
-        self.input_code = args[3]
+        self.text_edit = args[2]
+        self.clinic_type = args[3]
+        self.input_code = args[4]
 
         self.settings = QSettings('__settings.ini', QSettings.IniFormat)
         self.ui = None
+        self.clinic_name = None
 
         self._set_ui()
         self._set_signal()
@@ -64,24 +67,39 @@ class DialogDiagnosticPicker(QtWidgets.QDialog):
     def _set_signal(self):
         self.ui.buttonBox.accepted.connect(self.accepted_button_clicked)
         self.ui.tableWidget_diagnostic.clicked.connect(self._table_item_clicked)
+        self.ui.tableWidget_diagnostic.doubleClicked.connect(self.accepted_button_clicked)
 
     def _table_item_clicked(self):
-        self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).animateClick()
+        # self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).animateClick()
+        clinic_name = self._get_clinic_name() + ' '
+        self.parent.insert_text(self.text_edit, clinic_name, self.input_code)
+        self.input_code = ''
+
+        self._update_diagnosis_hit_rate()
 
     def accepted_button_clicked(self):
+        self.clinic_name = self._get_clinic_name()
+        self._update_diagnosis_hit_rate()
+
+        self.close()
+
+    def _update_diagnosis_hit_rate(self):
+        clinic_key = self._get_clinic_key()
+        if clinic_key is not None:
+            db_utils.increment_hit_rate(self.database, 'clinic', 'ClinicKey', clinic_key)
+
+    def _get_clinic_name(self):
         item = self.ui.tableWidget_diagnostic.item(
             self.ui.tableWidget_diagnostic.currentRow(),
             self.ui.tableWidget_diagnostic.currentColumn(),
         )
 
         if item is not None:
-            self.clinic_name = item.text()
+            clinic_name = item.text()
         else:
-            self.clinic_name = ''
+            clinic_name = ''
 
-        self.clinic_key = self._get_clinic_key()
-
-        self.close()
+        return clinic_name
 
     def _read_data(self):
         # self.table_widget_diagnostic.set_db_data(self.sql, self._set_wait_data)

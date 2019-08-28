@@ -150,7 +150,6 @@ class DialogCertificatePayment(QtWidgets.QDialog):
         self.ui.lineEdit_address.setText(string_utils.xstr(row['Address']))
 
     def _start_date_changed(self):
-        self.ui.dateEdit_end_date.setDate(self.ui.dateEdit_start_date.date())
         self._read_medical_record()
 
     def _read_medical_record(self):

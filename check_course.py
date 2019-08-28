@@ -12,7 +12,7 @@ from libs import ui_utils
 from libs import date_utils
 from libs import number_utils
 from libs import string_utils
-from libs import validator_utils
+from libs import system_utils
 from libs import personnel_utils
 from libs import nhi_utils
 
@@ -53,6 +53,7 @@ class CheckCourse(QtWidgets.QMainWindow):
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_CHECK_COURSE, self)
+        system_utils.set_css(self, self.system_settings)
         self.center()
         self._set_table_widget()
 
@@ -215,7 +216,7 @@ class CheckCourse(QtWidgets.QMainWindow):
             next_error_message = []
             if next_patient_key == 0:
                 pass
-            elif (patient_key != next_patient_key):
+            elif patient_key != next_patient_key:
                 delta = self._get_first_course_delta(
                     row_no, patient_key, course, case_date,
                 )
@@ -223,7 +224,7 @@ class CheckCourse(QtWidgets.QMainWindow):
                 if next_course >= 2:
                     next_error_message.append('療程未見首次')
 
-                if course >= 2 and delta.days + 1 > 30:  # 當天也算一天 +1
+                if course >= 2 and delta is not None and delta.days + 1 > 30:  # 當天也算一天 +1
                     error_message.append('療程已超過30日')
             else:
                 if card != next_card:  # 換新療程
@@ -233,7 +234,9 @@ class CheckCourse(QtWidgets.QMainWindow):
                     next_delta = self._get_first_course_delta(  # 以下一筆為檢查資料
                         row_no, patient_key, course, next_case_date,
                     )
-                    if course >= 2 and delta.days + 1 > 30:  # 當天也算一天 +1
+                    if course >= 2 and delta is None:
+                        error_message.append('療程未見首次')
+                    elif course >= 2 and delta.days + 1 > 30:  # 當天也算一天 +1
                         error_message.append('療程已超過30日')
 
                     if course < 6:
@@ -265,7 +268,7 @@ class CheckCourse(QtWidgets.QMainWindow):
                         next_error_message.append('負擔類別不一致')
 
                     if disease_code != next_disease_code and next_course >= 2:
-                        next_error_message.append('診斷碼不一致')
+                        next_error_message.append('療程診斷碼不一致')
 
                     if next_treatment == '':
                         next_error_message.append('無處置')

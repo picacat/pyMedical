@@ -113,19 +113,21 @@ class DialogMedicalRecordList(QtWidgets.QDialog):
         condition = []
         script = '''
             SELECT 
-                CaseKey, DATE_FORMAT(CaseDate, '%Y-%m-%d %H:%i') AS CaseDate, DoctorDate, ChargeDate, 
-                cases.PatientKey, cases.Name, Period, ChargePeriod, cases.InsType, 
-                Share, cases.RegistNo, Card, Continuance, TreatType, 
+                cases.CaseKey, DATE_FORMAT(cases.CaseDate, '%Y-%m-%d %H:%i') AS CaseDate, 
+                DoctorDate, ChargeDate, 
+                cases.PatientKey, cases.Name, cases.Period, ChargePeriod, cases.InsType, 
+                cases.Share, cases.RegistNo, cases.Card, cases.Continuance, cases.TreatType, 
                 PresDays1, PresDays2, DiseaseCode1, DiseaseName1,
-                Doctor, Massager, Room, RegistFee, SDiagShareFee, SDrugShareFee,
-                DoctorDone, ChargeDone,
-                TotalFee, patient.Gender, patient.Birthday
+                cases.Doctor, cases.Massager, cases.Room, RegistFee, SDiagShareFee, SDrugShareFee,
+                cases.DoctorDone, cases.ChargeDone,
+                TotalFee, patient.Gender, patient.Birthday, wait.InProgress
             FROM cases
                 LEFT JOIN patient ON patient.PatientKey = cases.PatientKey
+                LEFT JOIN wait ON wait.CaseKey = cases.CaseKey
         '''
 
         if self.ui.radioButton_range_date.isChecked():
-            condition.append('(CaseDate BETWEEN "{0}" AND "{1}")'.format(start_date, end_date))
+            condition.append('(cases.CaseDate BETWEEN "{0}" AND "{1}")'.format(start_date, end_date))
 
         ins_type = self.ui.comboBox_ins_type.currentText()
         if ins_type != '全部':
@@ -133,27 +135,27 @@ class DialogMedicalRecordList(QtWidgets.QDialog):
 
         apply_type = self.ui.comboBox_apply_type.currentText()
         if apply_type != '全部':
-            condition.append('ApplyType = "{0}"'.format(apply_type))
+            condition.append('cases.ApplyType = "{0}"'.format(apply_type))
 
         treat_type = self.ui.comboBox_treat_type.currentText()
         if treat_type != '全部':
-            condition.append('TreatType = "{0}"'.format(treat_type))
+            condition.append('cases.TreatType = "{0}"'.format(treat_type))
 
         share_type = self.ui.comboBox_share_type.currentText()
         if share_type != '全部':
-            condition.append('Share = "{0}"'.format(share_type))
+            condition.append('cases.Share = "{0}"'.format(share_type))
 
         period = self.ui.comboBox_period.currentText()
         if period != '全部':
-            condition.append('Period = "{0}"'.format(period))
+            condition.append('cases.Period = "{0}"'.format(period))
 
         room = self.ui.comboBox_room.currentText()
         if room != '全部':
-            condition.append('Room = {0}'.format(room))
+            condition.append('cases.Room = {0}'.format(room))
 
         doctor = self.ui.comboBox_doctor.currentText()
         if doctor != '全部':
-            condition.append('Doctor = "{0}"'.format(doctor))
+            condition.append('cases.Doctor = "{0}"'.format(doctor))
 
         keyword = self.ui.lineEdit_patient_key.text()
         if keyword == '':
@@ -176,7 +178,7 @@ class DialogMedicalRecordList(QtWidgets.QDialog):
                 condition=' AND '.join(condition),
             )
         # script += " ORDER BY CaseDate, cases.Room, cases.RegistNo"
-        script += ' ORDER BY DATE(CaseDate), FIELD(Period, {period}), cases.RegistNo, cases.Room'.format(
+        script += ' ORDER BY DATE(cases.CaseDate), FIELD(cases.Period, {period}), cases.RegistNo, cases.Room'.format(
             period=str(nhi_utils.PERIOD)[1:-1],
         )
 

@@ -6,6 +6,7 @@ import sys
 
 from libs import ui_utils
 from libs import system_utils
+from libs import personnel_utils
 
 
 # 系統設定 2018.03.19
@@ -85,6 +86,7 @@ class Login(QtWidgets.QDialog):
     def center(self):
         frame_geometry = self.frameGeometry()
         screen = QtWidgets.QApplication.desktop().screenNumber(QtWidgets.QApplication.desktop().cursor().pos())
+
         center_point = QtWidgets.QApplication.desktop().screenGeometry(screen).center()
         frame_geometry.moveCenter(center_point)
         self.move(frame_geometry.topLeft())
@@ -143,7 +145,26 @@ class Login(QtWidgets.QDialog):
 
         self.login_ok = True
         self.user_name = row[0]['Name']
+        self._clear_in_progress(self.user_name)
         self.close()
+
+    def _clear_in_progress(self, user_name):
+
+        position = personnel_utils.get_personnel_field_value(self.database, user_name, 'Position')
+        if position not in ['醫師', '支援醫師']:
+            return
+
+        sql = '''
+            UPDATE wait
+            SET
+                InProgress = NULL
+            WHERE
+                Doctor = "{doctor_name}" AND
+                DoctorDone = "False"
+        '''.format(
+            doctor_name=user_name,
+        )
+        self.database.exec_sql(sql)
 
     # 關閉系統
     def close_button_clicked(self):

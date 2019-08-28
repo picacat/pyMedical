@@ -6,6 +6,7 @@ import sys
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtWidgets import QMessageBox, QPushButton
 from libs import ui_utils
+from libs import system_utils
 from libs import string_utils
 from libs import charge_utils
 from libs import number_utils
@@ -38,6 +39,7 @@ class ChargeSettingsRegist(QtWidgets.QMainWindow):
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_CHARGE_SETTINGS_REGIST, self)
+        system_utils.set_css(self, self.system_settings)
         self.table_widget_regist_fee = table_widget.TableWidget(self.ui.tableWidget_regist_fee, self.database)
         self.table_widget_regist_fee.set_column_hidden([0, 1])
         self.table_widget_discount = table_widget.TableWidget(self.ui.tableWidget_discount, self.database)

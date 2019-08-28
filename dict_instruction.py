@@ -7,6 +7,7 @@ from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QInputDialog, QMessageBox
 
 from classes import table_widget
+from libs import system_utils
 from libs import ui_utils
 from libs import string_utils
 from libs import dialog_utils
@@ -38,6 +39,7 @@ class DictInstruction(QtWidgets.QMainWindow):
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_DICT_INSTRUCTION, self)
+        system_utils.set_css(self, self.system_settings)
         self.table_widget_dict_instruction = table_widget.TableWidget(
             self.ui.tableWidget_dict_instruction, self.database
         )

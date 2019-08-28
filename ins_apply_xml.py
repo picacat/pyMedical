@@ -233,7 +233,7 @@ class InsApplyXML(QtWidgets.QMainWindow):
         d28 = ET.SubElement(dbody, 'd28')
         d28.text = string_utils.xstr(row['PresType'])
         d29 = ET.SubElement(dbody, 'd29')
-        d29.text = string_utils.xstr(row['Card'])
+        d29.text = string_utils.xstr(row['Card'])[:4]
         d30 = ET.SubElement(dbody, 'd30')
         d30.text = string_utils.xstr(row['DoctorID'])
 
@@ -430,6 +430,9 @@ class InsApplyXML(QtWidgets.QMainWindow):
         if pres_days <= 0:
             return
 
+        if string_utils.xstr(row['Card'][:4]) == 'G000':  # 新特約院所新增虛擬碼 R005 2019.08.10
+            self._set_virtual_order(dbody, row, case_row, pres_days)
+
         if number_utils.get_integer(row['DrugFee']) > 0:
             order_type = '1'  # 1=用藥明細
         else:
@@ -447,6 +450,42 @@ class InsApplyXML(QtWidgets.QMainWindow):
             self._set_medicine(
                 dbody, row, case_row, prescript_row, pres_days, packages, instruction
             )
+
+    def _set_virtual_order(self, dbody, row, case_row, pres_days):
+        pdata = ET.SubElement(dbody, 'pdata')
+
+        self.sequence += 1
+
+        order_type = 'G'  # 藥品代號為 R001~R007 專案支付參考數值填G
+        ins_code = 'R005'
+        total_dosage = 0
+        unit_price = 0
+        amount = 0
+
+        p3 = ET.SubElement(pdata, 'p3')
+        p3.text = order_type  # 1=用藥明細 4=不另計價 G-專案支付參考
+        p4 = ET.SubElement(pdata, 'p4')
+        p4.text = ins_code
+        p8 = ET.SubElement(pdata, 'p8')
+        p8.text = '{0:05.2f}'.format(100)  # 成數
+        p10 = ET.SubElement(pdata, 'p10')
+        p10.text = string_utils.xstr(total_dosage)  # 總量
+        p11 = ET.SubElement(pdata, 'p11')
+        p11.text = string_utils.xstr(unit_price)  # 單價
+        p12 = ET.SubElement(pdata, 'p12')
+        p12.text = string_utils.xstr(amount)  # 點數
+        p13 = ET.SubElement(pdata, 'p13')
+        p13.text = string_utils.xstr(self.sequence)  # 序號
+        p14 = ET.SubElement(pdata, 'p14')
+        p14.text = '{0}0000'.format( date_utils.west_date_to_nhi_date(case_row['CaseDate']))
+        p15 = ET.SubElement(pdata, 'p15')
+        p15.text = '{0}0000'.format( date_utils.west_date_to_nhi_date(
+            case_row['CaseDate'].date() + datetime.timedelta(days=pres_days-1))
+        )
+        p16 = ET.SubElement(pdata, 'p16')
+        p16.text = string_utils.xstr(row['DoctorID'])
+        p20 = ET.SubElement(pdata, 'p20')
+        p20.text = string_utils.xstr(row['Class'])
 
     def _set_A21(self, dbody, row, case_row, order_type, pres_days):
         pdata = ET.SubElement(dbody, 'pdata')

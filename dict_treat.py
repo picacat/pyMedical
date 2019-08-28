@@ -6,6 +6,7 @@ import sys
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtWidgets import QInputDialog, QMessageBox, QPushButton
 from libs import ui_utils
+from libs import system_utils
 from libs import string_utils
 from libs import dialog_utils
 from classes import table_widget
@@ -38,6 +39,7 @@ class DictTreat(QtWidgets.QMainWindow):
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_DICT_TREAT, self)
+        system_utils.set_css(self, self.system_settings)
         self.table_widget_dict_groups = table_widget.TableWidget(self.ui.tableWidget_dict_groups, self.database)
         self.table_widget_dict_groups.set_column_hidden([0])
         self.table_widget_dict_treat = table_widget.TableWidget(self.ui.tableWidget_dict_treat, self.database)

@@ -1,6 +1,5 @@
 from openpyxl import Workbook
 from openpyxl.styles import PatternFill, Border, Side, Alignment, Protection, Font
-import copy
 
 from libs import string_utils
 from libs import number_utils
@@ -17,10 +16,12 @@ side = Side(border_style='thin', color = '000000')
 border = Border(top=side, bottom=side, left=side, right=side)
 
 
-def export_table_widget_to_excel(excel_file_name, table_widget, hidden_column=None):
+def export_table_widget_to_excel(excel_file_name, table_widget, hidden_column=None, numeric_cell=None):
+    if numeric_cell is None:
+        numeric_cell = []
     wb = Workbook()
     ws = wb.active
-    ws.title = '預約門診資料'
+    ws.title = 'sheet1'
 
     header_row = []
     for col_no in range(table_widget.columnCount()):
@@ -42,6 +43,10 @@ def export_table_widget_to_excel(excel_file_name, table_widget, hidden_column=No
                 item_text = item.text()
             else:
                 item_text = ''
+
+            if numeric_cell is not None and col_no in numeric_cell:
+                item_text = item_text.replace(',', '')
+                item_text = number_utils.get_float(item_text)
 
             row.append(item_text)
 

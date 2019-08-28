@@ -7,6 +7,7 @@ from PyQt5.QtWidgets import QMessageBox, QPushButton
 import datetime
 
 from libs import ui_utils
+from libs import system_utils
 from libs import string_utils
 from libs import personnel_utils
 from dialog import dialog_purchase_list
@@ -45,6 +46,7 @@ class PurchaseList(QtWidgets.QMainWindow):
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_PURCHASE_LIST, self)
+        system_utils.set_css(self, self.system_settings)
         self.table_widget_purchase_list = table_widget.TableWidget(self.ui.tableWidget_purchase_list, self.database)
         self._set_table_width()
         self._set_tool_button()
@@ -201,6 +203,7 @@ class PurchaseList(QtWidgets.QMainWindow):
         case_key = self.table_widget_purchase_list.field_value(0)
         self.database.delete_record('prescript', 'CaseKey', case_key)
         self.database.delete_record('cases', 'CaseKey', case_key)
+        self.database.delete_record('wait', 'CaseKey', case_key)
         current_row = self.ui.tableWidget_purchase_list.currentRow()
         self.ui.tableWidget_purchase_list.removeRow(current_row)
 

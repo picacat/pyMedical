@@ -7,6 +7,7 @@ from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtWidgets import QMessageBox, QPushButton
 
 from libs import ui_utils
+from libs import system_utils
 from libs import date_utils
 from libs import number_utils
 from libs import string_utils
@@ -59,6 +60,7 @@ class InsJudge(QtWidgets.QMainWindow):
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_INS_JUDGE, self)
+        system_utils.set_css(self, self.system_settings)
 
     # 設定信號
     def _set_signal(self):

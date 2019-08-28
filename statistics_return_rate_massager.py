@@ -45,6 +45,7 @@ class StatisticsReturnRateMassager(QtWidgets.QMainWindow):
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_STATISTICS_RETURN_RATE_MASSAGER, self)
+        system_utils.set_css(self, self.system_settings)
         self.table_widget_return_rate_massager = table_widget.TableWidget(
             self.ui.tableWidget_return_rate_massager, self.database)
         self._set_table_width()
@@ -240,7 +241,7 @@ class StatisticsReturnRateMassager(QtWidgets.QMainWindow):
         options = QFileDialog.Options()
         excel_file_name, _ = QFileDialog.getSaveFileName(
             self.parent,
-            "QFileDialog.getSaveFileName()",
+            "匯出推拿師回診率統計表",
             '{0}至{1}{2}推拿師父回診率統計表.xlsx'.format(
                 self.start_date[:10], self.end_date[:10], self.massager
             ),

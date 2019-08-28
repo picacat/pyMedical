@@ -5,6 +5,7 @@ import sys
 
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtWidgets import QMessageBox, QPushButton
+from libs import system_utils
 from libs import ui_utils
 from libs import string_utils
 from libs import charge_utils
@@ -37,6 +38,7 @@ class ChargeSettingsShare(QtWidgets.QMainWindow):
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_CHARGE_SETTINGS_SHARE, self)
+        system_utils.set_css(self, self.system_settings)
         self.table_widget_diag_share = table_widget.TableWidget(self.ui.tableWidget_diag_share, self.database)
         self.table_widget_diag_share.set_column_hidden([0, 1])
         self.table_widget_drug_share = table_widget.TableWidget(self.ui.tableWidget_drug_share, self.database)

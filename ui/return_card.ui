@@ -138,8 +138,10 @@
     <bool>false</bool>
    </attribute>
    <addaction name="action_return_card"/>
+   <addaction name="separator"/>
    <addaction name="action_open_medical_record"/>
    <addaction name="action_undo"/>
+   <addaction name="action_print_registration_form"/>
    <addaction name="separator"/>
    <addaction name="action_close"/>
   </widget>
@@ -149,13 +151,14 @@
      <x>0</x>
      <y>0</y>
      <width>1115</width>
-     <height>26</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu">
     <property name="title">
      <string>檔案</string>
     </property>
+    <addaction name="action_print_registration_form"/>
    </widget>
    <addaction name="menu"/>
   </widget>
@@ -196,6 +199,18 @@
    </property>
    <property name="text">
     <string>還原成欠卡</string>
+   </property>
+  </action>
+  <action name="action_print_registration_form">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/document-print.svg</normaloff>../icons/document-print.svg</iconset>
+   </property>
+   <property name="text">
+    <string>列印還卡收據</string>
+   </property>
+   <property name="toolTip">
+    <string>列印還卡收據</string>
    </property>
   </action>
  </widget>

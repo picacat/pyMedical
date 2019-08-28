@@ -7,6 +7,7 @@ import json
 
 from classes import table_widget
 from libs import ui_utils
+from libs import system_utils
 from libs import string_utils
 from libs import number_utils
 from libs import dialog_utils
@@ -36,6 +37,7 @@ class RestoreMedicalRecords(QtWidgets.QMainWindow):
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_RESTORE_MEDICAL_RECORDS, self)
+        system_utils.set_css(self, self.system_settings)
         self.table_widget_medical_records = table_widget.TableWidget(
             self.ui.tableWidget_medical_records, self.database
         )

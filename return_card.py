@@ -13,6 +13,7 @@ from libs import system_utils
 from libs import personnel_utils
 from classes import table_widget
 from dialog import dialog_return_card
+from printer import print_registration
 
 
 # 樣板 2018.01.31
@@ -53,6 +54,7 @@ class ReturnCard(QtWidgets.QMainWindow):
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_RETURN_CARD, self)
+        system_utils.set_css(self, self.system_settings)
         self.table_widget_return_card = table_widget.TableWidget(self.ui.tableWidget_return_card, self.database)
         self.table_widget_return_card.set_column_hidden([0, 1])
         self._set_table_width()
@@ -63,6 +65,7 @@ class ReturnCard(QtWidgets.QMainWindow):
         self.ui.action_return_card.triggered.connect(self.return_card)
         self.ui.action_open_medical_record.triggered.connect(self.open_medical_record)
         self.ui.action_undo.triggered.connect(self._undo_return_card)
+        self.ui.action_print_registration_form.triggered.connect(self._print_registration_form)
         self.ui.tableWidget_return_card.doubleClicked.connect(self.open_medical_record)
         self.ui.tableWidget_return_card.itemSelectionChanged.connect(self._return_card_item_changed)
 
@@ -81,6 +84,16 @@ class ReturnCard(QtWidgets.QMainWindow):
     def _set_table_width(self):
         width = [80, 80, 80, 80, 130, 130, 150, 200, 200, 60, 80, 40, 100, 100, 80, 70]
         self.table_widget_return_card.set_table_heading_width(width)
+
+    # 列印收據
+    def _print_registration_form(self, printable, case_key=False):
+        if not case_key:
+            case_key = self.table_widget_return_card.field_value(1)
+
+        print_regist = print_registration.PrintRegistration(
+            self, self.database, self.system_settings, case_key, '還卡收據')
+        print_regist.print()
+        del print_regist
 
     # 讀取欠卡資料
     def read_return_card(self, return_date=None):

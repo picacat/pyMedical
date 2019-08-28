@@ -3,6 +3,7 @@
 
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtWidgets import QInputDialog, QMessageBox
+from libs import system_utils
 from libs import ui_utils
 from libs import string_utils
 from libs import dialog_utils
@@ -41,6 +42,7 @@ class DictDrug(QtWidgets.QMainWindow):
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_DICT_DRUG, self)
+        system_utils.set_css(self, self.system_settings)
         self.table_widget_dict_groups = table_widget.TableWidget(self.ui.tableWidget_dict_groups, self.database)
         self.table_widget_dict_groups.set_column_hidden([0, 1])
         self.table_widget_dict_drug = table_widget.TableWidget(self.ui.tableWidget_dict_drug, self.database)

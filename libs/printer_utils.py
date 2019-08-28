@@ -34,6 +34,8 @@ from printer.print_receipt_self_form3 import *
 from printer.print_receipt_self_form4 import *
 from printer.print_receipt_self_form5 import *
 
+from printer.print_misc_form5 import *
+
 from printer.print_ins_apply_total_fee import *
 from printer.print_ins_apply_order import *
 from printer.print_ins_apply_schedule_table import *
@@ -84,6 +86,10 @@ PRINT_RECEIPT_SELF_FORM = {
     '03-3"自費醫療收據': PrintReceiptSelfForm3,
     '04-4"自費醫療收據': PrintReceiptSelfForm4,
     '05-2.5"自費醫療收據': PrintReceiptSelfForm5,
+}
+
+PRINT_MISC_FORM = {
+    '05-2.5"醫療費用收據': PrintMiscForm5,
 }
 
 
@@ -195,6 +201,8 @@ def get_case_html_1(database, case_key, ins_type, background_color=None):
             card=card,
             regist_no=string_utils.xstr(row['RegistNo']),
         )
+    elif ins_type == '全部':
+        pass
     else:
         html += '''
             <tr>
@@ -546,6 +554,7 @@ def get_prescript_html(database, system_setting, case_key, medicine_set,
     return prescript
 
 
+# 明醫
 def get_prescript_block3_html(database, system_setting, case_key, medicine_set,
                        print_type, print_alias, print_total_dosage, blocks=3):
     if medicine_set is None:
@@ -614,7 +623,7 @@ def get_prescript_block3_html(database, system_setting, case_key, medicine_set,
     block_width = {
         3: {'medicine_name_width': 20,
             'dosage_width': 7,
-            'total_dosage_width': 4,
+            'total_dosage_width': 5,
             'separator_width': 1},
         2: {'medicine_name_width': 30,
             'dosage_width': 10,
@@ -639,13 +648,14 @@ def get_prescript_block3_html(database, system_setting, case_key, medicine_set,
             if system_setting.field('列印藥品總量') != 'Y' or not print_total_dosage:
                 total_dosage = ''
 
+            medicine_name = string_utils.xstr(prescript_block[0])[:10]
             prescript_line += '''
-                <td align="left" width="{medicine_name_width}%">{medicine_name} {location}</td>
-                <td align="right" width="{dosage_width}%">{dosage}{unit}</td>
+                <td align="left" width="{medicine_name_width}%"><b>{medicine_name} {location}</b></td>
+                <td align="right" width="{dosage_width}%"><b>{dosage}{unit}</b></td>
                 <td align="right" width="{total_dosage_width}%">{total_dosage}</td>
                 <td width="{separator_width}%">{separator}</td> 
             '''.format(
-                medicine_name=string_utils.xstr(prescript_block[0]),
+                medicine_name=medicine_name,
                 location=location,
                 dosage=string_utils.xstr(prescript_block[2]),
                 unit=string_utils.xstr(prescript_block[3]),
@@ -782,6 +792,96 @@ def get_self_fees_html(database, case_key):
     return html
 
 
+# 自費費用
+def get_fees_html(database, case_key):
+    sql = '''
+        SELECT * FROM cases 
+        WHERE 
+            CaseKey = {0}
+    '''.format(case_key)
+
+    rows = database.select_record(sql)
+    if len(rows) <= 0:
+        return ''
+
+    row = rows[0]
+    ins_receipt_fee = (number_utils.get_integer(row['RegistFee']) +
+                       number_utils.get_integer(row['SDiagShareFee']) +
+                       number_utils.get_integer(row['SDrugShareFee']) +
+                       number_utils.get_integer(row['DepositFee']))
+    html = '''
+        <tr>
+          <td>掛號費:{regist_fee}</td>
+          <td>門診負擔:{diag_share_fee}</td>
+          <td>藥品負擔:{drug_share_fee}</td>
+          <td>欠卡費:{deposit_fee}</td>
+          <td>健保實收:{ins_receipt_fee}</td>
+        </tr> 
+        <tr>
+          <td>診察費:{diag_fee}</td>
+          <td>藥費:{drug_fee}</td>
+          <td>調劑費:{pharmacy_fee}</td>
+          <td>處置費:{treat_fee}</td>
+          <td>健保申請:{ins_apply_fee}</td>
+        </tr> 
+        <tr>
+          <td>自費診察費:{s_diag_fee}</td>
+          <td>一般藥費:{s_drug_fee}</td>
+          <td>水煎藥費:{herb_fee}</td>
+          <td>高貴藥費:{expensive_fee}</td>
+          <td>自費材料費:{material_fee}</td>
+        </tr>
+        <tr>  
+          <td>自費針灸費:{acupuncture_fee}</td>
+          <td>民俗調理費:{massage_fee}</td>
+        </tr>
+        <tr>  
+          <td>合計金額:{self_total_fee}</td>
+          <td>折扣金額:{discount_fee}</td>
+          <td>自費應收:{total_fee}</td>
+          <td>自費實收:{receipt_fee}</td>
+          <td>合計實收:{total_receipt_fee}</td>
+        </tr> 
+    '''.format(
+        regist_fee=string_utils.xstr(number_utils.get_integer(row['RegistFee'])),
+        diag_share_fee=string_utils.xstr(number_utils.get_integer(row['SDiagShareFee'])),
+        drug_share_fee=string_utils.xstr(number_utils.get_integer(row['SDrugShareFee'])),
+        total_share_fee=string_utils.xstr(
+            number_utils.get_integer(row['SDiagShareFee']) +
+            number_utils.get_integer(row['SDrugShareFee'])
+        ),
+        deposit_fee=string_utils.xstr(number_utils.get_integer(row['DepositFee'])),
+        ins_receipt_fee=string_utils.xstr(ins_receipt_fee),
+        diag_fee=string_utils.xstr(number_utils.get_integer(row['DiagFee'])),
+        drug_fee=string_utils.xstr(number_utils.get_integer(row['InterDrugFee'])),
+        pharmacy_fee=string_utils.xstr(number_utils.get_integer(row['PharmacyFee'])),
+        treat_fee=string_utils.xstr(
+            number_utils.get_integer(row['AcupunctureFee']) +
+            number_utils.get_integer(row['MassageFee']) +
+            number_utils.get_integer(row['DislocateFee'])
+        ),
+        ins_total_fee=string_utils.xstr(number_utils.get_integer(row['InsTotalFee'])),
+        ins_apply_fee=string_utils.xstr(number_utils.get_integer(row['InsApplyFee'])),
+        s_diag_fee=string_utils.xstr(number_utils.get_integer(row['SDiagFee'])),
+        s_drug_fee=string_utils.xstr(number_utils.get_integer(row['SDrugFee'])),
+        herb_fee=string_utils.xstr(number_utils.get_integer(row['SHerbFee'])),
+        expensive_fee=string_utils.xstr(number_utils.get_integer(row['SExpensiveFee'])),
+        material_fee=string_utils.xstr(number_utils.get_integer(row['SMaterialFee'])),
+
+        acupuncture_fee=string_utils.xstr(number_utils.get_integer(row['SAcupunctureFee'])),
+        massage_fee=string_utils.xstr(number_utils.get_integer(row['SMassageFee'])),
+        self_total_fee=string_utils.xstr(number_utils.get_integer(row['SelfTotalFee'])),
+        discount_fee=string_utils.xstr(number_utils.get_integer(row['DiscountFee'])),
+        total_fee=string_utils.xstr(number_utils.get_integer(row['TotalFee'])),
+        receipt_fee=string_utils.xstr(number_utils.get_integer(row['ReceiptFee'])),
+        total_receipt_fee=string_utils.xstr(
+            ins_receipt_fee + number_utils.get_integer(row['ReceiptFee'])
+        ),
+    )
+
+    return html
+
+
 def get_medicine_detail(rows, row_no, pres_days, print_alias=False):
     try:
         medicine_name = rows[row_no]['MedicineName']
@@ -810,7 +910,7 @@ def get_medicine_detail(rows, row_no, pres_days, print_alias=False):
     return medicine_name, location, dosage, unit, total_dosage
 
 
-def get_instruction_html(database, case_key, medicine_set):
+def get_instruction_html(database, system_settings, case_key, medicine_set):
     sql = '''
         SELECT * FROM cases 
         WHERE 
@@ -825,7 +925,7 @@ def get_instruction_html(database, case_key, medicine_set):
 
     if medicine_set is None:
         html = '''
-              主治醫師: {doctor}
+              醫師: {doctor}
         '''.format(
             doctor=string_utils.xstr(row['Doctor']),
         )
@@ -836,13 +936,19 @@ def get_instruction_html(database, case_key, medicine_set):
     instruction = case_utils.get_instruction(database, case_key, medicine_set)
 
     if pres_days > 0:
+        _, total_dosage = case_utils.get_prescript_html_data(
+            database, system_settings, case_key, medicine_set
+        )
+        total_dosage *= pres_days
+
         html = '''
-              主治醫師: {doctor} 調劑者: {doctor} 用藥指示: 一日{package}包, 共{pres_days}日份 {instruction}服用
+              醫師: {doctor} 調劑者: {doctor} 指示: 一日{package}包, 共{pres_days}日份 {instruction}服用 總量: {total_dosage}
         '''.format(
             doctor=string_utils.xstr(row['Doctor']),
             package=string_utils.xstr(packages),
             pres_days=string_utils.xstr(pres_days),
             instruction=instruction,
+            total_dosage=total_dosage,
         )
     else:
         html = '''
@@ -997,7 +1103,10 @@ def print_registration(parent, database, system_settings, case_key,
 
     print_registration_form = PRINT_REGISTRATION_FORM[form](
         parent, database, system_settings, case_key)
-    if print_type == 'print':
+
+    if print_option == '還卡收據':
+        print_registration_form.print(print_option)
+    elif print_type == 'print':
         print_registration_form.print()
     else:
         print_registration_form.preview()
@@ -1135,6 +1244,37 @@ def print_self_receipt(parent, database, system_settings, case_key, medicine_set
         print_receipt_form.preview()
 
     del print_receipt_form
+
+
+# 列印其他收據
+def print_misc(parent, database, system_settings, case_key,
+               print_type, print_option='系統設定'):
+    printable = system_settings.field('列印其他收據')
+    if print_option != '系統設定' and printable == '不印':
+        printable = '列印'
+
+    if printable == '不印':
+        return
+    elif printable == '詢問':
+        dialog = QtPrintSupport.QPrintDialog()
+        if dialog.exec() == QtWidgets.QDialog.Rejected:
+            return
+    elif printable == '預覽':
+        print_type = 'preview'
+
+    form = system_settings.field('其他收據格式')
+    if form not in list(PRINT_MISC_FORM.keys()):
+        return
+
+    print_misc_form = PRINT_MISC_FORM[form](
+        parent, database, system_settings, case_key)
+
+    if print_type == 'print':
+        print_misc_form.print()
+    else:
+        print_misc_form.preview()
+
+    del print_misc_form
 
 
 # 列印申請總表

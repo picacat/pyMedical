@@ -2,7 +2,6 @@
 #coding: utf-8
 
 from PyQt5 import QtWidgets, QtCore, QtGui
-from PyQt5.QtWidgets import QMessageBox, QPushButton
 
 from classes import table_widget
 from dialog import dialog_input_medicine
@@ -16,6 +15,7 @@ from libs import number_utils
 from libs import prescript_utils
 from libs import system_utils
 from libs import case_utils
+from libs import charge_utils
 
 
 # 輸入健保處方 2018.04.14
@@ -33,7 +33,8 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
 
         self._set_ui()
         self._set_signal()
-        self._read_prescript()
+        if self.case_key is not None:
+            self._read_prescript()
 
     # 解構
     def __del__(self):
@@ -46,6 +47,7 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_SELF_PRESCRIPT_RECORD, self)
+        system_utils.set_css(self, self.system_settings)
         self.table_widget_prescript = table_widget.TableWidget(self.ui.tableWidget_prescript, self.database)
         self.table_widget_prescript.set_column_hidden([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
 
@@ -54,6 +56,17 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
 
         self._set_table_width()
         self._set_combo_box()
+        self._set_discount_visible()
+
+    def _set_discount_visible(self):
+        if self.system_settings.field('自費折扣方式') == '個別折扣':
+            return
+
+        enabled = False
+        self.ui.label_discount.setVisible(enabled)
+        self.ui.spinBox_discount_rate.setVisible(enabled)
+        self.ui.label_percent.setVisible(enabled)
+        self.ui.lineEdit_discount_fee.setVisible(enabled)
 
     # 設定信號
     def _set_signal(self):
@@ -62,6 +75,7 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
         self.ui.toolButton_dictionary.clicked.connect(self._open_dictionary)
         self.ui.toolButton_show_costs.clicked.connect(self._show_costs)
         self.ui.toolButton_medicine_info.clicked.connect(self._show_medicine_description)
+        self.ui.toolButton_copy.clicked.connect(self._copy_prescript)
 
         self.ui.tableWidget_prescript.keyPressEvent = self._table_widget_prescript_key_press
         self.ui.tableWidget_prescript.itemChanged.connect(self._prescript_item_changed)
@@ -69,8 +83,9 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
         self.ui.tableWidget_prescript.cellClicked.connect(self._prescript_cell_clicked)
 
         self.ui.comboBox_pres_days.currentTextChanged.connect(self.pres_days_changed)
-
         self.ui.tableWidget_prescript.dropEvent = self.prescript_drop_event
+        self.ui.spinBox_discount_rate.valueChanged.connect(self._calculate_discount)
+        self.ui.lineEdit_discount_fee.textChanged.connect(self._discount_fee_changed)
 
     def prescript_drop_event(self, event):
         table_widget = event.source()
@@ -256,7 +271,6 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
             price = string_utils.get_formatted_str('單價', row['SalePrice'])
             amount = string_utils.get_formatted_str('單價', None)
 
-
         prescript_row = [
             [prescript_utils.SELF_PRESCRIPT_COL_NO['PrescriptKey'], '-1'],
             [prescript_utils.SELF_PRESCRIPT_COL_NO['PrescriptNo'],
@@ -308,7 +322,7 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
         medicine_width = [
             70,
             100, 100, 100, 100, 100, 100, 100, 100, 100,
-            225, 60, 50, 60, 80, 80,
+            280, 60, 50, 70, 90, 90,
         ]
         self.table_widget_prescript.set_table_heading_width(medicine_width)
 
@@ -317,6 +331,7 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
         self._read_medicine()
         self._calculate_total_dosage()
         self._calculate_total_costs()
+        self._calculate_self_total_fee()
 
         if self.parent.call_from == '醫師看診作業':
             self.append_null_medicine()
@@ -330,9 +345,22 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
         if len(row) <= 0:
             return
 
-        self.ui.comboBox_package.setCurrentText(string_utils.xstr(row[0]['Packages']))
-        self.ui.comboBox_pres_days.setCurrentText(string_utils.xstr(row[0]['Days']))
-        self.ui.comboBox_instruction.setCurrentText(string_utils.xstr(row[0]['Instruction']))
+        row = row[0]
+        self.ui.comboBox_package.setCurrentText(string_utils.xstr(row['Packages']))
+        self.ui.comboBox_pres_days.setCurrentText(string_utils.xstr(row['Days']))
+        self.ui.comboBox_instruction.setCurrentText(string_utils.xstr(row['Instruction']))
+
+        self_total_fee = number_utils.get_integer(row['SelfTotalFee'])
+        discount_rate = number_utils.get_integer(row['DiscountRate'])
+        discount_fee = number_utils.get_integer(row['DiscountFee'])
+        total_fee = number_utils.get_integer(row['TotalFee'])
+
+        self.ui.spinBox_discount_rate.setValue(discount_rate)
+        self.ui.lineEdit_discount_fee.setText(string_utils.xstr(discount_fee))
+        self.ui.lineEdit_self_total_fee.setText(string_utils.xstr(self_total_fee))
+        self.ui.lineEdit_total_fee.setText(string_utils.xstr(total_fee))
+        # self.ui.label_self_total_fee.setText('自費合計: ${0:,}'.format(self_total_fee))
+        # self.ui.label_total_fee.setText('應收金額: ${0:,}'.format(total_fee))
 
     def _read_medicine(self):
         sql = """ 
@@ -421,13 +449,14 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
         if medicine_key_item is None:
             return
 
-        description = prescript_utils.get_medicine_description(self.database, medicine_key_item.text())
+        medicine_key = medicine_key_item.text()
+        description = prescript_utils.get_medicine_description(self.database, medicine_key)
         if description is None:
             return
 
         dialog = dialog_rich_text.DialogRichText(
             self, self.database, self.system_settings,
-            'rich_text', description
+            'rich_text', medicine_key, description
         )
         dialog.exec_()
         dialog.close_all()
@@ -470,6 +499,7 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
         self.parent.calculate_self_fees()
         self._calculate_total_dosage()
         self._calculate_total_costs()
+        self._calculate_self_total_fee()
 
     def save_prescript(self):
         medicine_set = self.medicine_set
@@ -495,13 +525,22 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
         self._save_medicine(medicine_set)
 
     def _save_dosage(self, medicine_set):
-        fields = ['CaseKey', 'MedicineSet', 'Packages', 'Days', 'Instruction',]
+        fields = [
+            'CaseKey', 'MedicineSet', 'Packages', 'Days', 'Instruction',
+            'SelfTotalFee', 'DiscountRate', 'DiscountFee', 'TotalFee',
+        ]
+        self_total_fee = self._get_self_total_fee()
+        total_fee = self._get_total_fee()
         data = [
             string_utils.xstr(self.case_key),
             string_utils.xstr(medicine_set),
             self.ui.comboBox_package.currentText(),
             self.ui.comboBox_pres_days.currentText(),
             self.ui.comboBox_instruction.currentText(),
+            self_total_fee,
+            self.ui.spinBox_discount_rate.value(),
+            self.ui.lineEdit_discount_fee.text(),
+            total_fee,
         ]
 
         sql = '''
@@ -636,6 +675,7 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
         pres_days = case_utils.get_pres_days(self.database, case_key, medicine_set)
         packages = case_utils.get_packages(self.database, case_key, medicine_set)
         instruction = case_utils.get_instruction(self.database, case_key, medicine_set)
+        discount_rate = case_utils.get_discount_rate(self.database, case_key, medicine_set)
 
         medicine_type_script = ''
         if medicine_set == 1:
@@ -666,11 +706,13 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
         self.ui.comboBox_pres_days.setCurrentText(string_utils.xstr(pres_days))
         self.ui.comboBox_package.setCurrentText(string_utils.xstr(packages))
         self.ui.comboBox_instruction.setCurrentText(instruction)
+        self.ui.spinBox_discount_rate.setValue(discount_rate)
 
         self.ui.tableWidget_prescript.resizeRowsToContents()
 
     # 藥日變更重新批價
     def pres_days_changed(self):
+        self._calculate_self_total_fee()
         self.parent.calculate_self_fees()
 
     def _prescript_item_selection_changed(self):
@@ -705,8 +747,9 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
             self._adjust_price_column_align(row_no)
             self.parent.calculate_self_fees()
 
-            self ._calculate_total_dosage()
-            self ._calculate_total_costs()
+            self._calculate_total_dosage()
+            self._calculate_total_costs()
+            self._calculate_self_total_fee()
 
     # 拷貝過去病歷的處方
     def copy_host_prescript(self, database, case_key, medicine_set=None):
@@ -798,6 +841,12 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
     def _calculate_total_dosage(self):
         total_dosage = 0.0
         for row_no in range(self.ui.tableWidget_prescript.rowCount()):
+            medicine_name = self.ui.tableWidget_prescript.item(
+                row_no, prescript_utils.SELF_PRESCRIPT_COL_NO['MedicineName']
+            )
+            if medicine_name is not None and medicine_name.text() == '優待':
+                continue
+
             item = self.ui.tableWidget_prescript.item(row_no, prescript_utils.SELF_PRESCRIPT_COL_NO['Dosage'])
             if item is None:
                 continue
@@ -840,6 +889,38 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
 
         self.ui.label_total_costs.setText('({0:.1f})'.format(total_costs))
 
+    def _calculate_self_total_fee(self):
+        pres_days = number_utils.get_integer(self.ui.comboBox_pres_days.currentText())
+        if pres_days <= 0:
+            pres_days = 1
+
+        self_total_fee = 0
+        for row_no in range(self.ui.tableWidget_prescript.rowCount()):
+            item = self.ui.tableWidget_prescript.item(row_no, prescript_utils.SELF_PRESCRIPT_COL_NO['Amount'])
+            if item is None:
+                continue
+
+            try:
+                amount = number_utils.get_float(item.text())
+            except ValueError:
+                item.setText(None)
+                continue
+
+            subtotal = charge_utils.get_subtotal_fee(amount, pres_days)
+            self_total_fee += subtotal
+
+        discount_fee = number_utils.get_integer(self.ui.lineEdit_discount_fee.text())
+        total_fee = self_total_fee - discount_fee
+        self.ui.lineEdit_self_total_fee.setText(string_utils.xstr(self_total_fee))
+        self.ui.lineEdit_total_fee.setText(string_utils.xstr(total_fee))
+        self._calculate_discount()
+
+    def _get_self_total_fee(self):
+        return number_utils.get_integer(self.ui.lineEdit_self_total_fee.text())
+
+    def _get_total_fee(self):
+        return number_utils.get_integer(self.ui.lineEdit_total_fee.text())
+
     def _open_dictionary(self):
         self.parent.open_dictionary(self.medicine_set, '自費處方')
 
@@ -854,7 +935,7 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
         )
         dialog = dialog_rich_text.DialogRichText(
             self, self.database, self.system_settings,
-            'html', html
+            'html', None, html
         )
         dialog.exec_()
         dialog.close_all()
@@ -862,3 +943,94 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
 
     def _prescript_cell_clicked(self):
         system_utils.set_keyboard_layout('英文')
+
+    def _calculate_discount(self):
+        self_total_fee = self._get_self_total_fee()
+        discount_rate = self.ui.spinBox_discount_rate.value()
+        discount_fee = round(self_total_fee - (self_total_fee * discount_rate / 100))
+        total_fee = self_total_fee - discount_fee
+        self.ui.lineEdit_discount_fee.setText(string_utils.xstr(discount_fee))
+
+        if self.ui.spinBox_discount_rate.value() == 100:
+            return
+
+        if self.system_settings.field('折扣四捨五入') == 'Y':
+            rounded_total_fee = round(total_fee, -1)
+
+            discount_fee += number_utils.get_integer(total_fee - rounded_total_fee)
+            self.ui.lineEdit_discount_fee.setText(string_utils.xstr(discount_fee))
+
+    def _discount_fee_changed(self):
+        self_total_fee = self._get_self_total_fee()
+        discount_fee = number_utils.get_integer(self.ui.lineEdit_discount_fee.text())
+        total_fee = self_total_fee - discount_fee
+
+        # self.ui.label_total_fee.setText('應收金額: ${0:,}'.format(
+        #     number_utils.get_integer(total_fee)
+        # ))
+        self.ui.lineEdit_total_fee.setText(string_utils.xstr(total_fee))
+        self.parent.calculate_self_fees()
+
+    # 拷貝自費處方至新增的自費處方
+    def _copy_prescript(self):
+        new_tab = self.parent.add_prescript_tab()
+        new_tab.copy_from_self_prescript(self.ui.tableWidget_prescript)
+
+    def copy_from_ins_prescript(self, table_widget_ins_prescript):
+        for row_no in range(table_widget_ins_prescript.rowCount()):
+            row = dict()
+            medicine_key_item = table_widget_ins_prescript.item(
+                row_no, prescript_utils.INS_PRESCRIPT_COL_NO['MedicineKey'])
+            if medicine_key_item is None:
+                continue
+
+            medicine_key = medicine_key_item.text()
+            row['MedicineKey'] = medicine_key
+            row['MedicineType'] = table_widget_ins_prescript.item(
+                row_no, prescript_utils.INS_PRESCRIPT_COL_NO['MedicineType']).text()
+            row['Price'] = prescript_utils.get_medicine_field(
+                self.database, medicine_key, 'InPrice'
+            )
+            row['Amount'] = None
+            row['InsCode'] = table_widget_ins_prescript.item(
+                row_no, prescript_utils.INS_PRESCRIPT_COL_NO['InsCode']).text()
+            row['MedicineName'] = table_widget_ins_prescript.item(
+                row_no, prescript_utils.INS_PRESCRIPT_COL_NO['MedicineName']).text()
+            row['Unit'] = table_widget_ins_prescript.item(
+                row_no, prescript_utils.INS_PRESCRIPT_COL_NO['Unit']).text()
+            dosage = table_widget_ins_prescript.item(
+                row_no, prescript_utils.INS_PRESCRIPT_COL_NO['Dosage']).text()
+
+            self.append_null_medicine()
+            self.append_prescript(row, dosage)
+            self._set_dosage_format(row_no, prescript_utils.SELF_PRESCRIPT_COL_NO['Dosage'])
+
+    def copy_from_self_prescript(self, table_widget_self_prescript):
+        for row_no in range(table_widget_self_prescript.rowCount()):
+            row = dict()
+            medicine_key_item = table_widget_self_prescript.item(
+                row_no, prescript_utils.SELF_PRESCRIPT_COL_NO['MedicineKey'])
+            if medicine_key_item is None:
+                continue
+
+            medicine_key = medicine_key_item.text()
+            row['MedicineKey'] = medicine_key
+            row['MedicineType'] = table_widget_self_prescript.item(
+                row_no, prescript_utils.SELF_PRESCRIPT_COL_NO['MedicineType']).text()
+            row['Price'] = table_widget_self_prescript.item(
+                row_no, prescript_utils.SELF_PRESCRIPT_COL_NO['Price']).text()
+            row['Amount'] = table_widget_self_prescript.item(
+                row_no, prescript_utils.SELF_PRESCRIPT_COL_NO['Amount']).text()
+            row['InsCode'] = table_widget_self_prescript.item(
+                row_no, prescript_utils.SELF_PRESCRIPT_COL_NO['InsCode']).text()
+            row['MedicineName'] = table_widget_self_prescript.item(
+                row_no, prescript_utils.SELF_PRESCRIPT_COL_NO['MedicineName']).text()
+            row['Unit'] = table_widget_self_prescript.item(
+                row_no, prescript_utils.SELF_PRESCRIPT_COL_NO['Unit']).text()
+            dosage = table_widget_self_prescript.item(
+                row_no, prescript_utils.SELF_PRESCRIPT_COL_NO['Dosage']).text()
+
+            self.append_null_medicine()
+            self.append_prescript(row, dosage)
+            self._set_dosage_format(row_no, prescript_utils.SELF_PRESCRIPT_COL_NO['Dosage'])
+

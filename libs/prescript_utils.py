@@ -354,3 +354,20 @@ def get_max_medicine_set(database, case_key):
     return max_medicine_set
 
 
+def get_medicine_field(database, medicine_key, field_name):
+    if medicine_key in [None, '']:
+        return None
+
+    sql = '''
+        SELECT {field_name} FROM medicine
+        WHERE
+            MedicineKey = {medicine_key}
+    '''.format(
+        field_name=field_name,
+        medicine_key=medicine_key,
+    )
+
+    rows = database.select_record(sql)
+
+    return rows[0][field_name]
+

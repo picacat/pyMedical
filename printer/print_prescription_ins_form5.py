@@ -70,12 +70,16 @@ class PrintPrescriptionInsForm5:
         case_record = printer_utils.get_case_html_2(self.database, self.case_key, '健保')
         symptom_record = printer_utils.get_symptom_html(self.database, self.case_key, colspan=5)
         disease_record = printer_utils.get_disease(self.database, self.case_key)
-        prescript_record = printer_utils.get_prescript_block3_html(
+        # prescript_record = printer_utils.get_prescript_block3_html(
+        #     self.database, self.system_settings,
+        #     self.case_key, self.medicine_set,
+        #     '處方箋', print_alias=False, print_total_dosage=True)
+        prescript_record = printer_utils.get_prescript_html(
             self.database, self.system_settings,
             self.case_key, self.medicine_set,
-            '處方箋', print_alias=False, print_total_dosage=True)
+            '處方箋', print_alias=False, print_total_dosage=True, blocks=2)
         instruction = printer_utils.get_instruction_html(
-            self.database, self.case_key, self.medicine_set
+            self.database, self.system_settings, self.case_key, self.medicine_set
         )
 
         html = '''
@@ -88,7 +92,7 @@ class PrintPrescriptionInsForm5:
                   </tbody>  
                 </table>
                 {disease}
-                <hr>
+                <hr style="line-height:0.5">
                 <table width="98%" cellspacing="0">
                   <tbody>
                     {prescript}

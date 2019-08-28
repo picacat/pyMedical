@@ -1,4 +1,4 @@
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtGui
 from lxml import etree as ET
 from libs import string_utils
 from libs import number_utils
@@ -189,6 +189,38 @@ def get_instruction(database, case_key, medicine_set=1):
         instruction = None
 
     return instruction
+
+
+def get_discount_rate(database, case_key, medicine_set=1):
+    sql = '''
+        SELECT DiscountRate FROM dosage WHERE 
+            CaseKey = {0} AND
+            MedicineSet = {1} 
+    '''.format(case_key, medicine_set)
+    rows = database.select_record(sql)
+
+    if len(rows) > 0:
+        discount_rate = number_utils.get_integer(rows[0]['DiscountRate'])
+    else:
+        discount_rate = None
+
+    return discount_rate
+
+
+def get_discount_fee(database, case_key, medicine_set=1):
+    sql = '''
+        SELECT DiscountFee FROM dosage WHERE 
+            CaseKey = {0} AND
+            MedicineSet = {1} 
+    '''.format(case_key, medicine_set)
+    rows = database.select_record(sql)
+
+    if len(rows) > 0:
+        discount_fee = number_utils.get_integer(rows[0]['DiscountFee'])
+    else:
+        discount_fee = None
+
+    return discount_fee
 
 
 def get_host_pres_days(database, case_key, medicine_set=1):
@@ -449,11 +481,16 @@ def get_dosage_html(database, case_key, medicine_set, total_dosage):
             dosage_row[0]['Instruction{0}'.format(medicine_set)]
         )
 
-    pres_days = number_utils.get_integer(rows[0]['Days'])
-    packages = number_utils.get_integer(rows[0]['Packages'])
+    row = rows[0]
+    pres_days = number_utils.get_integer(row['Days'])
+    packages = number_utils.get_integer(row['Packages'])
+    try:
+        self_total_fee = number_utils.get_integer(row['SelfTotalFee'])
+    except KeyError:
+        self_total_fee = None
 
-    if packages > 0 and pres_days > 0:
-        instruction = string_utils.xstr(rows[0]['Instruction'])
+    if packages > 0 or pres_days > 0:
+        instruction = string_utils.xstr(row['Instruction'])
         dosage_data = '''
             <tr>
                 <td style="text-align: left; padding-left: 30px;" colspan="4">
@@ -465,6 +502,24 @@ def get_dosage_html(database, case_key, medicine_set, total_dosage):
             pres_days=pres_days,
             instruction=instruction,
             total_dosage=total_dosage,
+        )
+
+    if self_total_fee is not None and self_total_fee > 0:
+        discount_rate = number_utils.get_integer(row['DiscountRate'])
+        discount_fee = number_utils.get_integer(row['DiscountFee'])
+        total_fee = number_utils.get_integer(row['TotalFee'])
+        dosage_data += '''
+            <tr>
+                <td style="text-align: left; padding-left: 30px;" colspan="4">
+                    自費合計: ${self_total_fee:,} 優待: {discount_rate}% 折扣金額: ${discount_fee:,}
+                    應收金額: ${total_fee:,}
+                </td>
+            </tr>
+        '''.format(
+            self_total_fee=self_total_fee,
+            discount_rate=discount_rate,
+            discount_fee=discount_fee,
+            total_fee=total_fee,
         )
 
     return dosage_data
@@ -608,7 +663,6 @@ def copy_past_medical_record(
             string_utils.xstr(row['SpecialCode'])
         )
 
-    medical_record.close_all_self_prescript_tabs()
     if copy_ins_prescript:
         if copy_ins_prescript_to == '健保處方':
             if medical_record.tab_list[0] is not None:
@@ -624,6 +678,7 @@ def copy_past_medical_record(
             medical_record.tab_list[0].copy_past_treat(case_key, '病歷拷貝')
 
     if copy_self_prescript:
+        medical_record.close_all_self_prescript_tabs()
         sql = '''
             SELECT MedicineSet FROM prescript 
             WHERE 
@@ -997,4 +1052,31 @@ def backup_medical_record(database, case_key, deleter, delete_datetime):
     backup_prescript(database, case_key, deleter, delete_datetime)
     backup_dosage(database, case_key, deleter, delete_datetime)
 
+
+def set_in_progress_icon(table_widget, row_no, col_no, in_progress):
+    table_widget.setCellWidget(row_no, col_no, None)
+
+    if in_progress == 'Y':
+        icon = QtGui.QIcon('./icons/user-info.png')
+        button = QtWidgets.QPushButton(table_widget)
+        button.setIcon(icon)
+        button.setFlat(True)
+        table_widget.setCellWidget(row_no, col_no, button)
+
+
+def get_return_date(database, case_key):
+    sql = '''
+        SELECT  ReturnDate FROM deposit
+        WHERE
+            CaseKey = {case_key}
+    '''.format(
+        case_key=case_key,
+    )
+
+    rows = database.select_record(sql)
+
+    if len(rows) <= 0:
+        return None
+
+    return rows[0]['ReturnDate']
 

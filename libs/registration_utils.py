@@ -35,7 +35,8 @@ def get_last_reg_no(database, system_settings, start_date, end_date, period, roo
     sql = '''
         SELECT RegistNo FROM cases 
         WHERE 
-            CaseDate BETWEEN "{0}" AND "{1}"
+            CaseDate BETWEEN "{0}" AND "{1}" AND
+            RegistNo >= 0
     '''.format(
         start_date, end_date
     )
@@ -110,7 +111,7 @@ def get_reg_no_by_mode(database, system_settings, period, room, doctor, reg_no):
         else:
             reg_no += 2
     elif system_settings.field('現場掛號給號模式') == '單號':
-        if reg_no % 2 == 0:
+        if number_utils.get_integer(reg_no) % 2 == 0:
             reg_no += 1
         else:
             reg_no += 2
@@ -289,17 +290,26 @@ def check_deposit(database, patient_key):
 # 檢查欠款
 def check_debt(database, patient_key):
     message = None
+
     sql = '''
-        SELECT CaseDate, DebtFee FROM cases WHERE
-        (PatientKey = {0}) AND
-        (DebtFee > 0)
-    '''.format(patient_key)
+        SELECT * FROM debt 
+        WHERE
+            PatientKey = {patient_key} AND
+            Fee > 0 AND
+            ReturnDate1 IS NULL 
+    '''.format(
+        patient_key=patient_key,
+    )
     rows = database.select_record(sql)
 
     if len(rows) > 0:
-        message = '* 欠款提醒: {0}門診尚有欠款{1}未還.<br>'.format(
-            rows[0]['CaseDate'].strftime('%Y-%m-%d'),
-            rows[0]['DebtFee'])
+        message = ''
+        for row in rows:
+            message += '* 欠款提醒: {case_date} 門診尚有{debt_type} {debt} 未還.<br>'.format(
+                case_date=row['CaseDate'].strftime('%Y-%m-%d'),
+                debt_type=string_utils.xstr(row['DebtType']),
+                debt=row['Fee']
+            )
 
     return message
 

@@ -69,11 +69,13 @@ class PrintReceiptSelfForm3:
     def _html(self):
         case_record = printer_utils.get_case_html_2(self.database, self.case_key, '自費')
         prescript_record = printer_utils.get_prescript_html(
-            self.database, self.system_settings,
-            self.case_key, self.medicine_set,
+            self.database, self.system_settings, self.case_key, self.medicine_set,
             '費用收據', print_alias=False, print_total_dosage=True, blocks=2)
+        instruction = printer_utils.get_instruction_html(
+            self.database, self.system_settings, self.case_key, self.medicine_set
+        )
         fees_record = printer_utils.get_self_fees_html(self.database, self.case_key)
-        remark = '<hr>* 本收據可為報稅之憑證, 請妥善保存, 遺失恕不補發'
+        remark = '* 本收據可為報稅之憑證, 請妥善保存, 遺失恕不補發'
 
         prescript_html = '''
             <table cellspacing="0">
@@ -123,8 +125,10 @@ class PrintReceiptSelfForm3:
                     {case}
                   </tbody>  
                 </table>
-                <hr>
+                <hr style="line-height:0.5">
                 {prescript_html}
+                {instruction}
+                <hr style="line-height:0.5">
                 <table width="100%" cellspacing="0">
                   <tbody>
                     {fees}
@@ -140,6 +144,7 @@ class PrintReceiptSelfForm3:
             clinic_address=self.system_settings.field('院所地址'),
             case=case_record,
             prescript_html=prescript_html,
+            instruction=instruction,
             fees=fees_record,
             remark=remark,
         )

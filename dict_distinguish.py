@@ -6,6 +6,7 @@ import sys
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QInputDialog, QMessageBox, QPushButton
 from libs import ui_utils
+from libs import system_utils
 from libs import string_utils
 from libs import dialog_utils
 from classes import table_widget
@@ -38,6 +39,7 @@ class DictDistinguish(QtWidgets.QMainWindow):
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_DICT_DISTINGUISH, self)
+        system_utils.set_css(self, self.system_settings)
         self.table_widget_dict_groups = table_widget.TableWidget(self.ui.tableWidget_dict_groups, self.database)
         self.table_widget_dict_groups.set_column_hidden([0])
         self.table_widget_dict_groups_name = table_widget.TableWidget(self.ui.tableWidget_dict_groups_name, self.database)
@@ -66,7 +68,7 @@ class DictDistinguish(QtWidgets.QMainWindow):
     # 設定欄位寬度
     def _set_table_width(self):
         dict_groups_width = [100, 180]
-        dict_distinguish_width = [100, 180, 180, 750]
+        dict_distinguish_width = [100, 180, 180, 400, 350]
         self.table_widget_dict_groups.set_table_heading_width(dict_groups_width)
         self.table_widget_dict_groups_name.set_table_heading_width(dict_groups_width)
         self.table_widget_dict_distinguish.set_table_heading_width(dict_distinguish_width)
@@ -138,6 +140,7 @@ class DictDistinguish(QtWidgets.QMainWindow):
             string_utils.xstr(rec['ClinicCode']),
             string_utils.xstr(rec['InputCode']),
             string_utils.xstr(rec['ClinicName']),
+            string_utils.xstr(rec['Position']),
         ]
 
         for column in range(len(dict_distinguish_rec)):

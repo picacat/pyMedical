@@ -40,7 +40,8 @@ def get_font():
     if sys.platform == 'win32':
         font = "Microsoft JhengHei"
     else:
-        font = 'Noto Sans Mono'
+        #font = 'Noto Sans Mono'
+        font = 'Monospace'
 
     return font
 

@@ -19,6 +19,7 @@ from dialog import dialog_medical_record_list
 from classes import table_widget
 from printer import print_prescription
 from printer import print_receipt
+from printer import print_misc
 
 from dialog import dialog_medical_record_done
 
@@ -64,6 +65,7 @@ class MedicalRecordList(QtWidgets.QMainWindow):
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_MEDICAL_RECORD_LIST, self)
+        system_utils.set_css(self, self.system_settings)
         self.table_widget_medical_record_list = table_widget.TableWidget(
             self.ui.tableWidget_medical_record_list, self.database)
         self.table_widget_medical_record_list.set_column_hidden([0])
@@ -78,6 +80,7 @@ class MedicalRecordList(QtWidgets.QMainWindow):
         self.ui.action_open_record.triggered.connect(self.open_medical_record)
         self.ui.action_print_prescript.triggered.connect(self._print_prescript)
         self.ui.action_print_receipt.triggered.connect(self._print_receipt)
+        self.ui.action_print_misc.triggered.connect(self._print_misc)
         self.ui.action_print_cases.triggered.connect(self._print_cases)
         self.ui.action_export_cases_pdf.triggered.connect(self._print_cases)
         self.ui.action_print_fees.triggered.connect(self._print_fees)
@@ -249,6 +252,11 @@ class MedicalRecordList(QtWidgets.QMainWindow):
                     row_no, column).setForeground(
                     QtGui.QColor('darkgreen')
                 )
+            if string_utils.xstr(row['InProgress']) == 'Y':
+                self.ui.tableWidget_medical_record_list.item(
+                    row_no, column).setForeground(
+                    QtGui.QColor('red')
+                )
 
         self._set_print_check_box(row_no)
         self._set_done_status(row, row_no)
@@ -267,6 +275,13 @@ class MedicalRecordList(QtWidgets.QMainWindow):
         )
 
     def _set_done_status(self, row, row_no):
+        in_progress = string_utils.xstr(row['InProgress'])
+        if in_progress == 'Y':
+            case_utils.set_in_progress_icon(
+                self.ui.tableWidget_medical_record_list, row_no, 4, in_progress
+            )
+            return
+
         gtk_apply = './icons/gtk-apply.svg'
         gtk_close = './icons/gtk-close.svg'
         if string_utils.xstr(row['DoctorDone']) == 'True' and row['DoctorDate'] is not None:
@@ -359,17 +374,19 @@ class MedicalRecordList(QtWidgets.QMainWindow):
 
         sql = '''
             SELECT 
-                CaseKey, DATE_FORMAT(CaseDate, '%Y-%m-%d %H:%i') AS CaseDate, DoctorDate, ChargeDate,
-                cases.PatientKey, cases.Name, Period, ChargePeriod, cases.InsType, 
-                Share, cases.RegistNo, Card, Continuance, TreatType, 
+                cases.CaseKey, DATE_FORMAT(cases.CaseDate, '%Y-%m-%d %H:%i') AS CaseDate, 
+                cases.DoctorDate, cases.ChargeDate,
+                cases.PatientKey, cases.Name, cases.Period, cases.ChargePeriod, cases.InsType, 
+                cases.Share, cases.RegistNo, cases.Card, cases.Continuance, cases.TreatType, 
                 PresDays1, PresDays2, DiseaseCode1, DiseaseName1,
-                Doctor, Massager, Room, RegistFee, SDiagShareFee, SDrugShareFee,
-                ChargePeriod, DoctorDone, ChargeDone,
-                TotalFee, patient.Gender, patient.Birthday
+                cases.Doctor, cases.Massager, cases.Room, RegistFee, SDiagShareFee, SDrugShareFee,
+                cases.ChargePeriod, cases.DoctorDone, cases.ChargeDone,
+                TotalFee, patient.Gender, patient.Birthday, wait.InProgress
             FROM cases
                 LEFT JOIN patient ON patient.PatientKey = cases.PatientKey
+                LEFT JOIN wait ON wait.CaseKey = cases.CaseKey
             WHERE 
-                CaseKey = {0}
+                cases.CaseKey = {0}
         '''.format(case_key)
         row = self.database.select_record(sql)[0]
         current_row = self.ui.tableWidget_medical_record_list.currentRow()
@@ -400,6 +417,15 @@ class MedicalRecordList(QtWidgets.QMainWindow):
         print_charge.print()
 
         del print_charge
+
+    # 列印其他收據
+    def _print_misc(self):
+        case_key = self.table_widget_medical_record_list.field_value(0)
+        print_other = print_misc.PrintMisc(
+            self, self.database, self.system_settings, case_key, '選擇列印')
+        print_other.print()
+
+        del print_other
 
     def _set_check(self):
         sender_name = self.sender().objectName()

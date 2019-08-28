@@ -30,6 +30,7 @@ class CSHIS:
 
         self.basic_data = cshis_utils.BASIC_DATA
         self.treat_data = cshis_utils.TREAT_DATA
+        self.treatment_data = cshis_utils.TREATMENT_DATA
 
     def __del__(self):
         if self.cshis is not None:
@@ -131,11 +132,12 @@ class CSHIS:
         self._close_com()
         cshis_utils.show_ic_card_message(error_code, '醫事人員卡密碼解鎖')
 
-    def reset_reader(self):
+    def reset_reader(self, show_message=True):
         self._open_com()
         error_code = self.cshis.csSoftwareReset(0)  # 0=讀卡機, 1=安全模組, 2=醫事人員卡, 3=健保卡
         self._close_com()
-        cshis_utils.show_ic_card_message(error_code, '讀卡機重新啟動')
+        if show_message:
+            cshis_utils.show_ic_card_message(error_code, '讀卡機重新啟動')
 
     def _update_patient(self, patient_key):
         if not self.read_basic_data():
@@ -179,6 +181,22 @@ class CSHIS:
             return False
 
         self.basic_data = cshis_utils.decode_register_basic_data(buffer)
+
+        return True
+
+    def read_treatment_no_need_hpc(self):
+        buffer_size = 498
+        buffer = ctypes.create_string_buffer(buffer_size)  # c: char *
+        buffer_len = ctypes.c_short(buffer_size)  # c: int *
+        self._open_com()
+        error_code = self.cshis.hisGetTreatmentNoNeedHPC(buffer, ctypes.byref(buffer_len))
+        self._close_com()
+
+        if error_code != 0:
+            cshis_utils.show_ic_card_message(error_code, '健保卡讀取')
+            return False
+
+        self.treatment_data = cshis_utils.decode_treatment_data(buffer)
 
         return True
 

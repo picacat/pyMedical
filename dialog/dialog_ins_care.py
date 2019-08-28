@@ -63,13 +63,27 @@ class DialogInsCare(QtWidgets.QDialog):
         self.close()
 
     def _read_data(self):
-        if self.treat_type in ['乳癌照護', '肝癌照護']:
+        if self.treat_type in ['乳癌照護', '肝癌照護', '肺癌照護', '大腸癌照護']:
             sql = '''
                 SELECT * FROM charge_settings
                 WHERE
                     InsCode IN ('P56006', 'P56007')
                 ORDER BY InsCode
             '''
+        elif self.treat_type in ['小兒氣喘']:
+            sql = '''
+                SELECT * FROM charge_settings
+                WHERE
+                    InsCode IN ('C01', 'C02')
+                ORDER BY InsCode
+            '''
+        elif self.treat_type in ['小兒腦性麻痺']:
+            sql = '''
+                    SELECT * FROM charge_settings
+                    WHERE
+                        InsCode IN ('C03', 'C04')
+                    ORDER BY InsCode
+                '''
         else:
             return
 

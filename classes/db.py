@@ -234,9 +234,13 @@ class Database:
         sql = 'SHOW COLUMNS FROM {0} like "{1}"'.format(table_name, search_column)
         rows = self.select_record(sql)
 
-        if alter_type == 'add' and len(rows) > 0:  # 新欄位已加入
-            return
-        elif alter_type == 'change' and len(rows) > 0:
+        if alter_type == 'add':
+            if len(rows) > 0:  # 新欄位已加入
+                return
+        elif alter_type == 'change':
+            if len(rows) <= 0:  # 新欄位已變更
+                return
+
             if (string_utils.xstr(rows[0]['Field']) == new_column and
                     string_utils.xstr(rows[0]['Type']).lower() == data_type.lower()):
                 return

@@ -9,6 +9,7 @@ from libs import ui_utils
 from libs import string_utils
 from libs import nhi_utils
 from libs import charge_utils
+from libs import system_utils
 from classes import table_widget
 from dialog import dialog_input_nhi
 
@@ -39,6 +40,7 @@ class ChargeSettingsNHI(QtWidgets.QMainWindow):
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_CHARGE_SETTINGS_NHI, self)
+        system_utils.set_css(self, self.system_settings)
         self.table_widget_nhi = table_widget.TableWidget(self.ui.tableWidget_nhi, self.database)
         self.table_widget_nhi.set_column_hidden([0])
         self._set_table_width()

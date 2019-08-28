@@ -141,6 +141,22 @@ def get_personnel_field_value(database, name, field):
         return string_utils.xstr(rows[0][field])
 
 
+def person_id_to_name(database, person_id):
+    if string_utils.xstr(person_id) == '':
+        return ''
+
+    sql = '''
+        SELECT Name FROM person WHERE
+        ID = "{0}"
+    '''.format(person_id)
+    rows = database.select_record(sql)
+
+    if len(rows) <= 0:
+        return ''
+    else:
+        return string_utils.xstr(rows[0]['Name'])
+
+
 def get_doctor_nurse(database, schedule_date, period, doctor):
     nurse_name = ''
     sql = '''

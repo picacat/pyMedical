@@ -10,10 +10,8 @@ from classes import table_widget
 
 from libs import ui_utils
 from libs import date_utils
-from libs import number_utils
+from libs import system_utils
 from libs import string_utils
-from libs import validator_utils
-from libs import personnel_utils
 from libs import nhi_utils
 
 
@@ -58,6 +56,7 @@ class CheckInsDrug(QtWidgets.QMainWindow):
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_CHECK_INS_DRUG, self)
+        system_utils.set_css(self, self.system_settings)
         self.center()
         self._set_table_widget()
 
@@ -71,9 +70,10 @@ class CheckInsDrug(QtWidgets.QMainWindow):
     def _set_table_widget(self):
         self.table_widget_prescript = table_widget.TableWidget(
             self.ui.tableWidget_prescript, self.database)
-        self.table_widget_prescript.set_column_hidden([0])
+        self.table_widget_prescript.set_column_hidden([0, 1, 2])
         width = [
-            100, 120, 80, 80, 100, 180,
+            100, 100, 100,
+            120, 80, 80, 100, 180,
             120, 150, 180, 120, 200, 250,
         ]
         self.table_widget_prescript.set_table_heading_width(width)
@@ -82,9 +82,10 @@ class CheckInsDrug(QtWidgets.QMainWindow):
     def _set_signal(self):
         self.ui.tableWidget_prescript.doubleClicked.connect(self.open_medical_record)
         self.ui.toolButton_find_error.clicked.connect(self._find_error)
+        self.ui.toolButton_update_ins_code.clicked.connect(self._update_ins_code)
 
     def _find_error(self):
-        self.table_widget_prescript.find_error(11)
+        self.table_widget_prescript.find_error(13)
 
     def open_medical_record(self):
         case_key = self.table_widget_prescript.field_value(0)
@@ -95,7 +96,8 @@ class CheckInsDrug(QtWidgets.QMainWindow):
 
         sql = '''
             SELECT 
-                prescript.PrescriptKey, prescript.MedicineName, prescript.Dosage, prescript.InsCode, 
+                prescript.PrescriptKey, prescript.MedicineName, prescript.MedicineKey, prescript.MedicineType, 
+                prescript.Dosage, prescript.InsCode, 
                 cases.CaseKey, cases.CaseDate, cases.PatientKey, cases.Name, 
                 cases.Doctor
             FROM prescript 
@@ -207,7 +209,7 @@ class CheckInsDrug(QtWidgets.QMainWindow):
             SELECT Content FROM presextend
             WHERE
                 ExtendType = "處方簽章" AND 
-                PrescriptKey = {0}
+                presextend.PrescriptKey = {0}
         '''.format(string_utils.xstr(row['PrescriptKey']))
         rows = self.database.select_record(sql)
         if len(rows) <= 0:
@@ -218,6 +220,8 @@ class CheckInsDrug(QtWidgets.QMainWindow):
         self.ui.tableWidget_prescript.setRowCount(row_no + 1)
 
         case_key = string_utils.xstr(row['CaseKey'])
+        prescript_key = string_utils.xstr(row['PrescriptKey'])
+        medicine_key = string_utils.xstr(row['MedicineKey'])
         try:
             last_case_key = self.ui.tableWidget_prescript.item(row_no-1, 0).text()
         except AttributeError:
@@ -237,6 +241,8 @@ class CheckInsDrug(QtWidgets.QMainWindow):
 
         medical_record = [
             string_utils.xstr(case_key),
+            string_utils.xstr(prescript_key),
+            string_utils.xstr(medicine_key),
             string_utils.xstr(case_date),
             string_utils.xstr(patient_key),
             string_utils.xstr(name),
@@ -254,7 +260,7 @@ class CheckInsDrug(QtWidgets.QMainWindow):
                 row_no, column_no,
                 QtWidgets.QTableWidgetItem(medical_record[column_no])
             )
-            if column_no in [2]:
+            if column_no in [4]:
                 self.ui.tableWidget_prescript.item(
                     row_no, column_no).setTextAlignment(
                     QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
@@ -267,3 +273,65 @@ class CheckInsDrug(QtWidgets.QMainWindow):
 
                 self.ui.tableWidget_prescript.item(row_no, column_no).setForeground(color)
 
+    def _update_ins_code(self):
+        record_count = self.ui.tableWidget_prescript.rowCount()
+        progress_dialog = QtWidgets.QProgressDialog(
+            '正在偵測讀卡機連接埠中, 請稍後...', '取消', 0, record_count, self
+        )
+
+        progress_dialog.setWindowModality(QtCore.Qt.WindowModal)
+        progress_dialog.setValue(0)
+
+        for row_no in range(record_count):
+            progress_dialog.setValue(row_no)
+            error_message = self.ui.tableWidget_prescript.item(row_no, 11)
+            if error_message is None:
+                continue
+
+            medicine_key = self.ui.tableWidget_prescript.item(row_no, 2)
+            if medicine_key is None:
+                medicine_name = self.ui.tableWidget_prescript.item(row_no, 7).text()
+                self._update_ins_code_by_name(medicine_name)
+                continue
+
+            medicine_key = medicine_key.text()
+            ins_code = self._get_ins_code(medicine_key)
+            if ins_code is None:
+                ins_code = 'NULL'
+            else:
+                ins_code = '"{0}"'.format(ins_code)
+
+            prescript_key = self.ui.tableWidget_prescript.item(row_no, 1).text()
+            sql = '''
+                UPDATE prescript
+                    SET InsCode = {ins_code}
+                WHERE
+                    PrescriptKey = {prescript_key}
+            '''.format(
+                ins_code=ins_code,
+                prescript_key=prescript_key,
+            )
+            self.database.exec_sql(sql)
+
+        progress_dialog.setValue(record_count)
+        self.start_check()
+
+    def _get_ins_code(self, medicine_key):
+        sql = '''
+            SELECT InsCode FROM medicine
+            WHERE
+                MedicineKey = {medicine_key}
+        '''.format(
+            medicine_key=medicine_key,
+        )
+
+        rows = self.database.select_record(sql)
+        if len(rows) <= 0:
+            ins_code = None
+        else:
+            ins_code = string_utils.xstr(rows[0]['InsCode'])
+
+        return ins_code
+
+    def _update_ins_code_by_name(self, medicine_name):
+        pass

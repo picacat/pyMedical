@@ -60,6 +60,8 @@ class DialogInsJudge(QtWidgets.QDialog):
         ui_utils.set_combo_box(self.ui.comboBox_year, year_list)
         self.ui.comboBox_year.setCurrentText(str(current_year))
         self.ui.comboBox_month.setCurrentText(str(current_month))
+        for combo_box in self.findChildren(QtWidgets.QComboBox):
+            combo_box.setView(QtWidgets.QListView())
 
     def _set_apply_date(self):
         year = self.ui.comboBox_year.currentText()

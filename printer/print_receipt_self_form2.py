@@ -85,13 +85,13 @@ class PrintReceiptSelfForm2:
                     {case}
                   </tbody>  
                 </table>
-                <hr>
+                <hr style="line-height:0.5">
                 <table width="90%" cellspacing="0">
                   <tbody>
                     {fees}
                   </tbody>
                 </table>
-                <hr>
+                <hr style="line-height:0.5">
                 * 本收據可為報稅之憑證, 請妥善保存, 遺失恕不補發
               </body>
             </html>

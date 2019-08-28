@@ -6,6 +6,7 @@ import sys
 from PyQt5 import QtWidgets, QtGui, QtCore
 
 from libs import ui_utils
+from libs import system_utils
 from dialog import dialog_ins_check
 
 import check_errors
@@ -63,6 +64,7 @@ class InsCheck(QtWidgets.QMainWindow):
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_INS_CHECK, self)
+        system_utils.set_css(self, self.system_settings)
 
     # 設定信號
     def _set_signal(self):

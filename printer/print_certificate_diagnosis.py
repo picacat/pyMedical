@@ -144,6 +144,65 @@ class PrintCertificateDiagnosis:
         )
         return html
 
+    def _get_case_list(self, row):
+        sql = '''
+            SELECT CaseDate FROM certificate_items
+            WHERE
+                CertificateKey = {certificate_key}
+            ORDER BY CaseDate
+        '''.format(
+            certificate_key=self.certificate_key,
+        )
+
+        rows = self.database.select_record(sql)
+        if len(rows) <= 0:
+            rows = self._get_rows_by_script(row)
+
+        case_list = []
+        for row in rows:
+            case_list.append(string_utils.xstr(row['CaseDate'].date()))
+
+        return case_list
+
+    def _get_rows_by_script(self, row):
+        start_date = '{0} 00:00:00'.format(row['StartDate'])
+        end_date = '{0} 23:59:59'.format(row['EndDate'])
+        patient_key = row['PatientKey']
+
+        treat_type_dict = {
+            '針傷科': nhi_utils.INS_TREAT,
+            '針灸科': nhi_utils.ACUPUNCTURE_TREAT,
+            '傷骨科': nhi_utils.MASSAGE_TREAT,
+        }
+
+        condition = ''
+        ins_type = string_utils.xstr(row['InsType'])
+        treat_type = string_utils.xstr(row['TreatType'])
+        if treat_type == '':
+            treat_type = '全部'
+
+        if ins_type in ['健保', '自費']:
+            condition = ' AND InsType = "{0}" '.format(ins_type)
+
+        if treat_type == '內科':
+            condition += ' AND TreatType = "內科" '
+        elif treat_type != '全部':
+            condition += ' AND TreatType IN {0} '.format(tuple(treat_type_dict[treat_type]))
+
+        sql = '''
+            SELECT CaseDate FROM cases
+            WHERE
+                CaseDate BETWEEN "{0}" AND "{1}" AND
+                PatientKey = {2} AND
+                TreatType != "自購"
+                {3}
+            GROUP BY DATE(CaseDate)
+            ORDER BY CaseDate
+        '''.format(start_date, end_date, patient_key, condition)
+        rows = self.database.select_record(sql)
+
+        return rows
+
     def _get_html_patient(self, row):
         patient_row = patient_utils.get_patient_row(self.database, row['PatientKey'])
 
@@ -151,6 +210,7 @@ class PrintCertificateDiagnosis:
         if row['EndDate'] != row['StartDate']:
             case_date += ' 至 {0}'.format(string_utils.xstr(row['EndDate']))
 
+        case_list = self._get_case_list(row)
 
         html = '''
             <table align=center cellpadding="2" cellspacing="0" width="98%" style="font-size: 14px; border-width: 1px; border-style: solid;">
@@ -178,7 +238,11 @@ class PrintCertificateDiagnosis:
                         <th bgcolor="LightGray" style="vertical-align: middle">科別<br><font size="3">Speciality</font></th>
                         <td style="text-align: center; vertical-align: middle">60 中醫科</td>
                         <th bgcolor="LightGray">診療日期<br><font size="3">Date of Examination</font></th>
-                        <td colspan="3" style="text-align: center; vertical-align: middle">{case_date}</td>
+                        <td colspan="3" style="text-align: center; vertical-align: middle">{case_date}<br></td>
+                    </tr>
+                    <tr>
+                        <th bgcolor="LightGray">診療日期明細<br><font size="3">List of Date</font></th>
+                        <td colspan="5" style="text-align: left; vertical-align: middle">{case_list}<br>共{case_times}次</td>
                     </tr>
                 </tbody>  
             </table>
@@ -192,6 +256,8 @@ class PrintCertificateDiagnosis:
             telephone=string_utils.xstr(patient_row['Telephone']),
             cellphone=string_utils.xstr(patient_row['Cellphone']),
             address=string_utils.xstr(patient_row['Address']),
+            case_list=', '.join(case_list),
+            case_times=len(case_list),
         )
         return html
 

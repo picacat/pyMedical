@@ -2,7 +2,7 @@
 #coding: utf-8
 
 
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtCore
 import re
 import calendar
 
@@ -67,6 +67,10 @@ class DialogSelectPatient(QtWidgets.QDialog):
 
     def get_patient_key(self):
         return self.patient_key
+
+    def get_name(self):
+        name = self.table_widget_patient_list.field_value(1)
+        return name
 
     def _query_patient(self):
         query_str = string_utils.xstr(self.ui.lineEdit_query.text()).strip()
@@ -199,3 +203,9 @@ class DialogSelectPatient(QtWidgets.QDialog):
                 row_no, column,
                 QtWidgets.QTableWidgetItem(patient_rec[column])
             )
+            if column in [2]:
+                self.ui.tableWidget_patient_list.item(
+                    row_no, column).setTextAlignment(
+                    QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
+                )
+

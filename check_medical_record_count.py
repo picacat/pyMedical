@@ -4,7 +4,6 @@
 import sys
 
 from PyQt5 import QtWidgets, QtGui, QtCore
-import datetime
 
 from classes import table_widget
 
@@ -12,8 +11,7 @@ from libs import ui_utils
 from libs import date_utils
 from libs import number_utils
 from libs import string_utils
-from libs import validator_utils
-from libs import personnel_utils
+from libs import system_utils
 from libs import nhi_utils
 
 
@@ -59,6 +57,7 @@ class CheckMedicalRecordCount(QtWidgets.QMainWindow):
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_CHECK_MEDICAL_RECORD_COUNT, self)
+        system_utils.set_css(self, self.system_settings)
         self.center()
         self._set_table_widget()
         self.ui.label_treat_limit.setText(

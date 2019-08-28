@@ -56,6 +56,14 @@ def get_str(in_string, encoding):
     if not in_string:
         return ''
 
+    if type(in_string).__name__ in ['int', 'float']:
+        try:
+            out_string = xstr(in_string)
+        except TypeError:
+            out_string = ''
+
+        return out_string
+
     try:
         out_string = str(in_string, encoding)
     except (UnicodeDecodeError, TypeError) as e:

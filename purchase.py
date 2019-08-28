@@ -6,6 +6,7 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 import datetime
 
 from libs import ui_utils
+from libs import system_utils
 from libs import string_utils
 from libs import number_utils
 from libs import nhi_utils
@@ -42,6 +43,7 @@ class Purchase(QtWidgets.QMainWindow):
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_PURCHASE, self)
+        system_utils.set_css(self, self.system_settings)
         self.table_widget_medicine_type = table_widget.TableWidget(
             self.ui.tableWidget_medicine_type, self.database
         )
@@ -78,6 +80,7 @@ class Purchase(QtWidgets.QMainWindow):
         self.ui.radioButton_2.clicked.connect(self._set_patient)
         self.ui.comboBox_cashier.currentTextChanged.connect(self._set_sales)
         self.ui.comboBox_doctor.currentTextChanged.connect(self._set_sales)
+        self.ui.comboBox_massager.currentTextChanged.connect(self._set_sales)
 
     # 設定欄位寬度
     def _set_table_width(self):
@@ -107,8 +110,19 @@ class Purchase(QtWidgets.QMainWindow):
         for row in rows:
             doctor_list.append(string_utils.xstr(row['Name']))
 
+        sql = '''
+            SELECT * FROM person
+            WHERE
+                Position IN ("推拿師父") 
+        '''
+        rows = self.database.select_record(sql)
+        massager_list = []
+        for row in rows:
+            massager_list.append(string_utils.xstr(row['Name']))
+
         ui_utils.set_combo_box(self.ui.comboBox_cashier, cashier_list, None)
         ui_utils.set_combo_box(self.ui.comboBox_doctor, doctor_list, None)
+        ui_utils.set_combo_box(self.ui.comboBox_massager, massager_list, None)
         ui_utils.set_combo_box(self.ui.comboBox_period, nhi_utils.PERIOD)
 
         period = registration_utils.get_period(self.system_settings)
@@ -485,7 +499,7 @@ class Purchase(QtWidgets.QMainWindow):
             'PatientKey', 'Name', 'CaseDate', 'DoctorDate',
             'Period', 'InsType',
             'TreatType',
-            'Register', 'Cashier', 'Doctor',
+            'Register', 'Cashier', 'Doctor', 'Massager',
             'SDrugFee', 'SelfTotalFee', 'DiscountFee', 'TotalFee', 'ReceiptFee',
             'DoctorDone',
             'ChargeDate', 'ChargePeriod', 'ChargeDone',
@@ -502,6 +516,7 @@ class Purchase(QtWidgets.QMainWindow):
             self.system_settings.field('使用者'),
             self.ui.comboBox_cashier.currentText(),
             self.ui.comboBox_doctor.currentText(),
+            self.ui.comboBox_massager.currentText(),
             self.ui.lineEdit_subtotal.text(),
             self.ui.lineEdit_subtotal.text(),
             self.ui.lineEdit_discount.text(),
@@ -551,7 +566,7 @@ class Purchase(QtWidgets.QMainWindow):
         fields = [
             'CaseKey', 'CaseDate', 'PatientKey', 'Name', 'Visit', 'RegistType',
             'TreatType', 'InsType', 'Period',
-            'Room', 'RegistNo', 'DoctorDone', 'ChargeDone',
+            'Room', 'RegistNo', 'Doctor', 'Massager', 'DoctorDone', 'ChargeDone',
         ]
 
         data = [
@@ -566,6 +581,8 @@ class Purchase(QtWidgets.QMainWindow):
             self.ui.comboBox_period.currentText(),
             1,
             0,
+            self.ui.comboBox_doctor.currentText(),
+            self.ui.comboBox_massager.currentText(),
             'True',
             charge_done,
         ]
@@ -600,7 +617,15 @@ class Purchase(QtWidgets.QMainWindow):
         dialog.deleteLater()
 
     def _set_sales(self):
+        if self.system_settings.field('自購藥銷售人員') != '單選':
+            return
+
         if self.sender().objectName() == 'comboBox_cashier' and self.ui.comboBox_cashier.currentText() != '':
             self.ui.comboBox_doctor.setCurrentText(None)
+            self.ui.comboBox_massager.setCurrentText(None)
         elif self.sender().objectName() == 'comboBox_doctor' and self.ui.comboBox_doctor.currentText() != '':
             self.ui.comboBox_cashier.setCurrentText(None)
+            self.ui.comboBox_massager.setCurrentText(None)
+        elif self.sender().objectName() == 'comboBox_massager' and self.ui.comboBox_massager.currentText() != '':
+            self.ui.comboBox_cashier.setCurrentText(None)
+            self.ui.comboBox_doctor.setCurrentText(None)

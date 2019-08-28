@@ -12,6 +12,8 @@ from ic_record_upload import *
 from cashier import *
 from waiting_list import *
 from medical_record import *
+from examination_list import *
+from examination import *
 
 from charge_settings import *
 from users import *
@@ -19,6 +21,7 @@ from doctor_schedule import *
 from doctor_nurse_table import *
 from dict_diagnostic import *
 from dict_medicine import *
+from dict_misc import *
 from dict_ins_drug import *
 
 from medical_record_list import *
@@ -36,6 +39,7 @@ from certificate_payment import *
 from statistics_medical_record import *
 from statistics_doctor import *
 from statistics_return_rate import *
+from statistics_medicine import *
 
 
 module_dict = {
@@ -53,6 +57,8 @@ module_dict = {
     '醫師看診作業': WaitingList,
     '病歷資料': MedicalRecord,
     '病歷統計': StatisticsMedicalRecord,
+    '檢驗報告查詢': ExaminationList,
+    '檢驗報告登錄': Examination,
 
     '收費設定': ChargeSettings,
     '醫師班表': DoctorSchedule,
@@ -60,6 +66,7 @@ module_dict = {
     '使用者管理': Users,
     '診察資料': DictDiagnostic,
     '處方資料': DictMedicine,
+    '其他資料': DictMisc,
     '健保藥品': DictInsDrug,
 
     '病歷查詢': MedicalRecordList,
@@ -74,6 +81,7 @@ module_dict = {
 
     '醫師統計': StatisticsDoctor,
     '回診率統計': StatisticsReturnRate,
+    '用藥統計': StatisticsMedicine,
 
     '資料回復': RestoreRecords,
 }
@@ -84,5 +92,7 @@ def get_module_name(tab_name):
         tab_name = '病歷資料'
     elif tab_name.find('病患資料') != -1:
         tab_name = '病患資料'
+    elif tab_name.find('檢驗報告-') != -1:
+        tab_name = '檢驗報告登錄'
 
     return module_dict[tab_name]

@@ -9,6 +9,7 @@ from classes import table_widget
 from dialog import dialog_certificate_payment
 from dialog import dialog_certificate_query
 
+from libs import system_utils
 from libs import ui_utils
 from libs import string_utils
 from libs import number_utils
@@ -41,6 +42,7 @@ class CertificatePayment(QtWidgets.QMainWindow):
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_CERTIFICATE_PAYMENT, self)
+        system_utils.set_css(self, self.system_settings)
 
         self.table_widget_certificate_list = table_widget.TableWidget(
             self.ui.tableWidget_certificate_list, self.database)

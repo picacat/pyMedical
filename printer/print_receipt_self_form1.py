@@ -18,6 +18,7 @@ class PrintReceiptSelfForm1:
         self.database = args[0]
         self.system_settings = args[1]
         self.case_key = args[2]
+        self.medicine_set = args[3]
         self.ui = None
 
         self.printer = printer_utils.get_printer(self.system_settings, '自費醫療收據印表機')
@@ -67,6 +68,13 @@ class PrintReceiptSelfForm1:
 
     def _html(self):
         case_record = printer_utils.get_case_html_1(self.database, self.case_key, '自費')
+        prescript_record = printer_utils.get_prescript_block3_html(
+            self.database, self.system_settings,
+            self.case_key, self.medicine_set,
+            '處方箋', print_alias=False, print_total_dosage=True, blocks=3)
+        instruction = printer_utils.get_instruction_html(
+            self.database, self.system_settings, self.case_key, self.medicine_set
+        )
         fees_record = printer_utils.get_self_fees_html(self.database, self.case_key)
 
         html = '''
@@ -85,13 +93,19 @@ class PrintReceiptSelfForm1:
                     {case}
                   </tbody>  
                 </table>
-                <hr>
+                <hr style="line-height:0.5">
+                <table cellspacing=0>
+                  <tbody>
+                    {prescript}
+                  </tbody>  
+                </table>
+                {instruction}
+                <hr style="line-height:0.5">
                 <table width="90%" cellspacing="0">
                   <tbody>
                     {fees}
                   </tbody>
                 </table>
-                <hr>
                 * 本收據可為報稅之憑證, 請妥善保存, 遺失恕不補發
               </body>
             </html>
@@ -101,6 +115,8 @@ class PrintReceiptSelfForm1:
             clinic_telephone=self.system_settings.field('院所電話'),
             clinic_address=self.system_settings.field('院所地址'),
             case=case_record,
+            prescript=prescript_record,
+            instruction=instruction,
             fees=fees_record,
         )
 

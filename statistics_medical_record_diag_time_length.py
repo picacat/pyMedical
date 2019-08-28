@@ -42,6 +42,7 @@ class StatisticsMedicalRecordDiagTimeLength(QtWidgets.QMainWindow):
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_STATISTICS_MEDICAL_RECORD_DIAG_TIME_LENGTH, self)
+        system_utils.set_css(self, self.system_settings)
         self.table_widget_medical_record = table_widget.TableWidget(
             self.ui.tableWidget_medical_record, self.database
         )
@@ -159,8 +160,8 @@ class StatisticsMedicalRecordDiagTimeLength(QtWidgets.QMainWindow):
         options = QFileDialog.Options()
         excel_file_name, _ = QFileDialog.getSaveFileName(
             self.parent,
-            "QFileDialog.getSaveFileName()",
-            '{0}至{1}{2}醫師門診人次統計表.xlsx'.format(
+            "匯出醫師門診看診時間統計表",
+            '{0}至{1}{2}醫師門診看診時間統計表.xlsx'.format(
                 self.start_date[:10], self.end_date[:10], self.doctor
             ),
             "excel檔案 (*.xlsx);;Text Files (*.txt)", options = options
@@ -169,7 +170,7 @@ class StatisticsMedicalRecordDiagTimeLength(QtWidgets.QMainWindow):
             return
 
         export_utils.export_table_widget_to_excel(
-            excel_file_name, self.ui.tableWidget_doctor_count,
+            excel_file_name, self.ui.tableWidget_medical_record,
         )
 
         system_utils.show_message_box(

@@ -5,8 +5,7 @@ from PyQt5 import QtWidgets, QtGui, QtCore, QtPrintSupport
 from PyQt5.QtPrintSupport import QPrinter
 from libs import printer_utils
 from libs import system_utils
-from libs import string_utils
-from libs import number_utils
+from libs import case_utils
 
 
 # 自費收據格式5 6.5 x 2.5 inches
@@ -18,6 +17,7 @@ class PrintReceiptSelfForm5:
         self.database = args[0]
         self.system_settings = args[1]
         self.case_key = args[2]
+        self.medicine_set = args[3]
         self.ui = None
 
         self.printer = printer_utils.get_printer(self.system_settings, '自費醫療收據印表機')
@@ -39,7 +39,7 @@ class PrintReceiptSelfForm5:
     # 設定GUI
     def _set_ui(self):
         font = system_utils.get_font()
-        self.font = QtGui.QFont(font, 9, QtGui.QFont.PreferQuality)
+        self.font = QtGui.QFont(font, 10, QtGui.QFont.PreferQuality)
 
     def _set_signal(self):
         pass
@@ -57,7 +57,7 @@ class PrintReceiptSelfForm5:
 
     def print_html(self, printing=None):
         self.current_print = self.print_html
-        self.printer.setPaperSize(QtCore.QSizeF(7.5, 2.5), QPrinter.Inch)
+        self.printer.setPaperSize(QtCore.QSizeF(7.2, 2.5), QPrinter.Inch)
 
         document = printer_utils.get_document(self.printer, self.font)
         document.setDocumentMargin(printer_utils.get_document_margin())
@@ -66,7 +66,29 @@ class PrintReceiptSelfForm5:
             document.print(self.printer)
 
     def _html(self):
+        if self.system_settings.field('列印處方別名') == 'Y':
+            print_alias = True
+        else:
+            print_alias = False
+
+        if self.system_settings.field('列印藥品總量') == 'Y':
+            print_total_dosage = True
+        else:
+            print_total_dosage = False
+
         case_record = printer_utils.get_case_html_1(self.database, self.case_key, '自費')
+        prescript_record = printer_utils.get_prescript_html(
+            self.database, self.system_settings,
+            self.case_key, self.medicine_set,
+            '費用收據', print_alias, print_total_dosage, blocks=2)
+        # prescript_record = printer_utils.get_prescript_block3_html(
+        #     self.database, self.system_settings,
+        #     self.case_key, self.medicine_set,
+        #     '費用收據', print_alias=False, print_total_dosage=True, blocks=3)
+        instruction = printer_utils.get_instruction_html(
+            self.database, self.system_settings, self.case_key, self.medicine_set
+        )
+
         fees_record = printer_utils.get_self_fees_html(self.database, self.case_key)
 
         html = '''
@@ -85,14 +107,13 @@ class PrintReceiptSelfForm5:
                     {case}
                   </tbody>  
                 </table>
-                <hr>
-                <table width="90%" cellspacing="0">
+                <hr style="line-height:0.5">
+                <table cellspacing=0>
                   <tbody>
-                    {fees}
-                  </tbody>
+                    {prescript}
+                  </tbody>  
                 </table>
-                <hr>
-                * 本收據可為報稅之憑證, 請妥善保存, 遺失恕不補發
+                {instruction}
               </body>
             </html>
         '''.format(
@@ -101,6 +122,8 @@ class PrintReceiptSelfForm5:
             clinic_telephone=self.system_settings.field('院所電話'),
             clinic_address=self.system_settings.field('院所地址'),
             case=case_record,
+            prescript=prescript_record,
+            instruction=instruction,
             fees=fees_record,
         )
 

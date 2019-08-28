@@ -33,6 +33,7 @@ class DialogReservationBooking(QtWidgets.QDialog):
         self.ui = None
 
         self._set_ui()
+        self._set_validator()
         self._set_signal()
 
     # 解構
@@ -61,6 +62,9 @@ class DialogReservationBooking(QtWidgets.QDialog):
             'Name',
             self.ui.lineEdit_query
         )
+        ui_utils.set_combo_box(self.ui.comboBox_source, ['現場預約', '初診預約'])
+        self._clear_patient_data()
+        self._set_patient_read_only(True)
 
     def keyPressEvent(self, event):
         if event.key() in [QtCore.Qt.Key_Return, QtCore.Qt.Key_Enter]:
@@ -71,10 +75,48 @@ class DialogReservationBooking(QtWidgets.QDialog):
         self.ui.buttonBox.accepted.connect(self.accepted_button_clicked)
         self.ui.pushButton_query.clicked.connect(self._query_patient)
         self.ui.lineEdit_query.returnPressed.connect(self._query_patient)
+        self.ui.comboBox_source.currentTextChanged.connect(self._source_changed)
+        self.ui.lineEdit_name.textChanged.connect(self._name_changed)
+        self.ui.lineEdit_birthday.editingFinished.connect(self._validate_birthday)
+
+    def _validate_birthday(self):
+        west_date = date_utils.date_to_west_date(self.ui.lineEdit_birthday.text())
+        self.ui.lineEdit_birthday.setText(west_date)
+
+    def _set_validator(self):
+        self.ui.lineEdit_birthday.setValidator(validator_utils.set_validator('日期格式'))
+
+    def _name_changed(self):
+        if self.ui.lineEdit_name.text().strip() == '':
+            button_enabled = False
+        else:
+            button_enabled = True
+
+        self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setEnabled(button_enabled)
+
+    def _clear_patient_data(self):
+        self.ui.lineEdit_patient_key.setText(None)
+        self.ui.lineEdit_name.setText(None)
+        self.ui.lineEdit_birthday.setText(None)
+        self.ui.lineEdit_id.setText(None)
+        self.ui.lineEdit_telephone.setText(None)
+
+    def _set_patient_read_only(self, set_read_only):
+        self.ui.lineEdit_query.setEnabled(set_read_only)
+        self.ui.pushButton_query.setEnabled(set_read_only)
+
+        self.ui.lineEdit_patient_key.setReadOnly(True)
+        self.ui.lineEdit_name.setReadOnly(set_read_only)
+        self.ui.lineEdit_birthday.setReadOnly(set_read_only)
+        self.ui.lineEdit_id.setReadOnly(set_read_only)
+        self.ui.lineEdit_telephone.setReadOnly(set_read_only)
+
+        if set_read_only:
+            self.ui.lineEdit_query.setFocus()
+        else:
+            self.ui.lineEdit_name.setFocus()
 
     def accepted_button_clicked(self):
-        patient_key = self.ui.lineEdit_patient_key.text()
-        name = self.ui.lineEdit_name.text()
         reservation_date = self.ui.lineEdit_reservation_date.text()
         period = self.ui.lineEdit_period.text()
         doctor = self.ui.lineEdit_doctor.text()
@@ -95,12 +137,35 @@ class DialogReservationBooking(QtWidgets.QDialog):
             'Room', 'Doctor', 'ReserveNo', 'Source'
         ]
 
+        source = self.ui.comboBox_source.currentText()
+        if source == '初診預約':
+            self._write_temp_patient()
+
+        patient_key = self.ui.lineEdit_patient_key.text()
+        name = self.ui.lineEdit_name.text()
+
         data = [
             patient_key, name, reservation_date, period,
-            room, doctor, reserve_no, '現場預約',
+            room, doctor, reserve_no, source,
         ]
 
         self.database.insert_record('reserve', fields, data)
+
+    # 寫入初診病患暫存檔
+    def _write_temp_patient(self):
+        fields = [
+            'Name', 'ID', 'Birthday', 'PhoneNo',
+        ]
+
+        data = [
+            self.ui.lineEdit_name.text(),
+            self.ui.lineEdit_id.text(),
+            self.ui.lineEdit_birthday.text(),
+            self.ui.lineEdit_telephone.text(),
+        ]
+
+        last_row_id = self.database.insert_record('temp_patient', fields, data)
+        self.ui.lineEdit_patient_key.setText(string_utils.xstr(last_row_id))
 
     # 開始查詢病患資料
     def _query_patient(self):
@@ -134,12 +199,16 @@ class DialogReservationBooking(QtWidgets.QDialog):
     def _set_patient_data(self, rows):
         row = rows[0]
         patient_key = row['PatientKey']
-        name = row['Name']  # 病歷號可能會跟網路初診病歷號重複
+        name = string_utils.xstr(row['Name'])  # 病歷號可能會跟網路初診病歷號重複
+        telephone = string_utils.xstr(row['Telephone'])
+        if telephone == '':
+            telephone = string_utils.xstr(row['Cellphone'])
 
         self.ui.lineEdit_patient_key.setText(string_utils.xstr(patient_key))
-        self.ui.lineEdit_name.setText(string_utils.xstr(row['Name']))
+        self.ui.lineEdit_name.setText(name)
         self.ui.lineEdit_birthday.setText(string_utils.xstr(row['Birthday']))
         self.ui.lineEdit_id.setText(string_utils.xstr(row['ID']))
+        self.ui.lineEdit_telephone.setText(telephone)
 
         self._check_reservation_status(patient_key, name)
 
@@ -286,10 +355,19 @@ class DialogReservationBooking(QtWidgets.QDialog):
             msg_box.setInformativeText("超過次數, 無法預約掛號.")
             msg_box.addButton(QPushButton("確定"), QMessageBox.YesRole)
             msg_box.exec_()
-            self.ui.lineEdit_patient_key.setText(None)
-            self.ui.lineEdit_name.setText(None)
-            self.ui.lineEdit_birthday.setText(None)
-            self.ui.lineEdit_id.setText(None)
+            self._clear_patient_data()
 
         return is_ok
+
+    def _source_changed(self):
+        current_text = self.ui.comboBox_source.currentText()
+        self._clear_patient_data()
+        if current_text == '初診預約':
+            set_read_only = False
+            last_temp_patient_key = self.database.get_last_auto_increment_key('temp_patient')
+            self.ui.lineEdit_patient_key.setText(string_utils.xstr(last_temp_patient_key))
+        else:
+            set_read_only = True
+
+        self._set_patient_read_only(set_read_only)
 

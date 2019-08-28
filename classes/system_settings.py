@@ -30,11 +30,13 @@ class SystemSettings:
         if field_name == '工作站編號':
             return station_no
 
-        script = 'select * from system_settings where StationNo = {0} and Field = "{1}"'.format(station_no, field_name)
+        script = 'select * from system_settings where StationNo = {0} and Field = "{1}"'.format(
+            station_no, field_name
+        )
 
         try:
-            setting_rec = self.database.select_record(script)[0]
-            return setting_rec['Value']
+            setting_row = self.database.select_record(script)[0]
+            return setting_row['Value']
         except IndexError:
             return None
 
@@ -47,16 +49,18 @@ class SystemSettings:
 
         station_no = self.get_station_no(field_name)
 
-        script = 'select * from system_settings where StationNo = {0} and Field = "{1}" limit 1'.format(station_no, field_name)
+        script = 'select * from system_settings where StationNo = {0} and Field = "{1}" limit 1'.format(
+            station_no, field_name
+        )
 
         try:
-            setting_rec = self.database.select_record(script)[0]
-            if value == setting_rec['Value']:
+            setting_row = self.database.select_record(script)[0]
+            if value == setting_row['Value']:
                 return
 
             self.database.update_record(
                 'system_settings', ['Value'], 'SystemSettingsKey',
-                setting_rec['SystemSettingsKey'], [value]
+                setting_row['SystemSettingsKey'], [value]
             )
         except IndexError:
             fields = ['StationNo', 'Field', 'Value']
@@ -69,7 +73,9 @@ class SystemSettings:
     def get_station_no(self, field_name):
         if field_name in [
             '院所名稱', '院所代號', '統一編號', '健保業務', '負責醫師', '醫師證號', '開業證號',
-            '院所電話', '院所地址', '電子郵件', '早班時間', '午班時間', '晚班時間',
+            '院所電話', '院所地址',
+            '自費折扣方式', '劑量上限',
+            '電子郵件', '早班時間', '午班時間', '晚班時間',
             '護士人數', '藥師人數', '申報藥事服務費', '申報初診照護', '針灸認證合格', '針灸認證合格日期',
             '分班', '分診', '早班起始號', '午班起始號', '晚班起始號', '現場掛號給號模式', '預設門診類別',
             '首次警告次數', '針傷警告次數', '外觀主題', '老人優待', '老人優待年齡', '釋出預約號',

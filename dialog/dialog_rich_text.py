@@ -19,7 +19,8 @@ class DialogRichText(QtWidgets.QDialog):
         self.database = args[0]
         self.system_settings = args[1]
         self.text_format = args[2]  # rich_text, plain_text, html
-        self.text = args[3]
+        self.medicine_key = args[3]
+        self.text = args[4]
 
         self.ui = None
 
@@ -39,8 +40,16 @@ class DialogRichText(QtWidgets.QDialog):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_DIALOG_RICH_TEXT, self)
         self.setFixedSize(self.size())  # non resizable dialog
         system_utils.set_css(self, self.system_settings)
-        self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setText('確定')
+        if self.medicine_key is not None:
+            self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setText('儲存編輯')
+            self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Close).setText('關閉')
+        else:
+            self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setVisible(False)
+            self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Close).setText('關閉')
+
         self._set_text()
+        if self.medicine_key is None:
+            self.ui.textEdit_rich_text.setReadOnly(True)
 
     def _set_text(self):
         text = self.text
@@ -57,8 +66,27 @@ class DialogRichText(QtWidgets.QDialog):
 
     # 設定信號
     def _set_signal(self):
-        self.ui.buttonBox.accepted.connect(self.accepted_button_clicked)
+        self.ui.buttonBox.accepted.connect(self._accepted_button_clicked)
+        self.ui.buttonBox.rejected.connect(self._rejected_button_clicked)
 
-    def accepted_button_clicked(self):
+    def _rejected_button_clicked(self):
         self.close()
 
+    def _accepted_button_clicked(self):
+        if self.medicine_key is not None and self.ui.textEdit_rich_text.document().isModified():
+            self._save_description()
+
+        self.close()
+
+    def _save_description(self):
+        description = self.ui.textEdit_rich_text.toPlainText()
+        sql = '''
+            UPDATE medicine 
+                SET Description = "{description}"
+            WHERE
+                MedicineKey = {medicine_key}
+        '''.format(
+            medicine_key=self.medicine_key,
+            description=description,
+        )
+        self.database.exec_sql(sql)

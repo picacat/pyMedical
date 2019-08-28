@@ -57,6 +57,7 @@ class CheckDatabase(QtWidgets.QDialog):
 
         self._check_patient()
         self._check_cases()
+        self._check_dosage()
         self._check_prescript()
         self._check_medicine()
         self._check_person()
@@ -104,6 +105,16 @@ class CheckDatabase(QtWidgets.QDialog):
             self.database.check_field_exists('cases', 'add', 'TreatType', 'varchar(10) AFTER RegistType'),
             self.database.check_field_exists('cases', 'add', 'ChargePeriod', 'varchar(4) AFTER Period'),
             self.database.check_field_exists('cases', 'add', 'ChargeDate', 'datetime AFTER DoctorDate'),
+            self.database.check_field_exists('cases', 'add', 'DiscountRate', 'int DEFAULT 100 AFTER DiscountFee'),
+        ]
+        self._exec_process(process_list)
+
+    def _check_dosage(self):
+        process_list = [
+            self.database.check_field_exists('dosage', 'add', 'SelfTotalFee', 'int AFTER Instruction'),
+            self.database.check_field_exists('dosage', 'add', 'DiscountRate', 'int DEFAULT 100 AFTER SelfTotalFee'),
+            self.database.check_field_exists('dosage', 'add', 'DiscountFee', 'int AFTER DiscountRate'),
+            self.database.check_field_exists('dosage', 'add', 'TotalFee', 'int AFTER DiscountFee'),
         ]
         self._exec_process(process_list)
 
@@ -164,6 +175,7 @@ class CheckDatabase(QtWidgets.QDialog):
             self.database.check_field_exists('wait', 'change', ['Name', 'Name'], 'varchar(100)'),
             self.database.check_field_exists('wait', 'add', 'TreatType', 'varchar(10) AFTER RegistType'),
             self.database.check_field_exists('wait', 'change', ['Remark', 'Remark'], 'varchar(100)'),
+            self.database.check_field_exists('wait', 'add', 'InProgress', 'varchar(10) AFTER Doctor'),
         ]
         self._exec_process(process_list)
 
@@ -177,8 +189,8 @@ class CheckDatabase(QtWidgets.QDialog):
         process_list = [
             self.database.check_field_exists('debt', 'change', ['Name', 'Name'], 'varchar(100)'),
             self.database.check_field_exists('debt', 'add', 'DebtType', 'varchar(10) AFTER PatientKey'),
+            self.database.check_field_exists('debt', 'add', 'Cashier1', 'varchar(10) AFTER Casher1'),
             self.database.check_field_exists('debt', 'add', 'Cashier2', 'varchar(10) AFTER Casher2'),
-            self.database.check_field_exists('debt', 'add', 'Cashier3', 'varchar(10) AFTER Casher3'),
             self.database.check_field_exists('debt', 'add', 'Cashier3', 'varchar(10) AFTER Casher3'),
         ]
         self._exec_process(process_list)
@@ -187,12 +199,14 @@ class CheckDatabase(QtWidgets.QDialog):
         process_list = [
             self.database.check_field_exists('insapply', 'change', ['Name', 'Name'], 'varchar(100)'),
             self.database.check_field_exists('insapply', 'add', 'Visit', 'varchar(10) AFTER ShareCode'),
+            self.database.check_field_exists('insapply', 'change', ['Card', 'Card'], 'varchar(5)'),
         ]
         self._exec_process(process_list)
 
     def _check_clinic(self):
         process_list = [
             self.database.check_field_exists('clinic', 'change', ['groups', 'Groups'], 'varchar(40)'),
+            self.database.check_field_exists('clinic', 'change', ['position', 'Position'], 'varchar(40)'),
             self.database.check_field_exists('clinic', 'add', 'HitRate', 'int DEFAULT 0 AFTER ClinicName'),
         ]
         self._exec_process(process_list)
@@ -200,6 +214,7 @@ class CheckDatabase(QtWidgets.QDialog):
     def _check_certificate(self):
         process_list = [
             self.database.check_field_exists('certificate', 'add', 'Doctor', 'varchar(20) AFTER Name'),
+            self.database.check_field_exists('certificate', 'add', 'TreatType', 'varchar(20) AFTER InsType'),
         ]
         self._exec_process(process_list)
 
@@ -208,6 +223,9 @@ class CheckDatabase(QtWidgets.QDialog):
             self.database.check_field_exists('dict_groups', 'add', 'DictOrderNo', 'varchar(10) AFTER DictGroupsKey'),
             self.database.check_field_exists('person', 'add', 'Title', 'varchar(20) AFTER Code'),
             self.database.check_field_exists('reservation_table', 'add', 'Weekday', 'varchar(10) AFTER Period'),
+            self.database.check_field_exists('hospid', 'change', ['HospName', 'HospName'], 'varchar(100)'),
+            self.database.check_field_exists('hospid', 'change', ['Telephone', 'Telephone'], 'varchar(50)'),
+            self.database.check_field_exists('hospid', 'change', ['Address', 'Address'], 'varchar(100)'),
         ]
         self._exec_process(process_list)
 

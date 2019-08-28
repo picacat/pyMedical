@@ -7,6 +7,7 @@ from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtWidgets import QInputDialog
 
 from classes import table_widget
+from libs import system_utils
 from libs import ui_utils
 from libs import string_utils
 from libs import nhi_utils
@@ -17,7 +18,7 @@ from dialog import dialog_course_list
 from dialog import dialog_ins_list_edit
 
 
-# 候診名單 2018.01.31
+# 健保申報資料 2019.01.31
 class InsApplyList(QtWidgets.QMainWindow):
     # 初始化
     def __init__(self, parent=None, *args):
@@ -60,6 +61,7 @@ class InsApplyList(QtWidgets.QMainWindow):
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_INS_APPLY_LIST, self)
+        system_utils.set_css(self, self.system_settings)
         self.table_widget_ins_apply_list = table_widget.TableWidget(
             self.ui.tableWidget_ins_apply_list, self.database)
         self.table_widget_ins_apply_list.set_column_hidden([0])
@@ -206,6 +208,12 @@ class InsApplyList(QtWidgets.QMainWindow):
                     row_no, col_no).setTextAlignment(
                     QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
                 )
+            elif col_no in [7, 15, 26, 31, 32, 34, 36, 37, 38, 39, 40]:
+                self.ui.tableWidget_ins_apply_list.item(
+                    row_no, col_no).setTextAlignment(
+                    QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
+                )
+
             if row['Note'] is not None:
                 self.ui.tableWidget_ins_apply_list.item(
                     row_no, col_no).setForeground(
@@ -277,7 +285,7 @@ class InsApplyList(QtWidgets.QMainWindow):
 
         printer_utils.print_medical_records(
             self, self.database, self.system_settings,
-            patient_key, None, start_date, end_date, 'print'
+            patient_key, None, start_date, end_date,
         )
 
     # 列印病歷首頁

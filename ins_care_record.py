@@ -4,6 +4,7 @@
 from PyQt5 import QtWidgets, QtCore, QtGui
 
 from libs import ui_utils
+from libs import system_utils
 from libs import string_utils
 from libs import number_utils
 from classes import table_widget
@@ -40,6 +41,7 @@ class InsCareRecord(QtWidgets.QMainWindow):
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_INS_CARE_RECORD, self)
+        system_utils.set_css(self, self.system_settings)
         self.table_widget_prescript = table_widget.TableWidget(self.ui.tableWidget_prescript, self.database)
         self.table_widget_prescript.set_column_hidden([0, 1, 2, 3, 4, 5, 6])
         self._set_table_width()
@@ -51,6 +53,7 @@ class InsCareRecord(QtWidgets.QMainWindow):
     def _set_signal(self):
         self.ui.toolButton_add_medicine.clicked.connect(self._open_ins_care_dialog)
         self.ui.toolButton_remove_medicine.clicked.connect(self._remove_medicine)
+        self.ui.toolButton_refresh.clicked.connect(self.refresh_prescript)
         self.ui.tableWidget_prescript.keyPressEvent = self._table_widget_prescript_key_press
 
     def _table_widget_prescript_key_press(self, event):
@@ -111,7 +114,7 @@ class InsCareRecord(QtWidgets.QMainWindow):
     def _set_table_width(self):
         medicine_width = [
             70, 100, 100, 100, 100, 100, 100,
-            250, 90, 60, 50, 50, 60,
+            355, 90, 60, 50, 50, 60,
         ]
         self.table_widget_prescript.set_table_heading_width(medicine_width)
 
@@ -305,7 +308,7 @@ class InsCareRecord(QtWidgets.QMainWindow):
         self.ui.tableWidget_prescript.setRowCount(0)
         self._add_care_row(treat_code, 0)
 
-    # 乳癌肝癌照護處置
+    # 癌症照護處置
     def set_cancer_treat(self, treatment):
         if treatment in ['針灸治療', '傷科治療']:
             treat_code = 'P56005'
@@ -316,9 +319,9 @@ class InsCareRecord(QtWidgets.QMainWindow):
         if treat_code != '':
             self._add_care_row(treat_code, self.ui.tableWidget_prescript.rowCount())
 
-    # 乳癌肝癌照護給藥
+    # 癌症照護給藥
     def set_cancer_prescript(self, pres_days):
-        if pres_days <= 0:  #未給藥
+        if pres_days <= 0:  # 未給藥
             return
 
         if pres_days <= 7:
@@ -414,3 +417,20 @@ class InsCareRecord(QtWidgets.QMainWindow):
         dialog.close_all()
         dialog.deleteLater()
 
+    def refresh_prescript(self):
+        treat_type = self.parent.tab_registration.ui.comboBox_treat_type.currentText()
+        pres_days = number_utils.get_integer(self.parent.tab_list[0].comboBox_pres_days.currentText())
+        treatment = self.parent.tab_list[0].combo_box_treatment.currentText()
+
+        if treat_type in ['乳癌照護', '肝癌照護', '肺癌照護', '大腸癌照護']:
+            self.set_cancer_prescript(pres_days)
+            self.set_cancer_treat(treatment)
+        elif treat_type == '助孕照護':
+            self.set_aid_pregnant_treat(treatment)
+        elif treat_type == '保胎照護':
+            self.set_keep_baby_treat(treatment)
+        elif treat_type == '兒童鼻炎':
+            self._remove_specific_treat_code(['P58005'])  # 歸零
+            self._add_care_row('P58005', 0)  # 預設為兒童鼻炎
+
+        self.parent.calculate_ins_fees()

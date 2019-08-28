@@ -85,7 +85,7 @@
         </column>
         <column>
          <property name="text">
-          <string>病歷號碼</string>
+          <string>病歷號</string>
          </property>
          <property name="textAlignment">
           <set>AlignLeading|AlignVCenter</set>
@@ -183,7 +183,7 @@
      <x>0</x>
      <y>0</y>
      <width>960</width>
-     <height>26</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu">
@@ -195,6 +195,8 @@
     <addaction name="separator"/>
     <addaction name="action_print_prescript"/>
     <addaction name="action_print_receipt"/>
+    <addaction name="action_print_misc"/>
+    <addaction name="separator"/>
     <addaction name="action_print_cases"/>
     <addaction name="action_print_fees"/>
     <addaction name="separator"/>
@@ -367,6 +369,15 @@
    </property>
    <property name="text">
     <string>匯出日報表 Excel</string>
+   </property>
+  </action>
+  <action name="action_print_misc">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/printer-printing.png</normaloff>../icons/printer-printing.png</iconset>
+   </property>
+   <property name="text">
+    <string>列印其他收據</string>
    </property>
   </action>
  </widget>

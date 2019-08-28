@@ -23,6 +23,7 @@ import ins_apply_adjust_fee
 import ins_apply_total_fee
 import ins_apply_schedule_table
 import ins_check_apply_fee
+import ins_doctor_apply_fee
 import ins_apply_xml
 import ins_apply_tab
 
@@ -70,6 +71,7 @@ class InsApply(QtWidgets.QMainWindow):
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_INS_APPLY, self)
+        system_utils.set_css(self, self.system_settings)
 
     # 設定信號
     def _set_signal(self):
@@ -130,7 +132,8 @@ class InsApply(QtWidgets.QMainWindow):
             xml_file_name = nhi_utils.get_ins_xml_file_name(self.apply_type_code, self.apply_date)
             if not os.path.isfile(xml_file_name):
                 self._create_xml_file()
-                self._check_ins_xml_file()
+
+            self._check_ins_xml_file()
         else:
             pass
 
@@ -262,6 +265,16 @@ class InsApply(QtWidgets.QMainWindow):
             self.tab_ins_apply_total_fee.ins_total_fee,
         )
         self.ui.tabWidget_ins_data.addTab(self.tab_ins_check_apply_fee, '申報金額核對')
+
+        self.tab_ins_doctor_apply_fee = ins_doctor_apply_fee.InsDoctorApplyFee(
+            self, self.database, self.system_settings,
+            self.apply_year, self.apply_month,
+            self.start_date, self.end_date,
+            self.period, self.apply_type, self.clinic_id,
+            self.ins_generate_date,
+            self.tab_ins_apply_total_fee.ins_total_fee,
+        )
+        self.ui.tabWidget_ins_data.addTab(self.tab_ins_doctor_apply_fee, '醫師申報業績')
 
     def _open_nhi_vpn(self):
         med_vpn_addr = 'https://medvpn.nhi.gov.tw/iwse0000/IWSE0020S02.aspx'

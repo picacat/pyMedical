@@ -4,6 +4,7 @@
 from PyQt5 import QtWidgets
 
 from libs import ui_utils
+from libs import system_utils
 from dialog import dialog_statistics_doctor
 import statistics_medical_record_diag_time_length
 
@@ -40,6 +41,7 @@ class StatisticsMedicalRecord(QtWidgets.QMainWindow):
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_STATISTICS_MEDICAL_RECORD, self)
+        system_utils.set_css(self, self.system_settings)
 
     # 設定信號
     def _set_signal(self):
@@ -120,6 +122,6 @@ class StatisticsMedicalRecord(QtWidgets.QMainWindow):
 
     def _export_to_excel(self):
         if self.ui.tabWidget_statistics_medical_record.currentIndex() == 0:
-            self.tab_statistics_doctor_count.export_to_excel()
+            self.tab_statistics_medical_record_diag_time_length.export_to_excel()
 
 

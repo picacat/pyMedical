@@ -59,6 +59,7 @@ class Reservation(QtWidgets.QMainWindow):
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_RESERVATION, self)
+        system_utils.set_css(self, self.system_settings)
         self.table_widget_reservation = table_widget.TableWidget(
             self.ui.tableWidget_reservation, self.database
         )
@@ -337,7 +338,7 @@ class Reservation(QtWidgets.QMainWindow):
                     color = 'gray'
                 elif string_utils.xstr(rows[0]['Source']) == '網路預約':
                     color = 'blue'
-                elif string_utils.xstr(rows[0]['Source']) == '網路初診預約':
+                elif string_utils.xstr(rows[0]['Source']) in ['初診預約', '網路初診預約']:
                     color = 'green'
                 else:
                     color = 'black'
@@ -580,7 +581,7 @@ class Reservation(QtWidgets.QMainWindow):
 
         if string_utils.xstr(row_data['Source']) == '網路預約':
             color = 'blue'
-        elif string_utils.xstr(row_data['Source']) == '網路初診預約':
+        elif string_utils.xstr(row_data['Source']) in ['初診預約', '網路初診預約']:
             color = 'green'
         else:
             color = 'black'
@@ -831,7 +832,7 @@ class Reservation(QtWidgets.QMainWindow):
         row = rows[0]
 
         reservation_source = string_utils.xstr(row['Source'])
-        if reservation_source == '網路初診預約':
+        if reservation_source in ['初診預約', '網路初診預約']:
             return row
         else:
             return None
@@ -908,21 +909,24 @@ class Reservation(QtWidgets.QMainWindow):
         self.parent.registration_arrival(reserve_key)
 
     def _update_new_patient(self, temp_patient_row):
-        id = string_utils.xstr(temp_patient_row['ID'])
-        gender_code = id[1]
-        gender = patient_utils.get_gender(gender_code)
+        patient_id = string_utils.xstr(temp_patient_row['ID'])
+        if patient_id != '':
+            gender_code = patient_id[1]
+            gender = patient_utils.get_gender(gender_code)
+        else:
+            gender = None
 
         field = [
             'Name', 'ID', 'Gender', 'Birthday', 'Telephone',
         ]
         data = [
             string_utils.xstr(temp_patient_row['Name']),
-            id,
+            patient_id,
             gender,
             string_utils.xstr(temp_patient_row['Birthday']),
             string_utils.xstr(temp_patient_row['PhoneNo']),
         ]
-        new_patient_key = self.database.insert_record('Patient', field, data)
+        new_patient_key = self.database.insert_record('patient', field, data)
 
         return new_patient_key
 
@@ -958,6 +962,8 @@ class Reservation(QtWidgets.QMainWindow):
             return
 
         row = rows[0]
+
+        self.ui.dateEdit_reservation_date.setDate(datetime.datetime.today())
         period = string_utils.xstr(row['Period'])
         self._set_radio_button_period(period)
         self.ui.comboBox_doctor.setCurrentText(string_utils.xstr(row['Doctor']))
@@ -973,6 +979,7 @@ class Reservation(QtWidgets.QMainWindow):
                     break
 
         self.ui.tableWidget_reservation.setCurrentCell(current_row, current_col)
+        self.ui.tableWidget_reservation.setFocus()
 
     def _reservation_list_changed(self):
         reserve_key = self.table_widget_reservation_list.field_value(0)

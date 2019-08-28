@@ -3,11 +3,14 @@
 #coding: utf-8
 
 from PyQt5 import QtWidgets, QtCore
+from PyQt5.QtWidgets import QMessageBox
 
+from libs import system_utils
 from libs import ui_utils
 from libs import string_utils
 from libs import number_utils
 from libs import personnel_utils
+from libs import dialog_utils
 from dialog import dialog_debt
 from classes import table_widget
 
@@ -41,6 +44,7 @@ class Debt(QtWidgets.QMainWindow):
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_DEBT, self)
+        system_utils.set_css(self, self.system_settings)
         self.table_widget_debt = table_widget.TableWidget(self.ui.tableWidget_debt, self.database)
         self.table_widget_debt.set_column_hidden([0, 1])
         # self._set_table_width()
@@ -49,6 +53,7 @@ class Debt(QtWidgets.QMainWindow):
     def _set_signal(self):
         self.ui.action_close.triggered.connect(self.close_debt)
         self.ui.action_pay_back.triggered.connect(self.pay_back)
+        self.ui.action_remove_debt.triggered.connect(self._remove_debt)
         self.ui.tableWidget_debt.itemSelectionChanged.connect(self._debt_item_selection_changed)
         self.ui.action_open_medical_record.triggered.connect(self.open_medical_record)
         self.ui.tableWidget_debt.doubleClicked.connect(self.open_medical_record)
@@ -166,3 +171,17 @@ class Debt(QtWidgets.QMainWindow):
 
     def _debt_item_selection_changed(self):
         pass
+
+    def _remove_debt(self):
+        msg_box = dialog_utils.get_message_box(
+            '刪除欠款資料', QMessageBox.Warning,
+            '<font size="4" color="red"><b>確定刪除此筆欠款資料?</b></font>',
+            '注意！資料刪除後, 將無法回復!'
+        )
+        remove_record = msg_box.exec_()
+        if not remove_record:
+            return
+
+        key = self.table_widget_debt.field_value(0)
+        self.database.delete_record('debt', 'DebtKey', key)
+        self.ui.tableWidget_debt.removeRow(self.ui.tableWidget_debt.currentRow())

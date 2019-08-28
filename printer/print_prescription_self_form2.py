@@ -73,7 +73,7 @@ class PrintPrescriptionSelfForm2:
             self.case_key, self.medicine_set,
             '處方箋', print_alias=False, print_total_dosage=True, blocks=3)
         instruction = printer_utils.get_instruction_html(
-            self.database, self.case_key, self.medicine_set
+            self.database, self.system_settings, self.case_key, self.medicine_set
         )
 
         html = '''
@@ -84,7 +84,7 @@ class PrintPrescriptionSelfForm2:
                     {case}
                   </tbody>  
                 </table>
-                <hr>
+                <hr style="line-height:0.5">
                 <table cellspacing=0>
                   <tbody>
                     {prescript}

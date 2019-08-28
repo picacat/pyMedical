@@ -36,6 +36,9 @@ class TableWidget:
     # 設定 tableWidget heading width
     def set_table_heading_width(self, width):
         for i in range(0, len(width)):
+            if self.table_widget.horizontalHeaderItem(i) is None:
+                continue
+
             self.table_widget.setColumnWidth(i, width[i])
             self.table_widget.horizontalHeaderItem(i).setTextAlignment(Qt.AlignLeft)
 
@@ -141,7 +144,7 @@ class TableWidget:
             self.table_widget.setCurrentCell(0, field_no)
 
             # error_message = string_utils.xstr(
-            #     self.table_widget.item(0, field_no).text()
+            #     self.table_widget_wait.item(0, field_no).text()
             # )
             #
             # if error_message == '':

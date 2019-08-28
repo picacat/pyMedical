@@ -75,7 +75,7 @@ class PrintReceiptInsForm2:
             self.case_key, self.medicine_set,
             '費用收據', print_alias=False, print_total_dosage=True, blocks=3)
         instruction = printer_utils.get_instruction_html(
-            self.database, self.case_key, self.medicine_set
+            self.database, self.system_settings, self.case_key, self.medicine_set
         )
         fees_record = printer_utils.get_ins_fees_html(self.database, self.case_key)
 
@@ -98,7 +98,7 @@ class PrintReceiptInsForm2:
                   </tbody>  
                 </table>
                 {disease}
-                <hr>
+                <hr style="line-height:0.5">
                 <table cellspacing="0">
                   <thead>
                     <tr>
@@ -120,13 +120,12 @@ class PrintReceiptInsForm2:
                   </tbody>
                 </table>
                 {instruction}
-                <hr>
+                <hr style="line-height:0.5">
                 <table width="90%" cellspacing="0">
                   <tbody>
                     {fees}
                   </tbody>
                 </table>
-                <hr>
                 * 本收據可為報稅之憑證, 請妥善保存, 遺失恕不補發 (健保申報為健保總額支付點數, 非一點一元)
               </body>
             </html>

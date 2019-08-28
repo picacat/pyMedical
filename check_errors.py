@@ -5,10 +5,10 @@ import sys
 
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtWidgets import QMessageBox, QPushButton
-import datetime
 
 from classes import table_widget
 
+from libs import system_utils
 from libs import ui_utils
 from libs import date_utils
 from libs import number_utils
@@ -56,6 +56,7 @@ class CheckErrors(QtWidgets.QMainWindow):
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_CHECK_ERRORS, self)
+        system_utils.set_css(self, self.system_settings)
         self.center()
         self._set_table_widget()
 
@@ -237,7 +238,7 @@ class CheckErrors(QtWidgets.QMainWindow):
             if self.ui.tableWidget_errors.item(row_no, 3).text() == string_utils.xstr(patient_key):
                 return True
 
-        return  False
+        return False
 
     def _check_medical_record(self, row):
         error_messages = []
@@ -277,8 +278,15 @@ class CheckErrors(QtWidgets.QMainWindow):
             special_code = case_utils.get_disease_special_code(
                 self.database, disease_code1,
             )
+            pres_days = case_utils.get_pres_days(self.database, row['CaseKey'])
+            treat_type = string_utils.xstr(row['TreatType'])
+
             if special_code != '' and string_utils.xstr(row['SpecialCode']).strip() == '':
                 error_messages.append('{0}為慢性病但病歷無慢性病代碼'.format(disease_code1))
+            if special_code == '' and treat_type == '內科' and pres_days > 7:
+                error_messages.append('病名非慢性病但內科開藥超過七日'.format(disease_code1))
+            if special_code != '' and treat_type == '內科' and pres_days <= 6:
+                error_messages.append('病名為慢性病但內科開藥少於七日'.format(disease_code1))
 
             for i in range(1, 4):
                 disease_code = string_utils.xstr(row['DiseaseCode{0}'.format(i)])
@@ -423,19 +431,23 @@ class CheckErrors(QtWidgets.QMainWindow):
 
     # 重新批價
     def _calculate_ins_fee(self):
-        self.ui.tableWidget_errors.setFocus(True)
-        self.parent.ui.progressBar.setMaximum(self.ui.tableWidget_errors.rowCount()-1)
-        self.parent.ui.progressBar.setValue(0)
+        row_count = self.ui.tableWidget_errors.rowCount()
 
-        for row_no in range(self.ui.tableWidget_errors.rowCount()):
+        self.ui.tableWidget_errors.setFocus(True)
+        progress_dialog = QtWidgets.QProgressDialog(
+            '正在重新批價中, 請稍後...', '取消', 0, row_count, self
+        )
+        progress_dialog.setWindowModality(QtCore.Qt.WindowModal)
+        progress_dialog.setValue(0)
+
+        for row_no in range(row_count):
+            progress_dialog.setValue(row_no)
+
             self.ui.tableWidget_errors.setCurrentCell(row_no, 0)
             case_key = self.ui.tableWidget_errors.item(row_no, 0).text()
             charge_utils.calculate_ins_fee(self.database, self.system_settings, case_key)
 
-            self.parent.ui.progressBar.setValue(
-                self.parent.ui.progressBar.value() + 1
-            )
-
+        progress_dialog.setValue(row_count)
         self.parent._check_ins_data()
 
     def _correct_errors(self):

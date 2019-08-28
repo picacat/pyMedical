@@ -18,6 +18,7 @@ from libs import cshis_utils
 from libs import personnel_utils
 from printer import print_prescription
 from printer import print_receipt
+from printer import print_misc
 
 if sys.platform == 'win32':
     from classes import cshis_win32 as cshis
@@ -61,6 +62,7 @@ class Cashier(QtWidgets.QMainWindow):
         )
         self.ui.action_print_prescription.setEnabled(False)
         self.ui.action_print_receipt.setEnabled(False)
+        self.ui.action_print_misc.setEnabled(False)
 
         self.table_widget_charge_list.set_column_hidden([0, 1])
 
@@ -71,6 +73,7 @@ class Cashier(QtWidgets.QMainWindow):
         self.ui.action_save_without_print.triggered.connect(self._apply_charge)
         self.ui.action_print_prescription.triggered.connect(self._print_prescription)
         self.ui.action_print_receipt.triggered.connect(self._print_receipt)
+        self.ui.action_print_misc.triggered.connect(self._print_misc)
         self.ui.action_open_medical_record.triggered.connect(self._open_medical_record)
 
         self.ui.radioButton_unpaid.clicked.connect(self.read_wait)
@@ -107,15 +110,14 @@ class Cashier(QtWidgets.QMainWindow):
 
         self._read_charge_list(payment)
 
-        if payment == '未批價':
-            action_enabled = False
-        elif self.ui.tableWidget_charge_list.rowCount() > 0:
+        if self.ui.tableWidget_charge_list.rowCount() > 0:
             action_enabled = True
         else:
             action_enabled = False
 
         self.ui.action_print_prescription.setEnabled(action_enabled)
         self.ui.action_print_receipt.setEnabled(action_enabled)
+        self.ui.action_print_misc.setEnabled(action_enabled)
 
     def _read_charge_list(self, payment=''):
         if payment == '未批價':
@@ -144,62 +146,80 @@ class Cashier(QtWidgets.QMainWindow):
         self.table_widget_charge_list.set_db_data(sql, self._set_table_data)
         self._charge_list_changed()
         if self.table_widget_charge_list.row_count() <= 0:
-            self.ui.action_open_medical_record.setEnabled(False)
+            enabled = False
         else:
-            self.ui.action_open_medical_record.setEnabled(True)
+            enabled = True
+
+        self.ui.action_open_medical_record.setEnabled(enabled)
+        self.ui.action_print_prescription.setEnabled(enabled)
+        self.ui.action_print_receipt.setEnabled(enabled)
+        self.ui.action_print_misc.setEnabled(enabled)
 
         self._set_permission()
 
-    def _set_table_data(self, rec_no, rec):
+    def _set_table_data(self, row_no, row):
+        signature = case_utils.extract_security_xml(row['Security'], '醫令時間')
+        ins_type = string_utils.xstr(row['InsType'])
+        card = string_utils.xstr(row['Card'])
+        xcard = string_utils.xstr(row['XCard'])
+
+        if ins_type != '健保' or card in nhi_utils.ABNORMAL_CARD or xcard in nhi_utils.ABNORMAL_CARD:
+            ic_wrote = '略'
+        elif signature is None:
+            ic_wrote = '否'
+        else:
+            ic_wrote = '是'
+
         age_year, age_month = date_utils.get_age(
-            rec['Birthday'], rec['CaseDate'])
+            row['Birthday'], row['CaseDate'])
         if age_year is None:
             age = ''
         else:
             age = '{0}歲'.format(age_year)
 
-        charge_total = (number_utils.get_integer(rec['DrugShareFee']) +
-                        number_utils.get_integer(rec['TotalFee']))
+        charge_total = (number_utils.get_integer(row['DrugShareFee']) +
+                        number_utils.get_integer(row['TotalFee']))
 
         charge_status = '未批價'
-        if rec['ChargeDone'] == 'True':
+        if row['ChargeDone'] == 'True':
             charge_status = '已批價'
 
         wait_rec = [
-            string_utils.xstr(rec['WaitKey']),
-            string_utils.xstr(rec['CaseKey']),
-            string_utils.xstr(rec['PatientKey']),
-            string_utils.xstr(rec['Name']),
-            string_utils.xstr(rec['Gender']),
+            string_utils.xstr(row['WaitKey']),
+            string_utils.xstr(row['CaseKey']),
+            string_utils.xstr(row['PatientKey']),
+            string_utils.xstr(row['Name']),
+            string_utils.xstr(row['Gender']),
             age,
-            string_utils.xstr(rec['Share']),
-            string_utils.xstr(rec['InsType']),
-            string_utils.xstr(rec['TreatType']),
-            string_utils.xstr(rec['DrugShareFee']),
-            string_utils.xstr(rec['TotalFee']),
+            string_utils.xstr(row['Share']),
+            string_utils.xstr(row['InsType']),
+            string_utils.xstr(row['TreatType']),
+            string_utils.xstr(row['DrugShareFee']),
+            string_utils.xstr(row['TotalFee']),
             string_utils.xstr(charge_total),
             charge_status,
+            ic_wrote,
         ]
 
         for column in range(len(wait_rec)):
             self.ui.tableWidget_charge_list.setItem(
-                rec_no, column,
+                row_no, column,
                 QtWidgets.QTableWidgetItem(wait_rec[column])
             )
             if column in [2, 9, 10, 11]:
                 self.ui.tableWidget_charge_list.item(
-                    rec_no, column).setTextAlignment(
+                    row_no, column).setTextAlignment(
                     QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
                 )
-            elif column in [4]:
+            elif column in [4, 12, 13]:
                 self.ui.tableWidget_charge_list.item(
-                    rec_no, column).setTextAlignment(
+                    row_no, column).setTextAlignment(
                     QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
                 )
 
-            if rec['InsType'] == '自費' or number_utils.get_integer(rec['TotalFee']) > 0:
+            if row['InsType'] == '自費' or number_utils.get_integer(row['TotalFee']) > 0:
                 self.ui.tableWidget_charge_list.item(
-                    rec_no, column).setForeground(
+                    row_no, column).setForeground(
                     QtGui.QColor('blue')
                 )
 
@@ -224,6 +244,7 @@ class Cashier(QtWidgets.QMainWindow):
         self.ui.lineEdit_total_fee.setText(None)
         self.ui.lineEdit_receipt_fee.setText(None)
         self.ui.lineEdit_debt.setText(None)
+        self.ui.lineEdit_total.setText(None)
 
     def _show_medical_record(self):
         case_key = self.table_widget_charge_list.field_value(1)
@@ -245,6 +266,13 @@ class Cashier(QtWidgets.QMainWindow):
         self.ui.lineEdit_total_fee.setText(string_utils.xstr(case_row['TotalFee']))
         self.ui.lineEdit_receipt_fee.setText(string_utils.xstr(case_row['ReceiptFee']))
 
+        self.ui.lineEdit_total.setText(
+            string_utils.xstr(
+                number_utils.get_integer(case_row['DrugShareFee']) +
+                number_utils.get_integer(case_row['TotalFee'])
+            )
+        )
+
         if self.ui.radioButton_unpaid.isChecked():
             self.ui.lineEdit_receipt_drug_share_fee.setText(
                 self.ui.lineEdit_drug_share_fee.text()
@@ -257,7 +285,6 @@ class Cashier(QtWidgets.QMainWindow):
 
     def _apply_charge(self):
         sender_name = self.sender().objectName()
-
 
         debt = ''
         if number_utils.get_integer(self.ui.lineEdit_debt.text()) > 0:
@@ -281,21 +308,24 @@ class Cashier(QtWidgets.QMainWindow):
 
         self._save_records()
         if sender_name == 'action_save':
+            self._print_prescription()
             self._print_receipt()
+            self._print_misc()
 
         self._write_ic_card()
 
         self.read_wait()
 
     def _calculate_receipt_fee(self):
+        receipt_drug_share_fee = number_utils.get_integer(self.ui.lineEdit_receipt_drug_share_fee.text())
         receipt_fee = number_utils.get_integer(self.ui.lineEdit_receipt_fee.text())
-        total_fee = number_utils.get_integer(
-            self.ui.lineEdit_total_fee.text()
-        )
 
-        if receipt_fee < total_fee:
+        total_receipt_fee = receipt_drug_share_fee + receipt_fee
+        total_fee = number_utils.get_integer(self.ui.lineEdit_total.text())
+
+        if receipt_drug_share_fee <= 0 or receipt_fee <= 0:
             self.ui.lineEdit_debt.setText(
-                string_utils.xstr(total_fee - receipt_fee)
+                string_utils.xstr(total_fee - total_receipt_fee)
             )
         else:
             self.ui.lineEdit_debt.setText(None)
@@ -364,16 +394,21 @@ class Cashier(QtWidgets.QMainWindow):
 
         self.database.insert_record('debt', fields, data)
 
-
         fields = ['DebtFee']
         data = [debt]
         self.database.update_record('cases', fields, 'CaseKey', case_key, data)
 
     # 列印處方箋
     def _print_prescription(self):
+        sender_name = self.sender().objectName()
+        if sender_name == 'action_print_prescription':
+            print_type = '選擇列印'
+        else:
+            print_type = '系統設定'
+
         case_key = self.table_widget_charge_list.field_value(1)
         print_prescript = print_prescription.PrintPrescription(
-            self, self.database, self.system_settings, case_key, '選擇列印')
+            self, self.database, self.system_settings, case_key, print_type)
         print_prescript.print()
 
         del print_prescript
@@ -392,6 +427,21 @@ class Cashier(QtWidgets.QMainWindow):
         print_charge.print()
 
         del print_charge
+
+    # 列印其他收據
+    def _print_misc(self):
+        sender_name = self.sender().objectName()
+        if sender_name == 'action_print_misc':
+            print_type = '選擇列印'
+        else:
+            print_type = '系統設定'
+
+        case_key = self.table_widget_charge_list.field_value(1)
+        print_other = print_misc.PrintMisc(
+            self, self.database, self.system_settings, case_key, print_type)
+        print_other.print()
+
+        del print_other
 
     # 醫令寫入健保卡
     def _write_ic_card(self):

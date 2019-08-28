@@ -217,7 +217,7 @@ class PrintMedicalFees:
             ins_fees_record = printer_utils.get_ins_fees_html(self.database, case_key)
             self_fees_record = printer_utils.get_self_fees_html(self.database, case_key)
             instruction = printer_utils.get_instruction_html(
-                self.database, case_key, medicine_set
+                self.database, self.system_settings, case_key, medicine_set
             )
 
             medical_record_html += '''

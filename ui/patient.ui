@@ -394,13 +394,14 @@
      <x>0</x>
      <y>0</y>
      <width>1115</width>
-     <height>26</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu">
     <property name="title">
      <string>檔案</string>
     </property>
+    <addaction name="action_copy_remote_patient"/>
    </widget>
    <addaction name="menu"/>
   </widget>
@@ -423,6 +424,21 @@
    </property>
    <property name="text">
     <string>關閉視窗</string>
+   </property>
+  </action>
+  <action name="action_copy_remote_patient">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/network-server.png</normaloff>../icons/network-server.png</iconset>
+   </property>
+   <property name="text">
+    <string>拷貝分院病患資料</string>
+   </property>
+   <property name="toolTip">
+    <string>拷貝分院病患資料</string>
+   </property>
+   <property name="shortcut">
+    <string>F12</string>
    </property>
   </action>
  </widget>

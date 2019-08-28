@@ -2,8 +2,8 @@ import os
 from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtWidgets import QMessageBox, QPushButton
 from PyQt5 import uic
-from libs import  nhi_utils
-from libs import  string_utils
+from libs import nhi_utils
+from libs import string_utils
 
 ICON_NO = QtGui.QIcon('./icons/gtk-no.svg')
 ICON_OK = QtGui.QIcon('./icons/gtk-ok.svg')
@@ -26,6 +26,7 @@ UI_MEDICAL_RECORD_REGISTRATION = "medical_record_registration.ui"
 UI_MEDICAL_RECORD_FEES = "medical_record_fees.ui"
 UI_MEDICAL_RECORD_LIST = "medical_record_list.ui"
 UI_MEDICAL_RECORD_FAMILY = "medical_record_family.ui"
+UI_MEDICAL_RECORD_EXAMINATION = "medical_record_examination.ui"
 
 UI_SYSTEM_UPDATE = "system_update.ui"
 
@@ -44,9 +45,12 @@ UI_CASHIER = "cashier.ui"
 UI_INCOME = "income.ui"
 UI_INCOME_CASH_FLOW = "income_cash_flow.ui"
 UI_INCOME_LIST = "income_list.ui"
+UI_INCOME_SELF_PRESCRIPT = "income_self_prescript.ui"
 UI_DEBT = "debt.ui"
 UI_PURCHASE = "purchase.ui"
 UI_PURCHASE_LIST = "purchase_list.ui"
+UI_EXAMINATION_LIST = "examination_list.ui"
+UI_EXAMINATION = "examination.ui"
 
 UI_INS_CHECK = "ins_check.ui"
 UI_INS_APPLY = "ins_apply.ui"
@@ -56,6 +60,7 @@ UI_INS_JUDGE = "ins_judge.ui"
 UI_INS_APPLY_CALCULATED_DATA = "ins_apply_calculated_data.ui"
 UI_INS_APPLY_TOTAL_FEE = "ins_apply_total_fee.ui"
 UI_INS_CHECK_APPLY_FEE = "ins_check_apply_fee.ui"
+UI_INS_DOCTOR_APPLY_FEE = "ins_doctor_apply_fee.ui"
 UI_INS_APPLY_SCHEDULE_TABLE = "ins_apply_schedule_table.ui"
 
 UI_STATISTICS_MEDICAL_RECORD = "statistics_medical_record.ui"
@@ -69,6 +74,9 @@ UI_STATISTICS_DOCTOR_SALE = "statistics_doctor_sale.ui"
 UI_STATISTICS_RETURN_RATE = "statistics_return_rate.ui"
 UI_STATISTICS_RETURN_RATE_DOCTOR = "statistics_return_rate_doctor.ui"
 UI_STATISTICS_RETURN_RATE_MASSAGER = "statistics_return_rate_massager.ui"
+
+UI_STATISTICS_MEDICINE = "statistics_medicine.ui"
+UI_STATISTICS_MEDICINE_SALES = "statistics_medicine_sales.ui"
 
 UI_DOCTOR_SCHEDULE = "doctor_schedule.ui"
 UI_DOCTOR_NURSE_TABLE = "doctor_nurse_table.ui"
@@ -115,6 +123,8 @@ UI_DIALOG_MEDICAL_RECORD_DONE = "dialog_medical_record_done.ui"
 UI_DIALOG_MEDICAL_RECORD_REFERENCE = "dialog_medical_record_reference.ui"
 UI_DIALOG_MEDICINE = "dialog_medicine.ui"
 
+UI_DIALOG_EXAMINATION_LIST = "dialog_examination_list.ui"
+
 UI_DIALOG_STATISTICS_DOCTOR = "dialog_statistics_doctor.ui"
 UI_DIALOG_STATISTICS_RETURN_RATE = "dialog_statistics_return_rate.ui"
 
@@ -126,6 +136,7 @@ UI_DIALOG_PAST_HISTORY = "dialog_past_history.ui"
 UI_DIALOG_PATIENT = "dialog_patient.ui"
 UI_DIALOG_PATIENT_LIST = "dialog_patient_list.ui"
 UI_DIALOG_SELECT_PATIENT = "dialog_select_patient.ui"
+UI_DIALOG_SELECT_REMOTE_PATIENT = "dialog_select_remote_patient.ui"
 
 UI_DIALOG_RESERVATION_BOOKING = "dialog_reservation_booking.ui"
 UI_DIALOG_RESERVATION_MODIFY = "dialog_reservation_modify.ui"
@@ -136,6 +147,7 @@ UI_DIALOG_SETTINGS = "dialog_settings.ui"
 UI_DIALOG_SYMPTOM = "dialog_symptom.ui"
 UI_DIALOG_TONGUE = "dialog_tongue.ui"
 UI_DIALOG_PULSE = "dialog_pulse.ui"
+UI_DIALOG_PULSE_PICKER = "dialog_pulse_picker.ui"
 UI_DIALOG_REMARK = "dialog_remark.ui"
 UI_DIALOG_DISTINGUISH = "dialog_distinguish.ui"
 UI_DIALOG_CURE = "dialog_cure.ui"
@@ -147,8 +159,10 @@ UI_DIALOG_ELECTRIC_ACUPUNCTURE = "dialog_electric_acupuncture.ui"
 UI_DIALOG_PURCHASE_LIST = "dialog_purchase_list.ui"
 UI_DIALOG_EXPORT_EMR_XML = "dialog_export_emr_xml.ui"
 UI_DIALOG_DATE_PICKER = "dialog_date_picker.ui"
+UI_DIALOG_ACUPUNCTURE_POINT = "dialog_acupuncture_point.ui"
 UI_DIALOG_PERMISSION = "dialog_permission.ui"
 UI_DIALOG_HOSTS = "dialog_hosts.ui"
+UI_DIALOG_ADD_DIAGNOSTIC_DICT = "dialog_add_diagnostic_dict.ui"
 
 UI_DIALOG_INS_CHECK = "dialog_ins_check.ui"
 UI_DIALOG_INS_APPLY = "dialog_ins_apply.ui"
@@ -157,6 +171,8 @@ UI_DIALOG_INS_CARE = "dialog_ins_care.ui"
 UI_DIALOG_DOCTOR_SCHEDULE = "dialog_doctor_schedule.ui"
 UI_DIALOG_NURSE_SCHEDULE = "dialog_nurse_schedule.ui"
 UI_DIALOG_COURSE_LIST = "dialog_course_list.ui"
+
+UI_DIALOG_DATABASE_REPAIR = "dialog_database_repair.ui"
 
 UI_DICT_DIAGNOSTIC = "dict_diagnostic.ui"
 UI_DICT_SYMPTOM = "dict_symptom.ui"
@@ -167,9 +183,11 @@ UI_DICT_DISEASE = "dict_disease.ui"
 UI_DICT_DISTINGUISH = "dict_distinguish.ui"
 UI_DICT_CURE = "dict_cure.ui"
 UI_DICT_MEDICINE = "dict_medicine.ui"
+UI_DICT_MISC = "dict_misc.ui"
 UI_DICT_DRUG = "dict_drug.ui"
 UI_DICT_TREAT = "dict_treat.ui"
 UI_DICT_INSTRUCTION = "dict_instruction.ui"
+UI_DICT_HOSP = "dict_hosp.ui"
 UI_DICT_COMPOUND = "dict_compound.ui"
 
 UI_DICT_INS_DRUG = "dict_ins_drug.ui"

@@ -7,6 +7,7 @@ import datetime
 
 from classes import table_widget
 from libs import ui_utils
+from libs import system_utils
 from libs import date_utils
 from libs import string_utils
 from libs import nhi_utils
@@ -16,6 +17,27 @@ from libs import personnel_utils
 from libs import patient_utils
 from printer import print_prescription
 from printer import print_receipt
+
+WAITING_LIST_COL_NO = {
+    'WaitKey': 0,
+    'CaseKey': 1,
+    'InProgress': 2,
+    'RegistNo': 3,
+    'PatientKey': 4,
+    'Name': 5,
+    'Gender': 6,
+    'Age': 7,
+    'Room': 8,
+    'WaitTime': 9,
+    'RegistType': 10,
+    'ShareType': 11,
+    'TreatType': 12,
+    'Visit': 13,
+    'Card': 14,
+    'Course': 15,
+    'Massager': 16,
+    'Remark': 17,
+}
 
 
 # 候診名單 2018.01.31
@@ -59,8 +81,12 @@ class WaitingList(QtWidgets.QMainWindow):
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_WAITING_LIST, self)
+        system_utils.set_css(self, self.system_settings)
         self.table_widget_waiting_list = table_widget.TableWidget(self.ui.tableWidget_waiting_list, self.database)
-        self.table_widget_waiting_list.set_column_hidden([0, 1])
+        self.table_widget_waiting_list.set_column_hidden([
+            WAITING_LIST_COL_NO['WaitKey'],
+            WAITING_LIST_COL_NO['CaseKey'],
+        ])
         self.table_widget_reservation_list = table_widget.TableWidget(
             self.ui.tableWidget_reservation_list, self.database)
         self.table_widget_reservation_list.set_column_hidden([0])
@@ -90,7 +116,7 @@ class WaitingList(QtWidgets.QMainWindow):
             self.ui.action_medical_record.setEnabled(False)
 
     def _set_table_width(self):
-        width = [70, 70,
+        width = [70, 70, 45,
                  70, 80, 40, 90, 40, 60, 60, 70, 50,
                  80, 80, 80, 60, 80, 40, 80, 220]
         self.table_widget_waiting_list.set_table_heading_width(width)
@@ -157,26 +183,33 @@ class WaitingList(QtWidgets.QMainWindow):
             age = '{0}歲{1}月'.format(age_year, age_month)
 
         wait_row = [
-                    string_utils.xstr(row['WaitKey']),
-                    string_utils.xstr(row['CaseKey']),
-                    row['PatientKey'],
-                    string_utils.xstr(row['Name']),
-                    string_utils.xstr(row['Gender']),
-                    age,
-                    row['Room'],
-                    row['RegistNo'],
-                    registration_time,
-                    wait_time,
-                    string_utils.xstr(row['InsType']),
-                    string_utils.xstr(row['RegistType']),
-                    string_utils.xstr(row['Share']),
-                    string_utils.xstr(row['TreatType']),
-                    string_utils.xstr(row['Visit']),
-                    string_utils.xstr(row['Card']),
-                    row['Continuance'],
-                    string_utils.xstr(row['Massager']),
-                    string_utils.xstr(row['Remark']),
+            string_utils.xstr(row['WaitKey']),
+            string_utils.xstr(row['CaseKey']),
+            None,
+            row['RegistNo'],
+            row['PatientKey'],
+            string_utils.xstr(row['Name']),
+            string_utils.xstr(row['Gender']),
+            age,
+            row['Room'],
+            registration_time,
+            wait_time,
+            string_utils.xstr(row['InsType']),
+            string_utils.xstr(row['RegistType']),
+            string_utils.xstr(row['Share']),
+            string_utils.xstr(row['TreatType']),
+            string_utils.xstr(row['Visit']),
+            string_utils.xstr(row['Card']),
+            row['Continuance'],
+            string_utils.xstr(row['Massager']),
+            string_utils.xstr(row['Remark']),
         ]
+
+        in_progress = string_utils.xstr(row['InProgress'])
+        case_utils.set_in_progress_icon(
+            self.ui.tableWidget_waiting_list,
+            row_no, WAITING_LIST_COL_NO['InProgress'], in_progress
+        )
 
         for col_no in range(len(wait_row)):
             item = QtWidgets.QTableWidgetItem()
@@ -184,12 +217,17 @@ class WaitingList(QtWidgets.QMainWindow):
             self.ui.tableWidget_waiting_list.setItem(
                 row_no, col_no, item,
             )
-            if col_no in [2, 5, 6, 7, 9, 16]:
+            if col_no in [WAITING_LIST_COL_NO['PatientKey'],
+                          WAITING_LIST_COL_NO['Age'],
+                          WAITING_LIST_COL_NO['Room'],
+                          WAITING_LIST_COL_NO['RegistNo'],
+                          WAITING_LIST_COL_NO['WaitTime'],
+                          WAITING_LIST_COL_NO['Course']]:
                 self.ui.tableWidget_waiting_list.item(
                     row_no, col_no).setTextAlignment(
                     QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
                 )
-            elif col_no in [4, 14]:
+            elif col_no in [WAITING_LIST_COL_NO['Gender'], WAITING_LIST_COL_NO['Visit']]:
                 self.ui.tableWidget_waiting_list.item(
                     row_no, col_no).setTextAlignment(
                     QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
@@ -199,6 +237,11 @@ class WaitingList(QtWidgets.QMainWindow):
                 self.ui.tableWidget_waiting_list.item(
                     row_no, col_no).setForeground(
                     QtGui.QColor('blue')
+                )
+            elif in_progress == 'Y':
+                self.ui.tableWidget_waiting_list.item(
+                    row_no, col_no).setForeground(
+                    QtGui.QColor('red')
                 )
 
     def open_medical_record(self):
@@ -210,7 +253,7 @@ class WaitingList(QtWidgets.QMainWindow):
             self.ui.tabWidget_waiting_list.currentIndex())
 
         if self.tab_name == '候診名單':
-            case_key = self.table_widget_waiting_list.field_value(1)
+            case_key = self.table_widget_waiting_list.field_value(WAITING_LIST_COL_NO['CaseKey'])
             call_from = '醫師看診作業'
         else:
             case_key = self.table_widget_wait_completed.field_value(1)
@@ -319,7 +362,7 @@ class WaitingList(QtWidgets.QMainWindow):
         self.ui.textEdit_medical_record.setHtml(None)
 
         try:
-            patient_key = self.table_widget_reservation_list.field_value(5)
+            patient_key = self.table_widget_reservation_list.field_value(6)
             if patient_key is None:
                 return
 
@@ -472,7 +515,7 @@ class WaitingList(QtWidgets.QMainWindow):
             statistics_list['本月健保傷科人數']
         )
 
-        width = [240, 80]
+        width = [180, 80]
         self.table_widget_statistics_list.set_table_heading_width(width)
         self.table_widget_statistics_list.set_dict(statistics_list)
 

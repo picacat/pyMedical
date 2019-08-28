@@ -13,6 +13,7 @@ from libs import ui_utils
 from libs import string_utils
 from libs import dialog_utils
 from libs import printer_utils
+from libs import system_utils
 
 
 # 診斷證明書 2018.12.24
@@ -40,6 +41,7 @@ class CertificateDiagnosis(QtWidgets.QMainWindow):
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_CERTIFICATE_DIAGNOSIS, self)
+        system_utils.set_css(self, self.system_settings)
         self.table_widget_certificate_list = table_widget.TableWidget(
             self.ui.tableWidget_certificate_list, self.database)
         self.table_widget_certificate_list.set_column_hidden([0, 1])
@@ -63,7 +65,7 @@ class CertificateDiagnosis(QtWidgets.QMainWindow):
 
     # 設定欄位寬度
     def _set_table_width(self):
-        width = [100, 100, 120, 80, 100, 80, 120, 120, 100, 300, 450, 100, 70]
+        width = [100, 100, 120, 80, 100, 80, 100, 120, 120, 100, 300, 350, 100, 70]
         self.table_widget_certificate_list.set_table_heading_width(width)
 
     def _read_certificate(self, sql=None):
@@ -86,6 +88,10 @@ class CertificateDiagnosis(QtWidgets.QMainWindow):
         if string_utils.xstr(row['ChargeDone']) == 'True':
             charge_done = '是'
 
+        treat_type = string_utils.xstr(row['TreatType'])
+        if treat_type == '':
+            treat_type = '全部'
+
         certificate_record = [
             string_utils.xstr(row['CertificateKey']),
             string_utils.xstr(row['CaseKey']),
@@ -93,6 +99,7 @@ class CertificateDiagnosis(QtWidgets.QMainWindow):
             string_utils.xstr(row['PatientKey']),
             string_utils.xstr(row['Name']),
             string_utils.xstr(row['InsType']),
+            treat_type,
             string_utils.xstr(row['StartDate']),
             string_utils.xstr(row['EndDate']),
             string_utils.xstr(row['Doctor']),
@@ -107,12 +114,12 @@ class CertificateDiagnosis(QtWidgets.QMainWindow):
                 row_no, column,
                 QtWidgets.QTableWidgetItem(certificate_record[column])
             )
-            if column in [3, 11]:
+            if column in [3, 12]:
                 self.ui.tableWidget_certificate_list.item(
                     row_no, column).setTextAlignment(
                     QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
                 )
-            elif column in [5, 12]:
+            elif column in [5, 6, 13]:
                 self.ui.tableWidget_certificate_list.item(
                     row_no, column).setTextAlignment(
                     QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter

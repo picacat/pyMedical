@@ -7,11 +7,9 @@ from PyQt5 import QtWidgets, QtGui, QtCore
 import os.path
 from lxml import etree as ET
 
-import datetime
-
 from classes import table_widget
 from libs import ui_utils
-from libs import date_utils
+from libs import system_utils
 from libs import string_utils
 from libs import nhi_utils
 from libs import number_utils
@@ -62,6 +60,7 @@ class InsCheckApplyFee(QtWidgets.QMainWindow):
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_INS_CHECK_APPLY_FEE, self)
+        system_utils.set_css(self, self.system_settings)
         self.ui.tableWidget_xml.setAlternatingRowColors(True)
         self.table_widget_error_message = table_widget.TableWidget(
             self.ui.tableWidget_error_message, self.database
@@ -198,39 +197,53 @@ class InsCheckApplyFee(QtWidgets.QMainWindow):
 
             try:
                 diag_fee = number_utils.get_integer(xdata['d36'])
-                ddata_fee['diag_fee'] += diag_fee
             except KeyError:
                 diag_fee = 0
+
+            ddata_fee['diag_fee'] += diag_fee
+
             try:
                 drug_fee = number_utils.get_integer(xdata['d32'])
-                ddata_fee['drug_fee'] += drug_fee
             except KeyError:
                 drug_fee = 0
+
+            ddata_fee['drug_fee'] += drug_fee
+
             try:
                 pharmacy_fee = number_utils.get_integer(xdata['d38'])
-                ddata_fee['pharmacy_fee'] += pharmacy_fee
             except KeyError:
                 pharmacy_fee = 0
+
+            ddata_fee['pharmacy_fee'] += pharmacy_fee
+
             try:
                 treat_fee = number_utils.get_integer(xdata['d33'])
-                ddata_fee['treat_fee'] += treat_fee
             except KeyError:
                 treat_fee = 0
+
+            ddata_fee['treat_fee'] += treat_fee
+
             try:
                 total_fee = number_utils.get_integer(xdata['d39'])
-                ddata_fee['total_fee'] += total_fee
             except KeyError:
                 total_fee = 0
+
+            ddata_fee['total_fee'] += total_fee
+
             try:
                 share_fee = number_utils.get_integer(xdata['d40'])
-                ddata_fee['share_fee'] += share_fee
             except KeyError:
                 share_fee = 0
+
+            ddata_fee['share_fee'] += share_fee
+
             try:
                 apply_fee = number_utils.get_integer(xdata['d41'])
-                ddata_fee['apply_fee'] += apply_fee
             except KeyError:
                 apply_fee = 0
+
+            ddata_fee['apply_fee'] += apply_fee
+
             try:
                 ddata_fee['agent_fee'] += number_utils.get_integer(xdata['d43'])
             except KeyError:

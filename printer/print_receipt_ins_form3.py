@@ -86,7 +86,7 @@ class PrintReceiptInsForm3:
             self.case_key, self.medicine_set,
             '費用收據', print_alias, print_total_dosage, blocks=2)
         instruction = printer_utils.get_instruction_html(
-            self.database, self.case_key, self.medicine_set
+            self.database, self.system_settings, self.case_key, self.medicine_set
         )
         fees_record = printer_utils.get_ins_fees_html(self.database, self.case_key)
 
@@ -111,7 +111,7 @@ class PrintReceiptInsForm3:
                   </tbody>  
                 </table>
                 {disease}
-                <hr>
+                <hr style="line-height:0.5">
                 <table cellspacing="0">
                   <thead>
                     <tr>
@@ -129,6 +129,7 @@ class PrintReceiptInsForm3:
                   </tbody>
                 </table>
                 {instruction}
+                <hr style="line-height:0.5">
                 <table width="98%" cellspacing="0">
                   <tbody>
                     {fees}

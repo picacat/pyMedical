@@ -91,22 +91,43 @@ class DialogDiseasePicker(QtWidgets.QDialog):
         else:
             order_type = 'ORDER BY ICDCode'
             if self.system_settings.field('詞庫排序') == '點擊率':
-                order_type = 'ORDER BY HitRate DESC'
+                order_type = 'ORDER BY HitRate DESC, ICDCode'
+
+            keyword_list = self.icd_code.split()
+            chinese_name_script = []
+            for keyword in keyword_list:
+                chinese_name_script.append('ChineseName LIKE "%{0}%"'.format(keyword))
+
+            if len(chinese_name_script) > 0:
+                chinese_name_script = ' AND '.join(chinese_name_script)
+                chinese_name_script = 'OR ({0})'.format(chinese_name_script)
+
             sql = '''
                 SELECT * FROM icd10
                 WHERE
-                    (ICDCode LIKE "{0}%" OR
-                     InputCode LIKE "%{0}%" OR
-                     ChineseName LIKE "%{0}%")
-                    {1}
-            '''.format(self.icd_code, chronic_script)
-            sql += order_type
+                    ICDCode LIKE "{icd_code}%" OR
+                    InputCode LIKE "%{icd_code}%"
+                    {chinese_name_script}
+                    {chronic_script}
+            '''.format(
+                icd_code=self.icd_code,
+                chinese_name_script=chinese_name_script,
+                chronic_script=chronic_script,
+            )
+
+            sql += order_type + ' LIMIT 300'
 
         return sql
 
     def _read_data(self):
         sql = self._get_sql_script()
         self.table_widget_disease.set_db_data(sql, self._set_table_data)
+        for row_no in range(self.ui.tableWidget_disease.rowCount()-1, -1, -1):
+            icd_code = self.ui.tableWidget_disease.item(row_no, 1).text()
+            sql = 'SELECT ICDCode FROM icd10 WHERE ICDCode LIKE "{0}%" LIMIT 2'.format(icd_code)
+            temp_rows = self.database.select_record(sql)
+            if len(temp_rows) >= 2:
+                self.ui.tableWidget_disease.removeRow(row_no)
 
     def _set_table_data(self, row_no, row):
         icd_code_row = [

@@ -116,17 +116,6 @@ class PrintMedicalRecords:
             '',
         )
 
-    def print_painter(self):
-        self.current_print = self.print_painter
-        self.printer.setPaperSize(QtCore.QSizeF(80, 80), QPrinter.Millimeter)
-
-        painter = QtGui.QPainter()
-        painter.setFont(self.font)
-        painter.begin(self.printer)
-        painter.drawText(0, 10, 'print test line1 中文測試')
-        painter.drawText(0, 30, 'print test line2 中文測試')
-        painter.end()
-
     def print_html(self, printing):
         self.current_print = self.print_html
         # self.printer.setOrientation(QPrinter.Landscape)
@@ -146,9 +135,9 @@ class PrintMedicalRecords:
             html = medical_record_html
         else:
             init_date = patient_utils.get_init_date(self.database, self.patient_key)
-            telepnone = string_utils.xstr(patient_row['Telephone'])
-            if telepnone == '':
-                telepnone = string_utils.xstr(patient_row['Cellphone'])
+            telephone = string_utils.xstr(patient_row['Telephone'])
+            if telephone == '':
+                telephone = string_utils.xstr(patient_row['Cellphone'])
 
             html = '''
                 <html>
@@ -187,7 +176,7 @@ class PrintMedicalRecords:
                 birthday=string_utils.xstr(patient_row['Birthday']),
                 id=string_utils.xstr(patient_row['ID']),
                 init_date=init_date,
-                telephone=telepnone,
+                telephone=telephone,
                 address=string_utils.xstr(patient_row['Address']),
             )
 
@@ -242,7 +231,7 @@ class PrintMedicalRecords:
                 case_key, medicine_set,
                 '過去病歷', print_alias=False, print_total_dosage=True, blocks=3)
             instruction = printer_utils.get_instruction_html(
-                self.database, case_key, medicine_set
+                self.database, self.system_settings, case_key, medicine_set
             )
 
             medical_record_html += '''

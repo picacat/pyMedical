@@ -23,6 +23,7 @@ from dialog import dialog_system_settings
 from dialog import dialog_hosts
 from dialog import dialog_ic_card
 from dialog import dialog_export_emr_xml
+from dialog import dialog_database_repair
 
 import system_update
 
@@ -179,10 +180,13 @@ class PyMedical(QtWidgets.QMainWindow):
         self.ui.action_ins_record_upload.triggered.connect(self._open_subroutine)
         self.ui.action_update.triggered.connect(self._update_files)
         self.ui.action_restore_records.triggered.connect(self._open_subroutine)
+        self.ui.action_database_repair.triggered.connect(self._database_repair)
 
         self.ui.action_waiting_list.triggered.connect(self._open_subroutine)
         self.ui.action_medical_record_list.triggered.connect(self._open_subroutine)
         self.ui.action_medical_record_statistics.triggered.connect(self._open_subroutine)
+        self.ui.action_examination.triggered.connect(self._open_subroutine)                   # 檢驗報告登錄
+        self.ui.action_examination_list.triggered.connect(self._open_subroutine)              # 檢驗報告查詢
 
         self.ui.action_settings.triggered.connect(self.open_settings)
         self.ui.action_charge.triggered.connect(self._open_subroutine)
@@ -191,10 +195,12 @@ class PyMedical(QtWidgets.QMainWindow):
         self.ui.action_users.triggered.connect(self._open_subroutine)
         self.ui.action_diagnostic.triggered.connect(self._open_subroutine)
         self.ui.action_medicine.triggered.connect(self._open_subroutine)
+        self.ui.action_misc.triggered.connect(self._open_subroutine)
         self.ui.action_ins_drug.triggered.connect(self._open_subroutine)
 
         self.ui.action_statistics_doctor.triggered.connect(self._open_subroutine)
         self.ui.action_statistics_return_rate.triggered.connect(self._open_subroutine)
+        self.ui.action_statistics_medicine.triggered.connect(self._open_subroutine)
 
         self.ui.action_ic_card.triggered.connect(self.open_ic_card)
         self.ui.action_show_side_bar.triggered.connect(self.switch_side_bar)
@@ -252,6 +258,8 @@ class PyMedical(QtWidgets.QMainWindow):
         tab_name = self.sender().text()
         if tab_name == '醫師看診作業':
             self._add_tab(tab_name, self.database, self.system_settings, self.statistics_dicts)
+        elif tab_name == '檢驗報告登錄':
+            self._add_tab(tab_name, self.database, self.system_settings, None)
         else:
             self._add_tab(tab_name, self.database, self.system_settings)
 
@@ -277,6 +285,7 @@ class PyMedical(QtWidgets.QMainWindow):
             '掛號櫃台結帳',
             '病患查詢',
             '病歷查詢',
+            '檢驗報告查詢',
             '病歷統計',
             '健保IC卡資料上傳',
             '申報檢查',
@@ -284,6 +293,7 @@ class PyMedical(QtWidgets.QMainWindow):
             '健保抽審',
             '醫師統計',
             '回診率統計',
+            '用藥統計',
         ]:
             widget.open_dialog()
         elif widget_name == "醫師看診作業":
@@ -381,6 +391,31 @@ class PyMedical(QtWidgets.QMainWindow):
                     current_tab.read_wait()
 
                 return
+
+    # 開啟病歷資料
+    def open_examination(self, examination_key):
+        if examination_key is None:
+            system_utils.show_message_box(
+                QMessageBox.Critical,
+                '查無檢驗報告資料',
+                '<font color="red"><h3>檢驗檔主鍵遺失, 請重新查詢!</h3></font>',
+                '請至檢驗報告查詢確認此筆資料是否存在.'
+            )
+            return
+
+        sql = '''
+            SELECT Name, ExaminationDate FROM examination
+            WHERE
+                ExaminationKey = {0}
+        '''.format(examination_key)
+        rows = self.database.select_record(sql)
+        name = string_utils.xstr(rows[0]['Name'])
+        examination_date = string_utils.xstr(rows[0]['ExaminationDate'])
+        tab_name = '檢驗報告-{name}-{examination_date}'.format(
+            name=name,
+            examination_date=examination_date,
+        )
+        self._add_tab(tab_name, self.database, self.system_settings, examination_key)
 
     # 開啟病歷資料
     def open_medical_record(self, case_key, call_from=None):
@@ -776,7 +811,10 @@ class PyMedical(QtWidgets.QMainWindow):
         current_tab_text = self.ui.tabWidget_window.tabText(index)
         if current_tab_text in ['門診掛號', '醫師看診作業', '批價作業']:
             tab = self.ui.tabWidget_window.currentWidget()
-            tab.read_wait()
+            if current_tab_text in ['門診掛號']:
+                tab.refresh_wait()
+            else:
+                tab.read_wait()
 
     # 重新顯示狀態列
     def refresh_status_bar(self):
@@ -810,11 +848,16 @@ class PyMedical(QtWidgets.QMainWindow):
             return
 
         ic_card = cshis.CSHIS(self.database, self.system_settings)
-
-        # ic_card.verify_sam()
+        # ic_card.reset_reader(show_message=False)
 
     def _update_files(self):
         dialog = system_update.SystemUpdate(self.ui, self.database, self.system_settings)
+        dialog.exec_()
+        dialog.deleteLater()
+
+    # 資料庫修復
+    def _database_repair(self):
+        dialog = dialog_database_repair.DialogDatabaseRepair(self.ui, self.database, self.system_settings)
         dialog.exec_()
         dialog.deleteLater()
 
@@ -829,10 +872,11 @@ class PyMedical(QtWidgets.QMainWindow):
 
 # 主程式
 def main():
+    QtCore.QCoreApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling, True)
+    QtCore.QCoreApplication.setAttribute(QtCore.Qt.AA_UseHighDpiPixmaps, True)
+    QtCore.QCoreApplication.setAttribute(QtCore.Qt.AA_Use96Dpi, True)
+
     app = QtWidgets.QApplication(sys.argv)
-    app.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling, True)  # enable high dpi scaling
-    app.setAttribute(QtCore.Qt.AA_UseHighDpiPixmaps, True)  # use high dpi icons
-    # app.setAttribute(QtCore.Qt.AA_Use96Dpi, True)  # use 96 dpi
 
     py_medical = PyMedical()
     py_medical.system_settings.post('使用者', None)

@@ -74,9 +74,9 @@ class PrintReceiptSelfForm4:
             '費用收據', print_alias=False, print_total_dosage=True, blocks=2)
         fees_record = printer_utils.get_self_fees_html(self.database, self.case_key)
         instruction = printer_utils.get_instruction_html(
-            self.database, self.case_key, self.medicine_set
+            self.database, self.system_settings, self.case_key, self.medicine_set
         )
-        remark = '<hr>* 本收據可為報稅之憑證, 請妥善保存, 遺失恕不補發'
+        remark = '* 本收據可為報稅之憑證, 請妥善保存, 遺失恕不補發'
 
         prescript_html = '''
             <table cellspacing="0">
@@ -128,8 +128,9 @@ class PrintReceiptSelfForm4:
                     {case}
                   </tbody>  
                 </table>
-                <hr>
+                <hr style="line-height:0.5">
                 {prescript_html}
+                <hr style="line-height:0.5">
                 <table width="100%" cellspacing="0">
                   <tbody>
                     {fees}

@@ -68,6 +68,7 @@ class ICRecordUpload(QtWidgets.QMainWindow):
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_IC_RECORD_UPLOAD, self)
+        system_utils.set_css(self, self.system_settings)
         self.table_widget_medical_record = table_widget.TableWidget(
             self.ui.tableWidget_ic_record, self.database)
         self.table_widget_medical_record.set_column_hidden([0])
@@ -579,10 +580,40 @@ class ICRecordUpload(QtWidgets.QMainWindow):
         sql = 'SELECT * FROM dosage WHERE CaseKey = {0}'.format(case_key)
         dosage_row = self.database.select_record(sql)
 
+        if 'G000' in string_utils.xstr(medical_record) and len(rows) > 0:  # 新特約院所開藥增加虛擬碼 R005, 避免雲端用藥重複被核扣
+            self._add_virtual_order(mb, medical_record, upload_type)
+
         for prescript_row in rows:
             if not self.add_medicine_rows(
                     mb, medical_record, prescript_row, dosage_row, case_key, upload_type):
                 return False
+
+        return True
+
+    def _add_virtual_order(self, mb, medical_record, upload_type):
+        mb2 = ET.SubElement(mb, 'MB2')
+
+        if upload_type in ['1', '3']:
+            registered_date = date_utils.west_datetime_to_nhi_datetime(
+                case_utils.extract_security_xml(medical_record['Security'], '寫卡時間')
+            )
+        else:
+            registered_date = date_utils.west_datetime_to_nhi_datetime(
+                medical_record['CaseDate']
+            )
+
+        prescript_type = 'G'  # G-虛擬醫令
+        ins_code = 'R005'  # 新特約院所
+        dosage = 0
+
+        a71 = ET.SubElement(mb2, 'A71')
+        a71.text = string_utils.xstr(registered_date)
+        a72 = ET.SubElement(mb2, 'A72')
+        a72.text = string_utils.xstr(prescript_type)
+        a73 = ET.SubElement(mb2, 'A73')
+        a73.text = ins_code
+        a77 = ET.SubElement(mb2, 'A77')
+        a77.text = string_utils.xstr(dosage)
 
         return True
 

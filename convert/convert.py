@@ -50,6 +50,7 @@ class DialogConvert(QtWidgets.QDialog):
         self.ui.buttonBox.accepted.connect(self.accepted_button_clicked)
         self.ui.buttonBox.rejected.connect(self.rejected_button_clicked)
         self.ui.pushButton_test_connection.clicked.connect(self.test_connection)
+        self.ui.pushButton_change_encoding.clicked.connect(self.change_encoding)
 
     # 開始轉檔
     def accepted_button_clicked(self):
@@ -88,5 +89,34 @@ class DialogConvert(QtWidgets.QDialog):
         msg_box.setWindowTitle('連線成功')
         msg_box.setText("<font size='4' color='Blue'><b>恭喜您! 連線至資料庫主機成功.</b></font>")
         msg_box.setInformativeText("連線成功, 可以執行轉檔作業.")
+        msg_box.addButton(QPushButton("確定"), QMessageBox.YesRole)
+        msg_box.exec_()
+
+    def change_encoding(self):
+        sql = '''
+            SELECT 
+                CONCAT('ALTER TABLE ', tbl.TABLE_NAME, ' CONVERT TO CHARACTER SET {charset};') AS exec_script 
+            FROM 
+                information_schema.TABLES tbl 
+            WHERE 
+                tbl.TABLE_SCHEMA = '{database_name}';
+        '''.format(
+            charset=self.ui.lineEdit_charset.text(),
+            database_name=self.ui.lineEdit_database.text(),
+        )
+
+        rows = self.database.select_record(sql)
+        for row in rows:
+            exec_script = row['exec_script']
+            try:
+                self.database.exec_sql(exec_script)
+            except:
+                print(exec_script)
+
+        msg_box = QMessageBox()
+        msg_box.setIcon(QMessageBox.Information)
+        msg_box.setWindowTitle('更改成功')
+        msg_box.setText("<font size='4' color='Blue'><b>恭喜您! 資料庫編碼更改成功.</b></font>")
+        msg_box.setInformativeText("編碼更改成功, 可以儲存更新後的編碼.")
         msg_box.addButton(QPushButton("確定"), QMessageBox.YesRole)
         msg_box.exec_()

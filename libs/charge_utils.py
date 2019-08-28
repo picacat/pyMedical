@@ -668,10 +668,11 @@ def get_self_fee(tab_list):
     self_fee['acupuncture_fee'] = 0.0
     self_fee['massage_fee'] = 0.0
     self_fee['material_fee'] = 0.0
+    self_fee['discount_fee'] = 0.0
 
     for medicine_set, tab in zip(range(len(tab_list)), tab_list):
         medicine_set += 1
-        if medicine_set == 1:  # 健保不批價
+        if medicine_set in [1, 12]:  # 健保=1, 加強照護=12, 不批價
             continue
 
         if tab is None:
@@ -684,6 +685,7 @@ def get_self_fee(tab_list):
         except:
             pres_days = 1
 
+        self_fee['discount_fee'] += number_utils.get_integer(tab.ui.lineEdit_discount_fee.text())
         calculate_self_fee(
             tab.ui.tableWidget_prescript,
             pres_days,
@@ -707,20 +709,30 @@ def calculate_self_fee(table_widget_prescript, pres_days, self_fee):
 
         medicine_type = item.text()
         amount = get_table_widget_item_fee(
-            table_widget_prescript, row_no, prescript_utils.SELF_PRESCRIPT_COL_NO['Amount']) * pres_days
+            table_widget_prescript, row_no,
+            prescript_utils.SELF_PRESCRIPT_COL_NO['Amount'])
+
+        subtotal = get_subtotal_fee(amount, pres_days)
 
         if medicine_type == '水藥':
-            self_fee['herb_fee'] += amount
+            self_fee['herb_fee'] += subtotal
         elif medicine_type == '高貴':
-            self_fee['expensive_fee'] += amount
+            self_fee['expensive_fee'] += subtotal
         elif medicine_type == '穴道':
-            self_fee['acupuncture_fee'] += amount
+            self_fee['acupuncture_fee'] += subtotal
         elif medicine_type == '處置':
-            self_fee['massage_fee'] += amount
+            self_fee['massage_fee'] += subtotal
         elif medicine_type == '器材':
-            self_fee['material_fee'] += amount
+            self_fee['material_fee'] += subtotal
         else:
-            self_fee['drug_fee'] += amount
+            self_fee['drug_fee'] += subtotal
+
+
+# 計算處方金額小計
+def get_subtotal_fee(amount, pres_days):
+    subtotal = number_utils.round_up(amount) * pres_days  # 小計四捨五入後再 * 天數
+
+    return subtotal
 
 
 def update_ins_apply_diag_fee(database, system_settings, ins_apply_key, diag_code):
@@ -780,6 +792,7 @@ def update_treat_fee(database, ins_apply_key, course, treat_percent):
 
     database.update_record('insapply', fields, 'InsApplyKey', ins_apply_key, data)
 
+
 def set_nhi_basic_data(database):
     fields = ['ChargeType', 'ItemName', 'InsCode', 'Amount', 'Remark']
     rows = [
@@ -794,24 +807,24 @@ def set_nhi_basic_data(database):
         ('診察費', '山地離島門診診察費(有護理人員)', 'A09', 335, None),
         ('診察費', '山地離島門診診察費', 'A10', 325, None),
         ('診察費', '初診門診診察費加計', 'A90', 50, '2年以上新特約診所: 初診病患或2年內未就診病患'),
-        ('藥費', '每日藥費', 'A21', 33, '一般案件給藥天數不得超過七日'),
+        ('藥費', '每日藥費', 'A21', 35, '一般案件給藥天數不得超過七日'),
         ('調劑費', '藥師調劑', 'A31', 23, '須先報備，經證明核可後申報'),
         ('調劑費', '醫師調劑', 'A32', 13, None),
-        ('處置費', '針灸治療處置費-另開內服藥', 'B41', 215, None),
-        ('處置費', '針灸治療處置費', 'B42', 215, None),
-        ('處置費', '電針治療處置費-另開內服藥', 'B43', 215, None),
-        ('處置費', '電針治療處置費', 'B44', 215, None),
-        ('處置費', '複雜性針灸治療處置費-另開內服藥', 'B45', 295, None),
-        ('處置費', '複雜性針灸治療處置費', 'B46', 295, None),
-        ('處置費', '傷科治療處置費-另開內服藥', 'B53', 215, None),
-        ('處置費', '傷科治療處置費', 'B54', 215, '標準作業程序: (1)四診八綱辨證(2)診斷(3)理筋手法'),
-        ('處置費', '複雜性傷科治療處置費-另開內服藥', 'B55', 295, None),
-        ('處置費', '複雜性傷科治療處置費', 'B56', 295, None),
-        ('處置費', '骨折、脫臼整復第一線復位處置治療費', 'B57', 465,
+        ('處置費', '針灸治療處置費-另開內服藥', 'B41', 227, None),
+        ('處置費', '針灸治療處置費', 'B42', 227, None),
+        ('處置費', '電針治療處置費-另開內服藥', 'B43', 227, None),
+        ('處置費', '電針治療處置費', 'B44', 227, None),
+        ('處置費', '複雜性針灸治療處置費-另開內服藥', 'B45', 307, None),
+        ('處置費', '複雜性針灸治療處置費', 'B46', 307, None),
+        ('處置費', '傷科治療處置費-另開內服藥', 'B53', 227, None),
+        ('處置費', '傷科治療處置費', 'B54', 227, '標準作業程序: (1)四診八綱辨證(2)診斷(3)理筋手法'),
+        ('處置費', '複雜性傷科治療處置費-另開內服藥', 'B55', 307, None),
+        ('處置費', '複雜性傷科治療處置費', 'B56', 307, None),
+        ('處置費', '骨折、脫臼整復第一線復位處置治療費', 'B57', 477,
          'B57「骨折、脫臼整復第一線復位處置治療」係指該患者受傷部位初次到醫療院所做接骨、復位之處理治療，且不得與B61併同申報'),
-        ('處置費', '脫臼整復費-同療程第一次就醫', 'B61', 315, None),
-        ('處置費', '脫臼整復費-同療程複診-另開內服藥', 'B62', 215, None),
-        ('處置費', '脫臼整復費-同療程複診', 'B63', 215, None),
+        ('處置費', '脫臼整復費-同療程第一次就醫', 'B61', 327, None),
+        ('處置費', '脫臼整復費-同療程複診-另開內服藥', 'B62', 227, None),
+        ('處置費', '脫臼整復費-同療程複診', 'B63', 227, None),
         ('照護費', '小兒氣喘照護處置費(含氣霧吸入處置費)', 'C01', 1500,
          '照護處置費包括中醫四診診察費、口服藥(不得少於五天)、針灸治療處置費、穴位推拿按摩、穴位敷貼處置費、氣霧吸入處置費'),
         ('照護費', '小兒氣喘照護處置費', 'C02', 1400,
@@ -840,15 +853,15 @@ def set_nhi_basic_data(database):
          '中醫四診診察費口服藥(至少七天)、衛教、營養飲食指導，單次門診須全部執行方能申請本項點數。'),
         ('照護費', '兒童過敏性鼻炎管理照護費', 'P58005', 200,
          '本項包含中醫護理衛教、營養飲食指導及經穴按摩指導，各項目皆須執行並於病歷詳細記載，方可申報費用。'),
-        ('照護費', '乳癌、肝癌門診加強照護費(給藥日數7天以下)', 'P56001', 700,
+        ('照護費', '特定癌症門診加強照護費(給藥日數7天以下)', 'P56001', 700,
          '包含中醫輔助醫療診察費、口服藥'),
-        ('照護費', '乳癌、肝癌門診加強照護費(給藥日數8-14天)', 'P56002', 1050,
+        ('照護費', '特定癌症門診加強照護費(給藥日數8-14天)', 'P56002', 1050,
          '包含中醫輔助醫療診察費、口服藥'),
-        ('照護費', '乳癌、肝癌門診加強照護費(給藥日數15-21天)', 'P56003', 1400,
+        ('照護費', '特定癌症門診加強照護費(給藥日數15-21天)', 'P56003', 1400,
          '包含中醫輔助醫療診察費、口服藥'),
-        ('照護費', '乳癌、肝癌門診加強照護費(給藥日數22-28天)', 'P56004', 1750,
+        ('照護費', '特定癌症門診加強照護費(給藥日數22-28天)', 'P56004', 1750,
          '包含中醫輔助醫療診察費、口服藥'),
-        ('照護費', '癌症針灸或傷科治療處置費', 'P56005', 400,
+        ('照護費', '特定癌症針灸或傷科治療處置費', 'P56005', 400,
          '本項處置費每月申報上限為 12 次，超出部分支付點數以零計。'),
         ('照護費', '疾病管理照護費', 'P56006', 550,
          '1.包含中醫護理衛教及營養飲食指導。2.限三個月申報一次，申報此項目者，須參考衛教表單(如附件三)提供照護指導，並應併入病患之病歷紀錄備查。'),

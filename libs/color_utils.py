@@ -1,4 +1,4 @@
-from PyQt5 import QtGui, QtCore
+from PyQt5 import QtGui
 
 LIGHT_BLUE = QtGui.QColor(233, 249, 255)
 DARK_BLUE = QtGui.QColor(184, 192, 252)

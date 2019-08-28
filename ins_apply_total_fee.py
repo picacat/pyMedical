@@ -6,6 +6,7 @@ import sys
 from PyQt5 import QtWidgets
 
 from libs import ui_utils
+from libs import system_utils
 from libs import nhi_utils
 from libs import number_utils
 from libs import printer_utils
@@ -68,6 +69,7 @@ class InsApplyTotalFee(QtWidgets.QMainWindow):
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_INS_APPLY_TOTAL_FEE, self)
+        system_utils.set_css(self, self.system_settings)
 
     # 設定信號
     def _set_signal(self):

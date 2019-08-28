@@ -131,29 +131,38 @@ class DialogInputMedicine(QtWidgets.QDialog):
         else:
             remark = None
 
+        medicine_type = string_utils.xstr(row['MedicineType'])
         medicine_row = [
             string_utils.xstr(row['MedicineKey']),
-            string_utils.xstr(row['MedicineType']),
+            medicine_type,
             string_utils.xstr(row['MedicineName']),
             string_utils.xstr(row['Unit']),
             string_utils.get_formatted_str('單價', row['SalePrice']),
             remark
         ]
 
-        for column in range(len(medicine_row)):
+        for col_no in range(len(medicine_row)):
             self.ui.tableWidget_medicine.setItem(
-                row_no, column,
-                QtWidgets.QTableWidgetItem(medicine_row[column])
+                row_no, col_no,
+                QtWidgets.QTableWidgetItem(medicine_row[col_no])
             )
             align = QtCore.Qt.AlignLeft
-            if column in [3]:
+            if col_no in [3]:
                 align = QtCore.Qt.AlignCenter
-            elif column in [4]:
+            elif col_no in [4]:
                 align = QtCore.Qt.AlignRight
 
-            self.ui.tableWidget_medicine.item(row_no, column).setTextAlignment(
+            self.ui.tableWidget_medicine.item(row_no, col_no).setTextAlignment(
                 align | QtCore.Qt.AlignVCenter
             )
+            if medicine_type in ['單方', '複方'] and remark == '':
+                self.ui.tableWidget_medicine.item(row_no, col_no).setForeground(
+                    QtGui.QColor('blue')
+                )
+            elif medicine_type in ['成方']:
+                self.ui.tableWidget_medicine.item(row_no, col_no).setForeground(
+                    QtGui.QColor('brown')
+                )
 
     # 輸入藥品
     def _add_prescript(self):

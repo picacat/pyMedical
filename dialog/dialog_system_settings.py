@@ -63,10 +63,6 @@ class DialogSystemSettings(QtWidgets.QDialog):
         self.ui.pushButton_detect_com_port.clicked.connect(self._detect_com_port)
 
     def _set_combo_box(self):
-        # if sys.platform == 'win32':
-        #     ui_utils.set_combo_box(self.ui.comboBox_theme, ui_utils.WIN32_THEME)
-        # else:
-        #     ui_utils.set_combo_box(self.ui.comboBox_theme, ui_utils.THEME)
         ui_utils.set_combo_box(
             self.ui.comboBox_theme,
             QtWidgets.QStyleFactory.keys()
@@ -97,7 +93,11 @@ class DialogSystemSettings(QtWidgets.QDialog):
         ui_utils.set_combo_box(self.ui.comboBox_self_receipt_printer, printer_list, None)
         ui_utils.set_combo_box(self.ui.comboBox_bag_printer, printer_list, None)
         ui_utils.set_combo_box(self.ui.comboBox_massage_printer, printer_list, None)
+        ui_utils.set_combo_box(self.ui.comboBox_misc_printer, printer_list, None)
         ui_utils.set_combo_box(self.ui.comboBox_report_printer, printer_list, None)
+
+        for combo_box in self.findChildren(QtWidgets.QComboBox):
+            combo_box.setView(QtWidgets.QListView())
 
         ui_utils.set_combo_box(
             self.ui.comboBox_regist_form,
@@ -120,6 +120,10 @@ class DialogSystemSettings(QtWidgets.QDialog):
             self.ui.comboBox_self_receipt_form,
             list(printer_utils.PRINT_RECEIPT_SELF_FORM.keys()), None
         )
+        ui_utils.set_combo_box(
+            self.ui.comboBox_misc_form,
+            list(printer_utils.PRINT_MISC_FORM.keys()), None
+        )
 
         ui_utils.set_combo_box(self.ui.comboBox_regist_print_mode, print_mode, None)
         ui_utils.set_combo_box(self.ui.comboBox_reserve_print_mode, print_mode, None)
@@ -129,6 +133,7 @@ class DialogSystemSettings(QtWidgets.QDialog):
         ui_utils.set_combo_box(self.ui.comboBox_self_receipt_print_mode, print_mode, None)
         ui_utils.set_combo_box(self.ui.comboBox_bag_print_mode, print_mode, None)
         ui_utils.set_combo_box(self.ui.comboBox_massage_print_mode, print_mode, None)
+        ui_utils.set_combo_box(self.ui.comboBox_misc_print_mode, print_mode, None)
 
         ui_utils.set_combo_box(self.ui.comboBox_report_print_mode, print_mode, None)
 
@@ -165,6 +170,13 @@ class DialogSystemSettings(QtWidgets.QDialog):
         self._set_check_box(self.ui.checkBox_acupuncture_cert, '針灸認證合格')
         self._set_date_edit(self.ui.dateEdit_acupuncture_date, '針灸認證合格日期')
         self.ui.comboBox_division.setCurrentText(self.system_settings.field('健保業務'))
+        self._set_radio_button(
+            [self.ui.radioButton_discount_group,
+             self.ui.radioButton_discount_individual],
+            ['統一折扣', '個別折扣'],
+            '自費折扣方式'
+        )
+        self.ui.spinBox_dosage_limitation.setValue(number_utils.get_integer(self.system_settings.field('劑量上限')))
 
     # 讀取診號設定
     def _read_regist_no_settings(self):
@@ -196,6 +208,10 @@ class DialogSystemSettings(QtWidgets.QDialog):
                                 self.ui.radioButton_self],
                                ['健保', '自費'],
                                '預設門診類別')
+        self._set_radio_button([self.ui.radioButton_multi_sales,
+                                self.ui.radioButton_single_sales],
+                               ['複選', '單選'],
+                               '自購藥銷售人員')
         self.ui.spinBox_diag_count.setValue(number_utils.get_integer(self.system_settings.field('首次警告次數')))
         self.ui.spinBox_treat_count.setValue(number_utils.get_integer(self.system_settings.field('針傷警告次數')))
         self._set_check_box(self.ui.checkBox_doctor_treat, '醫師親自處置')
@@ -204,6 +220,8 @@ class DialogSystemSettings(QtWidgets.QDialog):
     def _read_doctor_settings(self):
         self.ui.spinBox_room.setValue(number_utils.get_integer(self.system_settings.field('診療室')))
         self._set_check_box(self.ui.checkBox_copy_past, '自動顯示過去病歷')
+        self._set_check_box(self.ui.checkBox_copy_self_prescript, '預設拷貝自費處方')
+        self._set_check_box(self.ui.checkBox_round, '折扣四捨五入')
         self._set_check_box(self.ui.checkBox_auto_cashier, '自動完成批價作業')
         self.ui.spinBox_packages.setValue(number_utils.get_integer(self.system_settings.field('給藥包數')))
         self.ui.spinBox_days.setValue(number_utils.get_integer(self.system_settings.field('給藥天數')))
@@ -244,6 +262,7 @@ class DialogSystemSettings(QtWidgets.QDialog):
         self.ui.comboBox_self_receipt_print_mode.setCurrentText(self.system_settings.field('列印自費醫療收據'))
         self.ui.comboBox_bag_print_mode.setCurrentText(self.system_settings.field('列印藥袋'))
         self.ui.comboBox_massage_print_mode.setCurrentText(self.system_settings.field('列印民俗調理單'))
+        self.ui.comboBox_misc_print_mode.setCurrentText(self.system_settings.field('列印其他收據'))
 
         self.ui.comboBox_regist_form.setCurrentText(self.system_settings.field('門診掛號單格式'))
         self.ui.comboBox_reserve_form.setCurrentText(self.system_settings.field('預約掛號單格式'))
@@ -253,6 +272,7 @@ class DialogSystemSettings(QtWidgets.QDialog):
         self.ui.comboBox_self_receipt_form.setCurrentText(self.system_settings.field('自費醫療收據格式'))
         self.ui.comboBox_bag_form.setCurrentText(self.system_settings.field('藥袋格式'))
         self.ui.comboBox_massage_form.setCurrentText(self.system_settings.field('民俗調理單格式'))
+        self.ui.comboBox_misc_form.setCurrentText(self.system_settings.field('其他收據格式'))
 
         self.ui.comboBox_regist_printer.setCurrentText(self.system_settings.field('門診掛號單印表機'))
         self.ui.comboBox_reserve_printer.setCurrentText(self.system_settings.field('預約掛號單印表機'))
@@ -262,6 +282,7 @@ class DialogSystemSettings(QtWidgets.QDialog):
         self.ui.comboBox_self_receipt_printer.setCurrentText(self.system_settings.field('自費醫療收據印表機'))
         self.ui.comboBox_bag_printer.setCurrentText(self.system_settings.field('藥袋印表機'))
         self.ui.comboBox_massage_printer.setCurrentText(self.system_settings.field('民俗調理單印表機'))
+        self.ui.comboBox_misc_printer.setCurrentText(self.system_settings.field('其他收據印表機'))
 
         self.ui.comboBox_report_print_mode.setCurrentText(self.system_settings.field('列印報表'))
         self.ui.comboBox_report_printer.setCurrentText(self.system_settings.field('報表印表機'))
@@ -339,6 +360,13 @@ class DialogSystemSettings(QtWidgets.QDialog):
         self._save_check_box(self.ui.checkBox_acupuncture_cert, '針灸認證合格')
         self._save_date_edit(self.ui.dateEdit_acupuncture_date, '針灸認證合格日期')
         self.system_settings.post('健保業務', self.ui.comboBox_division.currentText())
+        self._save_radio_button([
+            self.ui.radioButton_discount_group,
+            self.ui.radioButton_discount_individual],
+            ['統一折扣', '個別折扣'],
+            '自費折扣方式'
+        )
+        self.system_settings.post('劑量上限', self.ui.spinBox_dosage_limitation.value())
 
     # 寫入診號控制
     def _save_regist_no_settings(self):
@@ -366,12 +394,18 @@ class DialogSystemSettings(QtWidgets.QDialog):
                                  self.ui.radioButton_self],
                                 ['健保', '自費'],
                                 '預設門診類別')
+        self._save_radio_button([self.ui.radioButton_multi_sales,
+                                 self.ui.radioButton_single_sales],
+                                ['複選', '單選'],
+                                '自購藥銷售人員')
         self.system_settings.post('首次警告次數', self.ui.spinBox_diag_count.value())
         self.system_settings.post('針傷警告次數', self.ui.spinBox_treat_count.value())
 
     def _save_doctor_settings(self):
         self.system_settings.post('診療室', self.ui.spinBox_room.value())
         self._save_check_box(self.ui.checkBox_copy_past, '自動顯示過去病歷')
+        self._save_check_box(self.ui.checkBox_copy_self_prescript, '預設拷貝自費處方')
+        self._save_check_box(self.ui.checkBox_round, '折扣四捨五入')
         self._save_check_box(self.ui.checkBox_auto_cashier, '自動完成批價作業')
         self.system_settings.post('給藥包數', self.ui.spinBox_packages.value())
         self.system_settings.post('給藥天數', self.ui.spinBox_days.value())
@@ -413,6 +447,7 @@ class DialogSystemSettings(QtWidgets.QDialog):
         self.system_settings.post('列印自費醫療收據', self.ui.comboBox_self_receipt_print_mode.currentText())
         self.system_settings.post('列印藥袋', self.ui.comboBox_bag_print_mode.currentText())
         self.system_settings.post('列印民俗調理單', self.ui.comboBox_massage_print_mode.currentText())
+        self.system_settings.post('列印其他收據', self.ui.comboBox_misc_print_mode.currentText())
 
         self.system_settings.post('門診掛號單格式', self.ui.comboBox_regist_form.currentText())
         self.system_settings.post('預約掛號單格式', self.ui.comboBox_reserve_form.currentText())
@@ -422,6 +457,7 @@ class DialogSystemSettings(QtWidgets.QDialog):
         self.system_settings.post('自費醫療收據格式', self.ui.comboBox_self_receipt_form.currentText())
         self.system_settings.post('藥袋格式', self.ui.comboBox_bag_form.currentText())
         self.system_settings.post('民俗調理單格式', self.ui.comboBox_massage_form.currentText())
+        self.system_settings.post('其他收據格式', self.ui.comboBox_misc_form.currentText())
 
         self.system_settings.post('門診掛號單印表機', self.ui.comboBox_regist_printer.currentText())
         self.system_settings.post('預約掛號單印表機', self.ui.comboBox_reserve_printer.currentText())
@@ -431,6 +467,7 @@ class DialogSystemSettings(QtWidgets.QDialog):
         self.system_settings.post('自費醫療收據印表機', self.ui.comboBox_self_receipt_printer.currentText())
         self.system_settings.post('藥袋印表機', self.ui.comboBox_bag_printer.currentText())
         self.system_settings.post('民俗調理單印表機', self.ui.comboBox_massage_printer.currentText())
+        self.system_settings.post('其他收據印表機', self.ui.comboBox_misc_printer.currentText())
 
         self.system_settings.post('列印報表', self.ui.comboBox_report_print_mode.currentText())
         self.system_settings.post('報表印表機', self.ui.comboBox_report_printer.currentText())

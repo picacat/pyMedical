@@ -4,6 +4,7 @@
 import sys
 
 from PyQt5 import QtWidgets, QtCore
+from libs import system_utils
 from libs import ui_utils
 import charge_settings_regist
 import charge_settings_share
@@ -35,6 +36,7 @@ class ChargeSettings(QtWidgets.QMainWindow):
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_CHARGE_SETTINGS, self)
+        system_utils.set_css(self, self.system_settings)
         self.ui.tabWidget_charge_settings.addTab(
             charge_settings_regist.ChargeSettingsRegist(self, *self.args), '掛號費')
         self.ui.tabWidget_charge_settings.addTab(

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# 病歷查詢 2014.09.22
+# 辨證治則詞庫 2014.09.22
 #coding: utf-8
 
 from PyQt5 import QtWidgets, QtGui
@@ -14,7 +14,7 @@ from dialog import dialog_distinguish
 from dialog import dialog_cure
 
 
-# 主視窗
+# 辨證治則詞庫
 class DialogDiagnosis(QtWidgets.QDialog):
     # 初始化
     def __init__(self, parent=None, *args):
@@ -24,6 +24,7 @@ class DialogDiagnosis(QtWidgets.QDialog):
         self.system_settings = args[1]
         self.dialog_type = args[2]
         self.text_edit = args[3]
+        self.text_edit_cure = args[4]
 
         self.settings = QSettings('__settings.ini', QSettings.IniFormat)
         self.ui = None
@@ -71,8 +72,10 @@ class DialogDiagnosis(QtWidgets.QDialog):
                 groups_name = row['DictGroupsName']
                 self.ui.tabWidget_diagnosis.addTab(
                     dialog_distinguish.DialogDistinguish(
-                        self, self.database, self.system_settings, groups_name, self.text_edit),
-                    groups_name)
+                        self, self.database, self.system_settings, groups_name, self.text_edit, self.text_edit_cure,
+                    ),
+                    groups_name
+                )
         elif self.dialog_type == '治則':
             sql = 'SELECT * FROM dict_groups WHERE DictGroupsType = "治則類別" ORDER BY DictGroupsKey'
             rows = self.database.select_record(sql)
@@ -80,5 +83,7 @@ class DialogDiagnosis(QtWidgets.QDialog):
                 groups_name = row['DictGroupsName']
                 self.ui.tabWidget_diagnosis.addTab(
                     dialog_cure.DialogCure(
-                        self, self.database, self.system_settings, groups_name, self.text_edit),
-                    groups_name)
+                        self, self.database, self.system_settings, groups_name, self.text_edit
+                    ),
+                    groups_name
+                )

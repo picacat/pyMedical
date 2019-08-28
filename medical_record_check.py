@@ -63,7 +63,7 @@ class MedicalRecordCheck(QtWidgets.QDialog):
             check_ok = self._check_aid_pregnant_care()
         elif self.treat_type == '保胎照護':
             check_ok = self._check_keep_baby_care()
-        elif self.treat_type in ['乳癌照護', '肝癌照護']:
+        elif self.treat_type in ['乳癌照護', '肝癌照護', '肺癌照護', '大腸癌照護']:
             check_ok = self._check_cancer_care()
         elif self.treat_type == '兒童鼻炎':
             check_ok = self._check_child_rhinitis()
@@ -102,6 +102,16 @@ class MedicalRecordCheck(QtWidgets.QDialog):
                 pass
             else:
                 error_message = '* ICD-10-CM主診斷碼非肝癌病名<br>肝癌主診斷碼範圍: C22~, C23~, C24~<br>'
+        elif treat_type == '肺癌照護':
+            if disease_code1[:3] in ['C33', 'C34']:  # 肺惡性腫瘤
+                pass
+            else:
+                error_message = '* ICD-10-CM主診斷碼非肺癌病名<br>肺癌主診斷碼範圍: C33~, C34~<br>'
+        elif treat_type == '大腸癌照護':
+            if disease_code1[:3] in ['C18', 'C19', 'C20', 'C21']:  # 大腸惡性腫瘤
+                pass
+            else:
+                error_message = '* ICD-10-CM主診斷碼非大腸癌病名<br>大腸癌主診斷碼範圍: C18~, C19~, C20~, C21~<br>'
         elif treat_type == '兒童鼻炎':
             if disease_code1 in ['J301', 'J302', 'J305', 'J3081', 'J3089', 'J309']:
                 pass
@@ -122,6 +132,10 @@ class MedicalRecordCheck(QtWidgets.QDialog):
             error_message = '* 乳癌照護未開立七天以上的內服藥, 請開立內服藥至少七天'
         elif treat_type == '肝癌照護' and pres_days < 7:
             error_message = '* 肝癌照護未開立七天以上的內服藥, 請開立內服藥至少七天'
+        elif treat_type == '肺癌照護' and pres_days < 7:
+            error_message = '* 肺癌照護未開立七天以上的內服藥, 請開立內服藥至少七天'
+        elif treat_type == '大腸癌照護' and pres_days < 7:
+            error_message = '* 大腸癌照護未開立七天以上的內服藥, 請開立內服藥至少七天'
 
         return error_message
 
@@ -144,7 +158,7 @@ class MedicalRecordCheck(QtWidgets.QDialog):
                                     treat_type, check_ins_code, table_widget_ins_care):
         error_message = None
 
-        if treat_type in ['乳癌照護', '肝癌照護']:
+        if treat_type in ['乳癌照護', '肝癌照護', '肺癌', '大腸癌']:
             if table_widget_ins_care is None:
                 return error_message
 
@@ -160,8 +174,8 @@ class MedicalRecordCheck(QtWidgets.QDialog):
             if not treat_exists:  # 無此醫令
                 return error_message
 
-            last_two_months = datetime.date(case_date.year, case_date.month, 1) - datetime.timedelta(60)
-            start_date = last_two_months.replace(day=1).strftime('%Y-%m-%d 00:00:00')
+            last_months = datetime.date(case_date.year, case_date.month, 1) - datetime.timedelta(30)
+            start_date = last_months.replace(day=1).strftime('%Y-%m-%d 00:00:00')
             end_date = '{0} 23:59:59'.format(case_date.date() - datetime.timedelta(1))
             sql = '''
                 SELECT cases.CaseDate, prescript.MedicineName FROM prescript
@@ -173,7 +187,7 @@ class MedicalRecordCheck(QtWidgets.QDialog):
             '''.format(patient_key, start_date, end_date, check_ins_code)
             rows = self.database.select_record(sql)
             if len(rows) >= 1:
-                error_message = '* {0}限三個月申報一次, 上次申報日期為{1}, 請刪除此項醫令'.format(
+                error_message = '* {0}限60日申報一次, 上次申報日期為{1}, 請刪除此項醫令'.format(
                     string_utils.xstr(rows[0]['MedicineName']),
                     rows[0]['CaseDate'].date(),
                 )
@@ -340,7 +354,7 @@ class MedicalRecordCheck(QtWidgets.QDialog):
                 '''
                     <font size="4" color="red">
                       <b>
-                        肝癌、乳癌照護檢查錯誤訊息:<br>
+                        特定癌症照護檢查錯誤訊息:<br>
                         <br>
                         {0}
                       </b>
@@ -469,6 +483,7 @@ class MedicalRecordCheck(QtWidgets.QDialog):
         if row_count <= 0:
             return check_ok
 
+        total_dosage = 0.0
         for row_no in range(row_count):
             self.table_widget_ins_prescript.setCurrentCell(
                 row_no, prescript_utils.INS_PRESCRIPT_COL_NO['Dosage'])
@@ -485,6 +500,15 @@ class MedicalRecordCheck(QtWidgets.QDialog):
             if dosage is None or dosage.text() == '':
                 error_message.append('{0} 無劑量'.format(medicine_name.text()))
                 break
+
+            try:
+                total_dosage += number_utils.get_float(dosage.text())
+            except ValueError:
+                error_message.append('{0} 劑量有誤'.format(medicine_name.text()))
+
+        dosage_limitation = number_utils.get_integer(self.system_settings.field('劑量上限'))
+        if dosage_limitation is not None and 0 < dosage_limitation < total_dosage:  # 超過劑量上限
+            error_message.append('用藥超過劑量上限{0}克'.format(dosage_limitation))
 
         if len(error_message) > 0:
             system_utils.show_message_box(

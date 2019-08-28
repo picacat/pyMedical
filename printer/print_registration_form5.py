@@ -3,11 +3,14 @@
 
 from PyQt5 import QtGui, QtCore, QtPrintSupport, QtWidgets
 from PyQt5.QtPrintSupport import QPrinter
+import datetime
+
 from libs import printer_utils
 from libs import string_utils
 from libs import number_utils
 from libs import system_utils
 from libs import date_utils
+from libs import case_utils
 
 
 # 掛號收據格式5 3"套表掛號單 (明醫)
@@ -24,6 +27,7 @@ class PrintRegistrationForm5:
         self.printer = printer_utils.get_printer(self.system_settings, '門診掛號單印表機')
         self.preview_dialog = QtPrintSupport.QPrintPreviewDialog(self.printer)
         self.current_print = None
+        self.return_card = None
 
         self._set_ui()
         self._set_signal()
@@ -44,7 +48,8 @@ class PrintRegistrationForm5:
     def _set_signal(self):
         pass
 
-    def print(self):
+    def print(self, return_card=None):
+        self.return_card = return_card
         self.print_html(True)
         # self.print_painter()
 
@@ -67,7 +72,7 @@ class PrintRegistrationForm5:
         painter.drawText(0, 30, 'print test line2 中文測試')
         painter.end()
 
-    def print_html(self, printing):
+    def print_html(self, printing, return_card=None):
         self.current_print = self.print_html
         self.printer.setPaperSize(QtCore.QSizeF(3.5, 3), QPrinter.Inch)
 
@@ -80,7 +85,7 @@ class PrintRegistrationForm5:
     def _html(self):
         sql = '''
             SELECT 
-                cases.PatientKey, cases.Name, cases.CaseDate, cases.RegistNo, cases.Room,
+                cases.CaseKey, cases.PatientKey, cases.Name, cases.CaseDate, cases.RegistNo, cases.Room,
                 cases.InsType, cases.Share, cases.RegistFee, cases.SDiagShareFee,
                 cases.DepositFee, cases.Card, cases.Continuance,
                 patient.DiscountType 
@@ -117,7 +122,27 @@ class PrintRegistrationForm5:
         regist_fee = number_utils.get_integer(row['RegistFee'])
         diag_share_fee = number_utils.get_integer(row['SDiagShareFee'])
         deposit_fee = number_utils.get_integer(row['DepositFee'])
+        return_card_note = ''
         font_size = 13
+
+        if self.return_card == '還卡收據':
+            return_date = case_utils.get_return_date(self.database, row['CaseKey'])
+            if return_date is None:
+                case_date = datetime.datetime.today()
+                case_time = datetime.datetime.now().time().strftime('%H:%M')
+            else:
+                case_date = string_utils.xstr(return_date.date())
+                case_time = string_utils.xstr(return_date.time())[:5]
+
+            case_date = date_utils.west_date_to_nhi_date(case_date)
+            case_date = '{year}.{month}.{day}'.format(
+                year=case_date[:3],
+                month=case_date[3:5],
+                day=case_date[5:],
+            )
+            regist_fee = 0
+            diag_share_fee = 0
+            return_card_note = '還卡'
 
         html = '''
             <html>
@@ -189,6 +214,7 @@ class PrintRegistrationForm5:
                             {ins_type}
                         </td>
                         <td width="30%" style="font-size: {font_size}px; text-align: left">
+                            {return_card_note}
                         </td>
                     </tr>
                 </table>
@@ -212,6 +238,7 @@ class PrintRegistrationForm5:
             total_fee=string_utils.xstr(regist_fee + diag_share_fee + deposit_fee),
             share=string_utils.xstr(row['Share']),
             card=card,
+            return_card_note=return_card_note,
         )
 
         return html

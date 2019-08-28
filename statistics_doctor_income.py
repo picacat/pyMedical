@@ -42,6 +42,7 @@ class StatisticsDoctorIncome(QtWidgets.QMainWindow):
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_STATISTICS_DOCTOR_INCOME, self)
+        system_utils.set_css(self, self.system_settings)
         self.table_widget_doctor_income = table_widget.TableWidget(self.ui.tableWidget_doctor_income, self.database)
         self._set_table_width()
 

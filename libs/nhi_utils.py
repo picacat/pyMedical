@@ -30,9 +30,34 @@ REMEDY_TYPE_CODE = {
     '補報整筆': '1',
     '補報差額': '2',
 }
-
+TREAT_ITEM = {
+    '01': '西醫門診',
+    '02': '牙醫門診',
+    '03': '中醫門診',
+    '04': '急診',
+    '05': '住院',
+    '06': '轉診',
+    '07': '門診回診',
+    '08': '住院回診',
+    'AA': '療程',
+    'AB': '療程',
+    'AC': '預防保健',
+    'AD': '職業傷害',
+    'AE': '慢箋',
+    'AF': '藥局調劑',
+    'AG': '排程檢查',
+    'AH': '居家照護',
+    'AI': '同日看診',
+    'BA': '急診住院',
+    'BB': '出院',
+    'BC': '急診住院中',
+    'BD': '急診離院',
+    'BE': '職傷住院',
+    'CA': '其他',
+    'DA': '門診轉出',
+    'DB': '門診手術',
+}
 MAX_COURSE = 6  # 療程次數
-
 MAX_TREAT_DRUG = 120  # 針傷給藥限量
 TREAT_DRUG_CODE = ['B41', 'B43', 'B45', 'B53', 'B62', 'B80', 'B85', 'B90']  # 針傷給藥代碼
 TREAT_CODE = ['B42', 'B44', 'B46', 'B54', 'B61', 'B63', 'B81', 'B86', 'B91']  # 針傷未開藥代碼
@@ -107,6 +132,7 @@ AUXILIARY_CARE_TREAT = [
 IMPROVE_CARE_TREAT = [
     '助孕照護', '保胎照護',
     '乳癌照護', '肝癌照護',
+    '肺癌照護', '大腸癌照護',
     '兒童鼻炎',
 ]
 
@@ -118,6 +144,8 @@ SPECIAL_CODE_DICT = {
     '乳癌照護': 'JE',
     '肝癌照護': 'JF',
     '兒童鼻炎': 'JG',
+    '肺癌照護': 'JI',
+    '大腸癌照護': 'JJ',
 }
 
 INS_TREAT_WITH_CARE = INS_TREAT + CARE_TREAT
@@ -1143,6 +1171,49 @@ COMPLICATED_MASSAGE_DISEASE_DICT = {
     ],
 }
 
+INS_SPECIAL_CARE_DICT = {
+    '腦血管疾病': [
+        [
+            [('G450-G468',), ('I60-I68',), ], [],
+        ],
+    ],
+    '顱腦損傷': [
+        [
+            [('S021-S024',), ('S026-S029',), ('S060-S069',), ], [],
+        ],
+    ],
+    '脊髓損傷': [
+        [
+            [('S140-S141',), ('S240-S241',), ('S340-S341',), ], [],
+        ],
+    ],
+    '乳癌': [
+        [
+            ['C50', 'C7981'], [],
+        ],
+    ],
+    '肝癌': [
+        [
+            ['C22', 'C23', 'C24'], [],
+        ],
+    ],
+    '肺癌': [
+        [
+            ['C33', 'C34'], [],
+        ],
+    ],
+    '大腸癌': [
+        [
+            ['C18', 'C19', 'C20', 'C21'], [],
+        ],
+    ],
+    '兒童過敏性鼻炎': [
+        [
+            ['J301', 'J302', 'J305', 'J3081', 'J3089', 'J309'], [],
+        ],
+    ],
+}
+
 
 # 取得負擔類別
 def get_share_type(share_type):
@@ -1751,10 +1822,35 @@ def get_complicated_massage_rows(database, groups_name, disease=1):
     return disease_rows
 
 
+def get_ins_special_care_rows(database, groups_name, disease=1):
+    disease_rows = []
+    rows = INS_SPECIAL_CARE_DICT[groups_name]
+    for row in rows:
+        disease_list1, disease_list2 = row[0], row[1]
+        if disease == 1:
+            disease_list = disease_list1
+        else:
+            disease_list = disease_list2
+
+        disease_row = get_disease_rows(database, disease_list)
+        disease_rows += disease_row
+
+    return disease_rows
+
+
 def get_complicated_massage_list(database, disease=1):
     disease_rows = []
     for row in list(COMPLICATED_MASSAGE_DISEASE_DICT.keys()):
         rows = get_complicated_massage_rows(database, row, disease)
+        disease_rows += rows
+
+    return disease_rows
+
+
+def get_ins_special_care_list(database, disease=1):
+    disease_rows = []
+    for row in list(INS_SPECIAL_CARE_DICT.keys()):
+        rows = get_ins_special_care_rows(database, row, disease)
         disease_rows += rows
 
     return disease_rows
@@ -1801,6 +1897,7 @@ def NHI_SendB(system_settings, type_code, dest_file):
         '若上傳成功, 請於30分鐘後至健保VPN網站查看上傳結果.'
     )
 
+
 '''
 // 回傳值: 0：無任何錯誤, 其他：參考異常碼對應。
 int NHI_SendB(
@@ -1823,6 +1920,8 @@ int NHI_SendB(
                                 // 本函式將使用者端之「上傳作業種類」檔案傳送至IDC
 )
 '''
+
+
 def NHI_SendB_thread(out_queue, system_settings, type_code, dest_file):
     BASE_DIR = os.path.abspath(os.path.join(os.path.dirname("__file__")))
     dll_file = os.path.join(BASE_DIR, 'nhi_eiiapi.dll')

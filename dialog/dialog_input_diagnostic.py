@@ -5,9 +5,10 @@
 from PyQt5 import QtWidgets
 from libs import ui_utils
 from libs import system_utils
+from libs import string_utils
 
 
-# 主視窗
+# 建立主訴詞庫
 class DialogInputDiagnostic(QtWidgets.QDialog):
     # 初始化
     def __init__(self, parent=None, *args):
@@ -50,20 +51,30 @@ class DialogInputDiagnostic(QtWidgets.QDialog):
 
     def _edit_diagnostic(self):
         sql = 'SELECT * FROM clinic WHERE ClinicKey = {0}'.format(self.diagnostic_key)
-        row_data = self.database.select_record(sql)[0]
-        self.ui.lineEdit_diagnostic_code.setText(row_data['ClinicCode'])
-        self.ui.lineEdit_input_code.setText(row_data['InputCode'])
-        self.ui.lineEdit_diagnostic_name.setText(row_data['ClinicName'])
+        row = self.database.select_record(sql)[0]
+        self.ui.lineEdit_diagnostic_code.setText(row['ClinicCode'])
+        self.ui.lineEdit_input_code.setText(row['InputCode'])
+        self.ui.lineEdit_diagnostic_name.setText(row['ClinicName'])
+
+        if string_utils.xstr(row['ClinicType']) == '辨證':
+            self.ui.label_distinguish.setVisible(True)
+            self.ui.lineEdit_distinguish.setVisible(True)
+            self.ui.lineEdit_distinguish.setText(row['Position'])
+        else:
+            self.ui.label_distinguish.setVisible(False)
+            self.ui.lineEdit_distinguish.setVisible(False)
+            self.ui.lineEdit_distinguish.setText(None)
 
     def accepted_button_clicked(self):
         if self.diagnostic_key is None:
             return
 
-        fields = ['ClinicCode', 'InputCode', 'ClinicName']
+        fields = ['ClinicCode', 'InputCode', 'ClinicName', 'Position']
         data = [
             self.ui.lineEdit_diagnostic_code.text(),
             self.ui.lineEdit_input_code.text(),
             self.ui.lineEdit_diagnostic_name.text(),
+            self.ui.lineEdit_distinguish.text(),
         ]
         
         self.database.update_record('clinic', fields, 'ClinicKey',

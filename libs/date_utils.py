@@ -101,13 +101,17 @@ def west_datetime_to_nhi_datetime(in_datetime):
 
 
 # 西元日期轉健保日期
-def west_date_to_nhi_date(in_date):
+def west_date_to_nhi_date(in_date, separator=''):
     if type(in_date) is str:
         in_date = datetime.datetime.strptime(in_date, '%Y-%m-%d')
 
     year = in_date.year - 1911
-    nhi_date = '{0:0>3}{1:0>2}{2:0>2}'.format(
-        str(year), str(in_date.month), str(in_date.day))
+    nhi_date = '{year:0>3}{separator}{month:0>2}{separator}{day:0>2}'.format(
+        year=str(year),
+        month=str(in_date.month),
+        day=str(in_date.day),
+        separator=separator,
+    )
 
     return nhi_date
 
@@ -146,6 +150,7 @@ def get_start_date_by_year_month(year, month):
     )
 
     return start_date
+
 
 def get_end_date_by_year_month(year, month):
     last_day = calendar.monthrange(year, month)[1]

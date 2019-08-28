@@ -44,6 +44,7 @@ class DictDiagnostic(QtWidgets.QMainWindow):
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_DICT_DIAGNOSTIC, self)
+        system_utils.set_css(self, self.system_settings)
         self.ui.tabWidget_diagnostic.addTab(
             dict_symptom.DictSymptom(self, *self.args), '主訴資料')
         self.ui.tabWidget_diagnostic.addTab(

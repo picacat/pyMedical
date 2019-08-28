@@ -5,6 +5,7 @@ from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtWidgets import QMessageBox, QPushButton
 from classes import table_widget
 from libs import ui_utils
+from libs import system_utils
 from libs import string_utils
 from libs import personnel_utils
 from dialog import dialog_input_user
@@ -43,6 +44,7 @@ class Users(QtWidgets.QMainWindow):
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_USERS, self)
+        system_utils.set_css(self, self.system_settings)
         self.table_widget_users = table_widget.TableWidget(self.ui.tableWidget_users, self.database)
         self._set_table_width()
 

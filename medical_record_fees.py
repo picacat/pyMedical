@@ -4,6 +4,7 @@
 from PyQt5 import QtWidgets, QtCore, QtGui
 from classes import table_widget
 from libs import ui_utils
+from libs import system_utils
 from libs import string_utils
 from libs import number_utils
 from libs import charge_utils
@@ -41,6 +42,7 @@ class MedicalRecordFees(QtWidgets.QMainWindow):
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_MEDICAL_RECORD_FEES, self)
+        system_utils.set_css(self, self.system_settings)
         self.table_widget_ins_fees = table_widget.TableWidget(self.ui.tableWidget_ins_fees, self.database)
         self.table_widget_cash_fees = table_widget.TableWidget(self.ui.tableWidget_cash_fees, self.database)
         self.ui.tableWidget_ins_fees.resizeRowsToContents()
@@ -51,11 +53,20 @@ class MedicalRecordFees(QtWidgets.QMainWindow):
             '健保合計', '門診負擔', '藥品負擔', '健保申請', '代辦費',
         ]
         self.ui.tableWidget_ins_fees.setVerticalHeaderLabels(self.ins_table_headers)
+        self._set_discount_visible()
+
+    def _set_discount_visible(self):
+        if self.system_settings.field('自費折扣方式') == '個別折扣':
+            enabled = False
+            self.ui.label_discount.setVisible(enabled)
+            self.ui.spinBox_discount.setVisible(enabled)
+            self.ui.label_percent.setVisible(enabled)
 
     # 設定信號
     def _set_signal(self):
         self.ui.toolButton_calculate_fees.clicked.connect(self.calculate_fees)
         self.ui.tableWidget_cash_fees.keyPressEvent = self._table_widget_cash_fees_key_press
+        self.ui.spinBox_discount.valueChanged.connect(self._calculate_discount)
 
     def _table_widget_cash_fees_key_press(self, event):
         key = event.key()
@@ -70,8 +81,8 @@ class MedicalRecordFees(QtWidgets.QMainWindow):
         return QtWidgets.QTableWidget.keyPressEvent(self.ui.tableWidget_cash_fees, event)
 
     def _set_table_width(self):
-        self.table_widget_ins_fees.set_table_heading_width([80])
-        self.table_widget_cash_fees.set_table_heading_width([80])
+        self.table_widget_ins_fees.set_table_heading_width([90])
+        self.table_widget_cash_fees.set_table_heading_width([90])
 
     def _set_new_self_medical_fees(self):
         ins_fees = [
@@ -141,6 +152,8 @@ class MedicalRecordFees(QtWidgets.QMainWindow):
         if row['ChargeDone'] == 'True':  # 批價完成後, 設定批價鎖定
             self.ui.checkBox_disable_calculate.setChecked(True)
 
+        self.ui.spinBox_discount.setValue(number_utils.get_integer(row['DiscountRate']))
+
         ins_fees = [
             [-1, row['DiagFee']],
             [0, row['InterDrugFee']],
@@ -200,6 +213,9 @@ class MedicalRecordFees(QtWidgets.QMainWindow):
 
     def _adjust_table_widget_align(self):
         for row_no in range(self.ui.tableWidget_ins_fees.rowCount()):
+            if self.ui.tableWidget_ins_fees.item(row_no, 0) is None:
+                continue
+
             self.ui.tableWidget_ins_fees.item(
                 row_no, 0).setTextAlignment(
                 QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
@@ -216,6 +232,9 @@ class MedicalRecordFees(QtWidgets.QMainWindow):
                 )
 
         for row_no in range(self.ui.tableWidget_cash_fees.rowCount()):
+            if self.ui.tableWidget_cash_fees.item(row_no, 0) is None:
+                continue
+
             self.ui.tableWidget_cash_fees.item(
                 row_no, 0).setTextAlignment(
                 QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
@@ -228,6 +247,11 @@ class MedicalRecordFees(QtWidgets.QMainWindow):
                 )
 
     def calculate_fees(self):
+        self.ui.spinBox_discount.setValue(100)
+        self.ui.tableWidget_cash_fees.setItem(
+            13, 0, QtWidgets.QTableWidgetItem(string_utils.xstr(0))
+        )
+
         self.calculate_ins_fees()
         self.calculate_self_fees(self.parent.tab_list, self.ui.checkBox_disable_calculate)
 
@@ -289,12 +313,13 @@ class MedicalRecordFees(QtWidgets.QMainWindow):
 
         self_fee = charge_utils.get_self_fee(tab_list)
 
-        self_fee['herb_fee'] = round(self_fee['herb_fee'])  # 四捨五入
-        self_fee['expensive_fee'] = round(self_fee['expensive_fee'])
-        self_fee['acupuncture_fee'] = round(self_fee['acupuncture_fee'])
-        self_fee['massage_fee'] = round(self_fee['massage_fee'])
-        self_fee['material_fee'] = round(self_fee['material_fee'])
-        self_fee['drug_fee'] = round(self_fee['drug_fee'])
+        self_fee['drug_fee'] = number_utils.round_up(self_fee['drug_fee'])
+        self_fee['herb_fee'] = number_utils.round_up(self_fee['herb_fee'])  # 四捨五入
+        self_fee['expensive_fee'] = number_utils.round_up(self_fee['expensive_fee'])
+        self_fee['acupuncture_fee'] = number_utils.round_up(self_fee['acupuncture_fee'])
+        self_fee['massage_fee'] = number_utils.round_up(self_fee['massage_fee'])
+        self_fee['material_fee'] = number_utils.round_up(self_fee['material_fee'])
+        self_fee['discount_fee'] = number_utils.round_up(self_fee['discount_fee'])
 
         self_fees = [
             [6, self_fee['drug_fee']],
@@ -303,6 +328,7 @@ class MedicalRecordFees(QtWidgets.QMainWindow):
             [9, self_fee['acupuncture_fee']],
             [10, self_fee['massage_fee']],
             [11, self_fee['material_fee']],
+            [13, self_fee['discount_fee']],
         ]
 
         for fee in self_fees:
@@ -332,25 +358,58 @@ class MedicalRecordFees(QtWidgets.QMainWindow):
         acupuncture_fee = charge_utils.get_table_widget_item_fee(self.ui.tableWidget_cash_fees, 9, 0)
         massage_fee = charge_utils.get_table_widget_item_fee(self.ui.tableWidget_cash_fees, 10, 0)
         material_fee = charge_utils.get_table_widget_item_fee(self.ui.tableWidget_cash_fees, 11, 0)
-        discount_fee = charge_utils.get_table_widget_item_fee(self.ui.tableWidget_cash_fees, 13, 0)
-
         self_total_fee = number_utils.get_integer(
                 diag_fee + drug_fee + herb_fee + expensive_fee +
                 acupuncture_fee + massage_fee +
                 material_fee
         )
+        discount_fee = charge_utils.get_table_widget_item_fee(self.ui.tableWidget_cash_fees, 13, 0)
+
+        self.ui.tableWidget_cash_fees.setItem(
+            13, 0, QtWidgets.QTableWidgetItem(string_utils.xstr(discount_fee))
+        )
+
         total_fee = number_utils.get_integer(self_total_fee - discount_fee)
 
         self.ui.tableWidget_cash_fees.setItem(
             12, 0,
             QtWidgets.QTableWidgetItem(string_utils.xstr(self_total_fee))
         )
-        self.ui.tableWidget_cash_fees.setItem(
+        self.ui.tableWidget_cash_fees.setItem(  # 應收金額
             14, 0,
+            QtWidgets.QTableWidgetItem(string_utils.xstr(total_fee))
+        )
+        self.ui.tableWidget_cash_fees.setItem(  # 實收金額
+            15, 0,
             QtWidgets.QTableWidgetItem(string_utils.xstr(total_fee))
         )
 
         self._adjust_table_widget_align()
+
+    def _calculate_discount(self):
+        if self.ui.checkBox_disable_calculate.isChecked():
+            return
+
+        self_total_fee = charge_utils.get_table_widget_item_fee(self.ui.tableWidget_cash_fees, 12, 0)
+        discount_rate = self.ui.spinBox_discount.value()
+        discount_fee = round(self_total_fee - (self_total_fee * discount_rate / 100))
+        self.ui.tableWidget_cash_fees.setItem(
+            13, 0, QtWidgets.QTableWidgetItem(string_utils.xstr(discount_fee))
+        )
+        self._calculate_own_expense_total()
+
+        if discount_rate == 100:
+            return
+
+        if self.system_settings.field('折扣四捨五入') == 'Y':
+            total_fee = charge_utils.get_table_widget_item_fee(self.ui.tableWidget_cash_fees, 14, 0)
+            rounded_total_fee = round(total_fee, -1)
+
+            discount_fee += total_fee - rounded_total_fee
+            self.ui.tableWidget_cash_fees.setItem(
+                13, 0, QtWidgets.QTableWidgetItem(string_utils.xstr(discount_fee))
+            )
+            self._calculate_own_expense_total()
 
     def auto_cashier(self):
         if self.ui.checkBox_disable_calculate.isChecked():

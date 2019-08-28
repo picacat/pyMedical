@@ -68,12 +68,16 @@ class PrintPrescriptionSelfForm5:
 
     def _html(self):
         case_record = printer_utils.get_case_html_2(self.database, self.case_key, '自費')
-        prescript_record = printer_utils.get_prescript_block3_html(
+        # prescript_record = printer_utils.get_prescript_block3_html(
+        #     self.database, self.system_settings,
+        #     self.case_key, self.medicine_set,
+        #     '處方箋', print_alias=False, print_total_dosage=True, blocks=3)
+        prescript_record = printer_utils.get_prescript_html(
             self.database, self.system_settings,
             self.case_key, self.medicine_set,
-            '處方箋', print_alias=False, print_total_dosage=True, blocks=3)
+            '處方箋', print_alias=False, print_total_dosage=True, blocks=2)
         instruction = printer_utils.get_instruction_html(
-            self.database, self.case_key, self.medicine_set
+            self.database, self.system_settings, self.case_key, self.medicine_set
         )
 
         html = '''
@@ -84,7 +88,7 @@ class PrintPrescriptionSelfForm5:
                     {case}
                   </tbody>  
                 </table>
-                <hr>
+                <hr style="line-height:0.5">
                 <table cellspacing=0>
                   <tbody>
                     {prescript}

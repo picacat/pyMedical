@@ -50,11 +50,11 @@ class MedicalRecordRegistration(QtWidgets.QMainWindow):
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_MEDICAL_RECORD_REGISTRATION, self)
+        system_utils.set_css(self, self.system_settings)
         self.table_widget_prescript_sign = table_widget.TableWidget(
             self.ui.tableWidget_prescript_sign, self.database)
         self._set_combo_box()
         self._set_table_width()
-        system_utils.set_css(self, self.system_settings)
 
     # 設定信號
     def _set_signal(self):
@@ -92,7 +92,7 @@ class MedicalRecordRegistration(QtWidgets.QMainWindow):
         self.ui.lineEdit_special_code.textChanged.connect(self.set_special_code)
 
     def _set_table_width(self):
-        width = [200, 100, 470]
+        width = [200, 90, 430]
         self.table_widget_prescript_sign.set_table_heading_width(width)
 
     # 檢查資料是否異動

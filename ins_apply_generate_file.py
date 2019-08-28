@@ -216,17 +216,17 @@ class InsApplyGenerateFile(QtWidgets.QMainWindow):
                 PatientKey = {patient_key} AND
                 Card = "{card}" AND
                 TreatCode{course} IS NULL
-        '''.format(
-                clinic_id=self.clinic_id,
-                apply_date=self.apply_date,
-                apply_period=self.period,
-                apply_type=nhi_utils.APPLY_TYPE_DICT[self.apply_type],
-                patient_key=patient_key,
-                card=card,
-                course=string_utils.xstr(course),
-            )
+            '''.format(
+                    clinic_id=self.clinic_id,
+                    apply_date=self.apply_date,
+                    apply_period=self.period,
+                    apply_type=nhi_utils.APPLY_TYPE_DICT[self.apply_type],
+                    patient_key=patient_key,
+                    card=card,
+                    course=string_utils.xstr(course),
+                )
 
-        ins_apply_rows = self.database.select_record(sql)
+            ins_apply_rows = self.database.select_record(sql)
 
         if len(ins_apply_rows) > 0:
             ins_apply_row = ins_apply_rows[0]
@@ -298,9 +298,9 @@ class InsApplyGenerateFile(QtWidgets.QMainWindow):
         else:
             first_visit = None
 
-        card = string_utils.xstr(row['Card'])[:4]
-        if case_type == 'B6':
-            card = nhi_utils.OCCUPATIONAL_INJURY_CARD
+        card = string_utils.xstr(row['Card'])
+        # if case_type == 'B6':  # 2019.08.08 void, 改以xml控制 4 bytes
+        #     card = nhi_utils.OCCUPATIONAL_INJURY_CARD
 
         message = self._check_error(row)
 

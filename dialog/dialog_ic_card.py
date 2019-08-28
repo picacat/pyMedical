@@ -141,7 +141,10 @@ class DialogICCard(QtWidgets.QDialog):
 
     # 讀取健保卡就醫資料
     def ic_card_record(self):
-        print('讀取健保卡就醫資料')
+        self.ic_card.read_treatment_no_need_hpc()
+        treatment_data = self.ic_card.treatment_data
+        for treatment in treatment_data['treatments']:
+            print(treatment)
 
     # 讀卡機裝置重新啟動
     def reset_reader(self):

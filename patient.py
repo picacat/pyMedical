@@ -6,15 +6,17 @@ import sys
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QMessageBox, QPushButton
 from libs import ui_utils
+from libs import system_utils
 from libs import string_utils
 from libs import nhi_utils
 from libs import date_utils
 from libs import validator_utils
 from libs import patient_utils
 from dialog import dialog_address
+from dialog import dialog_select_remote_patient
 
 
-# 樣板 2018.01.31
+# 病患基本資料 2018.01.31
 class Patient(QtWidgets.QMainWindow):
     # 初始化
     def __init__(self, parent=None, *args):
@@ -50,6 +52,7 @@ class Patient(QtWidgets.QMainWindow):
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_PATIENT, self)
+        system_utils.set_css(self, self.system_settings)
         self._set_combobox()
         self.ui.lineEdit_patient_key.setText(string_utils.xstr(self.database.get_last_auto_increment_key('patient')))
         self.ui.lineEdit_init_date.setText(date_utils.now_to_str())
@@ -62,12 +65,13 @@ class Patient(QtWidgets.QMainWindow):
     def _set_signal(self):
         self.ui.action_save.triggered.connect(self._save_patient)
         self.ui.action_close.triggered.connect(self.close_patient)
+        self.ui.action_copy_remote_patient.triggered.connect(self._copy_remote_patient)
         self.ui.toolButton_address.clicked.connect(self._open_address_dict)
         self.ui.lineEdit_birthday.editingFinished.connect(self._validate_birthday)
         self.ui.lineEdit_name.editingFinished.connect(self._validate_name)
         self.ui.lineEdit_id.editingFinished.connect(self._validate_id)
-        self.ui.lineEdit_telephone.textChanged.connect(self._phone_changed)
-        self.ui.lineEdit_cellphone.textChanged.connect(self._phone_changed)
+        self.ui.lineEdit_telephone.editingFinished.connect(self._phone_editing_finished)
+        self.ui.lineEdit_cellphone.editingFinished.connect(self._phone_editing_finished)
 
     def _set_combobox(self):
         ui_utils.set_combo_box(self.ui.comboBox_gender, nhi_utils.GENDER, None)
@@ -269,27 +273,27 @@ class Patient(QtWidgets.QMainWindow):
         dialog.close_all()
         dialog.deleteLater()
 
-    def _phone_changed(self):
-        if self.ui.lineEdit_address.text().strip() != '':
+    def _phone_editing_finished(self):
+        if self.ui.lineEdit_address.text().strip() != '':  # 已經輸入過就不要自動帶入
             return
 
         sender_name = self.sender().objectName()
         if sender_name == 'lineEdit_telephone':
             line_edit_phone = self.ui.lineEdit_telephone
+            field = 'Telephone'
         else:
             line_edit_phone = self.ui.lineEdit_cellphone
+            field = 'Cellphone'
 
-        phone_no = line_edit_phone.text()
-        if phone_no == '':
-            return
+        phone_no = line_edit_phone.text().strip()
 
         sql = '''
             SELECT Address FROM patient
             WHERE
-                (Telephone = "{phone_no}" OR
-                 Cellphone = "{phone_no}")
+                {field} = "{phone_no}"
             LIMIT 1
         '''.format(
+            field=field,
             phone_no=phone_no,
         )
         try:
@@ -300,3 +304,21 @@ class Patient(QtWidgets.QMainWindow):
         if len(rows) > 0:
             self.ui.lineEdit_address.setText(string_utils.xstr(rows[0]['Address']))
 
+    # 拷貝分院病患基本資料
+    def _copy_remote_patient(self):
+        dialog = dialog_select_remote_patient.DialogSelectRemotePatient(
+            self, self.database, self.system_settings,
+        )
+        if dialog.exec_():
+            remote_patient = dialog.get_remote_patient()
+            self.ui.lineEdit_name.setText(remote_patient['Name'])
+            self.ui.lineEdit_birthday.setText(remote_patient['Birthday'])
+            self.ui.comboBox_gender.setCurrentText(remote_patient['Gender'])
+            self.ui.lineEdit_id.setText(remote_patient['ID'])
+            self.ui.comboBox_ins_type.setCurrentText(remote_patient['InsType'])
+            self.ui.lineEdit_telephone.setText(remote_patient['Telephone'])
+            self.ui.lineEdit_cellphone.setText(remote_patient['Cellphone'])
+            self.ui.lineEdit_address.setText(remote_patient['Address'])
+            self._set_nationality()
+
+        del dialog

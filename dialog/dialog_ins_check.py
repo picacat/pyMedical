@@ -42,6 +42,9 @@ class DialogInsCheck(QtWidgets.QDialog):
         self.ui.spinBox_diag_limit.setValue(number_utils.get_integer(self.system_settings.field('首次警告次數')))
         self.ui.spinBox_treat_limit.setValue(number_utils.get_integer(self.system_settings.field('針傷警告次數')))
 
+        for combo_box in self.findChildren(QtWidgets.QComboBox):
+            combo_box.setView(QtWidgets.QListView())
+
     def _set_combo_box(self):
         year_list = []
         current_year = datetime.datetime.now().year
@@ -50,6 +53,10 @@ class DialogInsCheck(QtWidgets.QDialog):
             year_list.append(str(i))
 
         ui_utils.set_combo_box(self.ui.comboBox_year, year_list)
+        ui_utils.set_combo_box(
+            self.ui.comboBox_month,
+            [str(x) for x in range(1, 13)]
+        )
         self.ui.comboBox_year.setCurrentText(str(current_year))
         self.ui.comboBox_month.setCurrentText(str(current_month))
 

@@ -117,7 +117,7 @@ class PrintMedicalChart:
             case_row['CaseKey'], 1,
             '病歷表', print_alias=False, print_total_dosage=False, blocks=3)
         instruction = printer_utils.get_instruction_html(
-            self.database, case_row['CaseKey'], medicine_set=1
+            self.database, self.system_settings, case_row['CaseKey'], medicine_set=1
         )
 
         html = '''

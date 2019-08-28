@@ -47,7 +47,9 @@ class Registration(QtWidgets.QMainWindow):
         self.system_settings = args[1]
 
         self.ui = None
-        self.dialog_history = dialog_past_history.DialogPastHistory(self, self.database, self.system_settings)
+        self.dialog_history = dialog_past_history.DialogPastHistory(
+            self, self.database, self.system_settings
+        )
         self.socket_client = udp_socket_client.UDPSocketClient()
         self.reserve_key = None
 
@@ -77,6 +79,7 @@ class Registration(QtWidgets.QMainWindow):
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_REGISTRATION, self)
+        system_utils.set_css(self, self.system_settings)
         ui_utils.set_completer(
             self.database,
             'SELECT Name FROM patient GROUP BY Name ORDER BY Name',
@@ -104,6 +107,7 @@ class Registration(QtWidgets.QMainWindow):
         self.ui.action_cancel.triggered.connect(self._cancel_registration)
         self.ui.action_ic_card.triggered.connect(self._registration_by_ic_card)
         self.ui.action_save.triggered.connect(self._save_files)
+        self.ui.action_save_no_print.triggered.connect(self._save_files)
         self.ui.action_close.triggered.connect(self.close_registration)
         self.ui.action_clear_wait.triggered.connect(self._clear_wait)
         self.ui.action_med_vpn.triggered.connect(self._open_med_vpn)
@@ -142,8 +146,10 @@ class Registration(QtWidgets.QMainWindow):
         self.ui.lineEdit_diag_share_fee.textChanged.connect(self._selection_changed)
         self.ui.lineEdit_deposit_fee.textChanged.connect(self._selection_changed)
         self.ui.lineEdit_traditional_health_care_fee.textChanged.connect(self._selection_changed)
-        self.ui.tabWidget_list.currentChanged.connect(self._waiting_list_tab_changed)                   # 切換分頁
-        self.ui.tableWidget_wait_completed.itemSelectionChanged.connect(self._wait_completed_table_item_changed)
+        self.ui.tabWidget_list.currentChanged.connect(self._waiting_list_tab_changed)    # 切換分頁
+        self.ui.tableWidget_wait_completed.itemSelectionChanged.connect(
+            self._wait_completed_table_item_changed
+        )
 
     def _set_permission(self):
         if self.user_name == '超級使用者':
@@ -152,42 +158,53 @@ class Registration(QtWidgets.QMainWindow):
         if personnel_utils.get_permission(self.database, '預約掛號', '執行預約掛號', self.user_name) != 'Y':
             self.ui.action_reservation.setEnabled(False)
 
-        if personnel_utils.get_permission(self.database, self.program_name, '修正候診名單', self.user_name) != 'Y':
+        if personnel_utils.get_permission(
+                self.database, self.program_name, '修正候診名單', self.user_name) != 'Y':
             self.ui.toolButton_modify_wait.setEnabled(False)
             self.ui.toolButton_edit_cases.setEnabled(False)
 
-        if personnel_utils.get_permission(self.database, self.program_name, '刪除候診名單', self.user_name) != 'Y':
+        if personnel_utils.get_permission(
+                self.database, self.program_name, '刪除候診名單', self.user_name) != 'Y':
             self.ui.toolButton_delete_wait.setEnabled(False)
 
-        if personnel_utils.get_permission(self.database, self.program_name, '健保卡退掛', self.user_name) != 'Y':
+        if personnel_utils.get_permission(
+                self.database, self.program_name, '健保卡退掛', self.user_name) != 'Y':
             self.ui.toolButton_ic_cancel.setEnabled(False)
             self.ui.toolButton_ic_cancel_2.setEnabled(False)
 
-        if personnel_utils.get_permission(self.database, self.program_name, '健保卡寫卡', self.user_name) != 'Y':
+        if personnel_utils.get_permission(
+                self.database, self.program_name, '健保卡寫卡', self.user_name) != 'Y':
             self.ui.toolButton_write_ic.setEnabled(False)
             self.ui.toolButton_rewrite_ic_prescript.setEnabled(False)
 
-        if personnel_utils.get_permission(self.database, self.program_name, '病患資料修正', self.user_name) != 'Y':
+        if personnel_utils.get_permission(
+                self.database, self.program_name, '病患資料修正', self.user_name) != 'Y':
             self.ui.toolButton_modify_patient.setEnabled(False)
             self.ui.toolButton_modify_patient2.setEnabled(False)
 
-        if personnel_utils.get_permission(self.database, self.program_name, '補印收據', self.user_name) != 'Y':
+        if personnel_utils.get_permission(
+                self.database, self.program_name, '補印收據', self.user_name) != 'Y':
             self.ui.toolButton_print_wait.setEnabled(False)
             self.ui.toolButton_print_wait_2.setEnabled(False)
 
-        if personnel_utils.get_permission(self.database, self.program_name, '初診掛號', self.user_name) != 'Y':
+        if personnel_utils.get_permission(
+                self.database, self.program_name, '初診掛號', self.user_name) != 'Y':
             self.ui.action_new_patient.setEnabled(False)
 
-        if personnel_utils.get_permission(self.database, self.program_name, '清除非本日候診名單', self.user_name) != 'Y':
+        if personnel_utils.get_permission(
+                self.database, self.program_name, '清除非本日候診名單', self.user_name) != 'Y':
             self.ui.action_clear_wait.setEnabled(False)
 
-        if personnel_utils.get_permission(self.database, self.program_name, '開啟雲端藥歷', self.user_name) != 'Y':
+        if personnel_utils.get_permission(
+                self.database, self.program_name, '開啟雲端藥歷', self.user_name) != 'Y':
             self.ui.action_med_vpn.setEnabled(False)
 
-        if personnel_utils.get_permission(self.database, self.program_name, '健保卡掛號', self.user_name) != 'Y':
+        if personnel_utils.get_permission(
+                self.database, self.program_name, '健保卡掛號', self.user_name) != 'Y':
             self.ui.action_ic_card.setEnabled(False)
 
-        if personnel_utils.get_permission(self.database, self.program_name, '人工手動掛號', self.user_name) != 'Y':
+        if personnel_utils.get_permission(
+                self.database, self.program_name, '人工手動掛號', self.user_name) != 'Y':
             self.ui.groupBox_search_patient.setEnabled(False)
 
     def _registration_by_ic_card(self):
@@ -340,29 +357,45 @@ class Registration(QtWidgets.QMainWindow):
             self.ui.tabWidget_list.currentIndex()
         )
         if tab_name == '候診名單':
-            patient_key = self.table_widget_wait.field_value(2)
+            patient_key = self.ui.tableWidget_wait.item(self.ui.tableWidget_wait.currentRow(), 3)
         else:
-            patient_key = self.table_widget_wait_completed.field_value(2)
+            patient_key = self.ui.tableWidget_wait_completed.item(
+                self.ui.tableWidget_wait_completed.currentRow(), 2
+            )
 
+        if patient_key is None:
+            return
+
+        patient_key = patient_key.text()
         self.parent.open_patient_record(patient_key, '門診掛號')
 
     def _set_table_width(self):
-        width = [100, 100, 70, 90, 50, 45, 50, 80, 80, 80, 65, 80, 45, 30, 80, 80]
+        width = [100, 100, 45, 70, 80, 45, 45, 45, 80, 80, 100, 50, 80, 30, 30, 80, 80, 80, 80, 80, 80]
         self.table_widget_wait.set_table_heading_width(width)
         width = [
-            100, 100, 70, 90, 45, 50, 80, 80, 65, 80, 45, 30, 50, 60,
+            100, 100, 70, 90, 45, 50, 80, 100, 50, 65, 30, 30, 50, 60,
             80,
-            80, 80, 80, 80, 200,
+            80, 80, 80, 80, 400,
         ]
         self.table_widget_wait_completed.set_table_heading_width(width)
 
+    def refresh_wait(self):
+        if not self.ui.tabWidget_list.isEnabled():
+            return
+
+        self.read_wait()
+
     def read_wait(self):
         sql = '''
-            SELECT wait.*, patient.Gender FROM wait
+            SELECT 
+                wait.*, patient.Gender , 
+                cases.RegistFee, cases.SDiagShareFee, cases.DepositFee, cases.SMassageFee
+            FROM wait
             LEFT JOIN patient ON wait.PatientKey = patient.PatientKey
+            LEFT JOIN cases ON wait.CaseKey = cases.CaseKey
             WHERE 
-            DoctorDone = "False"
-            ORDER BY RegistNo
+            wait.DoctorDone = "False"
+            ORDER BY wait.RegistNo
         '''
         self.table_widget_wait.set_db_data(sql, self._set_wait_data)
         row_count = self.table_widget_wait.row_count()
@@ -376,6 +409,7 @@ class Registration(QtWidgets.QMainWindow):
         wait_row = [
             string_utils.xstr(row['WaitKey']),
             string_utils.xstr(row['CaseKey']),
+            None,
             row['PatientKey'],
             string_utils.xstr(row['Name']),
             row['RegistNo'],
@@ -390,7 +424,14 @@ class Registration(QtWidgets.QMainWindow):
             row['Room'],
             string_utils.xstr(row['Doctor']),
             string_utils.xstr(row['Massager']),
+            string_utils.xstr(row['RegistFee']),
+            string_utils.xstr(row['SDiagShareFee']),
+            string_utils.xstr(row['DepositFee']),
+            string_utils.xstr(row['SMassageFee']),
         ]
+
+        in_progress = string_utils.xstr(row['InProgress'])
+        case_utils.set_in_progress_icon(self.ui.tableWidget_wait, row_no, 2, in_progress)
 
         for col_no in range(len(wait_row)):
             item = QtWidgets.QTableWidgetItem()
@@ -398,21 +439,29 @@ class Registration(QtWidgets.QMainWindow):
             self.ui.tableWidget_wait.setItem(
                 row_no, col_no, item,
             )
-            if col_no in [2, 4, 12, 13]:
+            if col_no in [3, 5, 13, 14, 17, 18, 19, 20]:
                 self.ui.tableWidget_wait.item(
                     row_no, col_no).setTextAlignment(
                     QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
                 )
-            elif col_no in [4, 5, 10]:
+            elif col_no in [2, 5, 6, 11]:
                 self.ui.tableWidget_wait.item(
                     row_no, col_no).setTextAlignment(
                     QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
                 )
 
-            if row['InsType'] == '自費':
+            color = None
+            if in_progress == 'Y':
+                color = 'red'
+            elif row['Visit'] == '初診':
+                color = 'darkgreen'
+            elif row['InsType'] == '自費':
+                color = 'blue'
+
+            if color is not None:
                 self.ui.tableWidget_wait.item(
                     row_no, col_no).setForeground(
-                    QtGui.QColor('blue')
+                    QtGui.QColor(color)
                 )
 
     def _set_wait_tool_button(self, enabled):
@@ -456,6 +505,7 @@ class Registration(QtWidgets.QMainWindow):
         self.ui.action_reservation.setEnabled(enabled)
         self.ui.action_cancel.setEnabled(not enabled)
         self.ui.action_save.setEnabled(not enabled)
+        self.ui.action_save_no_print.setEnabled(not enabled)
 
         self.ui.groupBox_search_patient.setEnabled(enabled)
         self.ui.tabWidget_list.setEnabled(enabled)
@@ -528,9 +578,25 @@ class Registration(QtWidgets.QMainWindow):
         ui_utils.set_combo_box(
             self.ui.comboBox_massager,
             personnel_utils.get_personnel(self.database, '推拿師父'), None)
+        self._set_combo_box_remark()
+
+    def _set_combo_box_remark(self):
+        sql = '''
+            SELECT ClinicName FROM clinic
+            WHERE
+                ClinicType = "備註"
+            ORDER BY LENGTH(ClinicName), CAST(CONVERT(`ClinicName` using big5) AS BINARY)
+        '''
+        rows = self.database.select_record(sql)
+        remark_list = []
+        for row in rows:
+            remark_list.append(string_utils.xstr(row['ClinicName']))
+
+        ui_utils.set_combo_box(self.ui.comboBox_remark, remark_list, None)
 
     def _reset_action_button_text(self):
         self.ui.action_save.setText('掛號存檔')
+        self.ui.action_save_no_print.setText('掛號存檔不印')
         self.ui.action_cancel.setText('取消掛號')
 
     # 取消掛號
@@ -605,7 +671,7 @@ class Registration(QtWidgets.QMainWindow):
             period = self.ui.comboBox_period.currentText()
             doctor = self.ui.comboBox_doctor.currentText()
             room = registration_utils.get_room(self.database, period, doctor)
-            self.ui.comboBox_room.setCurrentText(string_utils.xstr(room))
+            # self.ui.comboBox_room.setCurrentText(string_utils.xstr(room))
         elif (sender_name in ['comboBox_period', 'comboBox_room'] and
               self.ui.action_save.text() == '掛號存檔'):
             period = self.ui.comboBox_period.currentText()
@@ -664,6 +730,8 @@ class Registration(QtWidgets.QMainWindow):
             if dialog.exec_():
                 patient_key = dialog.get_patient_key()
                 self._get_patient(patient_key)
+
+            del dialog
         elif row == -1:  # 取消查詢
             self.ui.lineEdit_query.setFocus()
         else:  # 已選取病患
@@ -674,28 +742,29 @@ class Registration(QtWidgets.QMainWindow):
     # 掛號修正
     def _modify_wait(self):
         if (self.user_name != '超級使用者' and
-            personnel_utils.get_permission(self.database, self.program_name, '修正候診名單', self.user_name) != 'Y'):
+                personnel_utils.get_permission(
+                    self.database, self.program_name, '修正候診名單', self.user_name) != 'Y'):
             return
 
         tab_name = self.ui.tabWidget_list.tabText(
             self.ui.tabWidget_list.currentIndex()
         )
         if tab_name == '候診名單':
-            case_key = self.table_widget_wait.field_value(1)
-            patient_key = self.table_widget_wait.field_value(2)
+            case_key = self.ui.tableWidget_wait.item(self.ui.tableWidget_wait.currentRow(), 1)
         else:
-            case_key = self.table_widget_wait_completed.field_value(1)
-            patient_key = self.table_widget_wait_completed.field_value(2)
+            case_key = self.ui.tableWidget_wait_completed.item(
+                self.ui.tableWidget_wait_completed.currentRow(), 1
+            )
 
-        if case_key is None or patient_key is None:
+        if case_key is None:
             return
+
+        case_key = case_key.text()
 
         self._set_reg_mode(False)
         self.ui.action_save.setText('修正存檔')
+        self.ui.action_save_no_print.setText('修正存檔不印')
         self.ui.action_cancel.setText('取消修正')
-
-        sql = 'SELECT * FROM patient WHERE PatientKey = {0}'.format(patient_key)
-        patient_record = self.database.select_record(sql)[0]
 
         sql = 'SELECT * FROM cases WHERE CaseKey = {0}'.format(case_key)
         rows = self.database.select_record(sql)
@@ -703,6 +772,16 @@ class Registration(QtWidgets.QMainWindow):
             return
 
         medical_record = rows[0]
+        patient_key = medical_record['PatientKey']
+        if patient_key is None:
+            return
+
+        sql = 'SELECT * FROM patient WHERE PatientKey = {0}'.format(patient_key)
+        rows = self.database.select_record(sql)
+        if len(rows) <= 0:
+            return
+
+        patient_record = rows[0]
         self._set_patient_data(patient_record)
         self._set_registration_data(patient_key, medical_record)
         self._set_charge(medical_record)
@@ -739,7 +818,7 @@ class Registration(QtWidgets.QMainWindow):
                 self.ui.comboBox_course.setCurrentIndex(0)
 
         self._set_charge()
-        self._show_past_history(patient_key)
+        self._show_past_history(patient_key, ic_card)
 
     # 檢查今日是否有預約
     def _check_reservation_exists(self, patient_key):
@@ -814,7 +893,8 @@ class Registration(QtWidgets.QMainWindow):
 
         row = rows[0]
 
-        if number_utils.get_integer(row['Continuance']) <= 0:  # 2019.04.29 上次為內科, 為避免療程中刷卡, 不要自動續療程
+        # 2019.04.29 上次為內科, 為避免療程中刷卡, 不要自動續療程
+        if number_utils.get_integer(row['Continuance']) <= 0:
             return
 
         if number_utils.get_integer(row['Continuance']) >= 6:  # 療程已滿
@@ -960,18 +1040,24 @@ class Registration(QtWidgets.QMainWindow):
             visit = patient_utils.get_visit(self.database, patient_key)
             card = '自動取得'
             course = None
+            xcard = None
             ins_type = self.system_settings.field('預設門診類別')
             share_type = self.ui.comboBox_patient_share.currentText()
             room = self.system_settings.field('診療室')  # 取得預設診療室
             period = registration_utils.get_period(self.system_settings)
             doctor = self._get_doctor_schedule(room, period)  # 醫師要先取得，以便確定是否佔用預約號
 
+            doctor_found = False
             if doctor is None or doctor == '':
                 for i in range(1, 20):
                     room = string_utils.xstr(i)
                     doctor = self._get_doctor_schedule(room, period)  # 醫師要先取得，以便確定是否佔用預約號
                     if doctor is not None and doctor != '':
+                        doctor_found = True
                         break
+
+            if not doctor_found:
+                room = 1
 
             if self.ui.spinBox_reg_no.value() == 0:
                 reg_no = registration_utils.get_reg_no(
@@ -987,15 +1073,18 @@ class Registration(QtWidgets.QMainWindow):
             visit = medical_record['Visit']
             ins_type = medical_record['InsType']
             share_type = medical_record['Share']
-            room = str(medical_record['Room'])
+            room = medical_record['Room']
 
-            reg_no = medical_record['RegistNo']
+            reg_no = number_utils.get_integer(medical_record['RegistNo'])
             self.ui.spinBox_reg_no.setValue(reg_no)
 
             period = medical_record['Period']
             card = medical_record['Card']
             course = str(medical_record['Continuance'])
-            doctor = self.table_widget_wait.field_value(14)
+            xcard = string_utils.xstr(medical_record['XCard'])
+            if xcard in nhi_utils.ABNORMAL_CARD:
+                xcard = nhi_utils.ABNORMAL_CARD_DICT[xcard]
+            doctor = self.table_widget_wait.field_value(15)
             if doctor is None:
                 doctor = str(medical_record['Doctor'])
             massager = medical_record['Massager']
@@ -1007,10 +1096,11 @@ class Registration(QtWidgets.QMainWindow):
         self.ui.comboBox_visit.setCurrentText(visit)
         self.ui.comboBox_card.setCurrentText(card)
         self.ui.comboBox_course.setCurrentText(course)
+        self.ui.comboBox_card_abnormal.setCurrentText(xcard)
         self.ui.comboBox_ins_type.setCurrentText(ins_type)
         self.ui.comboBox_share_type.setCurrentText(share_type)
         self.ui.comboBox_doctor.setCurrentText(doctor)
-        self.ui.comboBox_room.setCurrentText(room)
+        self.ui.comboBox_room.setCurrentText(string_utils.xstr(room))
         self.ui.comboBox_period.setCurrentText(period)
         self.ui.comboBox_massager.setCurrentText(massager)
         self.ui.comboBox_remark.setCurrentText(remark)
@@ -1105,7 +1195,9 @@ class Registration(QtWidgets.QMainWindow):
             deposit_fee = 0
 
         try:
-            traditional_health_care_fee = number_utils.get_integer(self.ui.lineEdit_traditional_health_care_fee.text())
+            traditional_health_care_fee = number_utils.get_integer(
+                self.ui.lineEdit_traditional_health_care_fee.text()
+            )
         except ValueError:
             traditional_health_care_fee = 0
 
@@ -1118,18 +1210,20 @@ class Registration(QtWidgets.QMainWindow):
         self.ui.lineEdit_total_amount.setText(str(total_amount))
         self.ui.lineEdit_receipt_fee.setText(str(total_amount))
 
-    def _show_past_history(self, patient_key):
-        self.dialog_history.show_past_history(patient_key)
+    def _show_past_history(self, patient_key, ic_card=None):
+        self.dialog_history.show_past_history(patient_key, ic_card)
 
     # 刪除候診名單
     def delete_wait_list(self, skip_warning=None):
         if not skip_warning:
-            name = self.table_widget_wait.field_value(3)
+            name = self.table_widget_wait.field_value(4)
             msg_box = QMessageBox()
             msg_box.setIcon(QMessageBox.Warning)
             msg_box.setWindowTitle('刪除掛號資料')
             msg_box.setText(
-                "<font size='4' color='red'><b>確定刪除 <font color='blue'>{0}</font> 的掛號資料?</b></font>".format(name)
+                "<font size='4' color='red'><b>確定刪除 <font color='blue'>{0}</font> 的掛號資料?</b></font>".format(
+                    name
+                )
             )
             msg_box.setInformativeText("注意！資料刪除後, 將無法回復!")
             msg_box.addButton(QPushButton("取消"), QMessageBox.NoRole)
@@ -1177,16 +1271,19 @@ class Registration(QtWidgets.QMainWindow):
         )
         if tab_name == '候診名單':
             case_key = self.table_widget_wait.field_value(1)
-            name = self.table_widget_wait.field_value(3)
+            name = self.table_widget_wait.field_value(4)
         else:
             case_key = self.table_widget_wait_completed.field_value(1)
-            name = self.table_widget_wait_completed.field_value(3)
+            name = self.table_widget_wait_completed.field_value(4)
 
         msg_box = QMessageBox()
         msg_box.setIcon(QMessageBox.Warning)
         msg_box.setWindowTitle('健保IC卡退掛')
-        msg_box.setText("<font size='4' color='red'><b>確定將<font color='blue'>{0}</font>的IC卡掛號資料退掛?</b></font>"
-                        .format(name))
+        msg_box.setText(
+            "<font size='4' color='red'><b>確定將<font color='blue'>{0}</font>的IC卡掛號資料退掛?</b></font>".format(
+                name
+            )
+        )
         msg_box.setInformativeText("注意！IC卡退掛後, 將回復原來健保卡序!")
         msg_box.addButton(QPushButton("取消"), QMessageBox.NoRole)
         msg_box.addButton(QPushButton("確定"), QMessageBox.YesRole)
@@ -1294,7 +1391,10 @@ class Registration(QtWidgets.QMainWindow):
         self.read_wait()
 
         self.socket_client.send_data('新增掛號資料')
-        self.print_registration_form('系統設定', case_key)
+
+        sender_name = self.sender().objectName()
+        if sender_name == 'action_save':
+            self.print_registration_form('系統設定', case_key)
 
     def _update_reservation(self, reserve_key):
         sql = 'UPDATE reserve SET Arrival = "True" WHERE ReserveKey = {0}'.format(
@@ -1351,7 +1451,7 @@ class Registration(QtWidgets.QMainWindow):
         if self.ui.comboBox_ins_type.currentText() != '健保':
             return ic_card
 
-        if self.ui.action_save.text() == '修正存檔':
+        if self.ui.action_save.text() == '修正存檔' or self.ui.action_save_no_print == '修正存檔不印':
             return ic_card
 
         if card in ('欠卡', '不需取得') or card in nhi_utils.ABNORMAL_CARD:
@@ -1452,11 +1552,13 @@ class Registration(QtWidgets.QMainWindow):
 
     # 新增病歷
     def _insert_medical_record(self, ic_card=None):
-        fields = ['CaseDate', 'PatientKey', 'Name', 'Visit', 'RegistType', 'Injury',
-                  'TreatType', 'Share', 'InsType', 'Card', 'Continuance', 'XCard', 'Period',
-                  'Room', 'RegistNo', 'Massager', 'Register',
-                  'ApplyType', 'PharmacyType',
-                  'RegistFee', 'DiagShareFee', 'SDiagShareFee', 'DepositFee', 'SMassageFee', 'Security', 'Remark']
+        fields = [
+            'CaseDate', 'PatientKey', 'Name', 'Visit', 'RegistType', 'Injury',
+            'TreatType', 'Share', 'InsType', 'Card', 'Continuance', 'XCard', 'Period',
+            'Room', 'RegistNo', 'Massager', 'Register',
+            'ApplyType', 'PharmacyType',
+            'RegistFee', 'DiagShareFee', 'SDiagShareFee', 'DepositFee', 'SMassageFee', 'Security', 'Remark'
+        ]
 
         diag_share_fee = charge_utils.get_diag_share_fee(
             self.database,
@@ -1525,9 +1627,12 @@ class Registration(QtWidgets.QMainWindow):
                 self.ui.tabWidget_list.currentIndex()
             )
             if tab_name == '候診名單':
-                wait_key = self.table_widget_wait.field_value(0)
+                wait_key = self._get_wait_key(case_key, self.ui.tableWidget_wait)
             else:
-                wait_key = self.table_widget_wait_completed.field_value(0)
+                wait_key = self._get_wait_key(case_key, self.ui.tableWidget_wait_completed)
+
+            if wait_key is None:
+                return
 
             self.update_wait(wait_key)
 
@@ -1535,6 +1640,17 @@ class Registration(QtWidgets.QMainWindow):
                 self.read_wait()
             else:
                 self._read_wait_completed()
+
+    @staticmethod
+    def _get_wait_key(case_key, table_widget_wait):
+        wait_key = None
+
+        for row_no in range(table_widget_wait.rowCount()):
+            if table_widget_wait.item(row_no, 1).text() == case_key:
+                wait_key = table_widget_wait.item(row_no, 0).text()
+                break
+
+        return wait_key
 
     # 新增候診名單
     def insert_wait(self, case_key):
@@ -1760,7 +1876,6 @@ class Registration(QtWidgets.QMainWindow):
                 LEFT JOIN patient ON wait.PatientKey = patient.PatientKey
                 LEFT JOIN cases ON wait.CaseKey = cases.CaseKey
             WHERE 
-                cases.TreatType NOT IN ("自購") AND
                 cases.DoctorDone = "True"
             ORDER BY FIELD(cases.Period, "晚班", "午班", "早班"), cases.RegistNo DESC
         '''
@@ -1778,14 +1893,17 @@ class Registration(QtWidgets.QMainWindow):
         signature = case_utils.extract_security_xml(row['Security'], '醫令時間')
         ins_type = string_utils.xstr(row['InsType'])
         card = string_utils.xstr(row['Card'])
+        xcard = string_utils.xstr(row['XCard'])
 
-        if ins_type != '健保' or card in nhi_utils.ABNORMAL_CARD:
+        if ins_type != '健保' or card in nhi_utils.ABNORMAL_CARD or xcard in nhi_utils.ABNORMAL_CARD:
             ic_wrote = '略'
         elif signature is None:
             ic_wrote = '否'
         else:
             ic_wrote = '是'
 
+        remark = string_utils.get_str(row['Remark'], 'utf8')[:20]
+        remark = string_utils.replace_ascii_char(['\n'], remark)
         wait_row = [
             string_utils.xstr(row['WaitKey']),
             string_utils.xstr(row['CaseKey']),
@@ -1806,7 +1924,7 @@ class Registration(QtWidgets.QMainWindow):
             number_utils.get_integer(row['SDiagShareFee']),
             number_utils.get_integer(row['DrugShareFee']),
             number_utils.get_integer(row['TotalFee']),
-            string_utils.get_str(row['Remark'], 'utf8'),
+            remark,
         ]
 
         for col_no in range(len(wait_row)):

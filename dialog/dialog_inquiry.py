@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# 病歷查詢 2014.09.22
+# 主訴舌診脈象詞庫 2019.07.19
 #coding: utf-8
 
 from PyQt5 import QtWidgets, QtGui
@@ -9,10 +9,11 @@ from PyQt5.QtCore import QSettings, QSize, QPoint
 from dialog import dialog_symptom
 from dialog import dialog_tongue
 from dialog import dialog_pulse
+from dialog import dialog_pulse_picker
 from dialog import dialog_remark
 
 
-# 主視窗
+# 主訴舌診脈象詞庫
 class DialogInquiry(QtWidgets.QDialog):
     # 初始化
     def __init__(self, parent=None, *args):
@@ -83,14 +84,20 @@ class DialogInquiry(QtWidgets.QDialog):
                         self, self.database, self.system_settings, groups_name, self.text_edit),
                     groups_name)
         elif self.dialog_type == '脈象':
+            self.ui.tabWidget_inquiry.addTab(
+                dialog_pulse_picker.DialogPulsePicker(
+                    self, self.database, self.system_settings, self.text_edit
+                ), '脈象表'
+            )
             sql = 'SELECT * FROM dict_groups WHERE DictGroupsType = "脈象類別" ORDER BY DictGroupsKey'
             rows = self.database.select_record(sql)
             for row in rows:
                 groups_name = row['DictGroupsName']
                 self.ui.tabWidget_inquiry.addTab(
                     dialog_pulse.DialogPulse(
-                        self, self.database, self.system_settings, groups_name, self.text_edit),
-                    groups_name)
+                        self, self.database, self.system_settings, groups_name, self.text_edit
+                    ), '脈象詞庫'
+                )
         elif self.dialog_type == '備註':
             sql = 'SELECT * FROM dict_groups WHERE DictGroupsType = "備註類別" ORDER BY DictGroupsKey'
             rows = self.database.select_record(sql)
