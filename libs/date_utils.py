@@ -16,7 +16,7 @@ def get_age(birth_date, current_date=datetime.datetime.now()):
 
 
 # 取得日期分隔符號
-def _get_date_separator(in_date):
+def get_date_separator(in_date):
     separator = ''
 
     if in_date.find('-') > 0:
@@ -31,7 +31,7 @@ def _get_date_separator(in_date):
 
 # 轉換為西元年
 def date_to_west_date(in_date):
-    separator = _get_date_separator(in_date)
+    separator = get_date_separator(in_date)
     new_date = in_date.split(separator)
 
     try:

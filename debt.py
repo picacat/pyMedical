@@ -89,6 +89,7 @@ class Debt(QtWidgets.QMainWindow):
 
         self.ui.action_open_medical_record.setEnabled(enabled)
         self.ui.action_pay_back.setEnabled(enabled)
+        self.ui.action_remove_debt.setEnabled(enabled)
 
         self._set_permission()
 
@@ -170,7 +171,7 @@ class Debt(QtWidgets.QMainWindow):
         self.close_tab()
 
     def _debt_item_selection_changed(self):
-        pass
+        self._set_tool_button()
 
     def _remove_debt(self):
         msg_box = dialog_utils.get_message_box(

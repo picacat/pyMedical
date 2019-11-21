@@ -87,6 +87,9 @@ class DialogMedicalRecordList(QtWidgets.QDialog):
         self.ui.lineEdit_patient_key.setEnabled(enabled)
         self.ui.toolButton_select_patient.setEnabled(enabled)
 
+        if self.ui.radioButton_assigned_patient.isChecked():
+            self.ui.lineEdit_patient_key.setFocus()
+
     def _set_date(self):
         if self.ui.radioButton_all_date.isChecked():
             enabled = False
@@ -128,6 +131,9 @@ class DialogMedicalRecordList(QtWidgets.QDialog):
 
         if self.ui.radioButton_range_date.isChecked():
             condition.append('(cases.CaseDate BETWEEN "{0}" AND "{1}")'.format(start_date, end_date))
+            period = self.ui.comboBox_period.currentText()
+            if period != '全部':
+                condition.append('cases.Period = "{0}"'.format(period))
 
         ins_type = self.ui.comboBox_ins_type.currentText()
         if ins_type != '全部':
@@ -145,10 +151,6 @@ class DialogMedicalRecordList(QtWidgets.QDialog):
         if share_type != '全部':
             condition.append('cases.Share = "{0}"'.format(share_type))
 
-        period = self.ui.comboBox_period.currentText()
-        if period != '全部':
-            condition.append('cases.Period = "{0}"'.format(period))
-
         room = self.ui.comboBox_room.currentText()
         if room != '全部':
             condition.append('cases.Room = {0}'.format(room))
@@ -158,26 +160,21 @@ class DialogMedicalRecordList(QtWidgets.QDialog):
             condition.append('cases.Doctor = "{0}"'.format(doctor))
 
         keyword = self.ui.lineEdit_patient_key.text()
-        if keyword == '':
-            pass
-        elif keyword.isdigit() and len(keyword) < 7:
-            condition.append('cases.PatientKey = {0}'.format(keyword))
-        else:
-            rows = patient_utils.get_patient_by_keyword(self.database, keyword)
-            if len(rows) == 1:
-                patient_key = rows[0]['PatientKey']
+        if keyword != '':
+            patient_key = patient_utils.get_patient_by_keyword(
+                self, self.database, self.system_settings,
+                'patient', 'PatientKey', keyword
+            )
+            if patient_key in ['', None]:
+                self.ui.lineEdit_patient_key.setText('')
             else:
-                self._select_patient(keyword)
-                patient_key = self.ui.lineEdit_patient_key.text()
-
-            if patient_key != '':
                 condition.append('cases.PatientKey = {0}'.format(patient_key))
 
         if len(condition) > 0:
             script += 'WHERE {condition}'.format(
                 condition=' AND '.join(condition),
             )
-        # script += " ORDER BY CaseDate, cases.Room, cases.RegistNo"
+
         script += ' ORDER BY DATE(cases.CaseDate), FIELD(cases.Period, {period}), cases.RegistNo, cases.Room'.format(
             period=str(nhi_utils.PERIOD)[1:-1],
         )
@@ -194,10 +191,11 @@ class DialogMedicalRecordList(QtWidgets.QDialog):
         patient_key = ''
 
         dialog = dialog_select_patient.DialogSelectPatient(
-            self, self.database, self.system_settings, keyword
+            self, self.database, self.system_settings,
+            'patient', 'PatientKey', keyword
         )
         if dialog.exec_():
-            patient_key = dialog.get_patient_key()
+            patient_key = dialog.get_primary_key()
 
         self.ui.lineEdit_patient_key.setText(patient_key)
 

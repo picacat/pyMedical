@@ -144,11 +144,16 @@ class CheckInsTreat(QtWidgets.QMainWindow):
 
     def _check_treats(self, row_no, row):
         error_message = []
+
+        if row['CaseKey'] is None:
+            return error_message
+
         case_date = row['CaseDate'].date()
         case_key = string_utils.xstr(row['CaseKey'])
         patient_key = string_utils.xstr(row['PatientKey'])
         treatment = string_utils.xstr(row['Treatment'])
-        treats = ','.join(self._get_ins_treat(case_key))
+        treat_list = self._get_ins_treat(case_key)
+        treats = ','.join(treat_list)
 
         try:
             last_case_date = datetime.datetime.strptime(
@@ -250,6 +255,9 @@ class CheckInsTreat(QtWidgets.QMainWindow):
         rows = self.database.select_record(sql)
 
         for row in rows:
+            if row['MedicineName'] is None:
+                continue
+
             treat_list.append(row['MedicineName'])
 
         return treat_list

@@ -8,6 +8,7 @@ from libs import ui_utils
 from libs import system_utils
 from libs import string_utils
 from libs import examination_util
+from libs import dialog_utils
 from classes import table_widget
 from dialog import dialog_examination_list
 
@@ -52,6 +53,7 @@ class ExaminationList(QtWidgets.QMainWindow):
     # 設定信號
     def _set_signal(self):
         self.ui.action_requery.triggered.connect(self.open_dialog)
+        self.ui.action_delete_record.triggered.connect(self._delete_examination)
         self.ui.action_close.triggered.connect(self.close_examination_list)
         self.ui.action_open_record.triggered.connect(self.open_examination)
         self.ui.tableWidget_examination_list.doubleClicked.connect(self.open_examination)
@@ -136,7 +138,23 @@ class ExaminationList(QtWidgets.QMainWindow):
     def _examination_preview(self):
         examination_key = self.table_widget_examination_list.field_value(0)
         if examination_key is None:
+            self.ui.textEdit_examination.setHtml(None)
             return
 
         html = examination_util.get_examination_html(self.database, examination_key)
         self.ui.textEdit_examination.setHtml(html)
+
+    def _delete_examination(self):
+        msg_box = dialog_utils.get_message_box(
+            '刪除檢驗資料', QMessageBox.Warning,
+            '<font size="4" color="red"><b>確定刪除此筆檢驗資料 ?</b></font>',
+            '注意！資料刪除後, 將無法回復!'
+        )
+        remove_record = msg_box.exec_()
+        if not remove_record:
+            return
+
+        key = self.table_widget_examination_list.field_value(0)
+        self.database.delete_record('examination', 'ExaminationKey', key)
+        self.database.delete_record('examination_item', 'ExaminationKey', key)
+        self.ui.tableWidget_examination_list.removeRow(self.ui.tableWidget_examination_list.currentRow())

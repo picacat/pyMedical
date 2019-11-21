@@ -54,7 +54,7 @@ class StatisticsReturnRateDoctor(QtWidgets.QMainWindow):
     def _set_table_width(self):
         width = [
             100,
-            110, 70, 90, 70, 90, 300, 90, 350]
+            110, 70, 90, 70, 90, 300, 90, 220, 140]
         self.table_widget_return_rate_doctor.set_table_heading_width(width)
 
     # 設定信號
@@ -98,8 +98,10 @@ class StatisticsReturnRateDoctor(QtWidgets.QMainWindow):
 
         sql = '''
             SELECT  
-                CaseKey, CaseDate, PatientKey, Name, Visit, TreatType, DiseaseName1, Doctor
+                CaseKey, CaseDate, cases.PatientKey, cases.Name, Visit, TreatType, DiseaseName1, Doctor,
+                Telephone, Cellphone
             FROM cases
+                LEFT JOIN patient ON patient.PatientKey = cases.PatientKey
             WHERE
                 CaseDate BETWEEN "{start_date}" AND "{end_date}" AND
                 Doctor IS NOT NULL
@@ -107,7 +109,7 @@ class StatisticsReturnRateDoctor(QtWidgets.QMainWindow):
                 {treat_type_condition}
                 {visit_condition}
                 {doctor_condition}
-            GROUP BY PatientKey
+            GROUP BY cases.PatientKey
             ORDER BY CaseDate
         '''.format(
             start_date=self.start_date,
@@ -123,6 +125,12 @@ class StatisticsReturnRateDoctor(QtWidgets.QMainWindow):
     def _set_table_data(self, row_no, row):
         return_days_list = self._get_return_days_list(row)
 
+        phone_list = []
+        if string_utils.xstr(row['Telephone']) != '':
+            phone_list.append(string_utils.xstr(row['Telephone']))
+        if string_utils.xstr(row['Cellphone']) != '':
+            phone_list.append(string_utils.xstr(row['Cellphone']))
+
         medical_record = [
             string_utils.xstr(row['CaseKey']),
             string_utils.xstr(row['CaseDate'].date()),
@@ -132,7 +140,8 @@ class StatisticsReturnRateDoctor(QtWidgets.QMainWindow):
             string_utils.xstr(row['TreatType']),
             string_utils.xstr(row['DiseaseName1']),
             string_utils.xstr(row['Doctor']),
-            ', '.join(return_days_list)
+            ', '.join(return_days_list),
+            ', '.join(phone_list),
         ]
 
         for column in range(len(medical_record)):

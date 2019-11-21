@@ -1,5 +1,6 @@
 # 取得各項費用金額
 
+from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtWidgets import QMessageBox, QPushButton
 
 import datetime
@@ -10,6 +11,8 @@ from libs import nhi_utils
 from libs import case_utils
 from libs import prescript_utils
 from libs import date_utils
+
+DISCOUNT_TYPE = ['掛號費優待', '門診負擔優待', '藥品負擔優待']
 
 
 # 基本掛號費
@@ -84,10 +87,6 @@ def _get_regist_discount_fee(database, discount_type):
 # 取得掛號費
 def get_regist_fee(database, system_settings,
                    birthday, discount_type, ins_type, share_type, treat_type, course=None):
-    if string_utils.xstr(discount_type) != '':  # 掛號費優待優先取得
-        regist_fee = _get_regist_discount_fee(database, discount_type)
-        return regist_fee
-
     regist_fee = _get_basic_regist_fee(database, ins_type)
     course_type = nhi_utils.get_course_type(course)
     sql = '''
@@ -103,10 +102,19 @@ def get_regist_fee(database, system_settings,
     if len(row) > 0:
         regist_fee = number_utils.get_integer(row['Amount'])
 
-    if regist_fee > 0:  # 最後檢查是否符合老人優待, 已經優待者就不檢查
+    if string_utils.xstr(discount_type) != '':  # 掛號費優待優先取得
+        discount_fee = _get_regist_discount_fee(database, discount_type)
+        if discount_fee >= 0:
+            regist_fee = discount_fee
+        else:
+            regist_fee += discount_fee
+    else:  # 最後檢查是否符合老人優待, 已經優待者就不檢查
         old_man_regist_fee = get_old_man_regist_fee(database, system_settings, birthday)
-        if old_man_regist_fee != None:
-            regist_fee = old_man_regist_fee
+        if old_man_regist_fee is not None:
+            if old_man_regist_fee >= 0:
+                regist_fee = old_man_regist_fee
+            else:
+                regist_fee += old_man_regist_fee
 
     return regist_fee
 
@@ -165,7 +173,7 @@ def get_deposit_fee(database, card):
 
 
 # 取得門診負擔 (treat_type 取代 treatment的原因: 掛號時須取得門診負擔, 以treat_type代表)
-def get_diag_share_fee(database, share_type, treatment, course):
+def get_diag_share_fee(database, share_type, treatment, course, reg_type=None):
     diag_share_fee = 0
     course_type = nhi_utils.get_course_type(course)
     if treatment in nhi_utils.ACUPUNCTURE_TREAT:
@@ -187,11 +195,36 @@ def get_diag_share_fee(database, share_type, treatment, course):
     if len(row) > 0:
         diag_share_fee = number_utils.get_integer(row['Amount'])
 
-    return diag_share_fee
+    if reg_type in nhi_utils.TOUR_FAR:
+        diag_share_fee *= 0.8  # 偏遠地區減免20%
+
+    return int(diag_share_fee)
+
+
+# 取得門診負擔優待
+def get_diag_share_discount_fee(database, discount_type):
+    diag_share_discount_fee = None
+
+    sql = '''
+        SELECT * FROM charge_settings
+        WHERE
+            ChargeType = "門診負擔優待" AND
+            ItemName = "{discount_type}"
+    '''.format(
+        discount_type=discount_type,
+    )
+    rows = database.select_record(sql)
+    if len(rows) <= 0:
+        return diag_share_discount_fee
+
+    row = rows[0]
+    diag_share_discount_fee = number_utils.get_integer(row['Amount'])
+
+    return diag_share_discount_fee
 
 
 # 取得藥品負擔
-def get_drug_share_fee(database, share_type, ins_drug_fee):
+def get_drug_share_fee(database, share_type, ins_drug_fee, reg_type=None):
     drug_share_fee = 0
     if share_type == '基層醫療':
         remark = None
@@ -234,7 +267,32 @@ def get_drug_share_fee(database, share_type, ins_drug_fee):
     if len(row) > 0:
         drug_share_fee = number_utils.get_integer(row['Amount'])
 
-    return drug_share_fee
+    if reg_type in nhi_utils.TOUR_FAR:
+        drug_share_fee *= 0.8  # 偏遠地區減免20%
+
+    return int(drug_share_fee)
+
+
+# 取得藥品負擔優待
+def get_drug_share_discount_fee(database, discount_type):
+    drug_share_discount_fee = None
+
+    sql = '''
+        SELECT * FROM charge_settings
+        WHERE
+            ChargeType = "藥品負擔優待" AND
+            ItemName = "{discount_type}"
+    '''.format(
+        discount_type=discount_type,
+    )
+    rows = database.select_record(sql)
+    if len(rows) <= 0:
+        return drug_share_discount_fee
+
+    row = rows[0]
+    drug_share_discount_fee = number_utils.get_integer(row['Amount'])
+
+    return drug_share_discount_fee
 
 
 # 取得門診負擔
@@ -358,6 +416,7 @@ def get_ins_pharmacy_fee(database, system_settings, ins_drug_fee, pharmacy_type=
 
     return ins_pharmacy_fee
 
+
 def get_ins_code_from_charge_settings(database, charge_type, item_name):
     ins_code = ''
     sql = '''
@@ -456,7 +515,7 @@ def get_ins_care_fee_from_table_widget(table_widget):
 
 
 # 取得健保代辦費
-def get_ins_agent_fee(database, share_type, treatment, course, ins_drug_fee):
+def get_ins_agent_fee(database, share_type, treatment, course, ins_drug_fee, reg_type=None):
     ins_agent_fee = 0
 
     if share_type in ['重大傷病', '山地離島']:  # 重大傷病, 山地離島: 無代辦費
@@ -467,12 +526,15 @@ def get_ins_agent_fee(database, share_type, treatment, course, ins_drug_fee):
             database,
             '基層醫療',
             nhi_utils.get_treat_type(treatment),
-            course
+            course,
+            reg_type
         )
         drug_share_fee = get_drug_share_fee(
             database,
             '基層醫療',
-            ins_drug_fee)
+            ins_drug_fee,
+            reg_type,
+        )
         ins_agent_fee = diag_share_fee + drug_share_fee
 
     return ins_agent_fee
@@ -556,7 +618,7 @@ def get_ins_special_care_fee(database, system_settings, case_key, treat_type,
     return ins_fee
 
 
-def get_ins_fee(database, system_settings, case_key, treat_type,
+def get_ins_fee(database, system_settings, case_key, reg_type, treat_type,
                 share, course, pres_days, pharmacy_type, treatment, table_widget_ins_care=None):
     if treat_type in nhi_utils.CARE_TREAT:
         ins_fee = get_ins_special_care_fee(
@@ -592,10 +654,10 @@ def get_ins_fee(database, system_settings, case_key, treat_type,
     )
 
     ins_fee['diag_share_fee'] = get_diag_share_fee(
-        database, share, treatment, course,
+        database, share, treatment, course, reg_type,
     )
     ins_fee['drug_share_fee'] = get_drug_share_fee(
-        database, share, ins_fee['drug_fee'],
+        database, share, ins_fee['drug_fee'], reg_type,
     )
 
     ins_fee['ins_apply_fee'] = (
@@ -614,7 +676,7 @@ def get_ins_fee(database, system_settings, case_key, treat_type,
 def calculate_ins_fee(database, system_settings, case_key):
     sql = '''
         SELECT 
-            CaseKey, Share, Continuance, TreatType, PharmacyType, Treatment 
+            CaseKey, RegistType, Share, Continuance, TreatType, PharmacyType, Treatment 
         FROM cases 
         WHERE 
             CaseKey = {0}
@@ -626,6 +688,7 @@ def calculate_ins_fee(database, system_settings, case_key):
         return
 
     pres_days = case_utils.get_pres_days(database, case_key)
+    reg_type = string_utils.xstr(row['RegistType'])
     treat_type = string_utils.xstr(row['TreatType'])
     share = string_utils.xstr(row['Share'])
     course = number_utils.get_integer(row['Continuance'])
@@ -634,7 +697,7 @@ def calculate_ins_fee(database, system_settings, case_key):
 
     ins_fee = get_ins_fee(
         database, system_settings, case_key,
-        treat_type, share, course, pres_days, pharmacy_type, treatment)
+        reg_type, treat_type, share, course, pres_days, pharmacy_type, treatment)
 
     fields = [
         'DiagFee', 'InterDrugFee', 'PharmacyFee',
@@ -1014,10 +1077,16 @@ def set_discount_basic_data(database):
 
 def get_table_widget_item_fee(table_widget, row_no, col_no):
     fee = table_widget.item(row_no, col_no)
-    if fee is not None:
-        fee = number_utils.get_float(fee.text())
-    else:
+    try:
+        if fee is not None:
+            fee = number_utils.get_float(fee.text())
+        else:
+            fee = 0.0
+    except ValueError:
         fee = 0.0
+        item = QtWidgets.QTableWidgetItem()
+        item.setData(QtCore.Qt.EditRole, fee)
+        table_widget.setItem(row_no, col_no, item)
 
     return fee
 
@@ -1088,5 +1157,75 @@ def calc_commission(quantity, amount, commission_rate):
         commission_rate = number_utils.get_float(commission_rate)
         commission = quantity * commission_rate
 
+    commission = number_utils.round_up(commission)
+
     return commission
 
+
+# 計算折扣
+def get_discount_fee(system_settings, self_total_fee, discount_rate):
+    if discount_rate == 100:
+        return 0
+
+    discount_fee = int(self_total_fee - (self_total_fee * discount_rate / 100))
+    total_fee = self_total_fee - discount_fee
+    remainder = total_fee % 10  # 個位數
+    rounded_type = system_settings.field('自費折扣進位')
+    remainder_type = system_settings.field('自費折扣尾數')
+    rounded_total_fee = total_fee
+
+    if rounded_type == '四捨五入':
+        rounded_total_fee = round(total_fee, -1)
+    elif rounded_type == '無條件進位':
+        if remainder_type == '尾數為0':
+            rounded_total_fee = total_fee + (10 - remainder)
+        else:  # 尾數為0或5
+            if remainder in [0, 5]:  # 尾數剛好, 不用調整
+                rounded_total_fee = total_fee
+            elif remainder < 5:
+                rounded_total_fee = total_fee + (5 - remainder)
+            elif remainder > 5:
+                rounded_total_fee = total_fee + (10 - remainder)
+    elif rounded_type == '無條件捨去':
+        if remainder_type == '尾數為0':
+            rounded_total_fee = total_fee - remainder
+        else:
+            if remainder in [0, 5]:  # 尾數剛好, 不用調整
+                rounded_total_fee = total_fee
+            elif remainder < 5:
+                rounded_total_fee = total_fee - remainder
+            elif remainder > 5:
+                rounded_total_fee = total_fee - (remainder - 5)
+
+    discount_fee += number_utils.get_integer(total_fee - rounded_total_fee)
+
+    return discount_fee
+
+
+# 取得自費金額
+def get_self_total_fee(database, case_key):
+    sql = '''
+        SELECT * FROM prescript
+        WHERE
+            CaseKey = {case_key} AND
+            MedicineSet >= 2
+        ORDER BY MedicineSet, PrescriptKey
+    '''.format(
+        case_key=case_key,
+    )
+
+    rows = database.select_record(sql)
+
+    self_total_fee = 0
+    for row in rows:
+        dosage = number_utils.get_float(row['Dosage'])
+        price = number_utils.get_float(row['Price'])
+        pres_days = case_utils.get_pres_days(database, case_key, row['MedicineSet'])
+        if pres_days <= 0:
+            pres_days = 1
+
+        amount = dosage * price
+        subtotal = get_subtotal_fee(amount, pres_days)
+        self_total_fee += subtotal
+
+    return self_total_fee

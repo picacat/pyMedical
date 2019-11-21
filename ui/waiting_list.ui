@@ -363,12 +363,17 @@
             </column>
             <column>
              <property name="text">
-              <string>病歷號碼</string>
+              <string>診號</string>
              </property>
             </column>
             <column>
              <property name="text">
               <string>病患姓名</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>病歷號碼</string>
              </property>
             </column>
             <column>
@@ -384,11 +389,6 @@
             <column>
              <property name="text">
               <string>診別</string>
-             </property>
-            </column>
-            <column>
-             <property name="text">
-              <string>診號</string>
              </property>
             </column>
             <column>
@@ -438,6 +438,11 @@
             </column>
             <column>
              <property name="text">
+              <string>自費金額</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
               <string>主治醫師</string>
              </property>
             </column>
@@ -471,6 +476,7 @@
     <bool>false</bool>
    </attribute>
    <addaction name="action_medical_record"/>
+   <addaction name="action_refresh_list"/>
    <addaction name="separator"/>
    <addaction name="action_close"/>
   </widget>
@@ -509,6 +515,18 @@
    </property>
    <property name="text">
     <string>關閉視窗</string>
+   </property>
+  </action>
+  <action name="action_refresh_list">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/gtk-refresh.svg</normaloff>../icons/gtk-refresh.svg</iconset>
+   </property>
+   <property name="text">
+    <string>重新顯示名單</string>
+   </property>
+   <property name="toolTip">
+    <string>重新顯示名單</string>
    </property>
   </action>
  </widget>

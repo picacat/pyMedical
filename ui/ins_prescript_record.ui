@@ -75,6 +75,20 @@
             </widget>
            </item>
            <item>
+            <widget class="QToolButton" name="toolButton_clear_medicine">
+             <property name="toolTip">
+              <string>清除處方</string>
+             </property>
+             <property name="text">
+              <string>...</string>
+             </property>
+             <property name="icon">
+              <iconset>
+               <normaloff>../icons/gtk-clear.svg</normaloff>../icons/gtk-clear.svg</iconset>
+             </property>
+            </widget>
+           </item>
+           <item>
             <widget class="QToolButton" name="toolButton_dictionary">
              <property name="toolTip">
               <string>開啟處方詞庫</string>
@@ -100,10 +114,16 @@
               <iconset>
                <normaloff>../icons/accessories-calculator.png</normaloff>../icons/accessories-calculator.png</iconset>
              </property>
+             <property name="shortcut">
+              <string>Ctrl+I</string>
+             </property>
             </widget>
            </item>
            <item>
             <widget class="QToolButton" name="toolButton_medicine_info">
+             <property name="toolTip">
+              <string>顯示藥品說明</string>
+             </property>
              <property name="text">
               <string>...</string>
              </property>
@@ -270,6 +290,11 @@
              <string>指示</string>
             </property>
            </column>
+           <column>
+            <property name="text">
+             <string>註</string>
+            </property>
+           </column>
           </widget>
          </item>
          <item>
@@ -411,6 +436,20 @@
             </widget>
            </item>
            <item>
+            <widget class="QToolButton" name="toolButton_clear_treat">
+             <property name="toolTip">
+              <string>清除處置</string>
+             </property>
+             <property name="text">
+              <string>...</string>
+             </property>
+             <property name="icon">
+              <iconset>
+               <normaloff>../icons/gtk-clear.svg</normaloff>../icons/gtk-clear.svg</iconset>
+             </property>
+            </widget>
+           </item>
+           <item>
             <widget class="QToolButton" name="toolButton_treat_dictionary">
              <property name="toolTip">
               <string>開啟處置詞庫</string>
@@ -455,8 +494,17 @@
          </item>
          <item>
           <widget class="QTableWidget" name="tableWidget_treat">
+           <property name="accessibleDescription">
+            <string/>
+           </property>
+           <property name="locale">
+            <locale language="Chinese" country="Taiwan"/>
+           </property>
+           <property name="inputMethodHints">
+            <set>Qt::ImhNone</set>
+           </property>
            <property name="editTriggers">
-            <set>QAbstractItemView::AnyKeyPressed|QAbstractItemView::DoubleClicked|QAbstractItemView::EditKeyPressed|QAbstractItemView::SelectedClicked</set>
+            <set>QAbstractItemView::AllEditTriggers</set>
            </property>
            <property name="tabKeyNavigation">
             <bool>true</bool>
@@ -466,6 +514,9 @@
            </property>
            <property name="defaultDropAction">
             <enum>Qt::MoveAction</enum>
+           </property>
+           <property name="alternatingRowColors">
+            <bool>true</bool>
            </property>
            <property name="selectionMode">
             <enum>QAbstractItemView::SingleSelection</enum>

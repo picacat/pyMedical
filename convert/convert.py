@@ -106,12 +106,20 @@ class DialogConvert(QtWidgets.QDialog):
         )
 
         rows = self.database.select_record(sql)
-        for row in rows:
+        row_count = len(rows)
+
+        self.progressBar.setMaximum(row_count)
+        self.progressBar.setValue(0)
+        for row_no, row in zip(range(row_count), rows):
+            self.progressBar.setValue(row_no)
+
             exec_script = row['exec_script']
             try:
                 self.database.exec_sql(exec_script)
             except:
                 print(exec_script)
+
+        self.progressBar.setValue(row_count)
 
         msg_box = QMessageBox()
         msg_box.setIcon(QMessageBox.Information)

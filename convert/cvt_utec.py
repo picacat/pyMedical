@@ -38,6 +38,8 @@ class CvtUtec():
     def _convert_med2000(self):
         if self.parent.ui.checkBox_groups.isChecked():
             self._cvt_groups()
+        if self.parent.ui.checkBox_disease_common.isChecked():
+            self._cvt_disease_common()
         if self.parent.ui.checkBox_disease_treat.isChecked():
             self._cvt_disease_treat()
         if self.parent.ui.checkBox_dosage.isChecked():
@@ -48,6 +50,8 @@ class CvtUtec():
     def _convert_medical(self):
         if self.parent.ui.checkBox_groups.isChecked():
             self._cvt_groups()
+        if self.parent.ui.checkBox_disease_common.isChecked():
+            self._cvt_disease_common()
         if self.parent.ui.checkBox_disease_treat.isChecked():
             self._cvt_disease_treat()
         if self.parent.ui.checkBox_dosage.isChecked():
@@ -59,6 +63,10 @@ class CvtUtec():
         if self.parent.ui.checkBox_medical_record.isChecked():
             self._cvt_medical_cases()
             self._cvt_med2000_cases()
+        if self.parent.ui.checkBox_commission.isChecked():
+            self._cvt_medical_commission()
+        if self.parent.ui.checkBox_project.isChecked():
+            self._cvt_medical_project()
 
     def _cvt_groups(self):
         self.parent.ui.label_progress.setText('詞庫類別轉檔')
@@ -331,14 +339,36 @@ class CvtUtec():
 
         fields = [
             'CertificateKey', 'CaseKey', 'PatientKey', 'Name', 'CertificateDate', 'CertificateType',
-            'InsType', 'StartDate', 'EndDate', 'Diagnosis', 'DoctorComment',
+            'InsType', 'StartDate', 'EndDate', 'Doctor', 'Diagnosis', 'DoctorComment',
 
         ]
         for row in rows:
             self.progress_bar.setValue(self.progress_bar.value() + 1)
+            patient_key = row['PatientKey']
+            start_date = '{0} 00:00:00'.format(row['StartDate'])
+            end_date = '{0} 23:59:59'.format(row['StopDate'])
+            sql = '''
+                SELECT CaseKey, Doctor FROM cases
+                WHERE
+                    CaseDate BETWEEN "{start_date}" AND "{end_date}" AND
+                    PatientKey = {patient_key} 
+            '''.format(
+                patient_key=patient_key,
+                start_date=start_date,
+                end_date=end_date,
+            )
+
+            case_rows = self.database.select_record(sql)
+            if len(case_rows) <= 0:
+                case_key = 0
+                doctor = None
+            else:
+                case_key = case_rows[0]['CaseKey']
+                doctor = string_utils.xstr(case_rows[0]['Doctor'])
+
             data = [
                 row['ProofKey'],
-                0,
+                case_key,
                 row['PatientKey'],
                 row['Name'],
                 row['ProofDate'],
@@ -346,11 +376,19 @@ class CvtUtec():
                 row['InsType'],
                 row['StartDate'],
                 row['StopDate'],
-                row['Disease'],
-                row['Diagnosis'],
+                doctor,
+                string_utils.get_str(row['Disease'], 'utf8'),
+                string_utils.get_str(row['Diagnosis'], 'utf8'),
             ]
 
             self.database.insert_record('certificate', fields, data)
+
+    def _cvt_disease_common(self):
+        self.progress_bar.setMaximum(100)
+        self.progress_bar.setValue(0)
+        self.parent.ui.label_progress.setText('病名詞庫常用類別轉檔')
+        cvt_groups.cvt_disease_common(self.database)
+        self.progress_bar.setValue(100)
 
     def _cvt_disease_treat(self):
         self.progress_bar.setMaximum(100)
@@ -358,3 +396,70 @@ class CvtUtec():
         self.parent.ui.label_progress.setText('病名詞庫傷骨科類別轉檔')
         cvt_groups.cvt_disease_treat(self.database)
         self.progress_bar.setValue(100)
+
+    def _cvt_medical_commission(self):
+        sql = '''
+            SELECT * FROM medextend
+            WHERE
+                MedExtendType = "抽成比例"     
+            ORDER BY MedicineKey 
+        '''
+
+        rows = self.source_db.select_record(sql)
+
+        self.progress_bar.setMaximum(len(rows))
+        self.progress_bar.setValue(0)
+
+        for row in rows:
+            self.progress_bar.setValue(self.progress_bar.value() + 1)
+            medicine_key = row['MedicineKey']
+            commission = row['Description']
+            if medicine_key is None or commission is None:
+                continue
+
+            commission = '{0}%'.format(commission)
+            self.database.exec_sql('''
+                UPDATE medicine
+                SET
+                    Commission = "{commission}"
+                WHERE
+                    MedicineKey = {medicine_key}
+            '''.format(
+                commission=commission,
+                medicine_key=medicine_key,
+            ))
+
+        self.progress_bar.setValue(len(rows))
+
+    def _cvt_medical_project(self):
+        sql = '''
+            SELECT * FROM medextend
+            WHERE
+                MedExtendType = "專案"     
+            ORDER BY MedicineKey 
+        '''
+
+        rows = self.source_db.select_record(sql)
+
+        self.progress_bar.setMaximum(len(rows))
+        self.progress_bar.setValue(0)
+
+        for row in rows:
+            self.progress_bar.setValue(self.progress_bar.value() + 1)
+            medicine_key = row['MedicineKey']
+            project = row['Description']
+            if medicine_key is None or project is None:
+                continue
+
+            self.database.exec_sql('''
+                UPDATE medicine
+                SET
+                    Project = "{project}"
+                WHERE
+                    MedicineKey = {medicine_key}
+            '''.format(
+                project=project,
+                medicine_key=medicine_key,
+            ))
+
+        self.progress_bar.setValue(len(rows))

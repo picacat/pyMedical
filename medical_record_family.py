@@ -9,12 +9,10 @@ import datetime
 from classes import table_widget
 from libs import ui_utils
 from libs import string_utils
-from libs import nhi_utils
 from libs import personnel_utils
 from libs import case_utils
 from libs import system_utils
 from libs import date_utils
-from libs import number_utils
 
 
 # 病歷資料 2018.01.31
@@ -26,12 +24,16 @@ class MedicalRecordFamily(QtWidgets.QMainWindow):
         self.database = args[0]
         self.system_settings = args[1]
         self.case_key = args[2]
+        self.call_from = args[3]
 
         self.ui = None
 
         self._set_ui()
         self._set_signal()
         self._read_family()
+
+        self.user_name = self.system_settings.field('使用者')
+        self._set_permission()
 
     # 解構
     def __del__(self):
@@ -58,11 +60,24 @@ class MedicalRecordFamily(QtWidgets.QMainWindow):
         self.ui.tableWidget_medical_record.itemSelectionChanged.connect(self._medical_record_changed)
         self.ui.pushButton_copy.clicked.connect(self._copy_medical_record)
 
+    def _set_permission(self):
+        if self.call_from == '醫師看診作業':
+            return
+
+        if self.user_name == '超級使用者':
+            return
+
+        if personnel_utils.get_permission(self.database, '病歷資料', '病歷修正', self.user_name) == 'Y':
+            return
+
+        self.ui.groupBox_copy_option.setEnabled(False)
+        self.ui.pushButton_copy.setEnabled(False)
+
     def _set_table_width(self):
         width = [90, 90, 50, 110, 50, 120]
         self.table_widget_patient.set_table_heading_width(width)
 
-        width = [90, 110, 50, 200, 50, 90]
+        width = [90, 125, 50, 200, 50, 90]
         self.table_widget_medical_record.set_table_heading_width(width)
 
     def _read_family(self):

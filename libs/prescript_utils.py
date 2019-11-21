@@ -60,6 +60,7 @@ PRESCRIPT_TREAT = ['穴道', '處置']
 # 取得服藥頻率代碼
 def get_usage_code(package):
     usage_dict = {
+        0: None,
         1: 'QD',
         2: 'BID',
         3: 'TID',
@@ -368,6 +369,8 @@ def get_medicine_field(database, medicine_key, field_name):
     )
 
     rows = database.select_record(sql)
+    if len(rows) <= 0:
+        return None
 
     return rows[0][field_name]
 

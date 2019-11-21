@@ -25,8 +25,9 @@ class StatisticsDoctorCount(QtWidgets.QMainWindow):
         self.system_settings = args[1]
         self.start_date = args[2]
         self.end_date = args[3]
-        self.ins_type = args[4]
-        self.doctor = args[5]
+        self.period = args[4]
+        self.ins_type = args[5]
+        self.doctor = args[6]
         self.ui = None
 
         self._set_ui()
@@ -50,7 +51,7 @@ class StatisticsDoctorCount(QtWidgets.QMainWindow):
     def _set_table_width(self):
         width = [
             110,
-            85, 85, 85, 85, 85, 85, 85, 85, 85, 85,
+            85, 85, 85, 85, 85, 85, 85, 85, 85, 85, 85, 85, 85,
             85, 85, 85, 85, 85, 85, 85, 85]
         self.table_widget_doctor_count.set_table_heading_width(width)
 
@@ -98,6 +99,7 @@ class StatisticsDoctorCount(QtWidgets.QMainWindow):
         self._reset_data()
         rows = self._read_data()
         self._calculate_ins_count(rows)
+        self._calculate_period(rows)
         self._calculate_treat_count(rows)
         self._calculate_subtotal()
         self._calculate_total()
@@ -115,6 +117,10 @@ class StatisticsDoctorCount(QtWidgets.QMainWindow):
                 )
 
     def _read_data(self):
+        period_condition = ''
+        if self.period != '全部':
+            period_condition = ' AND Period = "{0}"'.format(self.period)
+
         ins_type_condition = ''
         if self.ins_type != '全部':
             ins_type_condition = ' AND InsType = "{0}"'.format(self.ins_type)
@@ -125,16 +131,18 @@ class StatisticsDoctorCount(QtWidgets.QMainWindow):
 
         sql = '''
             SELECT  
-                CaseKey, CaseDate, InsType, TreatType, Continuance
+                CaseKey, CaseDate, Period, InsType, TreatType, Continuance
             FROM cases
             WHERE
                 CaseDate BETWEEN "{start_date}" AND "{end_date}" 
+                {period_condition}
                 {ins_type_condition}
                 {doctor_condition}
             ORDER BY CaseDate
         '''.format(
             start_date=self.start_date,
             end_date=self.end_date,
+            period_condition=period_condition,
             ins_type_condition=ins_type_condition,
             doctor_condition=doctor_condition,
         )
@@ -171,6 +179,28 @@ class StatisticsDoctorCount(QtWidgets.QMainWindow):
 
             self._set_item_data(row_no, col_no, string_utils.xstr(ins_count + 1))
 
+    def _calculate_period(self, rows):
+        for row in rows:
+            case_date = row['CaseDate'].strftime('%Y-%m-%d')
+            period = string_utils.xstr(row['Period'])
+
+            col_no = 3
+            if period == '早班':
+                col_no = 3
+            elif period == '午班':
+                col_no = 4
+            elif period == '晚班':
+                col_no = 5
+
+            row_no = self._get_row_no(case_date)
+            period_count = self.ui.tableWidget_doctor_count.item(row_no, col_no)
+            if period_count is None:
+                period_count = 0
+            else:
+                period_count = number_utils.get_integer(period_count.text())
+
+            self._set_item_data(row_no, col_no, string_utils.xstr(period_count + 1))
+
     def _calculate_treat_count(self, rows):
         for row in rows:
             case_date = row['CaseDate'].strftime('%Y-%m-%d')
@@ -179,39 +209,39 @@ class StatisticsDoctorCount(QtWidgets.QMainWindow):
             pres_days = case_utils.get_pres_days(self.database, row['CaseKey'])
 
             row_no = self._get_row_no(case_date)
-            col_no = 3
+            col_no = 6  # 內科
             if treat_type == '針灸治療':
                 if pres_days <= 0:
                     if course <= 1:
-                        col_no = 4
+                        col_no = 7
                     else:
-                        col_no = 5
+                        col_no = 8
                 else:
-                    col_no = 6
+                    col_no = 9
             elif treat_type == '複雜針灸':
                 if pres_days <= 0:
                     if course <= 1:
-                        col_no = 8
+                        col_no = 11
                     else:
-                        col_no = 9
+                        col_no = 12
                 else:
-                    col_no = 10
+                    col_no = 13
             elif treat_type == '傷科治療':
                 if pres_days <= 0:
                     if course <= 1:
-                        col_no = 12
+                        col_no = 15
                     else:
-                        col_no = 13
+                        col_no = 16
                 else:
-                    col_no = 14
+                    col_no = 17
             elif treat_type == '複雜傷科':
                 if pres_days <= 0:
                     if course <= 1:
-                        col_no = 16
+                        col_no = 19
                     else:
-                        col_no = 17
+                        col_no = 20
                 else:
-                    col_no = 18
+                    col_no = 21
 
             treat_count = self.ui.tableWidget_doctor_count.item(row_no, col_no)
             if treat_count is None:
@@ -232,25 +262,25 @@ class StatisticsDoctorCount(QtWidgets.QMainWindow):
 
     def _calculate_subtotal(self):
         for row_no in range(self.ui.tableWidget_doctor_count.rowCount()):
-            acupuncture1 = number_utils.get_integer(self.ui.tableWidget_doctor_count.item(row_no, 4).text())
-            acupuncture2 = number_utils.get_integer(self.ui.tableWidget_doctor_count.item(row_no, 5).text())
-            acupuncture3 = number_utils.get_integer(self.ui.tableWidget_doctor_count.item(row_no, 6).text())
-            self._set_item_data(row_no, 7, string_utils.xstr(acupuncture1 + acupuncture2 + acupuncture3))
+            acupuncture1 = number_utils.get_integer(self.ui.tableWidget_doctor_count.item(row_no, 7).text())
+            acupuncture2 = number_utils.get_integer(self.ui.tableWidget_doctor_count.item(row_no, 8).text())
+            acupuncture3 = number_utils.get_integer(self.ui.tableWidget_doctor_count.item(row_no, 9).text())
+            self._set_item_data(row_no, 10, string_utils.xstr(acupuncture1 + acupuncture2 + acupuncture3))
 
-            c_acupuncture1 = number_utils.get_integer(self.ui.tableWidget_doctor_count.item(row_no, 8).text())
-            c_acupuncture2 = number_utils.get_integer(self.ui.tableWidget_doctor_count.item(row_no, 9).text())
-            c_acupuncture3 = number_utils.get_integer(self.ui.tableWidget_doctor_count.item(row_no, 10).text())
-            self._set_item_data(row_no, 11, string_utils.xstr(c_acupuncture1 + c_acupuncture2 + c_acupuncture3))
+            c_acupuncture1 = number_utils.get_integer(self.ui.tableWidget_doctor_count.item(row_no, 11).text())
+            c_acupuncture2 = number_utils.get_integer(self.ui.tableWidget_doctor_count.item(row_no, 12).text())
+            c_acupuncture3 = number_utils.get_integer(self.ui.tableWidget_doctor_count.item(row_no, 13).text())
+            self._set_item_data(row_no, 14, string_utils.xstr(c_acupuncture1 + c_acupuncture2 + c_acupuncture3))
 
-            massage1 = number_utils.get_integer(self.ui.tableWidget_doctor_count.item(row_no, 12).text())
-            massage2 = number_utils.get_integer(self.ui.tableWidget_doctor_count.item(row_no, 13).text())
-            massage3 = number_utils.get_integer(self.ui.tableWidget_doctor_count.item(row_no, 14).text())
-            self._set_item_data(row_no, 15, string_utils.xstr(massage1 + massage2 + massage3))
+            massage1 = number_utils.get_integer(self.ui.tableWidget_doctor_count.item(row_no, 15).text())
+            massage2 = number_utils.get_integer(self.ui.tableWidget_doctor_count.item(row_no, 16).text())
+            massage3 = number_utils.get_integer(self.ui.tableWidget_doctor_count.item(row_no, 17).text())
+            self._set_item_data(row_no, 18, string_utils.xstr(massage1 + massage2 + massage3))
 
-            c_massage1 = number_utils.get_integer(self.ui.tableWidget_doctor_count.item(row_no, 16).text())
-            c_massage2 = number_utils.get_integer(self.ui.tableWidget_doctor_count.item(row_no, 17).text())
-            c_massage3 = number_utils.get_integer(self.ui.tableWidget_doctor_count.item(row_no, 18).text())
-            self._set_item_data(row_no, 19, string_utils.xstr(c_massage1 + c_massage2 + c_massage3))
+            c_massage1 = number_utils.get_integer(self.ui.tableWidget_doctor_count.item(row_no, 19).text())
+            c_massage2 = number_utils.get_integer(self.ui.tableWidget_doctor_count.item(row_no, 20).text())
+            c_massage3 = number_utils.get_integer(self.ui.tableWidget_doctor_count.item(row_no, 21).text())
+            self._set_item_data(row_no, 22, string_utils.xstr(c_massage1 + c_massage2 + c_massage3))
 
     def _calculate_total(self):
         total_list = [0 for i in range(self.ui.tableWidget_doctor_count.columnCount())]
@@ -279,7 +309,8 @@ class StatisticsDoctorCount(QtWidgets.QMainWindow):
             return
 
         export_utils.export_table_widget_to_excel(
-            excel_file_name, self.ui.tableWidget_doctor_count,
+            excel_file_name, self.ui.tableWidget_doctor_count, None,
+            [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22],
         )
 
         system_utils.show_message_box(
@@ -307,19 +338,19 @@ class StatisticsDoctorCount(QtWidgets.QMainWindow):
         set4 = QtChart.QBarSet(treat_type[4])
 
         set0 << number_utils.get_integer(
-            self.ui.tableWidget_doctor_count.item(self.ui.tableWidget_doctor_count.rowCount()-1, 3).text(),
+            self.ui.tableWidget_doctor_count.item(self.ui.tableWidget_doctor_count.rowCount()-1, 6).text(),
         )
         set1 << number_utils.get_integer(
-            self.ui.tableWidget_doctor_count.item(self.ui.tableWidget_doctor_count.rowCount()-1, 7).text(),
+            self.ui.tableWidget_doctor_count.item(self.ui.tableWidget_doctor_count.rowCount()-1, 10).text(),
         )
         set2 << number_utils.get_integer(
-            self.ui.tableWidget_doctor_count.item(self.ui.tableWidget_doctor_count.rowCount()-1, 11).text(),
+            self.ui.tableWidget_doctor_count.item(self.ui.tableWidget_doctor_count.rowCount()-1, 14).text(),
         )
         set3 << number_utils.get_integer(
-            self.ui.tableWidget_doctor_count.item(self.ui.tableWidget_doctor_count.rowCount()-1, 15).text(),
+            self.ui.tableWidget_doctor_count.item(self.ui.tableWidget_doctor_count.rowCount()-1, 18).text(),
         )
         set4 << number_utils.get_integer(
-            self.ui.tableWidget_doctor_count.item(self.ui.tableWidget_doctor_count.rowCount()-1, 19).text(),
+            self.ui.tableWidget_doctor_count.item(self.ui.tableWidget_doctor_count.rowCount()-1, 22).text(),
         )
 
         series = QtChart.QBarSeries()

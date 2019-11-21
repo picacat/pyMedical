@@ -13,6 +13,7 @@ from libs import date_utils
 from libs import system_utils
 from libs import string_utils
 from libs import nhi_utils
+from libs import prescript_utils
 
 
 # 候診名單 2018.01.31
@@ -147,7 +148,7 @@ class CheckInsDrug(QtWidgets.QMainWindow):
                 continue
 
             error_messages += self._check_valid_date(row, drug_rows)
-            # error_messages += self._check_drug_name(row, drug_rows)
+            # error_messages += self._check_drug_name(medical_row, drug_rows)
 
             self._insert_error_record(row_no, row, drug_rows, error_messages)
 
@@ -166,7 +167,13 @@ class CheckInsDrug(QtWidgets.QMainWindow):
 
         valid_date = drug_rows[0]['ValidDate']
         if type(valid_date) is str:
-            valid_date = datetime.datetime.strptime(valid_date, "%Y%m%d").date()
+            try:
+                if '-' in valid_date:
+                    valid_date = datetime.datetime.strptime(valid_date, "%Y-%m-%d").date()
+                else:
+                    valid_date = datetime.datetime.strptime(valid_date, "%Y%m%d").date()
+            except ValueError:
+                valid_date = None
 
         if valid_date is None:
             error_message.append('健保藥碼無效')
@@ -199,11 +206,18 @@ class CheckInsDrug(QtWidgets.QMainWindow):
             drug_name = drug_rows[0]['DrugName']
             valid_date = drug_rows[0]['ValidDate']
             if type(valid_date) is str:
-                valid_date = '{0}-{1}-{2}'.format(
-                    valid_date[:4],
-                    valid_date[4:6],
-                    valid_date[6:8],
-                )
+                if '-' in valid_date:
+                    valid_date = '{0}-{1}-{2}'.format(
+                        valid_date[:4],
+                        valid_date[5:7],
+                        valid_date[8:10],
+                    )
+                else:
+                    valid_date = '{0}-{1}-{2}'.format(
+                        valid_date[:4],
+                        valid_date[4:6],
+                        valid_date[6:8],
+                    )
 
         sql = '''
             SELECT Content FROM presextend
@@ -276,7 +290,7 @@ class CheckInsDrug(QtWidgets.QMainWindow):
     def _update_ins_code(self):
         record_count = self.ui.tableWidget_prescript.rowCount()
         progress_dialog = QtWidgets.QProgressDialog(
-            '正在偵測讀卡機連接埠中, 請稍後...', '取消', 0, record_count, self
+            '自動更新健保碼中, 請稍後...', '取消', 0, record_count, self
         )
 
         progress_dialog.setWindowModality(QtCore.Qt.WindowModal)
@@ -295,7 +309,7 @@ class CheckInsDrug(QtWidgets.QMainWindow):
                 continue
 
             medicine_key = medicine_key.text()
-            ins_code = self._get_ins_code(medicine_key)
+            ins_code = prescript_utils.get_medicine_field(self.database, medicine_key, 'InsCode')
             if ins_code is None:
                 ins_code = 'NULL'
             else:
@@ -315,23 +329,6 @@ class CheckInsDrug(QtWidgets.QMainWindow):
 
         progress_dialog.setValue(record_count)
         self.start_check()
-
-    def _get_ins_code(self, medicine_key):
-        sql = '''
-            SELECT InsCode FROM medicine
-            WHERE
-                MedicineKey = {medicine_key}
-        '''.format(
-            medicine_key=medicine_key,
-        )
-
-        rows = self.database.select_record(sql)
-        if len(rows) <= 0:
-            ins_code = None
-        else:
-            ins_code = string_utils.xstr(rows[0]['InsCode'])
-
-        return ins_code
 
     def _update_ins_code_by_name(self, medicine_name):
         pass

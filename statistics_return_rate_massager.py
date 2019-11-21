@@ -54,7 +54,7 @@ class StatisticsReturnRateMassager(QtWidgets.QMainWindow):
     def _set_table_width(self):
         width = [
             100,
-            110, 70, 90, 70, 90, 300, 90, 350]
+            110, 70, 90, 70, 90, 200, 90, 300, 150]
         self.table_widget_return_rate_massager.set_table_heading_width(width)
 
     # 設定信號
@@ -98,8 +98,10 @@ class StatisticsReturnRateMassager(QtWidgets.QMainWindow):
 
         sql = '''
             SELECT  
-                CaseKey, CaseDate, PatientKey, Name, Visit, TreatType, DiseaseName1, Massager
+                CaseKey, CaseDate, cases.PatientKey, cases.Name, Visit, TreatType, DiseaseName1, Doctor, Massager, 
+                Telephone, Cellphone
             FROM cases
+                LEFT JOIN patient ON patient.PatientKey = cases.PatientKey
             WHERE
                 CaseDate BETWEEN "{start_date}" AND "{end_date}"  AND
                 Massager IS NOT NULL
@@ -122,6 +124,11 @@ class StatisticsReturnRateMassager(QtWidgets.QMainWindow):
 
     def _set_table_data(self, row_no, row):
         return_days_list = self._get_return_days_list(row)
+        phone_list = []
+        if string_utils.xstr(row['Telephone']) != '':
+            phone_list.append(string_utils.xstr(row['Telephone']))
+        if string_utils.xstr(row['Cellphone']) != '':
+            phone_list.append(string_utils.xstr(row['Cellphone']))
 
         medical_record = [
             string_utils.xstr(row['CaseKey']),
@@ -132,9 +139,9 @@ class StatisticsReturnRateMassager(QtWidgets.QMainWindow):
             string_utils.xstr(row['TreatType']),
             string_utils.xstr(row['DiseaseName1']),
             string_utils.xstr(row['Massager']),
-            ', '.join(return_days_list)
+            ', '.join(return_days_list),
+            ', '.join(phone_list),
         ]
-
 
         for column in range(len(medical_record)):
             self.ui.tableWidget_return_rate_massager.setItem(
@@ -164,6 +171,7 @@ class StatisticsReturnRateMassager(QtWidgets.QMainWindow):
                 CaseDate BETWEEN "{start_date}" AND "{end_date}" AND
                 PatientKey = {patient_key}
                 {massager_condition}
+            GROUP BY DATE(CaseDate)
             ORDER BY CaseDate
         '''.format(
             start_date=start_date,

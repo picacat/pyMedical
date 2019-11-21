@@ -54,7 +54,7 @@ class DialogMedicalRecordHosts(QtWidgets.QDialog):
 
     # 設定欄位寬度
     def _set_table_width(self):
-        width = [100, 170, 110, 50, 80, 60, 50, 220, 45, 80, 80]
+        width = [100, 170, 125, 50, 80, 60, 50, 220, 45, 80, 80]
         self.table_widget_medical_records.set_table_heading_width(width)
 
     # 設定信號
@@ -212,14 +212,19 @@ class DialogMedicalRecordHosts(QtWidgets.QDialog):
             medicine_set = 2
 
         HIS_version = string_utils.xstr(row['HISVersion'])
+        clinic_name = string_utils.xstr(row['ClinicName'])
+        database = self.database_list[clinic_name]
         if HIS_version in ['Medical', 'Med2000']:
             pres_days = row['PresDays{0}'.format(medicine_set)]
         else:
-            pres_days = case_utils.get_pres_days(self.database, case_key, medicine_set)
+            pres_days = case_utils.get_pres_days(database, case_key, medicine_set)
+
+        if pres_days == 0:
+            pres_days = ''
 
         medical_record_data = [
             string_utils.xstr(case_key),
-            string_utils.xstr(row['ClinicName']),
+            clinic_name,
             string_utils.xstr(row['CaseDate'].date()),
             string_utils.xstr(row['InsType']),
             string_utils.xstr(row['TreatType']),

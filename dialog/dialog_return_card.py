@@ -20,8 +20,7 @@ else:
     from classes import cshis
 
 
-
-# 主視窗
+# 還卡對話框
 class DialogReturnCard(QtWidgets.QDialog):
     # 初始化
     def __init__(self, parent=None, *args):
@@ -64,7 +63,6 @@ class DialogReturnCard(QtWidgets.QDialog):
     def _set_combo_box(self):
         ui_utils.set_combo_box(self.ui.comboBox_return_period, nhi_utils.PERIOD)
         ui_utils.set_combo_box(self.ui.comboBox_continuance, nhi_utils.COURSE, None)
-        ui_utils.set_combo_box(self.ui.comboBox_case_share, nhi_utils.SHARE_TYPE)
         ui_utils.set_combo_box(self.ui.comboBox_card, nhi_utils.ABNORMAL_CARD_WITH_HINT, '自動產生')
 
     # 讀取資料
@@ -97,12 +95,10 @@ class DialogReturnCard(QtWidgets.QDialog):
         self.ui.lineEdit_card_no.setText(string_utils.xstr(row['CardNo']))
 
         return_date = date_utils.now_to_str()
-        period = registration_utils.get_period(self.system_settings)
+        period = registration_utils.get_current_period(self.system_settings)
         self.ui.lineEdit_return_date.setText(return_date)
         self.ui.comboBox_return_period.setCurrentText(period)
-        self.ui.lineEdit_return_fee.setText(string_utils.xstr(row['Fee']))
-        self.ui.comboBox_case_share.setCurrentText(row['Share'])
-        self.ui.lineEdit_share_fee.setText(string_utils.xstr(row['DiagShareFee']))
+        self.ui.spinBox_return_fee.setValue(number_utils.get_integer(row['Fee']))
 
         course = number_utils.get_integer(row['Continuance'])
         self.ui.comboBox_continuance.setCurrentText(string_utils.xstr(course))
@@ -260,7 +256,7 @@ class DialogReturnCard(QtWidgets.QDialog):
 
     def update_medical_record(self):
         fields = ['RefundFee']
-        data = [self.ui.lineEdit_return_fee.text(),]
+        data = [self.ui.spinBox_return_fee.value(),]
 
         self.database.update_record('cases', fields, 'CaseKey', self.case_key, data)
 

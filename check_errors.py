@@ -209,16 +209,24 @@ class CheckErrors(QtWidgets.QMainWindow):
             return error_messages
 
         rows = self.database.select_record(
-            'SELECT PatientKey FROM patient WHERE PatientKey = {0}'.format(row['PatientKey']))
+            'SELECT PatientKey FROM patient WHERE PatientKey = {0}'.format(row['PatientKey'])
+        )
         if len(rows) <= 0:
             error_messages.append('病患資料不存在')
             return error_messages
 
         if string_utils.xstr(row['Name']) == '':
             error_messages.append('姓名空白')
+
         try:
-            if row['Birthday'] > row['CaseDate']:
+            if row['Birthday'].year <= 1900:
                 error_messages.append('生日不合理')
+            elif row['Birthday'] > row['CaseDate'].date():
+                error_messages.append('生日不合理')
+            else:
+                age_year, _ = date_utils.get_age(row['Birthday'], row['CaseDate'])
+                if age_year < 3 and string_utils.xstr(row['Share']) == '基層醫療':
+                    error_messages.append('應申報三歲兒童')
         except:
             if string_utils.xstr(row['Birthday']) == '':
                 error_messages.append('生日空白')
@@ -248,10 +256,18 @@ class CheckErrors(QtWidgets.QMainWindow):
         elif row['ApplyType'] is None:
             error_messages.append('申報類別空白')
 
-        if string_utils.xstr(row['Card']) == '':
+        if row['RegistType'] in nhi_utils.TOUR_FAR and row['TourArea'] is None:
+            error_messages.append('巡迴醫療無巡迴地區')
+
+        card = string_utils.xstr(row['Card'])
+        course = number_utils.get_integer(row['Continuance'])
+        seq_number = case_utils.extract_security_xml(row['Security'], '健保卡序')
+        if card == '':
             error_messages.append('卡序空白')
-        elif string_utils.xstr(row['Card']) == '欠卡':
+        elif card == '欠卡':
             error_messages.append('欠卡未還')
+        elif seq_number is not None and seq_number != '' and card != seq_number and course <= 0:
+            error_messages.append('卡序與健保卡就醫序號不一致')
 
         if string_utils.xstr(row['Doctor']) == '':
             error_messages.append('無醫師')
@@ -380,6 +396,7 @@ class CheckErrors(QtWidgets.QMainWindow):
         error_messages = []
 
         case_key = row['CaseKey']
+        reg_type = string_utils.xstr(row['RegistType'])
         treat_type = string_utils.xstr(row['TreatType'])
         share = string_utils.xstr(row['Share'])
         course = number_utils.get_integer(row['Continuance'])
@@ -401,7 +418,7 @@ class CheckErrors(QtWidgets.QMainWindow):
         pres_days = case_utils.get_pres_days(self.database, row['CaseKey'])
         ins_fee = charge_utils.get_ins_fee(
             self.database, self.system_settings, case_key,
-            treat_type, share, course, pres_days, pharmacy_type, treatment
+            reg_type, treat_type, share, course, pres_days, pharmacy_type, treatment
         )
 
         if diag_fee != ins_fee['diag_fee']:
@@ -417,6 +434,7 @@ class CheckErrors(QtWidgets.QMainWindow):
         if dislocate_fee != ins_fee['dislocate_fee']:
             error_messages.append('脫臼費有誤')
         if diag_share_fee != ins_fee['diag_share_fee']:
+            print(reg_type, diag_share_fee, ins_fee['diag_share_fee'])
             error_messages.append('門診負擔有誤')
         if drug_share_fee != ins_fee['drug_share_fee']:
             error_messages.append('藥品負擔有誤')

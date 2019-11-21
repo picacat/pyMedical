@@ -8,6 +8,7 @@ import calendar
 
 from libs import ui_utils
 from libs import system_utils
+from libs import nhi_utils
 
 
 # 病歷查詢視窗
@@ -69,6 +70,7 @@ class DialogStatisticsDoctor(QtWidgets.QDialog):
             doctor_list.append(row['Name'])
 
         ui_utils.set_combo_box(self.ui.comboBox_doctor, doctor_list, '全部')
+        ui_utils.set_combo_box(self.ui.comboBox_period, nhi_utils.PERIOD, '全部')
 
     def start_date(self):
         start_date = self.ui.dateEdit_start_date.date().toString('yyyy-MM-dd 00:00:00')
@@ -79,6 +81,11 @@ class DialogStatisticsDoctor(QtWidgets.QDialog):
         end_date = self.ui.dateEdit_end_date.date().toString('yyyy-MM-dd 23:59:59')
 
         return end_date
+
+    def period(self):
+        period = self.ui.comboBox_period.currentText()
+
+        return period
 
     def doctor(self):
         doctor = self.ui.comboBox_doctor.currentText()

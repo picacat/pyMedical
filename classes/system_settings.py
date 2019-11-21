@@ -9,9 +9,9 @@ from libs import ui_utils
 # 系統設定
 class SystemSettings:
     # 初始化
-    def __init__(self, database, station_no=None):
+    def __init__(self, database, config_file, station_no=None):
         self.database = database
-        self.config_file = ui_utils.CONFIG_FILE
+        self.config_file = config_file
         self.config = configparser.ConfigParser()
         self.config.read(self.config_file)
 
@@ -74,12 +74,15 @@ class SystemSettings:
         if field_name in [
             '院所名稱', '院所代號', '統一編號', '健保業務', '負責醫師', '醫師證號', '開業證號',
             '院所電話', '院所地址',
-            '自費折扣方式', '劑量上限',
+            '資源類別', '巡迴區域', '掛號類別',
+            '劑量上限',
+            '自費折扣方式', '自費折扣進位', '自費折扣尾數',
+
             '電子郵件', '早班時間', '午班時間', '晚班時間',
             '護士人數', '藥師人數', '申報藥事服務費', '申報初診照護', '針灸認證合格', '針灸認證合格日期',
             '分班', '分診', '早班起始號', '午班起始號', '晚班起始號', '現場掛號給號模式', '預設門診類別',
             '首次警告次數', '針傷警告次數', '外觀主題', '老人優待', '老人優待年齡', '釋出預約號',
-            '預約次數限制', '爽約天數', '爽約期間', '爽約次數',
+            '預約次數限制', '爽約天數', '爽約期間', '爽約次數', '欠卡日期檢查範圍',
         ]:
             station_no = 0
         else:

@@ -124,13 +124,14 @@ class IncomeSelfPrescript(QtWidgets.QMainWindow):
         sql = '''
             SELECT * FROM cases
             WHERE
-                CaseDate BETWEEN "{start_date}" AND "{end_date}"
+                CaseDate BETWEEN "{start_date}" AND "{end_date}" AND
+                (TotalFee > 0 or DiscountFee > 0)
         '''.format(
             start_date=self.start_date,
             end_date=self.end_date,
         )
         if self.period != '全部':
-            sql += ' AND cases.Period = "{0}"'.format(self.period)
+            sql += ' AND cases.ChargePeriod = "{0}"'.format(self.period)
         if self.doctor != '全部':
             sql += ' AND cases.Doctor = "{0}"'.format(self.doctor)
         if self.cashier != '全部':

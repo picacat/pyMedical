@@ -12,6 +12,7 @@ from libs import string_utils
 from libs import number_utils
 from libs import export_utils
 from libs import system_utils
+from libs import case_utils
 
 
 # 用藥統計內容 2019.08.02
@@ -52,7 +53,7 @@ class StatisticsMedicineSales(QtWidgets.QMainWindow):
     def _set_table_width(self):
         width = [
             250,
-            70, 50, 85, 85,
+            80, 50, 90, 90,
         ]
         self.table_widget_medicine_sales.set_table_heading_width(width)
 
@@ -80,15 +81,18 @@ class StatisticsMedicineSales(QtWidgets.QMainWindow):
 
         sql = '''
             SELECT 
-                prescript.MedicineName, prescript.Unit, SUM(prescript.Dosage) AS TotalDosage, 
+                prescript.MedicineName, prescript.Unit, 
+                IFNULL(SUM(prescript.Dosage * IF(dosage.Days, dosage.Days, 1)), 0) AS TotalDosage, 
                 medicine.InPrice, medicine.SalePrice
             FROM prescript
                 LEFT JOIN cases ON prescript.CaseKey = cases.CaseKey
                 LEFT JOIN medicine ON prescript.MedicineKey = medicine.MedicineKey
+                LEFT JOIN dosage ON prescript.CaseKey = dosage.CaseKey
             WHERE
                 cases.CaseDate BETWEEN "{start_date}" AND "{end_date}" AND
                 {ins_type_condition}
                 {doctor_condition}
+                (prescript.MedicineSet = dosage.MedicineSet OR dosage.MedicineSet IS NULL) AND
                 prescript.MedicineType = "{medicine_type}" AND
                 prescript.Dosage > 0
             GROUP BY prescript.MedicineName
@@ -101,11 +105,15 @@ class StatisticsMedicineSales(QtWidgets.QMainWindow):
         )
         self.table_widget_medicine_sales.set_db_data(sql, self._set_table_data)
         self.ui.tableWidget_medicine_sales.sortItems(1, QtCore.Qt.DescendingOrder)
+        self.ui.tableWidget_medicine_sales.setCurrentCell(0, 0)
+
+        self._plot_chart()
 
     def _set_table_data(self, row_no, row):
+        total_dosage = number_utils.get_float(row['TotalDosage'])
         medicine_record = [
             string_utils.xstr(row['MedicineName']),
-            number_utils.get_float(row['TotalDosage']),
+            total_dosage,
             string_utils.xstr(row['Unit']),
             number_utils.get_float(row['InPrice']),
             number_utils.get_float(row['SalePrice']),
@@ -143,7 +151,7 @@ class StatisticsMedicineSales(QtWidgets.QMainWindow):
             return
 
         export_utils.export_table_widget_to_excel(
-            excel_file_name, self.ui.tableWidget_medicine_sales,
+            excel_file_name, self.ui.tableWidget_medicine_sales, None, [1, 3, 4, 5]
         )
 
         system_utils.show_message_box(
@@ -154,8 +162,8 @@ class StatisticsMedicineSales(QtWidgets.QMainWindow):
         )
 
     def _plot_chart(self):
-        while self.ui.horizontalLayout_income.count():
-            item = self.ui.horizontalLayout_income.takeAt(1)
+        while self.ui.verticalLayout_chart.count():
+            item = self.ui.verticalLayout_chart.takeAt(1)
             if item is None:
                 break
 
@@ -163,52 +171,44 @@ class StatisticsMedicineSales(QtWidgets.QMainWindow):
             if widget is not None:
                 widget.deleteLater()
 
-        self._plot_income_chart()
+        self._plot_medicine_chart()
 
-    def _plot_income_chart(self):
-        case_date_list = []
-        for row_no in range(self.ui.tableWidget_doctor_income.rowCount()):
-            case_date_field = self.ui.tableWidget_doctor_income.item(row_no, 0)
-            if case_date_field is None:
+    def _plot_medicine_chart(self):
+        medicine_list = []
+        for row_no in range(10):
+            medicine = [
+                self.ui.tableWidget_medicine_sales.item(row_no, 0),
+                self.ui.tableWidget_medicine_sales.item(row_no, 1),
+            ]
+            if medicine[0] is None:
                 continue
 
-            case_date = case_date_field.text()
-            if case_date == '總計':
-                continue
-
-            case_date_list.append(case_date)
+            medicine_list.append(medicine)
 
         series = QtChart.QBarSeries()
         bar_set = []
-        for i in range(len(case_date_list)):
-            case_date = case_date_list[i]
-            row_no = self._get_row_no(case_date)
-            subtotal = number_utils.get_integer(
-                self.ui.tableWidget_doctor_income.item(row_no, 9).text()
-            )
-            bar_set.append(QtChart.QBarSet(case_date_list[i][8:10]))
-            bar_set[i].setColor(QtGui.QColor('green'))
-            bar_set[i] << subtotal
+        for i in range(len(medicine_list)):
+            bar_set.append(QtChart.QBarSet(medicine_list[i][0].text()))
+            bar_set[i] << number_utils.get_float(medicine_list[i][1].text())
             series.append([bar_set[i]])
 
         chart = QtChart.QChart()
         chart.addSeries(series)
-        chart.setTitle('門診收入統計表')
+        chart.setTitle('用藥統計表')
         chart.setAnimationOptions(QtChart.QChart.SeriesAnimations)
 
-        categories = ['門診收入']
-
+        categories = ['用藥統計']
         axis = QtChart.QBarCategoryAxis()
         axis.append(categories)
         chart.createDefaultAxes()
-        chart.setAxisX(axis, series)
+        chart.addAxis(axis, QtCore.Qt.AlignBottom)
 
-        # chart.legend().setVisible(True)
-        # chart.legend().setAlignment(QtCore.Qt.AlignBottom)
-        chart.legend().hide()
+        chart.legend().setVisible(True)
+        chart.legend().setAlignment(QtCore.Qt.AlignRight)
+        # chart.legend().hide()
 
         self.chartView = QtChart.QChartView(chart)
         self.chartView.setRenderHint(QtGui.QPainter.Antialiasing)
 
-        self.chartView.setFixedWidth(750)
+        self.chartView.setFixedWidth(950)
         self.ui.horizontalLayout_income.addWidget(self.chartView)

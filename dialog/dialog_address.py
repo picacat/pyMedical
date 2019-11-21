@@ -42,8 +42,10 @@ class DialogAddress(QtWidgets.QDialog):
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setText('匯入')
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Close).setText('關閉')
 
+        self.table_widget_city = table_widget.TableWidget(self.ui.tableWidget_city, self.database)
         self.table_widget_district = table_widget.TableWidget(self.ui.tableWidget_district, self.database)
         self.table_widget_street = table_widget.TableWidget(self.ui.tableWidget_street, self.database)
+        self.table_widget_street_index = table_widget.TableWidget(self.ui.tableWidget_street_index, self.database)
         self._set_table_width()
 
     # 設定信號
@@ -75,31 +77,7 @@ class DialogAddress(QtWidgets.QDialog):
             GROUP BY City
             ORDER BY ZipCode
         '''
-        rows = self.database.select_record(sql)
-
-        row_count = len(rows)
-        self.ui.tableWidget_city.setRowCount(0)
-
-        column_count = self.ui.tableWidget_city.columnCount()
-        total_row = int(row_count / column_count)
-        if row_count % column_count > 0:
-            total_row += 1
-
-        for row_no in range(0, total_row):
-            self.ui.tableWidget_city.setRowCount(
-                self.ui.tableWidget_city.rowCount() + 1
-            )
-            for col_no in range(0, column_count):
-                index = (row_no * column_count) + col_no
-                if index >= row_count:
-                    break
-
-                self.ui.tableWidget_city.setItem(
-                    row_no, col_no, QtWidgets.QTableWidgetItem(rows[index]['City'])
-                )
-
-        self.ui.tableWidget_city.resizeRowsToContents()
-        self.ui.tableWidget_city.setCurrentCell(0, 0)
+        self.table_widget_city.set_db_data_without_heading(sql, 'City')
 
     def _city_changed(self):
         if not self.ui.tableWidget_city.selectedItems():
@@ -151,36 +129,7 @@ class DialogAddress(QtWidgets.QDialog):
             city=city,
             district=district,
         )
-
-        rows = self.database.select_record(sql)
-
-        row_count = len(rows)
-        self.ui.tableWidget_street_index.setRowCount(0)
-
-        column_count = self.ui.tableWidget_street_index.columnCount()
-        total_row = int(row_count / column_count)
-        if row_count % column_count > 0:
-            total_row += 1
-
-        for row_no in range(0, total_row):
-            self.ui.tableWidget_street_index.setRowCount(
-                self.ui.tableWidget_street_index.rowCount() + 1
-            )
-            for col_no in range(0, column_count):
-                index = (row_no * column_count) + col_no
-                if index >= row_count:
-                    break
-
-                self.ui.tableWidget_street_index.setItem(
-                    row_no, col_no, QtWidgets.QTableWidgetItem(rows[index]['Street'])
-                )
-                self.ui.tableWidget_street_index.item(
-                    row_no, col_no).setTextAlignment(
-                    QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
-                )
-
-        self.ui.tableWidget_street_index.resizeRowsToContents()
-        self.ui.tableWidget_street_index.setCurrentCell(0, 0)
+        self.table_widget_street_index.set_db_data_without_heading(sql, 'Street', QtCore.Qt.AlignCenter)
 
     def _street_index_changed(self):
         if not self.ui.tableWidget_street_index.selectedItems():

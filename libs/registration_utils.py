@@ -8,7 +8,7 @@ from libs import string_utils
 
 
 # 取得班別
-def get_period(system_settings):
+def get_current_period(system_settings):
     current_time = datetime.datetime.now().strftime('%H:%M')
     try:
         if current_time >= system_settings.field('晚班時間'):
@@ -91,7 +91,7 @@ def get_reg_no(database, system_settings, room, doctor, period=None, reserve_key
     start_date = datetime.datetime.now().strftime('%Y-%m-%d 00:00:00')
     end_date = datetime.datetime.now().strftime('%Y-%m-%d 23:59:59')
     if period is None:
-        period = get_period(system_settings)
+        period = get_current_period(system_settings)
 
     last_reg_no = get_last_reg_no(
         database, system_settings, start_date, end_date,
@@ -184,15 +184,21 @@ def check_release_reserve_no(database, room, period, doctor, reg_no):
     return release_reserve_no
 
 
-
-# 檢查重複就診
+# 檢查健保重複就診
 def check_record_duplicated(database, patient_key, case_date):
     start_date = case_date.strftime('%Y-%m-%d 00:00:00')
     end_date = case_date.strftime('%Y-%m-%d 23:59:59')
     sql = '''
-        SELECT * FROM cases WHERE PatientKey = {0} and 
-        CaseDate BETWEEN "{1}" and "{2}" 
-    '''.format(patient_key, start_date, end_date)
+        SELECT * FROM cases 
+        WHERE 
+            PatientKey = {patient_key} AND 
+            CaseDate BETWEEN "{start_date}" AND "{end_date}" AND
+            InsType = "健保"
+    '''.format(
+        patient_key=patient_key,
+        start_date=start_date,
+        end_date=end_date,
+    )
     rows = database.select_record(sql)
     if len(rows) > 0:
         return True
@@ -261,12 +267,21 @@ def check_diag_fee_times(database, system_settings, patient_key):
 
 
 # 檢查欠卡
-def check_deposit(database, patient_key):
+def check_deposit(database, system_settings, patient_key):
     message = None
     present = datetime.datetime.now()
-    start_date = datetime.date(present.year, present.month, 1) - datetime.timedelta(10)
-    start_date = start_date.strftime("%Y-%m-%d 00:00:00")
-    end_date = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d 23:59:59")
+    if system_settings.field('欠卡日期檢查範圍') == '10天前':
+        start_date = (present - datetime.timedelta(days=9)).strftime("%Y-%m-%d 00:00:00")  # 10天內未還卡
+    elif system_settings.field('欠卡日期檢查範圍') == '本月1日':
+        start_date = datetime.date(present.year, present.month, 1).strftime("%Y-%m-%d 00:00:00")  # 本月1日
+    elif system_settings.field('欠卡日期檢查範圍') == '上個月20日':
+        start_date = datetime.date(present.year, present.month, 1) - datetime.timedelta(10)  # 至上個月20日
+        start_date = start_date.strftime("%Y-%m-%d 00:00:00")
+    else:
+        start_date = datetime.date(present.year, present.month, 1) - datetime.timedelta(1)  # 至上個月1日
+        start_date = start_date.strftime("%Y-%m-01 00:00:00")
+
+    end_date = (present - datetime.timedelta(days=1)).strftime("%Y-%m-%d 23:59:59")
     sql = '''
         SELECT CaseDate FROM cases WHERE
         (PatientKey = {0}) AND
@@ -430,7 +445,8 @@ def check_course_complete(database, patient_key, course):
 def check_course_complete_in_days(database, patient_key, card, course, days):
     message = None
 
-    if number_utils.get_integer(course) <= 1:  # 療程首次或內科不檢查
+    course = number_utils.get_integer(course)
+    if course <= 1:  # 療程首次或內科不檢查
         return message
 
     start_date = (datetime.datetime.now() - datetime.timedelta(days=days-1)).strftime("%Y-%m-%d 00:00:00")
@@ -552,3 +568,35 @@ def is_reservation_full(database, reservation_date, period, reserve_no, doctor):
         is_full = True
 
     return is_full
+
+
+# Monday=0, Tuesday=1...Sunday=6
+def get_doctor_schedule(database, room, period):
+    sql = '''
+        SELECT * FROM doctor_schedule
+        WHERE
+            Room = {room} AND
+            Period = "{period}" 
+    '''.format(
+        room=room,
+        period=period,
+    )
+    rows = database.select_record(sql)
+    if len(rows) <= 0:
+        return None
+
+    row = rows[0]
+    doctor_list = [
+        string_utils.xstr(row['Monday']),
+        string_utils.xstr(row['Tuesday']),
+        string_utils.xstr(row['Wednesday']),
+        string_utils.xstr(row['Thursday']),
+        string_utils.xstr(row['Friday']),
+        string_utils.xstr(row['Saturday']),
+        string_utils.xstr(row['Sunday']),
+    ]
+
+    today = datetime.datetime.now().weekday()
+
+    return doctor_list[today]
+

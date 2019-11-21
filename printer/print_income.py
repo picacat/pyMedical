@@ -89,8 +89,9 @@ class PrintIncome:
         html = '''
             <html>
                 <body>
+                    <br>
                     <h2 align=center>{clinic_name} 門診現金收入日報表</h2>
-                    統計日期: {income_date} {period} 
+                    <div align="left" style="margin-left: 30px">統計日期: {income_date} {period}</div>
                     {table_income}
                     <br><br>
                     {table_total}
@@ -114,19 +115,19 @@ class PrintIncome:
             if self.tableWidget_income_list.item(row_no, 4).text() == '合計':
                 sequence = ''
 
-            pres_days = self.tableWidget_income_list.item(row_no, 9)
+            pres_days = self.tableWidget_income_list.item(row_no, 10)
             if pres_days is not None:
                 pres_days = pres_days.text()
             else:
                 pres_days = '0'
 
-            registrar = self.tableWidget_income_list.item(row_no, 20)
+            registrar = self.tableWidget_income_list.item(row_no, 21)
             if registrar is not None:
                 registrar = registrar.text()
             else:
                 registrar = ''
 
-            cashier = self.tableWidget_income_list.item(row_no, 21)
+            cashier = self.tableWidget_income_list.item(row_no, 22)
             if cashier is not None:
                 cashier = cashier.text()
             else:
@@ -172,24 +173,24 @@ class PrintIncome:
                 ins_type=self.tableWidget_income_list.item(row_no, 5).text(),
                 share_type=self.tableWidget_income_list.item(row_no, 6).text(),
                 treat_type=self.tableWidget_income_list.item(row_no, 7).text(),
-                card=self.tableWidget_income_list.item(row_no, 8).text(),
+                card=self.tableWidget_income_list.item(row_no, 9).text(),
                 pres_days=pres_days,
-                regist_fee=self.tableWidget_income_list.item(row_no, 10).text(),
-                diag_share_fee=self.tableWidget_income_list.item(row_no, 11).text(),
-                drug_share_fee=self.tableWidget_income_list.item(row_no, 12).text(),
-                deposit_fee=self.tableWidget_income_list.item(row_no, 13).text(),
-                refund=self.tableWidget_income_list.item(row_no, 14).text(),
-                repayment=self.tableWidget_income_list.item(row_no, 15).text(),
-                total_fee=self.tableWidget_income_list.item(row_no, 16).text(),
-                debt=self.tableWidget_income_list.item(row_no, 17).text(),
-                regist_debt=self.tableWidget_income_list.item(row_no, 18).text(),
-                receipt_fee=self.tableWidget_income_list.item(row_no, 19).text(),
+                regist_fee=self.tableWidget_income_list.item(row_no, 11).text(),
+                diag_share_fee=self.tableWidget_income_list.item(row_no, 12).text(),
+                drug_share_fee=self.tableWidget_income_list.item(row_no, 13).text(),
+                deposit_fee=self.tableWidget_income_list.item(row_no, 14).text(),
+                refund=self.tableWidget_income_list.item(row_no, 15).text(),
+                repayment=self.tableWidget_income_list.item(row_no, 16).text(),
+                total_fee=self.tableWidget_income_list.item(row_no, 17).text(),
+                debt=self.tableWidget_income_list.item(row_no, 18).text(),
+                regist_debt=self.tableWidget_income_list.item(row_no, 19).text(),
+                receipt_fee=self.tableWidget_income_list.item(row_no, 20).text(),
                 registrar=registrar,
                 cashier=cashier,
             )
 
         html = '''
-            <table align=center cellpadding="1" cellspacing="0" width="100%" style="border-width: 1px; border-style: solid;">
+            <table align=center cellpadding="1" cellspacing="0" width="95%" style="border-width: 1px; border-style: solid;">
                 <thead>
                     <tr bgcolor="LightGray">
                         <th>序</th>
@@ -229,7 +230,7 @@ class PrintIncome:
     def _get_table_total_html(self):
         html = '''
             <h2 align=center> 門診現金收入總表</h2>
-            <table align=center cellpadding="1" cellspacing="0" width="100%" style="border-width: 1px; border-style: solid;">
+            <table align=center cellpadding="1" cellspacing="0" width="95%" style="border-width: 1px; border-style: solid;">
                 <thead>
                     <tr bgcolor="LightGray">
                         <th>掛號費</th>

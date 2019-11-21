@@ -37,7 +37,9 @@ class InsUploadEMR(QtWidgets.QMainWindow):
         self.apply_type_code = nhi_utils.APPLY_TYPE_CODE[self.apply_type]
         self.apply_year = int(self.apply_date[:3]) + 1911
         self.apply_month = int(self.apply_date[3:5])
-        self.EXPORT_DIR = '{0}/emr{1}'.format(nhi_utils.XML_OUT_PATH, self.apply_date)
+        self.EXPORT_DIR = '{0}/emr{1}'.format(
+            nhi_utils.get_dir(self.system_settings, '申報路徑'), self.apply_date
+        )
 
         self._set_ui()
         self._set_signal()

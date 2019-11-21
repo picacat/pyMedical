@@ -2,14 +2,16 @@
 # 櫃台購藥 2014.09.22
 #coding: utf-8
 
-from PyQt5 import QtWidgets, QtCore
-from PyQt5.QtWidgets import QMessageBox, QPushButton
+from PyQt5 import QtWidgets, QtCore, QtGui
+from PyQt5.QtWidgets import QMessageBox, QPushButton, QFileDialog
 import datetime
 
 from libs import ui_utils
 from libs import system_utils
 from libs import string_utils
+from libs import number_utils
 from libs import personnel_utils
+from libs import export_utils
 from dialog import dialog_purchase_list
 from classes import table_widget
 from printer import print_receipt
@@ -28,6 +30,16 @@ class PurchaseList(QtWidgets.QMainWindow):
         self.ui = None
 
         self.user_name = self.system_settings.field('使用者')
+
+        self.dialog_setting = {
+            "dialog_executed": False,
+            "start_date": None,
+            "end_date": None,
+            "period": None,
+            "cashier": None,
+            "doctor": None,
+            "massager": None,
+        }
 
         self._set_ui()
         self._set_signal()
@@ -59,7 +71,7 @@ class PurchaseList(QtWidgets.QMainWindow):
         self.ui.action_open_record.triggered.connect(self.open_medical_record)
         self.ui.action_close.triggered.connect(self.close_purchase_list)
         self.ui.action_print_receipt.triggered.connect(self._print_receipt)
-        self.ui.action_print_purchase_list.triggered.connect(self._print_purchase_list)
+        self.ui.action_export_excel.triggered.connect(self._export_to_excel)
         self.ui.tableWidget_purchase_list.doubleClicked.connect(self.open_medical_record)
 
     def _set_permission(self):
@@ -72,19 +84,32 @@ class PurchaseList(QtWidgets.QMainWindow):
             self.ui.action_open_record.setEnabled(False)
         if personnel_utils.get_permission(self.database, self.program_name, '資料刪除', self.user_name) != 'Y':
             self.ui.action_delete_record.setEnabled(False)
-        if personnel_utils.get_permission(self.database, self.program_name, '列印名單', self.user_name) != 'Y':
-            self.ui.action_print_purchase_list.setEnabled(False)
 
     # 設定欄位寬度
     def _set_table_width(self):
-        width = [80, 200, 60, 100, 120, 100, 100, 100, 800]
+        width = [80, 130, 60, 90, 100, 700, 90, 90, 90, 90, 90, 90]
         self.table_widget_purchase_list.set_table_heading_width(width)
         self.table_widget_purchase_list.set_column_hidden([0])
 
     # 讀取病歷
     def _get_sql(self):
         dialog = dialog_purchase_list.DialogPurchaseList(self.ui, self.database, self.system_settings)
+        if self.dialog_setting['dialog_executed']:
+            dialog.ui.dateEdit_start_date.setDate(self.dialog_setting['start_date'])
+            dialog.ui.dateEdit_end_date.setDate(self.dialog_setting['end_date'])
+            dialog.ui.comboBox_period.setCurrentText(self.dialog_setting['period'])
+            dialog.ui.comboBox_cashier.setCurrentText(self.dialog_setting['cashier'])
+            dialog.ui.comboBox_doctor.setCurrentText(self.dialog_setting['doctor'])
+            dialog.ui.comboBox_massager.setCurrentText(self.dialog_setting['massager'])
+
         result = dialog.exec_()
+        self.dialog_setting['dialog_executed'] = True
+        self.dialog_setting['start_date'] = dialog.ui.dateEdit_start_date.date()
+        self.dialog_setting['end_date'] = dialog.ui.dateEdit_end_date.date()
+        self.dialog_setting['period'] = dialog.comboBox_period.currentText()
+        self.dialog_setting['cashier'] = dialog.comboBox_cashier.currentText()
+        self.dialog_setting['doctor'] = dialog.comboBox_doctor.currentText()
+        self.dialog_setting['massager'] = dialog.comboBox_massager.currentText()
 
         sql = dialog.get_sql()
         start_date = dialog.ui.dateEdit_start_date.date().toString('yyyy-MM-dd')
@@ -135,40 +160,49 @@ class PurchaseList(QtWidgets.QMainWindow):
 
         self.ui.action_delete_record.setEnabled(enabled)
         self.ui.action_print_receipt.setEnabled(enabled)
-        self.ui.action_print_purchase_list.setEnabled(enabled)
         self.ui.action_open_record.setEnabled(enabled)
 
         self._set_permission()
 
     def _set_table_data(self, row_no, row):
         content = self._get_purchase_content(row['CaseKey'])
+        discount_fee = number_utils.get_integer(row['DiscountFee'])
 
         purchase_row = [
             string_utils.xstr(row['CaseKey']),
-            string_utils.xstr(row['CaseDate']),
+            string_utils.xstr(row['CaseDate'].date()),
             string_utils.xstr(row['Period']),
             string_utils.xstr(row['PatientKey']),
             string_utils.xstr(row['Name']),
-            string_utils.xstr(row['TotalFee']),
+            content,
+            number_utils.get_integer(row['SelfTotalFee']),
+            discount_fee,
+            number_utils.get_integer(row['TotalFee']),
             string_utils.xstr(row['Cashier']),
             string_utils.xstr(row['Doctor']),
-            content,
+            string_utils.xstr(row['Massager']),
         ]
 
-        for column in range(len(purchase_row)):
+        for col_no in range(len(purchase_row)):
+            item = QtWidgets.QTableWidgetItem()
+            item.setData(QtCore.Qt.EditRole, purchase_row[col_no])
             self.ui.tableWidget_purchase_list.setItem(
-                row_no, column,
-                QtWidgets.QTableWidgetItem(purchase_row[column])
+                row_no, col_no, item
             )
-            if column in [3, 5]:
+            if col_no in [3, 6, 7, 8]:
                 self.ui.tableWidget_purchase_list.item(
-                    row_no, column).setTextAlignment(
+                    row_no, col_no).setTextAlignment(
                     QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
                 )
-            elif column in [2]:
+            elif col_no in [2]:
                 self.ui.tableWidget_purchase_list.item(
-                    row_no, column).setTextAlignment(
+                    row_no, col_no).setTextAlignment(
                     QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
+                )
+
+            if discount_fee > 0:
+                self.ui.tableWidget_purchase_list.item(row_no, col_no).setForeground(
+                    QtGui.QColor('red')
                 )
 
     def _get_purchase_content(self, case_key):
@@ -182,7 +216,11 @@ class PurchaseList(QtWidgets.QMainWindow):
         rows = self.database.select_record(sql)
         content = []
         for row in rows:
-            content.append(string_utils.xstr(row['MedicineName']))
+            content.append('{medicine_name} ({quantity}{unit})'.format(
+                medicine_name=string_utils.xstr(row['MedicineName']),
+                quantity=string_utils.xstr(row['Dosage']),
+                unit=string_utils.xstr(row['Unit']),
+            ))
 
         return ', '.join(content)
 
@@ -239,5 +277,33 @@ class PurchaseList(QtWidgets.QMainWindow):
 
         del print_charge
 
-    def _print_purchase_list(self):
-        pass
+    # 匯出自購藥 2019.07.01
+    def _export_to_excel(self):
+        options = QFileDialog.Options()
+        title = '{0}至{1}{2}自購藥報表'.format(
+            self.dialog_setting['start_date'].toString('yyyy-MM-dd'),
+            self.dialog_setting['end_date'].toString('yyyy-MM-dd'),
+            self.dialog_setting['period'],
+        )
+        excel_file_name, _ = QFileDialog.getSaveFileName(
+            self.parent,
+            "匯出自購藥",
+            '{title}.xlsx'.format(
+                title=title,
+            ),
+            "excel檔案 (*.xlsx);;Text Files (*.txt)", options = options
+        )
+        if not excel_file_name:
+            return
+
+        export_utils.export_table_widget_to_excel(
+            excel_file_name, self.ui.tableWidget_purchase_list,
+            [0], [3, 6, 7, 8], title
+        )
+
+        system_utils.show_message_box(
+            QMessageBox.Information,
+            '資料匯出完成',
+            '<h3>自購藥報表{0}匯出完成.</h3>'.format(excel_file_name),
+            'Microsoft Excel 格式.'
+        )

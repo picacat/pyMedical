@@ -13,7 +13,6 @@ from libs import date_utils
 from libs import number_utils
 from libs import string_utils
 from libs import system_utils
-from libs import personnel_utils
 from libs import nhi_utils
 
 
@@ -141,37 +140,6 @@ class CheckCourse(QtWidgets.QMainWindow):
 
         self.ui.tableWidget_errors.resizeRowsToContents()
 
-    def _get_first_course_delta(self, row_no, patient_key, course, next_case_date):
-        first_case_date = None
-        for i in range(course, 0, -1):
-            previous_case_date = self.ui.tableWidget_errors.item(row_no-i, 1)
-            previous_patient_key = self.ui.tableWidget_errors.item(row_no-i, 3)
-            if previous_case_date is None:
-                continue
-
-            if previous_patient_key.text() != patient_key:
-                continue
-
-            previous_case_date = previous_case_date.text()
-            previous_course = number_utils.get_integer(
-                self.ui.tableWidget_errors.item(row_no-i, 7).text()
-            )
-            if previous_course == 1:
-                first_case_date = previous_case_date
-                # if self.ui.tableWidget_errors.item(row_no-i, 3).text() == '407':
-                #     print(
-                #         first_case_date, next_case_date,
-                #         date_utils.str_to_date(next_case_date) - date_utils.str_to_date(first_case_date)
-                #     )
-                break
-
-        if first_case_date is not None:
-            delta = date_utils.str_to_date(next_case_date) - date_utils.str_to_date(first_case_date)
-        else:
-            delta = None
-
-        return delta
-
     def _check_course(self):
         row_count = self.ui.tableWidget_errors.rowCount()
         if row_count <= 0:
@@ -217,8 +185,11 @@ class CheckCourse(QtWidgets.QMainWindow):
             if next_patient_key == 0:
                 pass
             elif patient_key != next_patient_key:
-                delta = self._get_first_course_delta(
-                    row_no, patient_key, course, case_date,
+                # delta = self._get_first_course_delta(
+                #     row_no, primary_key, course, case_date,
+                # )
+                delta = nhi_utils.get_first_course_delta(
+                    self.ui.tableWidget_errors, row_no, patient_key, course, case_date,
                 )
 
                 if next_course >= 2:
@@ -228,15 +199,15 @@ class CheckCourse(QtWidgets.QMainWindow):
                     error_message.append('療程已超過30日')
             else:
                 if card != next_card:  # 換新療程
-                    delta = self._get_first_course_delta(  # 檢查當筆
-                        row_no, patient_key, course, case_date,
+                    delta = nhi_utils.get_first_course_delta(  # 檢查當筆
+                        self.ui.tableWidget_errors, row_no, patient_key, course, case_date,
                     )
-                    next_delta = self._get_first_course_delta(  # 以下一筆為檢查資料
-                        row_no, patient_key, course, next_case_date,
+                    next_delta = nhi_utils.get_first_course_delta(  # 以下一筆為檢查資料
+                        self.ui.tableWidget_errors, row_no, patient_key, course, next_case_date,
                     )
                     if course >= 2 and delta is None:
                         error_message.append('療程未見首次')
-                    elif course >= 2 and delta.days + 1 > 30:  # 當天也算一天 +1
+                    elif course >= 2 and delta is not None and delta.days + 1 > 30:  # 當天也算一天 +1
                         error_message.append('療程已超過30日')
 
                     if course < 6:
@@ -249,10 +220,10 @@ class CheckCourse(QtWidgets.QMainWindow):
                     elif course > 6:
                         next_error_message.append('療程超過6次')
                 else:   # 同療程
-                    delta = self._get_first_course_delta(
-                        row_no, patient_key, course, case_date,
+                    delta = nhi_utils.get_first_course_delta(
+                        self.ui.tableWidget_errors, row_no, patient_key, course, case_date,
                     )
-                    if course >= 2 and delta.days + 1 > 30:  # 當天也算一天 +1
+                    if course >= 2 and delta is not None and delta.days + 1 > 30:  # 當天也算一天 +1
                         error_message.append('療程已超過30日')
 
                     if next_course == course:

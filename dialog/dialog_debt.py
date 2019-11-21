@@ -70,7 +70,7 @@ class DialogDebt(QtWidgets.QDialog):
         )
 
         self.ui.comboBox_cashier.setCurrentText(self.system_settings.field('使用者'))
-        period = registration_utils.get_period(self.system_settings)
+        period = registration_utils.get_current_period(self.system_settings)
         self.ui.comboBox_period.setCurrentText(period)
 
         self.ui.lineEdit_debt.setText(string_utils.xstr(self.debt_row['Fee']))

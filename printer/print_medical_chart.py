@@ -64,7 +64,9 @@ class PrintMedicalChart:
         self.preview_dialog.exec_()
 
     def save_to_pdf(self):
-        export_dir = '{0}/emr{1}'.format(nhi_utils.XML_OUT_PATH, self.apply_date)
+        export_dir = '{0}/emr{1}'.format(
+            nhi_utils.get_dir(self.system_settings, '申報路徑'), self.apply_date
+        )
         if not os.path.exists(export_dir):
             os.mkdir(export_dir)
 

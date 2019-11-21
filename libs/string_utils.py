@@ -65,12 +65,15 @@ def get_str(in_string, encoding):
         return out_string
 
     try:
-        out_string = str(in_string, encoding)
+        out_string = str(in_string, encoding=encoding)
     except (UnicodeDecodeError, TypeError) as e:
         try:
-            out_string = str(in_string, 'big5')
+            out_string = str(in_string, encoding='big5', errors='replace')
         except (UnicodeDecodeError, TypeError) as e:
             out_string = in_string
+
+    if type(out_string) is bytes:
+        out_string = str(in_string, encoding='big5', errors='replace')
 
     return out_string
 
@@ -110,7 +113,7 @@ def phonetic_to_str(in_str):
 
 
 def get_formatted_str(field_type, raw_value):
-    value  = xstr(raw_value)
+    value = xstr(raw_value)
 
     if value == '':
         return value

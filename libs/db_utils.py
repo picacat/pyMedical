@@ -26,7 +26,10 @@ def str_converter(field_value):
     if isinstance(field_value, datetime.datetime):
         field_value = field_value.__str__()
     elif isinstance(field_value, bytes):
-        field_value = field_value.decode('utf8')
+        try:
+            field_value = field_value.decode('utf8')
+        except UnicodeDecodeError:
+            field_value = field_value.decode('big5')
     else:
         field_value = field_value.__str__()
 
@@ -36,8 +39,6 @@ def str_converter(field_value):
 def mysql_to_json(rows):
     import json
 
-    json_rows = []
-    for row in rows:
-        json_rows.append(json.dumps(row, default=str_converter))
+    json_data = json.dumps(rows, indent=4, ensure_ascii=False, default=str_converter)
 
-    return json_rows
+    return json_data

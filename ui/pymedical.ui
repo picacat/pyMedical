@@ -508,16 +508,73 @@
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout_9">
         <item>
-         <widget class="QLabel" name="label_system_name">
-          <property name="font">
-           <font>
-            <pointsize>10</pointsize>
-           </font>
-          </property>
-          <property name="text">
-           <string>新生堂中醫診所</string>
-          </property>
-         </widget>
+         <layout class="QHBoxLayout" name="horizontalLayout_2">
+          <item>
+           <layout class="QVBoxLayout" name="verticalLayout_11">
+            <item>
+             <widget class="QLabel" name="label_system_name">
+              <property name="font">
+               <font>
+                <pointsize>10</pointsize>
+               </font>
+              </property>
+              <property name="text">
+               <string>新生堂中醫診所</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QTextBrowser" name="textBrowser">
+              <property name="styleSheet">
+               <string notr="true"/>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer_2">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer_3">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
         </item>
         <item>
          <spacer name="verticalSpacer_2">
@@ -547,7 +604,7 @@
      <height>25</height>
     </rect>
    </property>
-   <widget class="QMenu" name="menu">
+   <widget class="QMenu" name="menu_registration">
     <property name="title">
      <string>掛號作業</string>
     </property>
@@ -561,7 +618,7 @@
     <addaction name="separator"/>
     <addaction name="action_ins_record_upload"/>
    </widget>
-   <widget class="QMenu" name="menu_2">
+   <widget class="QMenu" name="menu_doctor">
     <property name="title">
      <string>診療作業</string>
     </property>
@@ -572,19 +629,20 @@
     <addaction name="action_examination"/>
     <addaction name="action_examination_list"/>
    </widget>
-   <widget class="QMenu" name="menu_4">
+   <widget class="QMenu" name="menu_system">
     <property name="title">
      <string>系統作業</string>
     </property>
     <addaction name="action_update"/>
     <addaction name="separator"/>
     <addaction name="action_export_emr_xml"/>
+    <addaction name="action_import_medical_record"/>
     <addaction name="action_restore_records"/>
     <addaction name="separator"/>
     <addaction name="action_convert"/>
     <addaction name="action_database_repair"/>
    </widget>
-   <widget class="QMenu" name="menu_5">
+   <widget class="QMenu" name="menu_insurance">
     <property name="title">
      <string>申報作業</string>
     </property>
@@ -593,7 +651,7 @@
     <addaction name="separator"/>
     <addaction name="action_ins_judge"/>
    </widget>
-   <widget class="QMenu" name="menu_3">
+   <widget class="QMenu" name="menu_settings">
     <property name="title">
      <string>設定</string>
     </property>
@@ -615,28 +673,44 @@
     <addaction name="action_show_side_bar"/>
     <addaction name="separator"/>
    </widget>
-   <widget class="QMenu" name="menu_6">
+   <widget class="QMenu" name="menu_administrative">
     <property name="title">
      <string>醫務行政</string>
     </property>
     <addaction name="action_certificate_diagnosis"/>
     <addaction name="action_certificate_payment"/>
    </widget>
-   <widget class="QMenu" name="menu_7">
+   <widget class="QMenu" name="menu_statistics">
     <property name="title">
      <string>統計表</string>
     </property>
     <addaction name="action_statistics_doctor"/>
     <addaction name="action_statistics_return_rate"/>
     <addaction name="action_statistics_medicine"/>
+    <addaction name="action_statistics_ins_performance"/>
+    <addaction name="action_statistics_doctor_commission"/>
    </widget>
-   <addaction name="menu"/>
-   <addaction name="menu_2"/>
-   <addaction name="menu_6"/>
-   <addaction name="menu_5"/>
-   <addaction name="menu_7"/>
-   <addaction name="menu_3"/>
-   <addaction name="menu_4"/>
+   <widget class="QMenu" name="menu_massage">
+    <property name="title">
+     <string>養生館</string>
+    </property>
+    <addaction name="action_massage_registration"/>
+    <addaction name="action_massage_query"/>
+    <addaction name="action_customer_query"/>
+    <addaction name="separator"/>
+    <addaction name="action_5"/>
+    <addaction name="separator"/>
+    <addaction name="action_massage_income"/>
+    <addaction name="action_massage_return_rate"/>
+   </widget>
+   <addaction name="menu_registration"/>
+   <addaction name="menu_doctor"/>
+   <addaction name="menu_administrative"/>
+   <addaction name="menu_insurance"/>
+   <addaction name="menu_statistics"/>
+   <addaction name="menu_settings"/>
+   <addaction name="menu_system"/>
+   <addaction name="menu_massage"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="action_convert">
@@ -1000,6 +1074,101 @@
    </property>
    <property name="toolTip">
     <string>檢驗報告登錄</string>
+   </property>
+  </action>
+  <action name="action_import_medical_record">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/document-import.svg</normaloff>../icons/document-import.svg</iconset>
+   </property>
+   <property name="text">
+    <string>匯入病歷資料JSON</string>
+   </property>
+   <property name="toolTip">
+    <string>匯入病歷資料JSON</string>
+   </property>
+  </action>
+  <action name="action_statistics_ins_performance">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/trophy-gold.png</normaloff>../icons/trophy-gold.png</iconset>
+   </property>
+   <property name="text">
+    <string>健保申報業績</string>
+   </property>
+   <property name="toolTip">
+    <string>健保申報業績</string>
+   </property>
+  </action>
+  <action name="action_statistics_doctor_commission">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/face-angel.png</normaloff>../icons/face-angel.png</iconset>
+   </property>
+   <property name="text">
+    <string>醫師銷售業績統計</string>
+   </property>
+   <property name="toolTip">
+    <string>醫師銷售業績統計</string>
+   </property>
+  </action>
+  <action name="action_massage_registration">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/accessories-text-editor.png</normaloff>../icons/accessories-text-editor.png</iconset>
+   </property>
+   <property name="text">
+    <string>養生館掛號</string>
+   </property>
+  </action>
+  <action name="action_massage_query">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/edit-find.png</normaloff>../icons/edit-find.png</iconset>
+   </property>
+   <property name="text">
+    <string>掛號資料查詢</string>
+   </property>
+  </action>
+  <action name="action_massage_income">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/accessories-calculator.png</normaloff>../icons/accessories-calculator.png</iconset>
+   </property>
+   <property name="text">
+    <string>收入統計</string>
+   </property>
+  </action>
+  <action name="action_massage_return_rate">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/edit-redo-rtl.png</normaloff>../icons/edit-redo-rtl.png</iconset>
+   </property>
+   <property name="text">
+    <string>回診率統計</string>
+   </property>
+  </action>
+  <action name="action_5">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/emblem-documents.png</normaloff>../icons/emblem-documents.png</iconset>
+   </property>
+   <property name="text">
+    <string>養生館商品</string>
+   </property>
+  </action>
+  <action name="action">
+   <property name="text">
+    <string>顧客資料</string>
+   </property>
+  </action>
+  <action name="action_customer_query">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/avatar-default.png</normaloff>../icons/avatar-default.png</iconset>
+   </property>
+   <property name="text">
+    <string>顧客資料查詢</string>
    </property>
   </action>
  </widget>

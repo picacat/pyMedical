@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #coding: utf-8
 
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtCore
 
 from libs import ui_utils
 from libs import system_utils
@@ -25,6 +25,7 @@ class StatisticsDoctor(QtWidgets.QMainWindow):
             "dialog_executed": False,
             "start_date": None,
             "end_date": None,
+            "period": None,
             "ins_type": None,
             "doctor": None,
         }
@@ -76,6 +77,7 @@ class StatisticsDoctor(QtWidgets.QMainWindow):
             elif self.dialog_setting['ins_type'] == '自費':
                 dialog.ui.radioButton_self.setChecked(True)
 
+            dialog.ui.comboBox_period.setCurrentText(self.dialog_setting['period'])
             dialog.ui.comboBox_doctor.setCurrentText(self.dialog_setting['doctor'])
 
         if not dialog.exec_():
@@ -84,57 +86,60 @@ class StatisticsDoctor(QtWidgets.QMainWindow):
 
         start_date = dialog.start_date()
         end_date = dialog.end_date()
+        period = dialog.period()
         ins_type = dialog.ins_type()
         doctor = dialog.ui.comboBox_doctor.currentText()
 
         self.dialog_setting['dialog_executed'] = True
         self.dialog_setting['start_date'] = dialog.ui.dateEdit_start_date.date()
         self.dialog_setting['end_date'] = dialog.ui.dateEdit_end_date.date()
+        self.dialog_setting['period'] = period
         self.dialog_setting['ins_type'] = ins_type
         self.dialog_setting['doctor'] = doctor
 
         dialog.deleteLater()
-        self._set_tab_widget(start_date, end_date, ins_type, doctor)
+        self._set_tab_widget(start_date, end_date, period, ins_type, doctor)
 
-    def _set_tab_widget(self, start_date, end_date, ins_type, doctor):
+    def _set_tab_widget(self, start_date, end_date, period, ins_type, doctor):
         self.ui.tabWidget_statistics_doctor.clear()
 
         self.ui.statusbar.showMessage(
-            ' 統計期間: 從 {start_date} 至 {end_date} 保險: {ins_type} 醫師: {doctor}'.format(
+            ' 統計期間: 從 {start_date} 至 {end_date} {period} 保險: {ins_type} 醫師: {doctor}'.format(
                 start_date=start_date[:10],
                 end_date=end_date[:10],
+                period=period,
                 ins_type=ins_type,
                 doctor=doctor,
             )
         )
 
-        self._add_statistic_doctor_count(start_date, end_date, ins_type, doctor)
-        self._add_statistic_doctor_income(start_date, end_date, ins_type, doctor)
-        self._add_statistic_doctor_sale(start_date, end_date, doctor)
+        self._add_statistic_doctor_count(start_date, end_date, period, ins_type, doctor)
+        self._add_statistic_doctor_income(start_date, end_date, period, ins_type, doctor)
+        self._add_statistic_doctor_sale(start_date, end_date, period, doctor)
 
     # 醫師門診人數統計
-    def _add_statistic_doctor_count(self, start_date, end_date, ins_type, doctor):
+    def _add_statistic_doctor_count(self, start_date, end_date, period, ins_type, doctor):
         self.tab_statistics_doctor_count = statistics_doctor_count.StatisticsDoctorCount(
             self, self.database, self.system_settings,
-            start_date, end_date, ins_type, doctor,
+            start_date, end_date, period, ins_type, doctor,
         )
         self.tab_statistics_doctor_count.start_calculate()
         self.ui.tabWidget_statistics_doctor.addTab(self.tab_statistics_doctor_count, '門診人數統計')
 
     # 醫師門診收入統計
-    def _add_statistic_doctor_income(self, start_date, end_date, ins_type, doctor):
+    def _add_statistic_doctor_income(self, start_date, end_date, period, ins_type, doctor):
         self.tab_statistics_doctor_income = statistics_doctor_income.StatisticsDoctorIncome(
             self, self.database, self.system_settings,
-            start_date, end_date, ins_type, doctor,
+            start_date, end_date, period, ins_type, doctor,
         )
         self.tab_statistics_doctor_income.start_calculate()
         self.ui.tabWidget_statistics_doctor.addTab(self.tab_statistics_doctor_income, '門診收入統計')
 
     # 醫師自費銷售統計
-    def _add_statistic_doctor_sale(self, start_date, end_date, doctor):
+    def _add_statistic_doctor_sale(self, start_date, end_date, period, doctor):
         self.tab_statistics_doctor_sale = statistics_doctor_sale.StatisticsDoctorSale(
             self, self.database, self.system_settings,
-            start_date, end_date, doctor,
+            start_date, end_date, period, doctor,
         )
         self.tab_statistics_doctor_sale.start_calculate()
         self.ui.tabWidget_statistics_doctor.addTab(self.tab_statistics_doctor_sale, '自費銷售統計')

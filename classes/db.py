@@ -17,11 +17,7 @@ class Database:
     # 初始化
     def __init__(self, **kwargs):
         self.cnx = None
-
-        if kwargs == {}:
-            self._connect_to_db()
-        else:
-            self._connect_to_db(**kwargs)
+        self._connect_to_db(**kwargs)
 
     # 結束
     def __del__(self):
@@ -103,14 +99,29 @@ class Database:
 
         return assignment_list[:-1]
 
+    def get_cursor(self, dictionary=False):
+        time_out = 10
+        cursor = None
+        connect_ok = True
+        for i in range(time_out):
+            try:
+                cursor = self.cnx.cursor(dictionary=dictionary)
+            except:
+                self.cnx.close()
+                self._connect_to_db()
+                try:
+                    cursor = self.cnx.cursor(dictionary=dictionary)
+                except:
+                    connect_ok = False
+
+            if connect_ok:
+                break
+
+        return cursor
+
     # 讀取記錄
     def select_record(self, sql, dictionary=True):
-        try:
-            cursor = self.cnx.cursor(dictionary=dictionary)
-        except:
-            self.cnx.close()
-            self._connect_to_db()
-            cursor = self.cnx.cursor(dictionary=dictionary)
+        cursor = self.get_cursor(dictionary)
 
         cursor.execute(sql)
         rows = cursor.fetchall()
@@ -120,7 +131,8 @@ class Database:
 
     # 刪除記錄
     def delete_record(self, table_name, primary_key, key_value):
-        cursor = self.cnx.cursor()
+        cursor = self.get_cursor()
+
         sql = 'delete from {0} where {1} = {2}'.format(table_name, primary_key, key_value)
         cursor.execute(sql)
         self.cnx.commit()
@@ -128,7 +140,8 @@ class Database:
 
     # 增加記錄
     def insert_record(self, table_name, fields, data):
-        cursor = self.cnx.cursor()
+        cursor = self.get_cursor()
+
         value_list = self._get_value_list(fields)
         sql = "INSERT INTO {0} ({1}) VALUES ({2})".format(table_name, ", ".join(fields), value_list)
         string_utils.str_to_none(data)
@@ -141,9 +154,22 @@ class Database:
 
     # 更新記錄
     def update_record(self, table_name, fields, primary_key, key_value, data):
-        cursor = self.cnx.cursor()
+        cursor = self.get_cursor()
+
         assignment_list = self._get_assignment_list(fields)
-        sql = "UPDATE {0} SET {1} WHERE {2} = {3}".format(table_name, assignment_list, primary_key, key_value)
+        sql = '''
+            UPDATE 
+                {table_name} 
+            SET 
+                {assignment_list} 
+            WHERE 
+                {primary_key_field} = {key_value}
+        '''.format(
+            table_name=table_name,
+            assignment_list=assignment_list,
+            primary_key_field=primary_key,
+            key_value=key_value,
+        )
         string_utils.str_to_none(data)
         cursor.execute(sql, data)
         self.cnx.commit()
@@ -151,14 +177,16 @@ class Database:
 
     # 執行sql
     def exec_sql(self, sql):
-        cursor = self.cnx.cursor()
+        cursor = self.get_cursor()
+
         cursor.execute(sql)
         self.cnx.commit()
         cursor.close()
 
     # 檢查資料表是否存在
     def _is_table_exists(self, table_name):
-        cursor = self.cnx.cursor()
+        cursor = self.get_cursor()
+
         cursor.execute('show tables')
         rows = cursor.fetchall()
         if (table_name,) in rows:
@@ -186,7 +214,14 @@ class Database:
             return
 
         sql = string_utils.remove_bom(sql)
-        cursor = self.cnx.cursor(sql)
+
+        try:
+            cursor = self.cnx.cursor(sql)
+        except:
+            self.cnx.close()
+            self._connect_to_db()
+            cursor = self.cnx.cursor(sql)
+
         try:
             cursor.execute(sql)
         except mysql.errors.ProgrammingError:

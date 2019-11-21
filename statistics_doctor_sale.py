@@ -24,7 +24,8 @@ class StatisticsDoctorSale(QtWidgets.QMainWindow):
         self.system_settings = args[1]
         self.start_date = args[2]
         self.end_date = args[3]
-        self.doctor = args[4]
+        self.period = args[4]
+        self.doctor = args[5]
         self.ui = None
 
         self._set_ui()
@@ -38,10 +39,18 @@ class StatisticsDoctorSale(QtWidgets.QMainWindow):
     def close_all(self):
         pass
 
+    def center(self):
+        frame_geometry = self.frameGeometry()
+        screen = QtWidgets.QApplication.desktop().screenNumber(QtWidgets.QApplication.desktop().cursor().pos())
+        center_point = QtWidgets.QApplication.desktop().screenGeometry(screen).center()
+        frame_geometry.moveCenter(center_point)
+        self.move(frame_geometry.topLeft())
+
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_STATISTICS_DOCTOR_SALE, self)
         system_utils.set_css(self, self.system_settings)
+        self.center()
         self.table_widget_doctor_sale = table_widget.TableWidget(
             self.ui.tableWidget_doctor_sale, self.database
         )
@@ -76,12 +85,17 @@ class StatisticsDoctorSale(QtWidgets.QMainWindow):
     def start_calculate(self):
         self.ui.tableWidget_doctor_sale.setRowCount(0)
         self._read_data()
+
         self._calculate_total()
         self._list_sales_summary()
         self._calculate_summary_total()
         self._plot_chart()
 
     def _read_data(self):
+        period_condition = ''
+        if self.period != '全部':
+            period_condition = ' AND Period = "{0}"'.format(self.period)
+
         doctor_condition = ''
         if self.doctor != '全部':
             doctor_condition = ' AND cases.Doctor = "{0}"'.format(self.doctor)
@@ -98,18 +112,35 @@ class StatisticsDoctorSale(QtWidgets.QMainWindow):
                 prescript.MedicineSet >= 2 AND
                 Amount > 0 AND
                 cases.CaseDate BETWEEN "{start_date}" AND "{end_date}" 
+                {period_condition}
                 {doctor_condition}
             ORDER BY cases.CaseKey, prescript.PrescriptKey
         '''.format(
             start_date=self.start_date,
             end_date=self.end_date,
+            period_condition=period_condition,
             doctor_condition=doctor_condition,
         )
 
+        rows = self.database.select_record(sql)
+        row_count = len(rows)
+        if row_count <= 0:
+            return
+
+        self.progress_dialog = QtWidgets.QProgressDialog(
+            '自費銷售統計中, 請稍後...', '取消', 0, row_count, self
+        )
+
+        self.progress_dialog.setWindowModality(QtCore.Qt.WindowModal)
+        self.progress_dialog.setValue(0)
+
         self.table_widget_doctor_sale.set_db_data(sql, self._set_table_data)
         self._insert_discount()
+        self.progress_dialog.setValue(row_count)
 
     def _set_table_data(self, row_no, row):
+        self.progress_dialog.setValue(row_no)
+
         case_key = row['CaseKey']
         medicine_key = row['MedicineKey']
         medicine_set = row['MedicineSet']
@@ -121,7 +152,7 @@ class StatisticsDoctorSale(QtWidgets.QMainWindow):
         doctor = string_utils.xstr(row['Doctor'])
         quantity = number_utils.get_float(row['Dosage'])
         price = number_utils.get_float(row['Price'])
-        amount = number_utils.get_float(row['Amount']) * pres_days
+        amount = number_utils.round_up(number_utils.get_float(row['Amount'])) * pres_days
         commission_rate = charge_utils.get_commission_rate(self.database, medicine_key, doctor)
         commission = charge_utils.calc_commission(quantity, amount, commission_rate)
 
@@ -194,9 +225,12 @@ class StatisticsDoctorSale(QtWidgets.QMainWindow):
 
     def _insert_discount(self):
         row_count = self.ui.tableWidget_doctor_sale.rowCount() + self._get_discount_count()
+        if row_count <= 0:
+            return
 
         last_patient_key = self.ui.tableWidget_doctor_sale.item(0, 2).text()
         last_case_key = self.ui.tableWidget_doctor_sale.item(0, 0).text()
+
         for row_no in range(row_count):
             if self.ui.tableWidget_doctor_sale.item(row_no, 2) is None:
                 patient_key = 0
@@ -207,7 +241,9 @@ class StatisticsDoctorSale(QtWidgets.QMainWindow):
                 self._check_discount_row(row_no, last_case_key)
 
             last_patient_key = patient_key
-            last_case_key = self.ui.tableWidget_doctor_sale.item(row_no, 0).text()
+            last_case_key = self.ui.tableWidget_doctor_sale.item(row_no, 0)
+            if last_case_key is not None:
+                last_case_key = last_case_key.text()
 
     def _check_discount_row(self, row_no, case_key):
         sql = '''
@@ -255,7 +291,7 @@ class StatisticsDoctorSale(QtWidgets.QMainWindow):
             return
 
         export_utils.export_table_widget_to_excel(
-            excel_file_name, self.ui.tableWidget_doctor_sale,
+            excel_file_name, self.ui.tableWidget_doctor_sale, [0], [2, 5, 6, 8, 9, 11]
         )
 
         system_utils.show_message_box(
@@ -292,7 +328,7 @@ class StatisticsDoctorSale(QtWidgets.QMainWindow):
             QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
         )
         self.ui.tableWidget_doctor_sale.setItem(
-            row_count, 11, QtWidgets.QTableWidgetItem(string_utils.xstr(total_commission))
+            row_count, 11, QtWidgets.QTableWidgetItem(string_utils.xstr(number_utils.round_up(total_commission)))
         )
         self.ui.tableWidget_doctor_sale.item(
             row_count, 11).setTextAlignment(

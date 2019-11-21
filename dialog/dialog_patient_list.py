@@ -96,7 +96,7 @@ class DialogPatientList(QtWidgets.QDialog):
                         ORDER BY PatientKey
                     '''.format(query_str)
                 elif re.compile('^[0-9]{1,4}[-/.][0-9]{1,2}').match(keyword):
-                    date_separator = date_utils._get_date_separator(keyword)
+                    date_separator = date_utils.get_date_separator(keyword)
                     if date_separator == '':
                         return
 

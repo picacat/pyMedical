@@ -9,6 +9,7 @@ from libs import system_utils
 from libs import string_utils
 from libs import case_utils
 from libs import nhi_utils
+from libs import icd10_utils
 
 
 # 病名詞庫 (from 病歷登錄)
@@ -46,6 +47,7 @@ class DialogDisease(QtWidgets.QDialog):
         system_utils.set_css(self, self.system_settings)
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Save).setText('選取')
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Close).setText('關閉')
+        self.table_widget_groups = table_widget.TableWidget(self.ui.tableWidget_groups, self.database)
         self.table_widget_groups_name = table_widget.TableWidget(self.ui.tableWidget_groups_name, self.database)
         self.table_widget_groups_name.set_column_hidden([0])
         self.table_widget_disease = table_widget.TableWidget(self.ui.tableWidget_disease, self.database)
@@ -62,10 +64,12 @@ class DialogDisease(QtWidgets.QDialog):
     def _set_radio_buttons(self):
         if self.disease_type == '所有病名':
             self.ui.radioButton_all.setChecked(True)
-        elif self.disease_type == '慢性病':
-            self.ui.radioButton_chronic.setChecked(True)
+        elif self.disease_type == '常用病名':
+            self.ui.radioButton_common.setChecked(True)
         elif self.disease_type == '傷骨科':
             self.ui.radioButton_treat.setChecked(True)
+        elif self.disease_type == '慢性病':
+            self.ui.radioButton_chronic.setChecked(True)
         elif self.disease_type == '複雜性針灸適應症':
             self.ui.radioButton_complicated_acupuncture.setChecked(True)
         elif self.disease_type == '複雜性傷科適應症':
@@ -81,6 +85,7 @@ class DialogDisease(QtWidgets.QDialog):
         self.ui.tableWidget_groups_name.itemSelectionChanged.connect(self.groups_name_changed)
         self.ui.tableWidget_disease.doubleClicked.connect(self.accepted_button_clicked)
         self.ui.radioButton_all.clicked.connect(self._set_groups)
+        self.ui.radioButton_common.clicked.connect(self._set_groups)
         self.ui.radioButton_chronic.clicked.connect(self._set_groups)
         self.ui.radioButton_treat.clicked.connect(self._set_groups)
         self.ui.radioButton_complicated_acupuncture.clicked.connect(self._set_groups)
@@ -97,6 +102,7 @@ class DialogDisease(QtWidgets.QDialog):
         self.ui.radioButton_period3.clicked.connect(self._set_injury_list)
 
         self.ui.tableWidget_injury.itemSelectionChanged.connect(self._injury_changed)
+        self.ui.lineEdit_keyword.textChanged.connect(self._query_disease)
 
     # 存檔
     def accepted_button_clicked(self):
@@ -154,22 +160,29 @@ class DialogDisease(QtWidgets.QDialog):
             '''
         elif self.ui.radioButton_complicated_acupuncture.isChecked():
             self.ui.tableWidget_groups.setVisible(False)
-            self._set_complicated_acupuncture_groups_name()
+            self._set_custom_groups_name(icd10_utils.COMPLICATED_ACUPUNCTURE_DISEASE_DICT)
             self.groups_name_changed()
 
             return
         elif self.ui.radioButton_complicated_massage.isChecked():
             self.ui.tableWidget_groups.setVisible(False)
-            self._set_complicated_massage_groups_name()
+            self._set_custom_groups_name(icd10_utils.COMPLICATED_MASSAGE_DISEASE_DICT)
             self.groups_name_changed()
 
             return
         elif self.ui.radioButton_ins_care.isChecked():
             self.ui.tableWidget_groups.setVisible(False)
-            self._set_ins_care_groups_name()
+            self._set_custom_groups_name(icd10_utils.INS_SPECIAL_CARE_DICT)
             self.groups_name_changed()
 
             return
+        elif self.ui.radioButton_common.isChecked():
+            sql = '''
+                SELECT * FROM dict_groups 
+                WHERE 
+                    DictGroupsType = "常用病名類別" 
+                ORDER BY DictGroupsName
+            '''
         else:
             sql = '''
                 SELECT * FROM dict_groups 
@@ -178,31 +191,8 @@ class DialogDisease(QtWidgets.QDialog):
                 ORDER BY DictGroupsName
             '''
 
-        rows = self.database.select_record(sql)
+        self.table_widget_groups.set_db_data_without_heading(sql, 'DictGroupsName')
 
-        row_count = len(rows)
-        self.ui.tableWidget_groups.setRowCount(0)
-
-        column_count = self.ui.tableWidget_groups.columnCount()
-        total_row = int(row_count / column_count)
-        if row_count % column_count > 0:
-            total_row += 1
-
-        for row_no in range(0, total_row):
-            self.ui.tableWidget_groups.setRowCount(
-                self.ui.tableWidget_groups.rowCount() + 1
-            )
-            for col_no in range(0, column_count):
-                index = (row_no * column_count) + col_no
-                if index >= row_count:
-                    break
-
-                self.ui.tableWidget_groups.setItem(
-                    row_no, col_no, QtWidgets.QTableWidgetItem(rows[index]['DictGroupsName'])
-                )
-
-        self.ui.tableWidget_groups.resizeRowsToContents()
-        self.ui.tableWidget_groups.setCurrentCell(0, 0)
         groups = self.ui.tableWidget_groups.selectedItems()
         if len(groups) <= 0:
             return
@@ -211,15 +201,20 @@ class DialogDisease(QtWidgets.QDialog):
         self._read_groups_name(groups)
         groups_name = self.table_widget_groups_name.field_value(1)
 
-        if not self.ui.radioButton_treat.isChecked():
-            self._read_disease(groups_name)
+        if self.ui.radioButton_treat.isChecked():
+            return
 
+        self._read_disease(groups_name)
         self.ui.tableWidget_groups.setFocus(True)
+
+        if self.ui.radioButton_common.isChecked():
+            self.groups_name_changed()
 
     def groups_changed(self):
         if not self.ui.tableWidget_groups.selectedItems():
             return
 
+        self.ui.lineEdit_keyword.setText(None)
         groups = self.ui.tableWidget_groups.selectedItems()[0].text()
         self._read_groups_name(groups)
         groups_name = self.table_widget_groups_name.field_value(1)
@@ -228,6 +223,9 @@ class DialogDisease(QtWidgets.QDialog):
             self._set_injury_list()
         else:
             self._read_disease(groups_name)
+
+        if self.ui.radioButton_common.isChecked():
+            self.groups_name_changed()
 
         self.ui.tableWidget_groups.setFocus(True)
 
@@ -249,6 +247,13 @@ class DialogDisease(QtWidgets.QDialog):
                     DictGroupsType = "傷骨科病名" and DictGroupsTopLevel = "{0}" 
                 ORDER BY DictGroupsName
             '''.format(groups)
+        elif self.ui.radioButton_common.isChecked():
+            sql = '''
+            SELECT * FROM dict_groups 
+            WHERE 
+                DictGroupsType = "常用病名" and DictGroupsTopLevel = "{0}" 
+            ORDER BY DictGroupsName
+        '''.format(groups)
         else:
             sql = '''
                 SELECT * FROM dict_groups 
@@ -270,25 +275,6 @@ class DialogDisease(QtWidgets.QDialog):
                 row_no, column,
                 QtWidgets.QTableWidgetItem(groups_name_row[column])
             )
-
-    def groups_name_changed(self):
-        self.ui.label_disease2.setVisible(False)
-        self.ui.tableWidget_disease2.setVisible(False)
-
-        groups_name = self.table_widget_groups_name.field_value(1)
-
-        if self.ui.radioButton_treat.isChecked():
-            self._set_injury_list()
-        elif self.ui.radioButton_complicated_acupuncture.isChecked():
-            self._set_complicated_acupuncture_list(groups_name)
-        elif self.ui.radioButton_complicated_massage.isChecked():
-            self._set_complicated_massage_list(groups_name)
-        elif self.ui.radioButton_ins_care.isChecked():
-            self._set_ins_special_care_list(groups_name)
-        else:
-            self._read_disease(groups_name)
-
-        self.ui.tableWidget_groups_name.setFocus(True)
 
     def _read_disease(self, groups_name):
         sql = '''
@@ -428,71 +414,6 @@ class DialogDisease(QtWidgets.QDialog):
         sql += ' ORDER BY ICDCode'
         self.table_widget_disease.set_db_data(sql, self._set_disease_data)
 
-    def _set_complicated_acupuncture_groups_name(self):
-        rows =[]
-        for row in list(nhi_utils.COMPLICATED_ACUPUNCTURE_DISEASE_DICT.keys()):
-            rows.append({'DictGroupsKey': None, 'DictGroupsName': string_utils.xstr(row)})
-
-        row_count = len(rows)
-        self.ui.tableWidget_groups_name.setRowCount(row_count)
-        for row_no in range(row_count):
-            self.ui.tableWidget_groups_name.setItem(
-                row_no, 1,
-                QtWidgets.QTableWidgetItem(rows[row_no]['DictGroupsName'])
-            )
-
-        self.ui.tableWidget_groups_name.resizeRowsToContents()
-
-    def _set_complicated_acupuncture_list(self, groups_name):
-        self.ui.label_disease2.setVisible(False)
-        self.ui.tableWidget_disease2.setVisible(False)
-
-        try:
-            disease_rows1 = nhi_utils.get_complicated_acupuncture_rows(self.database, groups_name, disease=1)
-        except KeyError:
-            return
-
-        disease_rows2 = nhi_utils.get_complicated_acupuncture_rows(self.database, groups_name, disease=2)
-
-        disease_rows_count1 = len(disease_rows1)
-        self.ui.tableWidget_disease.setRowCount(disease_rows_count1)
-        for row_no in range(disease_rows_count1):
-            icd_code = disease_rows1[row_no]
-            sql = 'SELECT * FROM icd10 WHERE ICDCode = "{0}"'.format(icd_code)
-            icd_rows = self.database.select_record(sql)[0]
-
-            row = {
-                    'ICD10Key':icd_rows['ICD10Key'],
-                    'ICDCode': icd_code,
-                    'SpecialCode': icd_rows['SpecialCode'],
-                    'ChineseName': icd_rows['ChineseName'],
-            }
-            self._set_disease_data(row_no, row)
-
-        if len(disease_rows2) <= 0:
-            return
-
-        self.ui.label_disease2.setVisible(True)
-        self.ui.tableWidget_disease2.setVisible(True)
-
-        disease_rows_count2 = len(disease_rows2)
-        self.ui.tableWidget_disease2.setRowCount(disease_rows_count2)
-        for row_no in range(disease_rows_count2):
-            icd_code = disease_rows2[row_no]
-            sql = 'SELECT * FROM icd10 WHERE ICDCode = "{0}"'.format(icd_code)
-            icd_rows = self.database.select_record(sql)[0]
-
-            row = {
-                'ICD10Key':icd_rows['ICD10Key'],
-                'ICDCode': icd_code,
-                'SpecialCode': icd_rows['SpecialCode'],
-                'ChineseName': icd_rows['ChineseName'],
-            }
-            self._set_disease_data2(row_no, row)
-
-        self.ui.tableWidget_disease2.setFocus(True)
-        self.ui.tableWidget_disease2.setCurrentCell(0, 1)
-
     def _set_disease_data2(self, row_no, row):
         disease_row = [
             string_utils.xstr(row['ICD10Key']),
@@ -516,11 +437,11 @@ class DialogDisease(QtWidgets.QDialog):
             row_no, 4, disease_name
         )
 
-    def _set_complicated_massage_groups_name(self):
+    def _set_custom_groups_name(self, custom_dict):
         self.ui.tableWidget_groups_name.setCurrentCell(0, 1)
 
         rows =[]
-        for row in list(nhi_utils.COMPLICATED_MASSAGE_DISEASE_DICT.keys()):
+        for row in list(custom_dict.keys()):
             rows.append({'DictGroupsKey': None, 'DictGroupsName': string_utils.xstr(row)})
 
         row_count = len(rows)
@@ -532,32 +453,43 @@ class DialogDisease(QtWidgets.QDialog):
             )
         self.ui.tableWidget_groups_name.resizeRowsToContents()
 
-    def _set_ins_care_groups_name(self):
-        self.ui.tableWidget_groups_name.setCurrentCell(0, 1)
+    def groups_name_changed(self):
+        self.ui.lineEdit_keyword.setText(None)
 
-        rows =[]
-        for row in list(nhi_utils.INS_SPECIAL_CARE_DICT.keys()):
-            rows.append({'DictGroupsKey': None, 'DictGroupsName': string_utils.xstr(row)})
+        self.ui.label_disease2.setVisible(False)
+        self.ui.tableWidget_disease2.setVisible(False)
 
-        row_count = len(rows)
-        self.ui.tableWidget_groups_name.setRowCount(row_count)
-        for row_no in range(row_count):
-            self.ui.tableWidget_groups_name.setItem(
-                row_no, 1,
-                QtWidgets.QTableWidgetItem(rows[row_no]['DictGroupsName'])
-            )
-        self.ui.tableWidget_groups_name.resizeRowsToContents()
+        groups_name = self.table_widget_groups_name.field_value(1)
 
-    def _set_complicated_massage_list(self, groups_name):
+        if self.ui.radioButton_common.isChecked():
+            self._set_custom_disease_list(icd10_utils.COMMON_DISEASE_DICT, groups_name)
+        elif self.ui.radioButton_treat.isChecked():
+            self._set_injury_list()
+        elif self.ui.radioButton_complicated_acupuncture.isChecked():
+            self._set_custom_disease_list(icd10_utils.COMPLICATED_ACUPUNCTURE_DISEASE_DICT, groups_name)
+        elif self.ui.radioButton_complicated_massage.isChecked():
+            self._set_custom_disease_list(icd10_utils.COMPLICATED_MASSAGE_DISEASE_DICT, groups_name)
+        elif self.ui.radioButton_ins_care.isChecked():
+            self._set_custom_disease_list(icd10_utils.INS_SPECIAL_CARE_DICT, groups_name)
+        else:
+            self._read_disease(groups_name)
+
+        self.ui.tableWidget_groups_name.setFocus(True)
+
+    def _set_custom_disease_list(self, custom_dict, groups_name):
         self.ui.label_disease2.setVisible(False)
         self.ui.tableWidget_disease2.setVisible(False)
 
         try:
-            disease_rows1 = nhi_utils.get_complicated_massage_rows(self.database, groups_name, disease=1)
+            disease_rows1 = nhi_utils.get_custom_groups_name_rows(
+                self.database, custom_dict, groups_name, disease=1
+            )
         except KeyError:
             return
 
-        disease_rows2 = nhi_utils.get_complicated_massage_rows(self.database, groups_name, disease=2)
+        disease_rows2 = nhi_utils.get_custom_groups_name_rows(
+            self.database, custom_dict, groups_name, disease=2
+        )
 
         disease_rows_count1 = len(disease_rows1)
         self.ui.tableWidget_disease.setRowCount(disease_rows_count1)
@@ -598,53 +530,22 @@ class DialogDisease(QtWidgets.QDialog):
         self.ui.tableWidget_disease2.setFocus(True)
         self.ui.tableWidget_disease2.setCurrentCell(0, 1)
 
-    def _set_ins_special_care_list(self, groups_name):
-        self.ui.label_disease2.setVisible(False)
-        self.ui.tableWidget_disease2.setVisible(False)
-
-        try:
-            disease_rows1 = nhi_utils.get_ins_special_care_rows(self.database, groups_name, disease=1)
-        except KeyError:
+    def _query_disease(self):
+        keyword = self.ui.lineEdit_keyword.text()
+        if keyword == '':
+            self.ui.tableWidget_disease.setRowCount(0)
             return
 
-        disease_rows2 = nhi_utils.get_ins_special_care_rows(self.database, groups_name, disease=2)
-
-        disease_rows_count1 = len(disease_rows1)
-        self.ui.tableWidget_disease.setRowCount(disease_rows_count1)
-        for row_no in range(disease_rows_count1):
-            icd_code = disease_rows1[row_no]
-            sql = 'SELECT * FROM icd10 WHERE ICDCode = "{0}"'.format(icd_code)
-            icd_rows = self.database.select_record(sql)[0]
-
-            row = {
-                'ICD10Key':icd_rows['ICD10Key'],
-                'ICDCode': icd_code,
-                'SpecialCode': icd_rows['SpecialCode'],
-                'ChineseName': icd_rows['ChineseName'],
-            }
-            self._set_disease_data(row_no, row)
-
-        if len(disease_rows2) <= 0:
-            return
-
-        self.ui.label_disease2.setVisible(True)
-        self.ui.tableWidget_disease2.setVisible(True)
-
-        disease_rows_count2 = len(disease_rows2)
-        self.ui.tableWidget_disease2.setRowCount(disease_rows_count2)
-        for row_no in range(disease_rows_count2):
-            icd_code = disease_rows2[row_no]
-            sql = 'SELECT * FROM icd10 WHERE ICDCode = "{0}"'.format(icd_code)
-            icd_rows = self.database.select_record(sql)[0]
-
-            row = {
-                'ICD10Key':icd_rows['ICD10Key'],
-                'ICDCode': icd_code,
-                'SpecialCode': icd_rows['SpecialCode'],
-                'ChineseName': icd_rows['ChineseName'],
-            }
-            self._set_disease_data2(row_no, row)
-
-        self.ui.tableWidget_disease2.setFocus(True)
-        self.ui.tableWidget_disease2.setCurrentCell(0, 1)
+        sql = '''
+            SELECT * FROM icd10
+            WHERE
+                ICDCode LIKE "{icd_code}%" OR
+                ChineseName LIKE "%{icd_code}%"
+            ORDER BY ICDCode
+        '''.format(
+            icd_code=keyword,
+        )
+        self.table_widget_disease.set_db_data(sql, self._set_disease_data)
+        self.ui.lineEdit_keyword.setFocus(True)
+        self.ui.lineEdit_keyword.setCursorPosition(len(keyword))
 

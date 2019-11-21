@@ -8,6 +8,7 @@ from libs import ui_utils
 from libs import string_utils
 from libs import system_utils
 from libs import case_utils
+from libs import personnel_utils
 
 
 # 病歷資料 2018.01.31
@@ -34,6 +35,9 @@ class MedicalRecordRecentlyHistory(QtWidgets.QMainWindow):
         self._read_data()
         self._display_past_record()
 
+        self.user_name = self.system_settings.field('使用者')
+        self._set_permission()
+
     # 解構
     def __del__(self):
         self.close_all()
@@ -55,6 +59,26 @@ class MedicalRecordRecentlyHistory(QtWidgets.QMainWindow):
         self.ui.toolButton_next.clicked.connect(self.next_past_record)
         self.ui.toolButton_last.clicked.connect(self.last_past_record)
         self.ui.toolButton_copy.clicked.connect(self.copy_past_medical_record_button_clicked)
+
+    def _set_permission(self):
+        if self.call_from == '醫師看診作業':
+            return
+
+        if self.user_name == '超級使用者':
+            return
+
+        if personnel_utils.get_permission(self.database, '病歷資料', '病歷修正', self.user_name) == 'Y':
+            return
+
+        self.ui.toolButton_copy.setEnabled(False)
+        self.ui.toolButton_check.setEnabled(False)
+        self.ui.checkBox_diagnostic.setEnabled(False)
+        self.ui.checkBox_disease.setEnabled(False)
+        self.ui.checkBox_remark.setEnabled(False)
+        self.ui.checkBox_ins_prescript.setEnabled(False)
+        self.ui.checkBox_ins_treat.setEnabled(False)
+        self.ui.checkBox_copy_to_self.setEnabled(False)
+        self.ui.checkBox_self_prescript.setEnabled(False)
 
     def _read_data(self):
         sql = 'SELECT * FROM cases WHERE CaseKey = {0}'.format(self.case_key)
@@ -100,7 +124,7 @@ class MedicalRecordRecentlyHistory(QtWidgets.QMainWindow):
     # 設定最近病歷參數 (目前沒用到, 留作範例)
     def _set_past_values(self, row):
         self.ui.textEdit_past.setProperty('medical_record', row['CaseKey'])
-        self.ui.textEdit_past.setProperty('patient_key', row['PatientKey'])
+        self.ui.textEdit_past.setProperty('primary_key', row['PatientKey'])
         self.ui.textEdit_past.setProperty('case_date', row['CaseDate'])
 
     def _get_past_history_case_key(self):
@@ -221,7 +245,6 @@ class MedicalRecordRecentlyHistory(QtWidgets.QMainWindow):
         self.ui.checkBox_self_prescript.setChecked(copy_self_prescript)
         if copy_self_prescript:
             self.ui.checkBox_self_prescript.setChecked(False)  # 預設不要拷貝
-
 
     # 拷貝病歷
     def copy_past_medical_record_button_clicked(self):

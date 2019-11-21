@@ -11,6 +11,7 @@ from libs import string_utils
 from libs import number_utils
 from libs import nhi_utils
 from libs import registration_utils
+from libs import patient_utils
 from classes import table_widget
 from dialog import dialog_medical_record_picker
 from dialog import dialog_select_patient
@@ -59,7 +60,7 @@ class Purchase(QtWidgets.QMainWindow):
         self.ui.label_name.setEnabled(False)
         self.ui.lineEdit_name.setEnabled(False)
         self.ui.toolButton_patient_list.setEnabled(False)
-        self.ui.toolButton_find_patient.setEnabled(False)
+        self.ui.toolButton_select_patient.setEnabled(False)
 
         self._set_table_width()
         self._set_combo_box()
@@ -69,12 +70,10 @@ class Purchase(QtWidgets.QMainWindow):
         self.ui.action_close.triggered.connect(self.close_purchase)
         self.ui.action_save.triggered.connect(self._save_purchase)
         self.ui.toolButton_patient_list.clicked.connect(self._patient_picker)
-        self.ui.toolButton_find_patient.clicked.connect(self._select_patient)
         self.ui.tableWidget_medicine_type.itemSelectionChanged.connect(self._groups_changed)
         self.ui.tableWidget_medicine.clicked.connect(self._set_prescript)
         self.ui.tableWidget_prescript.itemChanged.connect(self._prescript_item_changed)
         self.ui.lineEdit_input_code.textChanged.connect(self._input_code_changed)
-        self.ui.lineEdit_patient_key.textChanged.connect(self._patient_key_changed)
         self.ui.lineEdit_discount.textChanged.connect(self._discount_changed)
         self.ui.radioButton_1.clicked.connect(self._set_patient)
         self.ui.radioButton_2.clicked.connect(self._set_patient)
@@ -82,10 +81,16 @@ class Purchase(QtWidgets.QMainWindow):
         self.ui.comboBox_doctor.currentTextChanged.connect(self._set_sales)
         self.ui.comboBox_massager.currentTextChanged.connect(self._set_sales)
 
+        self.ui.lineEdit_patient_key.textChanged.connect(self._patient_key_changed)
+        self.ui.lineEdit_name.textChanged.connect(self._patient_name_changed)
+        self.ui.lineEdit_patient_key.returnPressed.connect(self._get_patient)
+        self.ui.toolButton_select_patient.clicked.connect(self._select_patient)
+
     # 設定欄位寬度
     def _set_table_width(self):
-        width = [80, 80, 260, 60, 60, 80, 80, 80]
+        width = [80, 80, 250, 60, 60, 80, 80, 50]
         self.table_widget_prescript.set_table_heading_width(width)
+
         self.table_widget_prescript.set_column_hidden([0, 1])
         self.table_widget_medicine.set_column_hidden([5, 6, 7, 8, 9])
 
@@ -125,7 +130,7 @@ class Purchase(QtWidgets.QMainWindow):
         ui_utils.set_combo_box(self.ui.comboBox_massager, massager_list, None)
         ui_utils.set_combo_box(self.ui.comboBox_period, nhi_utils.PERIOD)
 
-        period = registration_utils.get_period(self.system_settings)
+        period = registration_utils.get_current_period(self.system_settings)
         self.ui.comboBox_period.setCurrentText(period)
 
         current_user = self.system_settings.field('使用者')
@@ -152,36 +157,7 @@ class Purchase(QtWidgets.QMainWindow):
                 DictGroupsType = "藥品類別" 
             ORDER BY DictGroupsKey
         '''
-        rows = self.database.select_record(sql)
-
-        row_count = len(rows)
-        column_count = self.ui.tableWidget_medicine.columnCount()
-        total_row = int(row_count / column_count)
-        if row_count % column_count > 0:
-            total_row += 1
-
-        for row_no in range(0, total_row):
-            self.ui.tableWidget_medicine_type.setRowCount(
-                self.ui.tableWidget_medicine_type.rowCount() + 1
-            )
-            for col_no in range(0, column_count):
-                index = (row_no * column_count) + col_no
-                if index >= row_count:
-                    break
-
-                self.ui.tableWidget_medicine_type.setItem(
-                    row_no, col_no, QtWidgets.QTableWidgetItem(rows[index]['DictGroupsName'])
-                )
-
-        # self.ui.tableWidget_medicine_type.setColumnCount(row_count)
-        #
-        # for col in range(0, row_count):
-        #     self.ui.tableWidget_medicine_type.setItem(
-        #         0, col,
-        #         QtWidgets.QTableWidgetItem(rows[col]['DictGroupsName'])
-        #     )
-        #
-        # self.ui.tableWidget_medicine_type.setCurrentCell(0, 4)
+        self.table_widget_medicine_type.set_db_data_without_heading(sql, 'DictGroupsName')
 
     def _groups_changed(self):
         self._read_medicine()
@@ -356,8 +332,7 @@ class Purchase(QtWidgets.QMainWindow):
                 )
 
         button = QtWidgets.QPushButton(self.ui.tableWidget_prescript)
-        # button.setText('刪除')
-        button.setIcon(QtGui.QIcon('./icons/gtk-delete.svg'))
+        button.setIcon(QtGui.QIcon('./icons/cancel.svg'))
         button.setFlat(True)
         button.clicked.connect(self._remove_prescript_row)
         self.ui.tableWidget_prescript.setCellWidget(row_no, 7, button)
@@ -426,29 +401,68 @@ class Purchase(QtWidgets.QMainWindow):
         self.ui.lineEdit_total.setText('{0}'.format(total))
 
     def _patient_key_changed(self):
+        self.ui.action_save.setEnabled(True)
         patient_key = self.ui.lineEdit_patient_key.text()
+
         if patient_key == '':
+            self.ui.lineEdit_name.setText(None)
+
+        if patient_key.isdigit() and len(patient_key) <= 6:
+            self._set_line_edit_patient_data(patient_key)
+        else:
+            self.ui.action_save.setEnabled(False)
+            self.ui.lineEdit_name.setText('')
+
+    def _select_patient(self):
+        patient_key = patient_utils.select_patient(
+            self, self.database, self.system_settings, 'patient', 'PatientKey', ''
+        )
+
+        self._set_line_edit_patient_data(patient_key)
+
+    def _patient_name_changed(self):
+        self.ui.action_save.setEnabled(True)
+        patient_name = self.ui.lineEdit_name.text()
+
+        if patient_name == '':
+            self.ui.action_save.setEnabled(False)
+
+    def _get_patient(self):
+        keyword = self.ui.lineEdit_patient_key.text()
+
+        patient_key = patient_utils.get_patient_by_keyword(
+            self, self.database, self.system_settings,
+            'patient', 'PatientKey', keyword
+        )
+        if patient_key in ['', None]:
+            return
+
+        patient_key = string_utils.xstr(patient_key)
+        self.ui.lineEdit_patient_key.setText(patient_key)
+        self._set_line_edit_patient_data(patient_key)
+
+    def _set_line_edit_patient_data(self, patient_key):
+        if patient_key in [None, '']:
+            return
+
+        sql = 'SELECT * FROM patient WHERE PatientKey = {0}'.format(patient_key)
+        rows = self.database.select_record(sql)
+        if len(rows) <= 0:
             self.ui.lineEdit_name.setText('')
             return
 
-        sql = '''
-            SELECT * FROM patient
-            WHERE
-                PatientKey = {0}
-        '''.format(patient_key)
-        rows = self.database.select_record(sql)
-
-        if len(rows) <= 0:
-            return
-
-        self.ui.lineEdit_name.setText(string_utils.xstr(rows[0]['Name']))
+        row = rows[0]
+        self.ui.lineEdit_patient_key.setText(string_utils.xstr(row['PatientKey']))
+        self.ui.lineEdit_name.setText(string_utils.xstr(row['Name']))
 
     def _set_patient(self):
         if self.ui.radioButton_1.isChecked():
             self.ui.lineEdit_patient_key.setText('')
             self.ui.lineEdit_name.setText('')
+            self.ui.action_save.setEnabled(True)
             enabled = False
         else:
+            self.ui.action_save.setEnabled(False)
             enabled = True
 
         self.ui.label_patient_key.setEnabled(enabled)
@@ -456,7 +470,10 @@ class Purchase(QtWidgets.QMainWindow):
         self.ui.label_name.setEnabled(enabled)
         self.ui.lineEdit_name.setEnabled(enabled)
         self.ui.toolButton_patient_list.setEnabled(enabled)
-        self.ui.toolButton_find_patient.setEnabled(enabled)
+        self.ui.toolButton_select_patient.setEnabled(enabled)
+
+        if self.ui.radioButton_2.isChecked():
+            self.ui.lineEdit_patient_key.setFocus()
 
     def _save_purchase(self):
         case_key, case_date = self._save_medical_record()
@@ -498,7 +515,7 @@ class Purchase(QtWidgets.QMainWindow):
         fields = [
             'PatientKey', 'Name', 'CaseDate', 'DoctorDate',
             'Period', 'InsType',
-            'TreatType',
+            'TreatType', 'Remark',
             'Register', 'Cashier', 'Doctor', 'Massager',
             'SDrugFee', 'SelfTotalFee', 'DiscountFee', 'TotalFee', 'ReceiptFee',
             'DoctorDone',
@@ -513,6 +530,7 @@ class Purchase(QtWidgets.QMainWindow):
             period,
             '自費',
             '自購',
+            self.ui.textEdit_remark.toPlainText(),
             self.system_settings.field('使用者'),
             self.ui.comboBox_cashier.currentText(),
             self.ui.comboBox_doctor.currentText(),
@@ -601,18 +619,6 @@ class Purchase(QtWidgets.QMainWindow):
 
         patient_key = dialog.get_patient_key()
         self.ui.lineEdit_patient_key.setText(string_utils.xstr(patient_key))
-
-        dialog.deleteLater()
-
-    def _select_patient(self):
-        patient_key = self.ui.lineEdit_patient_key.text()
-        dialog = dialog_select_patient.DialogSelectPatient(
-            self, self.database, self.system_settings, ''
-        )
-        if dialog.exec_():
-            patient_key = dialog.get_patient_key()
-
-        self.ui.lineEdit_patient_key.setText(patient_key)
 
         dialog.deleteLater()
 

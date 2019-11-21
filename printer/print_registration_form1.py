@@ -23,6 +23,7 @@ class PrintRegistrationForm1:
         self.printer = printer_utils.get_printer(self.system_settings, '門診掛號單印表機')
         self.preview_dialog = QtPrintSupport.QPrintPreviewDialog(self.printer)
         self.current_print = None
+        self.return_card = None
 
         self._set_ui()
         self._set_signal()
@@ -43,10 +44,12 @@ class PrintRegistrationForm1:
     def _set_signal(self):
         pass
 
-    def print(self):
+    def print(self, return_card=None):
+        self.return_card = return_card
         self.print_html(True)
 
-    def preview(self):
+    def preview(self, return_card=None):
+        self.return_card = return_card
         geometry = QtWidgets.QApplication.desktop().screenGeometry()
 
         self.preview_dialog.paintRequested.connect(self.print_html)

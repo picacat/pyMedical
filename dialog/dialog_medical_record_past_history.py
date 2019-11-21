@@ -3,7 +3,7 @@
 #coding: utf-8
 
 from PyQt5 import QtWidgets, QtCore, QtGui
-import datetime
+from PyQt5.QtWidgets import QVBoxLayout
 
 from classes import table_widget
 from libs import system_utils
@@ -50,6 +50,7 @@ class DialogMedicalRecordPastHistory(QtWidgets.QDialog):
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setText('拷貝病歷')
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Cancel).setText('取消')
         self.table_widget_past_history = table_widget.TableWidget(self.ui.tableWidget_past_history, self.database)
+        self.table_widget_simple_view = table_widget.TableWidget(self.ui.tableWidget_simple_view, self.database)
         self.table_widget_past_history.set_column_hidden([0])
         self._set_table_width()
         if self.call_from == '病歷查詢':
@@ -57,16 +58,26 @@ class DialogMedicalRecordPastHistory(QtWidgets.QDialog):
             self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setVisible(False)
             self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Cancel).setText('關閉')
 
+        self.tabWidget_past_history.setCurrentIndex(0)
+
     # 設定欄位寬度
     def _set_table_width(self):
-        width = [100, 120, 50, 80, 60, 50, 180, 45, 80, 80]
+        width = [100, 125, 45, 80, 60, 30, 160, 35, 80, 60, 50]
         self.table_widget_past_history.set_table_heading_width(width)
 
     # 設定信號
     def _set_signal(self):
         self.ui.buttonBox.accepted.connect(self.accepted_button_clicked)
         self.ui.tableWidget_past_history.itemSelectionChanged.connect(self._past_history_changed)
-        self.ui.tableWidget_past_history.doubleClicked.connect(self._edit_past_history)
+        # self.ui.tableWidget_past_history.doubleClicked.connect(self._edit_past_history)
+        self.ui.tabWidget_past_history.currentChanged.connect(self._tab_changed)    # 切換分頁
+
+    def _tab_changed(self, i):
+        self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setEnabled(True)
+        tab_name = self.ui.tabWidget_past_history.tabText(i)
+
+        if tab_name == '處方精簡顯示':
+            self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setEnabled(False)
 
     def accepted_button_clicked(self):
         if not self.copy_medical_record:
@@ -133,6 +144,8 @@ class DialogMedicalRecordPastHistory(QtWidgets.QDialog):
         if self.call_from == '病歷查詢' and self.case_key is not None:
             self._locate_medical_record()
 
+        self._set_simple_view(rows)
+
     def _set_table_data(self, row_no, row):
         if row['InsType'] == '健保':
             medicine_set = 1
@@ -189,6 +202,12 @@ class DialogMedicalRecordPastHistory(QtWidgets.QDialog):
                     row_no, column).setBackground(
                     QtGui.QColor('lightgray')
                 )
+
+        button = QtWidgets.QPushButton(self.ui.tableWidget_past_history)
+        button.setIcon(QtGui.QIcon('./icons/gtk-open.svg'))
+        button.setFlat(True)
+        button.clicked.connect(self._edit_past_history)
+        self.ui.tableWidget_past_history.setCellWidget(row_no, 10, button)
 
     def _set_group_box_title(self, row):
         self.ui.groupBox_history_list.setTitle(
@@ -265,7 +284,14 @@ class DialogMedicalRecordPastHistory(QtWidgets.QDialog):
 
     def _edit_past_history(self):
         case_key = self.table_widget_past_history.field_value(0)
-        self.parent.parent.open_medical_record(case_key, '過去病歷')
+
+        if self.call_from == '診斷證明':
+            parent = self.parent.parent.parent
+        else:
+            parent = self.parent.parent
+
+        parent.open_medical_record(case_key, '過去病歷')
+
         self.copy_medical_record = False
 
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).animateClick()
@@ -278,3 +304,88 @@ class DialogMedicalRecordPastHistory(QtWidgets.QDialog):
 
             if item.text() == string_utils.xstr(self.case_key):
                 break
+
+    def _set_simple_view(self, rows):
+        self.ui.tableWidget_simple_view.setRowCount(0)
+
+        col_count = self.ui.tableWidget_simple_view.columnCount()
+        row_count = int(len(rows) / col_count)
+        if len(rows) % col_count > 0:
+            row_count += 1
+
+        self.ui.tableWidget_simple_view.setRowCount(row_count)
+
+        for row_no in range(row_count):
+            for col_no in range(0, col_count):
+                try:
+                    row = rows[row_no * col_count + col_no]
+                except IndexError:
+                    break
+
+                html = self._get_medical_record_html(row)
+
+                text_edit = QtWidgets.QTextEdit()
+                text_edit.setReadOnly(True)
+                text_edit.setHtml(html)
+
+                v_layout = QVBoxLayout()
+                v_layout.addWidget(text_edit)
+                widget = QtWidgets.QWidget()
+                widget.setLayout(v_layout)
+
+                self.ui.tableWidget_simple_view.setItem(
+                    row_no, col_no,
+                    QtWidgets.QTableWidgetItem('')
+                )
+                self.ui.tableWidget_simple_view.item(
+                    row_no, col_no).setBackground(
+                    QtGui.QColor('lightGray')
+                )
+                self.ui.tableWidget_simple_view.setCellWidget(
+                    row_no, col_no, widget
+                )
+
+    # 取得病歷html格式
+    def _get_medical_record_html(self, row):
+        if string_utils.xstr(row['InsType']) == '健保':
+            card = string_utils.xstr(row['Card'])
+            if number_utils.get_integer(row['Continuance']) >= 1:
+                card += '-' + str(row['Continuance'])
+            card = '<b>健保</b>: {0}'.format(card)
+        else:
+            card = '<b>自費</b>'
+
+        medical_record = '<b>日期</b>: {case_date} {card} <b>醫師</b>:{doctor}<hr>'.format(
+            case_date=string_utils.xstr(row['CaseDate'].date()),
+            card=card,
+            doctor=string_utils.xstr(row['Doctor']),
+        )
+        if row['DiseaseCode1'] is not None and len(str(row['DiseaseCode1']).strip()) > 0:
+            medical_record += '<b>主診斷</b>: {0} {1}<br>'.format(str(row['DiseaseCode1']), str(row['DiseaseName1']))
+
+        medical_record = '''
+            <div style="width: 95%;">
+                {0}
+            </div>
+        '''.format(medical_record)
+
+        case_key = row['CaseKey']
+        prescript_record = case_utils.get_prescript_record(self.database, self.system_settings, case_key)
+
+        html = '''
+            <html>
+                <head>
+                    <meta charset="UTF-8">
+                </head>
+                <body>
+                    {medical_record}
+                    {prescript_record}
+                </body>
+            </html>
+        '''.format(
+            medical_record=medical_record,
+            prescript_record=prescript_record,
+        )
+
+        return html
+

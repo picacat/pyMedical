@@ -1936,3 +1936,1028 @@ def cvt_disease_treat(database):
     database.insert_record('dict_groups', fields, data)
     data = ['傷骨科病名', disease_type, '03趾指間關節']
     database.insert_record('dict_groups', fields, data)
+
+
+def cvt_disease_common(database):
+    sql = 'DELETE FROM dict_groups WHERE DictGroupsType IN ("常用病名類別", "常用病名")'
+    database.exec_sql(sql)
+
+    fields = [
+        'DictGroupsType', 'DictGroupsTopLevel', 'DictGroupsName'
+    ]
+
+    disease_type = '01腦血管'
+    data = ['常用病名類別', None, disease_type]
+    database.insert_record('dict_groups', fields, data)
+
+    data = ['常用病名', disease_type, '01蜘蛛網膜出血']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '02腦出血']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '03顱內出血']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '04腦梗塞']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '05蜘蛛網膜後遺症']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '06腦出血後遺症']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '07顱內出血後遺症']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '08腦梗塞後遺症']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '09腦血管疾病']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '10腦血管疾病後遺症']
+    database.insert_record('dict_groups', fields, data)
+
+    disease_type = '02眼耳'
+    data = ['常用病名類別', None, disease_type]
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '01麥粒腫']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '02霰粒腫']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '03淚腺炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '04溢淚']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '05淚眼症']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '06乾眼症']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '07結膜炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '08結膜疾患']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '09白內障']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '10視網膜疾患']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '11青光眼']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '12眼球疾患']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '13視覺障礙']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '14眼睛疼痛']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '15外耳炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '16中耳炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '17梅尼爾氏症']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '18眩暈']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '19內耳疾患']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '20耳聾']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '21耳痛及積液']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '22耳鳴']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '23聽覺異常']
+    database.insert_record('dict_groups', fields, data)
+
+    disease_type = '03牙齒口腔食道'
+    data = ['常用病名類別', None, disease_type]
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '01齲齒']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '02齒髓炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '03齒齦炎及牙周病']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '04唾液腺疾病']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '05口腔炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '06唇及口腔黏膜疾病']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '07舌疾病']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '08食道炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '09胃食道逆流']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '10食道其他疾病']
+    database.insert_record('dict_groups', fields, data)
+
+    disease_type = '04呼吸胸腔'
+    data = ['常用病名類別', None, disease_type]
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '01感冒']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '02流行性感冒']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '03急性上呼吸道感染']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '04阻塞性喉炎會厭炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '05肺炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '06過敏性鼻炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '07慢性鼻炎咽炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '08慢性鼻竇炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '09鼻息肉']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '10鼻及鼻竇疾患']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '11扁桃腺慢性疾病']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '12喉氣管疾病']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '13上呼吸道其他疾病']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '14肺氣腫']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '15支氣管炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '16氣喘']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '17支氣管擴張症']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '18塵肺症']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '19肺水腫']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '20慢性阻塞性肺病']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '21間質性肺病']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '22呼吸異常']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '23其他呼吸衰竭']
+    database.insert_record('dict_groups', fields, data)
+
+    disease_type = '05心臟血管'
+    data = ['常用病名類別', None, disease_type]
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '01心臟病']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '02缺血性心臟病']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '03二尖瓣疾患']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '04心臟節律不整']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '05不明確心臟病']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '06高血壓']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '07低血壓']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '08心絞痛']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '09心肌炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '10心臟肥大']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '11心悸']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '12心搏異常']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '13心臟無力']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '14末梢血管疾病']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '15動脈粥樣硬化']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '16動脈瘤']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '17栓塞及血栓']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '18動脈及小動脈疾患']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '19下肢靜脈曲張']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '20食道靜脈曲張']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '21其他靜脈曲張']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '22循環系統疾患']
+    database.insert_record('dict_groups', fields, data)
+
+    disease_type = '06血液及免疫'
+    data = ['常用病名類別', None, disease_type]
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '01血小板增多症']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '02缺鐵性貧血']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '03維生素缺乏貧血']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '04葉酸缺乏貧血']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '05營養性貧血']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '06酵素貧血']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '07地中海型貧血']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '08其他貧血']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '09凝血缺陷']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '10紫斑症']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '11白血球疾患']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '12脾臟']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '13免疫缺乏']
+    database.insert_record('dict_groups', fields, data)
+
+    disease_type = '07內分泌代謝'
+    data = ['常用病名類別', None, disease_type]
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '01甲狀腺疾患']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '02第一型糖尿病']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '03第二型糖尿病']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '04胰臟疾患']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '05副甲狀腺低下']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '06腦下腺功能亢進']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '07腎上腺疾患']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '08卵巢功能障礙']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '09睪丸功能障礙']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '10青春期疾患']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '11其他內分泌疾患']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '12營養不良']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '13維生素缺乏']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '14其他元素缺乏']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '15肥胖']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '16血脂症']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '17嘌呤嘧啶代謝']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '18礦物質代謝']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '19新陳代謝疾患']
+    database.insert_record('dict_groups', fields, data)
+
+    disease_type = '08肝膽胰臟'
+    data = ['常用病名類別', None, disease_type]
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '01脂肪肝']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '02酒精性肝炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '03酒精性肝硬化']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '04病毒性肝炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '05慢性肝炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '06肝纖維及硬化']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '07發炎性肝疾病']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '08其他肝病']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '09膽結石']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '10膽囊炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '11膽道疾病']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '12急性胰臟炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '13胰臟其他疾病']
+    database.insert_record('dict_groups', fields, data)
+
+    disease_type = '09胃腸肛門'
+    data = ['常用病名類別', None, disease_type]
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '01胃潰瘍']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '02十二指腸潰瘍']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '03消化性潰瘍']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '04胃空腸潰瘍']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '05胃炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '06十二指腸炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '07消化不良']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '08胃其他疾病']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '09闌尾炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '10局部腸炎-小腸']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '11局部腸炎-大腸']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '12感染性胃腸炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '13其他胃腸炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '14腸躁症']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '15便秘']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '16功能性腸疾']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '17腸其他疾病']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '18腸吸收不良']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '19肛門及直腸']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '20痔瘡']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '21腹膜炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '22腹脹']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '23腹瀉']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '24腹痛']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '25胃腸息肉']
+    database.insert_record('dict_groups', fields, data)
+
+    disease_type = '10腎臟泌尿'
+    data = ['常用病名類別', None, disease_type]
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '01急性腎炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '02慢性腎炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '03腎病症候群']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '04腎炎症候群']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '05腎小管']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '06泌尿道病變']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '07腎衰竭']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '08慢性腎臟病']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '09血尿']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '10蛋白尿']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '11排尿困難']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '12尿失禁']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '13無尿']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '14多尿']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '15尿滯留']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '16腎泌尿道結石']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '17膀胱炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '18尿道疾患']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '19泌尿道感染']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '20攝護腺增大']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '21攝護腺炎']
+    database.insert_record('dict_groups', fields, data)
+
+    disease_type = '11男性生殖'
+    data = ['常用病名類別', None, disease_type]
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '01陰囊水腫']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '02睪丸炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '03不孕']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '04包皮疾患']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '05陰莖疾患']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '06其他生殖器官疾病']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '07勃起障礙']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '08性功能障礙']
+    database.insert_record('dict_groups', fields, data)
+
+    disease_type = '12女性生殖'
+    data = ['常用病名類別', None, disease_type]
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '01乳房發育不良']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '02其他乳房疾患']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '03輸卵管卵巢炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '04子宮炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '05子宮頸炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '06骨盆炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '07陰道及外陰炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '08子宮內膜異位']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '09生殖器脫垂']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '10生殖道廔管']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '11卵巢囊腫']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '12生殖道息肉']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '13子宮疾患']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '14子宮頸疾患']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '15其他陰道疾病']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '16外陰會陰疾患']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '17白帶']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '18月經過少']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '19月經過多']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '20月經不規則']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '21異常出血']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '22生殖器月經疼痛']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '23停經疾患']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '24習慣性流產']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '25不孕']
+    database.insert_record('dict_groups', fields, data)
+
+    disease_type = '13妊娠'
+    data = ['常用病名類別', None, disease_type]
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '01自然流產']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '02子宮外孕']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '03水腫']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '04蛋白尿']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '05子癇症']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '06妊娠高血壓']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '07母體高血壓']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '08早期出血']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '09孕吐']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '10妊娠糖尿病']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '11泌乳疾患']
+    database.insert_record('dict_groups', fields, data)
+
+    disease_type = '14皮膚皮下'
+    data = ['常用病名類別', None, disease_type]
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '01膿痂疹']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '02膿瘍,癤及癰']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '03蜂窩組織炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '04皮膚皮下局部感染']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '05天泡瘡']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '06水泡性疾患']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '07異位性皮膚炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '08濕疹']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '09脂漏性皮膚炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '10接觸性皮膚炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '11苔蘚']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '12癢疹']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '13其他皮膚炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '14乾癬']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '15蕁麻疹']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '16曬傷']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '17紫外線皮膚炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '18非游離輻射皮膚炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '19指(趾)甲疾患']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '20痤瘡']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '21禿髮']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '22髮色及髮幹異常']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '23多毛症']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '24毛囊疾患']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '25汗腺疾患']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '26白斑']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '27色素沉著疾患']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '28脂漏性角化症']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '29表皮增厚']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '30紅斑性狼瘡']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '31其他皮膚疾患']
+    database.insert_record('dict_groups', fields, data)
+
+    disease_type = '15神經系統'
+    data = ['常用病名類別', None, disease_type]
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '01腦炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '02截癱及四肢癱']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '03帕金森氏症']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '04阿茲海默症']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '05神經退化']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '06多發性硬化症']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '07癲癇']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '08週期性嘔吐']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '09偏頭痛']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '10頭痛']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '11腦血管症候群']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '12睡眠疾患']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '13三叉神經疾患']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '14顏面神經疾患']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '15腦神經疾患']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '16神經根叢疾患']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '17上肢神經病變']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '18下肢神經病變']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '19重症肌無力']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '20嬰兒腦性麻痺']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '21偏癱']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '22麻痺症候群']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '23脊髓疾病']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '24其他神經疾患']
+    database.insert_record('dict_groups', fields, data)
+
+    disease_type = '16肌肉骨骼'
+    data = ['常用病名類別', None, disease_type]
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '01化膿性關節炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '02類風濕關節炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '03痛風']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '04關節病變']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '05多關節病症']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '06肩關節炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '07肘關節炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '08腕關節炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '09腕掌關節炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '10手部關節炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '11髖關節炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '12膝關節炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '13踝足關節炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '14關節痛']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '15骨刺']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '16結節狀多動脈炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '17紅斑性狼瘡']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '18皮多肌炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '19全身性硬化症']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '20結締組織全身侵犯']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '21脊椎疾患']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '22僵直性脊椎炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '23背部病變背痛']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '24椎間盤疾患']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '25腰痛']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '26坐骨神經痛']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '27神經根病變']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '28肌肉疾患']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '29肌炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '30板機指']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '31滑膜腱鞘炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '32腱鞘囊腫']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '33軟組織疾患']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '34筋膜炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '35肩部病灶']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '36肌痛']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '37骨質疏鬆']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '38成人軟骨症']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '39骨髓炎']
+    database.insert_record('dict_groups', fields, data)
+
+    disease_type = '17感染'
+    data = ['常用病名類別', None, disease_type]
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '01感染性腸胃炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '02丹毒']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '03白喉']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '04百日咳']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '05敗血症']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '06性病']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '07腦炎腦膜炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '08登革熱']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '09水痘']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '10病毒性肝炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '11腮腺炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '12皮癬']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '13念珠菌']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '14黴菌病']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '15腸道蠕蟲']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '16蝨病及陰蝨']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '17疥癬']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '18人類免疫不全']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '19帶狀疱疹']
+    database.insert_record('dict_groups', fields, data)
+
+    disease_type = '18精神與行為'
+    data = ['常用病名類別', None, disease_type]
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '01失智症']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '02失憶']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '03譫妄']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '04精神疾患']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '05成癮症']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '06思覺失調']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '07分裂情感']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '08躁症']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '09重鬱症']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '10畏懼性焦慮症']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '11其他焦慮症']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '12歇斯底里']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '13非精神病之精神疾患']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '14飲食疾患']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '15睡眠障礙']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '16性功能障礙']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '17抽搐症']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '18遺尿屎症']
+    database.insert_record('dict_groups', fields, data)
+
+    disease_type = '19症狀異常'
+    data = ['常用病名類別', None, disease_type]
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '01心搏異常']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '02異常血壓']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '03呼吸道出血']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '04咳嗽']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '05呼吸異常']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '06喉嚨痛及胸痛']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '07腹痛']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '08噁心及嘔吐']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '09吞嚥困難']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '10胃腸脹氣']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '11大便失禁']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '12肝脾腫大']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '13腹水']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '14消化系統徵候']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '15皮膚感覺障礙']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '16腫塊或腫脹']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '17排尿異常']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '18其他排尿異常']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '19性功能障礙']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '20嗜睡及昏迷']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '21頭暈及目眩']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '22嗅覺味覺障礙']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '23情緒狀態']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '24語言障礙']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '25嗓音共振異常']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '26發燒']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '27頭痛']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '28疼痛']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '29乏力及疲勞']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '30痙攣']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '31淋巴結腫大']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '32水腫']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '33多汗症']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '34飲食異常']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '35蛋白尿及糖尿']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '36熱中暑']
+    database.insert_record('dict_groups', fields, data)
+
+    disease_type = '20婦科'
+    data = ['常用病名類別', None, disease_type]
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '01月經不調']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '02經前症候群']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '03痛經']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '04不孕症']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '05崩漏']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '06白帶']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '07更年期障礙']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '08乳房腫瘤']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '09乳腺炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '10乳汁不足']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '11安胎']
+    database.insert_record('dict_groups', fields, data)
+
+    disease_type = '21兒科'
+    data = ['常用病名類別', None, disease_type]
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '01感冒']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '02支氣管炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '03鼻過敏']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '04鼻竇炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '05氣喘']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '06口瘡']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '07便秘']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '08腹瀉腹痛']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '09皮膚炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '10中耳炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '11黃疸']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '12紫斑']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '13過動症']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '14分離焦慮']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '15週期性頭痛']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '16過度啼哭']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '17遺尿屎症']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '18發展遲緩']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '19發育不良']
+
+    disease_type = '22腫瘤'
+    data = ['常用病名類別', None, disease_type]
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '01鼻咽惡性腫瘤']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '02食道惡性腫瘤']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '03胃惡性腫瘤']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '04小腸惡性腫瘤']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '05結腸惡性腫瘤']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '06直腸惡性腫瘤']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '07肝惡性腫瘤']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '08胰臟惡性腫瘤']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '09肺惡性腫瘤']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '10乳房惡性腫瘤']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '11子宮頸惡性腫瘤']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '12子宮惡性腫瘤']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '13卵巢惡性腫瘤']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '14攝護腺惡性腫瘤']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '15腎臟惡性腫瘤']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '16膀胱惡性腫瘤']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '17甲狀腺惡性腫瘤']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '18良性脂肪瘤']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '19血管淋巴管瘤']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '20子宮平滑肌瘤']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '21乳房良性腫瘤']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '22子宮良性腫瘤']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '23卵巢良性腫瘤']
+    database.insert_record('dict_groups', fields, data)
+
+    disease_type = '23針灸科'
+    data = ['常用病名類別', None, disease_type]
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '01中風後遺症']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '02三叉神經痛']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '03顏面神經麻痺']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '04頸椎壓迫症後群']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '05下背痛']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '06五十肩']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '07高爾夫球肘']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '08網球肘']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '09媽媽手']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '10板機指']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '11過敏性鼻炎']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '12氣喘']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '13月經不順']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '14經痛']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '15更年期障礙']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '16精神官能症']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '17耳嗚']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '18失眠']
+    database.insert_record('dict_groups', fields, data)
+    data = ['常用病名', disease_type, '19減肥']
+    database.insert_record('dict_groups', fields, data)

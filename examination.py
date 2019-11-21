@@ -22,12 +22,17 @@ class Examination(QtWidgets.QMainWindow):
         self.database = args[0]
         self.system_settings = args[1]
         self.examination_key = args[2]
+        self.patient_key = args[3]
+        self.examination_date = args[4]
         self.ui = None
         self._set_ui()
         self._set_signal()
 
         if self.examination_key is not None:
             self._read_examination()
+
+        if self.patient_key is not None:
+            self._preset_patient()
 
     # 解構
     def __del__(self):
@@ -189,12 +194,13 @@ class Examination(QtWidgets.QMainWindow):
 
     def _select_patient(self, keyword=None):
         dialog = dialog_select_patient.DialogSelectPatient(
-            self, self.database, self.system_settings, keyword
+            self, self.database, self.system_settings,
+            'patient', 'PatientKey', keyword
         )
         if not dialog.exec_():
             return
 
-        patient_key = dialog.get_patient_key()
+        patient_key = dialog.get_primary_key()
         name = dialog.get_name()
 
         self.ui.lineEdit_patient_key.setText(patient_key)
@@ -274,7 +280,7 @@ class Examination(QtWidgets.QMainWindow):
 
         self._save_examination_item(examination_key)
         self._clear_examination()
-        if self.examination_key is not None:
+        if self.examination_key is not None or self.patient_key is not None:
             self.close_examination()
 
     def _save_examination_item(self, examination_key):
@@ -351,4 +357,10 @@ class Examination(QtWidgets.QMainWindow):
 
         self.ui.tableWidget_examination_item.itemChanged.connect(self._examination_item_changed)
 
+    def _preset_patient(self):
+        self.ui.lineEdit_patient_key.setText(string_utils.xstr(self.patient_key))
+        if self.examination_date is not None:
+            self.ui.dateEdit_examination_date.setDate(self.examination_date)
 
+        self.ui.tableWidget_examination_item.setCurrentCell(0, 4)
+        self.ui.tableWidget_examination_item.setFocus()

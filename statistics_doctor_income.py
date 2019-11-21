@@ -24,8 +24,9 @@ class StatisticsDoctorIncome(QtWidgets.QMainWindow):
         self.system_settings = args[1]
         self.start_date = args[2]
         self.end_date = args[3]
-        self.ins_type = args[4]
-        self.doctor = args[5]
+        self.period = args[4]
+        self.ins_type = args[5]
+        self.doctor = args[6]
         self.ui = None
 
         self._set_ui()
@@ -39,10 +40,18 @@ class StatisticsDoctorIncome(QtWidgets.QMainWindow):
     def close_all(self):
         pass
 
+    def center(self):
+        frame_geometry = self.frameGeometry()
+        screen = QtWidgets.QApplication.desktop().screenNumber(QtWidgets.QApplication.desktop().cursor().pos())
+        center_point = QtWidgets.QApplication.desktop().screenGeometry(screen).center()
+        frame_geometry.moveCenter(center_point)
+        self.move(frame_geometry.topLeft())
+
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_STATISTICS_DOCTOR_INCOME, self)
         system_utils.set_css(self, self.system_settings)
+        self.center()
         self.table_widget_doctor_income = table_widget.TableWidget(self.ui.tableWidget_doctor_income, self.database)
         self._set_table_width()
 
@@ -96,12 +105,24 @@ class StatisticsDoctorIncome(QtWidgets.QMainWindow):
     def _calculate_data(self):
         self._reset_data()
         rows = self._read_data()
+        row_count = len(rows)
+        if row_count <= 0:
+            return
+
+        self.progress_dialog = QtWidgets.QProgressDialog(
+            '門診收入統計中, 請稍後...', '取消', 0, row_count, self
+        )
+
+        self.progress_dialog.setWindowModality(QtCore.Qt.WindowModal)
+        self.progress_dialog.setValue(0)
         self._calculate_income(rows)
         self._calculate_refund()
         self._calculate_debt()
         self._calculate_repayment()
         self._calculate_subtotal()
         self._calculate_total()
+        self.progress_dialog.setValue(row_count)
+
         self._plot_chart()
 
     def _reset_data(self):
@@ -116,6 +137,10 @@ class StatisticsDoctorIncome(QtWidgets.QMainWindow):
                 )
 
     def _read_data(self):
+        period_condition = ''
+        if self.period != '全部':
+            period_condition = ' AND Period = "{0}"'.format(self.period)
+
         ins_type_condition = ''
         if self.ins_type != '全部':
             ins_type_condition = ' AND InsType = "{0}"'.format(self.ins_type)
@@ -130,12 +155,14 @@ class StatisticsDoctorIncome(QtWidgets.QMainWindow):
             FROM cases
             WHERE
                 CaseDate BETWEEN "{start_date}" AND "{end_date}" 
+                {period_condition}
                 {ins_type_condition}
                 {doctor_condition}
             ORDER BY CaseDate
         '''.format(
             start_date=self.start_date,
             end_date=self.end_date,
+            period_condition=period_condition,
             ins_type_condition=ins_type_condition,
             doctor_condition=doctor_condition,
         )
@@ -158,6 +185,7 @@ class StatisticsDoctorIncome(QtWidgets.QMainWindow):
         for row in rows:
             case_date = row['CaseDate'].strftime('%Y-%m-%d')
             row_no = self._get_row_no(case_date)
+            self.progress_dialog.setValue(row_no)
             regist_fee = self._get_cell_fee(row_no, 1) + number_utils.get_integer(row['RegistFee'])
             diag_share_fee = self._get_cell_fee(row_no, 2) + number_utils.get_integer(row['SDiagShareFee'])
             drug_share_fee = self._get_cell_fee(row_no, 3) + number_utils.get_integer(row['SDrugShareFee'])
@@ -196,6 +224,7 @@ class StatisticsDoctorIncome(QtWidgets.QMainWindow):
 
     def _calculate_refund(self):
         for row_no in range(self.ui.tableWidget_doctor_income.rowCount()):
+            self.progress_dialog.setValue(row_no)
             case_date = self.ui.tableWidget_doctor_income.item(row_no, 0)
             if case_date is  None:
                 refund = 0
@@ -235,6 +264,7 @@ class StatisticsDoctorIncome(QtWidgets.QMainWindow):
 
     def _calculate_debt(self):
         for row_no in range(self.ui.tableWidget_doctor_income.rowCount()):
+            self.progress_dialog.setValue(row_no)
             case_date = self.ui.tableWidget_doctor_income.item(row_no, 0)
             if case_date is  None:
                 debt = 0
@@ -274,6 +304,7 @@ class StatisticsDoctorIncome(QtWidgets.QMainWindow):
 
     def _calculate_repayment(self):
         for row_no in range(self.ui.tableWidget_doctor_income.rowCount()):
+            self.progress_dialog.setValue(row_no)
             case_date = self.ui.tableWidget_doctor_income.item(row_no, 0)
             if case_date is  None:
                 repayment = 0

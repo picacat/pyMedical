@@ -18,6 +18,7 @@ UI_LOGIN = "login.ui"
 UI_LOGIN_STATISTICS = "login_statistics.ui"
 
 UI_MEDICAL_RECORD = "medical_record.ui"
+UI_MEDICAL_RECORD2 = "medical_record2.ui"
 UI_INS_PRESCRIPT_RECORD = "ins_prescript_record.ui"
 UI_SELF_PRESCRIPT_RECORD = "self_prescript_record.ui"
 UI_INS_CARE_RECORD = "ins_care_record.ui"
@@ -61,15 +62,24 @@ UI_INS_APPLY_CALCULATED_DATA = "ins_apply_calculated_data.ui"
 UI_INS_APPLY_TOTAL_FEE = "ins_apply_total_fee.ui"
 UI_INS_CHECK_APPLY_FEE = "ins_check_apply_fee.ui"
 UI_INS_DOCTOR_APPLY_FEE = "ins_doctor_apply_fee.ui"
+UI_INS_APPLY_FEE_PERFORMANCE = "ins_apply_fee_performance.ui"
 UI_INS_APPLY_SCHEDULE_TABLE = "ins_apply_schedule_table.ui"
+UI_INS_APPLY_TOUR = "ins_apply_tour.ui"
 
 UI_STATISTICS_MEDICAL_RECORD = "statistics_medical_record.ui"
 UI_STATISTICS_MEDICAL_RECORD_DIAG_TIME_LENGTH = "statistics_medical_record_diag_time_length.ui"
+UI_STATISTICS_MEDICAL_RECORD_DISEASE_RANK = "statistics_medical_record_disease_rank.ui"
 
 UI_STATISTICS_DOCTOR = "statistics_doctor.ui"
 UI_STATISTICS_DOCTOR_COUNT = "statistics_doctor_count.ui"
 UI_STATISTICS_DOCTOR_INCOME = "statistics_doctor_income.ui"
 UI_STATISTICS_DOCTOR_SALE = "statistics_doctor_sale.ui"
+UI_STATISTICS_DOCTOR_PERFORMANCE = "statistics_doctor_performance.ui"
+UI_STATISTICS_DOCTOR_COMMISSION = "statistics_doctor_commission.ui"
+UI_STATISTICS_DOCTOR_PROJECT_SALE = "statistics_doctor_project_sale.ui"
+
+UI_STATISTICS_INS_PERFORMANCE = "statistics_ins_performance.ui"
+UI_STATISTICS_INS_PERFORMANCE_MEDICAL_RECORD = "statistics_ins_performance_medical_record.ui"
 
 UI_STATISTICS_RETURN_RATE = "statistics_return_rate.ui"
 UI_STATISTICS_RETURN_RATE_DOCTOR = "statistics_return_rate_doctor.ui"
@@ -118,6 +128,7 @@ UI_DIALOG_INS_LIST_EDIT = "dialog_ins_list_edit.ui"
 UI_DIALOG_MEDICAL_RECORD_LIST = "dialog_medical_record_list.ui"
 UI_DIALOG_MEDICAL_RECORD_PAST_HISTORY = "dialog_medical_record_past_history.ui"
 UI_DIALOG_MEDICAL_RECORD_HOSTS = "dialog_medical_record_hosts.ui"
+UI_DIALOG_MEDICAL_RECORD_COLLECTION = "dialog_medical_record_collection.ui"
 UI_DIALOG_MEDICAL_RECORD_PICKER = "dialog_medical_record_picker.ui"
 UI_DIALOG_MEDICAL_RECORD_DONE = "dialog_medical_record_done.ui"
 UI_DIALOG_MEDICAL_RECORD_REFERENCE = "dialog_medical_record_reference.ui"
@@ -127,6 +138,7 @@ UI_DIALOG_EXAMINATION_LIST = "dialog_examination_list.ui"
 
 UI_DIALOG_STATISTICS_DOCTOR = "dialog_statistics_doctor.ui"
 UI_DIALOG_STATISTICS_RETURN_RATE = "dialog_statistics_return_rate.ui"
+UI_DIALOG_INS_DATE_DOCTOR = "dialog_ins_date_doctor.ui"
 
 UI_DIALOG_CERTIFICATE_DIAGNOSIS = "dialog_certificate_diagnosis.ui"
 UI_DIALOG_CERTIFICATE_PAYMENT = "dialog_certificate_payment.ui"
@@ -163,6 +175,9 @@ UI_DIALOG_ACUPUNCTURE_POINT = "dialog_acupuncture_point.ui"
 UI_DIALOG_PERMISSION = "dialog_permission.ui"
 UI_DIALOG_HOSTS = "dialog_hosts.ui"
 UI_DIALOG_ADD_DIAGNOSTIC_DICT = "dialog_add_diagnostic_dict.ui"
+UI_DIALOG_ADD_DEPOSIT = "dialog_add_deposit.ui"
+UI_DIALOG_IMPORT_MEDICAL_RECORD = "dialog_import_medical_record.ui"
+UI_DIALOG_OFF_DAY_SETTING = "dialog_off_day_setting.ui"
 
 UI_DIALOG_INS_CHECK = "dialog_ins_check.ui"
 UI_DIALOG_INS_APPLY = "dialog_ins_apply.ui"
@@ -171,8 +186,12 @@ UI_DIALOG_INS_CARE = "dialog_ins_care.ui"
 UI_DIALOG_DOCTOR_SCHEDULE = "dialog_doctor_schedule.ui"
 UI_DIALOG_NURSE_SCHEDULE = "dialog_nurse_schedule.ui"
 UI_DIALOG_COURSE_LIST = "dialog_course_list.ui"
+UI_DIALOG_CERTIFICATE_ITEMS = "dialog_certificate_items.ui"
 
 UI_DIALOG_DATABASE_REPAIR = "dialog_database_repair.ui"
+
+UI_DIALOG_MASSAGE_RESERVATION = "dialog_massage_reservation.ui"
+UI_DIALOG_CUSTOMER = "dialog_customer.ui"
 
 UI_DICT_DIAGNOSTIC = "dict_diagnostic.ui"
 UI_DICT_SYMPTOM = "dict_symptom.ui"
@@ -198,6 +217,8 @@ UI_IC_RECORD_UPLOAD = 'ic_record_upload.ui'
 
 UI_RESTORE_RECORDS = "restore_records.ui"
 UI_RESTORE_MEDICAL_RECORDS = "restore_medical_records.ui"
+
+UI_MASSAGE_REGISTRATION = "massage_registration.ui"
 
 THEME = ['Fusion', 'Windows', 'Cleanlooks', 'gtk2', 'motif', 'plastic', 'cde', 'qt5-ct-style']
 WIN32_THEME = ['Fusion', 'Windows', 'WindowsXP', 'WindowsVista']
@@ -231,6 +252,8 @@ def get_discount_type(database):
 
 # 設定 comboBox item
 def set_combo_box(combobox, items, *args):
+    combobox.clear()
+
     combobox.setMaxVisibleItems(30)
     if items == '掛號優待':
         items = get_discount_type(args[0])
@@ -306,4 +329,15 @@ def set_instruction_combo_box(database, combobox):
             continue
 
         combobox.addItem(instruction)
+
+
+def get_medical_record_ui_file(system_settings):
+    if system_settings.field('病歷版面') == '版面1':
+        ui_file = UI_MEDICAL_RECORD
+    elif system_settings.field('病歷版面') == '版面2':
+        ui_file = UI_MEDICAL_RECORD2
+    else:
+        ui_file = UI_MEDICAL_RECORD
+
+    return ui_file
 

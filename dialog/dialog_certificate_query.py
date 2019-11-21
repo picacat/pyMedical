@@ -85,7 +85,10 @@ class DialogCertificateQuery(QtWidgets.QDialog):
             elif keyword.isdigit() and len(keyword) < 7:
                 self.sql += ' AND certificate.PatientKey = {0}'.format(keyword)
             else:
-                rows = patient_utils.get_patient_by_keyword(self.database, keyword)
+                rows = patient_utils.get_patient_by_keyword(
+                    self.database, self.system_settings,
+                    'patient', 'PatientKey', keyword
+                )
                 if len(rows) == 1:
                     patient_key = rows[0]['PatientKey']
                 else:
@@ -107,10 +110,11 @@ class DialogCertificateQuery(QtWidgets.QDialog):
     def _select_patient(self, keyword=None):
         patient_key = ''
         dialog = dialog_select_patient.DialogSelectPatient(
-            self, self.database, self.system_settings, keyword
+            self, self.database, self.system_settings,
+            'patient', 'PatientKey', keyword
         )
         if dialog.exec_():
-            patient_key = dialog.get_patient_key()
+            patient_key = dialog.get_primary_key()
 
         self.ui.lineEdit_keyword.setText(patient_key)
 

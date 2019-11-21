@@ -85,7 +85,7 @@ class PrintReceiptInsForm5:
             '費用收據', print_alias, print_total_dosage, blocks=2)
         # prescript_record = printer_utils.get_prescript_block3_html(
         #     self.database, self.system_settings,
-        #     self.case_key, self.medicine_set,
+        #     self.massage_case_key, self.medicine_set,
         #     '費用收據', print_alias=False, print_total_dosage=True, blocks=3)
         instruction = printer_utils.get_instruction_html(
             self.database, self.system_settings, self.case_key, self.medicine_set

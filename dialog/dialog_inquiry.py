@@ -31,6 +31,7 @@ class DialogInquiry(QtWidgets.QDialog):
         self._set_signal()
         self.read_dictionary()
         self.lineEdit_query.setFocus(True)
+        system_utils.set_keyboard_layout('英文')
 
     # 解構
     def __del__(self):
@@ -55,6 +56,19 @@ class DialogInquiry(QtWidgets.QDialog):
         self.ui.move(self.settings.value("dialog_inquiry_pos", QPoint(846, 215)))
 
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setText('關閉')
+        self.ui.tabWidget_inquiry.currentChanged.connect(self._tab_changed)                   # 切換分頁
+
+    def _tab_changed(self, i):
+        visible = True
+
+        tab_name = self.ui.tabWidget_inquiry.tabText(i)
+        if tab_name == '脈象表':
+            visible = False
+
+        self.ui.label_query.setVisible(visible)
+        self.ui.lineEdit_query.setVisible(visible)
+
+        self.ui.lineEdit_query.setFocus()
 
     # 設定信號
     def _set_signal(self):

@@ -23,9 +23,10 @@ import ins_apply_adjust_fee
 import ins_apply_total_fee
 import ins_apply_schedule_table
 import ins_check_apply_fee
-import ins_doctor_apply_fee
+import ins_apply_fee_performance
 import ins_apply_xml
 import ins_apply_tab
+import ins_apply_tour
 
 
 # 健保申報 2018.10.01
@@ -41,6 +42,8 @@ class InsApply(QtWidgets.QMainWindow):
         self.clinic_id = None
         self.apply_year = None
         self.apply_month = None
+        self.apply_date = None
+        self.apply_type_code = None
         self.start_date = None
         self.end_date = None
         self.apply_type = None
@@ -125,15 +128,19 @@ class InsApply(QtWidgets.QMainWindow):
                 self._add_ins_apply_tab()
                 self._create_xml_file()
                 self._check_ins_xml_file()
+                self._check_tour()
         elif apply_option == '申報查詢':
             self._calculate_ins_data()
             self._add_ins_apply_tab()
 
-            xml_file_name = nhi_utils.get_ins_xml_file_name(self.apply_type_code, self.apply_date)
+            xml_file_name = nhi_utils.get_ins_xml_file_name(
+                self.system_settings, self.apply_type_code, self.apply_date
+            )
             if not os.path.isfile(xml_file_name):
                 self._create_xml_file()
 
             self._check_ins_xml_file()
+            self._check_tour()
         else:
             pass
 
@@ -157,8 +164,6 @@ class InsApply(QtWidgets.QMainWindow):
         return apply_data_exists
 
     def _generate_ins_data(self):
-        perform_job = False
-
         if self._check_apply_data_exists():
             msg_box = QMessageBox()
             msg_box.setIcon(QMessageBox.Warning)
@@ -175,9 +180,8 @@ class InsApply(QtWidgets.QMainWindow):
             msg_box.addButton(QPushButton("取消"), QMessageBox.NoRole)
             cancel = msg_box.exec_()
             if cancel:
-                return perform_job
+                return False
 
-        perform_job = True
         self.ui.tabWidget_ins_data.clear()
 
         ins_generate = ins_apply_generate_file.InsApplyGenerateFile(
@@ -188,7 +192,7 @@ class InsApply(QtWidgets.QMainWindow):
         )
         ins_generate.generate_ins_file()
 
-        return perform_job
+        return True
 
     def _adjust_ins_fee(self):
         ins_adjust_fee = ins_apply_adjust_fee.InsApplyAdjustFee(
@@ -266,7 +270,7 @@ class InsApply(QtWidgets.QMainWindow):
         )
         self.ui.tabWidget_ins_data.addTab(self.tab_ins_check_apply_fee, '申報金額核對')
 
-        self.tab_ins_doctor_apply_fee = ins_doctor_apply_fee.InsDoctorApplyFee(
+        self.tab_ins_apply_fee_performance = ins_apply_fee_performance.InsApplyFeePerformance(
             self, self.database, self.system_settings,
             self.apply_year, self.apply_month,
             self.start_date, self.end_date,
@@ -274,7 +278,17 @@ class InsApply(QtWidgets.QMainWindow):
             self.ins_generate_date,
             self.tab_ins_apply_total_fee.ins_total_fee,
         )
-        self.ui.tabWidget_ins_data.addTab(self.tab_ins_doctor_apply_fee, '醫師申報業績')
+        self.ui.tabWidget_ins_data.addTab(self.tab_ins_apply_fee_performance, '申報業績')
+
+    def _check_tour(self):
+        self.tab_tour = ins_apply_tour.InsApplyTour(
+            self, self.database, self.system_settings,
+            self.apply_year, self.apply_month,
+            self.start_date, self.end_date,
+            self.period, self.apply_type, self.clinic_id,
+        )
+        if self.tab_tour.tour_apply_count > 0:
+            self.ui.tabWidget_ins_data.addTab(self.tab_tour, '巡迴醫療')
 
     def _open_nhi_vpn(self):
         med_vpn_addr = 'https://medvpn.nhi.gov.tw/iwse0000/IWSE0020S02.aspx'
@@ -292,7 +306,9 @@ class InsApply(QtWidgets.QMainWindow):
         return msg_box
 
     def _upload_data(self):
-        xml_file = nhi_utils.get_ins_xml_file_name(self.apply_type_code, self.apply_date)
+        xml_file = nhi_utils.get_ins_xml_file_name(
+            self.system_settings, self.apply_type_code, self.apply_date
+        )
         if not os.path.isfile(xml_file):
             system_utils.show_message_box(
                 QMessageBox.Information,
@@ -307,9 +323,11 @@ class InsApply(QtWidgets.QMainWindow):
             apply_date=self.apply_date,
             apply_type=self.apply_type_code,
         )
-        zip_file = os.path.join(nhi_utils.XML_OUT_PATH, zip_file)
 
-        cmd = ['7z', 'a', '-tzip', zip_file, xml_file, '-o{0}'.format(nhi_utils.XML_OUT_PATH)]
+        xml_path = nhi_utils.get_dir(self.system_settings, '申報路徑')
+        zip_file = os.path.join(xml_path, zip_file)
+
+        cmd = ['7z', 'a', '-tzip', zip_file, xml_file, '-o{0}'.format(xml_file)]
         sp = subprocess.Popen(cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
         sp.communicate()
 

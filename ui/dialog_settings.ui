@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>982</width>
-    <height>856</height>
+    <width>1156</width>
+    <height>904</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -24,8 +24,20 @@
     <layout class="QVBoxLayout" name="verticalLayout_2">
      <item>
       <widget class="QTabWidget" name="tabWidget_settings">
+       <property name="tabShape">
+        <enum>QTabWidget::Rounded</enum>
+       </property>
        <property name="currentIndex">
-        <number>0</number>
+        <number>3</number>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>24</width>
+         <height>24</height>
+        </size>
+       </property>
+       <property name="tabBarAutoHide">
+        <bool>false</bool>
        </property>
        <widget class="QWidget" name="tab_4">
         <attribute name="icon">
@@ -53,56 +65,72 @@
            <layout class="QVBoxLayout" name="verticalLayout_11">
             <item>
              <layout class="QGridLayout" name="gridLayout_3">
-              <item row="2" column="1">
-               <widget class="QLineEdit" name="lineEdit_owner"/>
-              </item>
-              <item row="1" column="1">
-               <widget class="QLineEdit" name="lineEdit_clinic_id"/>
-              </item>
-              <item row="0" column="0">
-               <widget class="QLabel" name="label_22">
+              <item row="3" column="2">
+               <widget class="QLabel" name="label_31">
                 <property name="text">
-                 <string>院所名稱</string>
+                 <string>院所地址</string>
                 </property>
                </widget>
               </item>
-              <item row="2" column="3">
-               <widget class="QLineEdit" name="lineEdit_owner_cert"/>
-              </item>
-              <item row="1" column="0">
-               <widget class="QLabel" name="label_23">
+              <item row="4" column="0">
+               <widget class="QLabel" name="label_76">
                 <property name="text">
-                 <string>院所代號</string>
+                 <string>資源類別</string>
                 </property>
                </widget>
               </item>
-              <item row="0" column="1" colspan="5">
-               <widget class="QLineEdit" name="lineEdit_clinic_name"/>
+              <item row="5" column="1" colspan="3">
+               <layout class="QHBoxLayout" name="horizontalLayout_18">
+                <item>
+                 <widget class="QRadioButton" name="radioButton_reg_normal">
+                  <property name="text">
+                   <string>一般門診</string>
+                  </property>
+                  <property name="checked">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QRadioButton" name="radioButton_reg_far">
+                  <property name="text">
+                   <string>巡迴偏遠</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QRadioButton" name="radioButton_reg_mountain">
+                  <property name="text">
+                   <string>巡迴山地</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QRadioButton" name="radioButton_reg_island">
+                  <property name="text">
+                   <string>巡迴離島</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <spacer name="horizontalSpacer_6">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>40</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+               </layout>
               </item>
-              <item row="3" column="3" colspan="3">
-               <widget class="QLineEdit" name="lineEdit_address"/>
-              </item>
-              <item row="1" column="5">
-               <widget class="QComboBox" name="comboBox_division"/>
-              </item>
-              <item row="1" column="4">
-               <widget class="QLabel" name="label_25">
+              <item row="4" column="2">
+               <widget class="QLabel" name="label_32">
                 <property name="text">
-                 <string>健保業務</string>
-                </property>
-               </widget>
-              </item>
-              <item row="3" column="0">
-               <widget class="QLabel" name="label_30">
-                <property name="text">
-                 <string>院所電話</string>
-                </property>
-               </widget>
-              </item>
-              <item row="2" column="0">
-               <widget class="QLabel" name="label_26">
-                <property name="text">
-                 <string>負責醫師</string>
+                 <string>電子郵件</string>
                 </property>
                </widget>
               </item>
@@ -120,11 +148,28 @@
                 </property>
                </widget>
               </item>
-              <item row="1" column="3">
-               <widget class="QLineEdit" name="lineEdit_invoice_no"/>
+              <item row="2" column="3">
+               <widget class="QLineEdit" name="lineEdit_owner_cert"/>
               </item>
-              <item row="3" column="1">
-               <widget class="QLineEdit" name="lineEdit_telephone"/>
+              <item row="5" column="5">
+               <widget class="QComboBox" name="comboBox_tour_area"/>
+              </item>
+              <item row="2" column="5">
+               <widget class="QLineEdit" name="lineEdit_clinic_cert"/>
+              </item>
+              <item row="3" column="0">
+               <widget class="QLabel" name="label_30">
+                <property name="text">
+                 <string>院所電話</string>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="0">
+               <widget class="QLabel" name="label_74">
+                <property name="text">
+                 <string>掛號類別</string>
+                </property>
+               </widget>
               </item>
               <item row="2" column="4">
                <widget class="QLabel" name="label_28">
@@ -133,25 +178,67 @@
                 </property>
                </widget>
               </item>
-              <item row="3" column="2">
-               <widget class="QLabel" name="label_31">
+              <item row="1" column="5">
+               <widget class="QComboBox" name="comboBox_division"/>
+              </item>
+              <item row="3" column="3" colspan="3">
+               <widget class="QLineEdit" name="lineEdit_address"/>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="label_23">
                 <property name="text">
-                 <string>院所地址</string>
+                 <string>院所代號</string>
                 </property>
                </widget>
               </item>
-              <item row="2" column="5">
-               <widget class="QLineEdit" name="lineEdit_clinic_cert"/>
-              </item>
-              <item row="4" column="0">
-               <widget class="QLabel" name="label_32">
-                <property name="text">
-                 <string>電子郵件</string>
-                </property>
-               </widget>
-              </item>
-              <item row="4" column="1" colspan="5">
+              <item row="4" column="3" colspan="3">
                <widget class="QLineEdit" name="lineEdit_email"/>
+              </item>
+              <item row="2" column="1">
+               <widget class="QLineEdit" name="lineEdit_owner"/>
+              </item>
+              <item row="0" column="1" colspan="5">
+               <widget class="QLineEdit" name="lineEdit_clinic_name"/>
+              </item>
+              <item row="1" column="4">
+               <widget class="QLabel" name="label_25">
+                <property name="text">
+                 <string>健保業務</string>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="4">
+               <widget class="QLabel" name="label_75">
+                <property name="text">
+                 <string>巡迴區域</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="3">
+               <widget class="QLineEdit" name="lineEdit_invoice_no"/>
+              </item>
+              <item row="0" column="0">
+               <widget class="QLabel" name="label_22">
+                <property name="text">
+                 <string>院所名稱</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QLineEdit" name="lineEdit_clinic_id"/>
+              </item>
+              <item row="4" column="1">
+               <widget class="QComboBox" name="comboBox_resource"/>
+              </item>
+              <item row="2" column="0">
+               <widget class="QLabel" name="label_26">
+                <property name="text">
+                 <string>負責醫師</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="1">
+               <widget class="QLineEdit" name="lineEdit_telephone"/>
               </item>
              </layout>
             </item>
@@ -263,11 +350,28 @@
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_13">
             <item>
-             <layout class="QVBoxLayout" name="verticalLayout_12">
+             <widget class="QCheckBox" name="checkBox_pharmacy_fee">
+              <property name="text">
+               <string>申報藥事服務費</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="checkBox_init_fee">
+              <property name="text">
+               <string>申報初診照護病歷</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_4">
               <item>
-               <widget class="QCheckBox" name="checkBox_pharmacy_fee">
+               <widget class="QCheckBox" name="checkBox_acupuncture_cert">
                 <property name="text">
-                 <string>申報藥事服務費</string>
+                 <string>針灸標準認證合格</string>
                 </property>
                 <property name="checked">
                  <bool>true</bool>
@@ -275,68 +379,47 @@
                </widget>
               </item>
               <item>
-               <widget class="QCheckBox" name="checkBox_init_fee">
+               <spacer name="horizontalSpacer">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item>
+               <widget class="QLabel" name="label_acupuncture_cert_date">
                 <property name="text">
-                 <string>申報初診照護病歷</string>
+                 <string>針灸認證合格日期</string>
                 </property>
                </widget>
               </item>
               <item>
-               <layout class="QHBoxLayout" name="horizontalLayout_4">
-                <item>
-                 <widget class="QCheckBox" name="checkBox_acupuncture_cert">
-                  <property name="text">
-                   <string>針灸標準認證合格</string>
-                  </property>
-                  <property name="checked">
-                   <bool>true</bool>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <spacer name="horizontalSpacer">
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
-                  </property>
-                  <property name="sizeHint" stdset="0">
-                   <size>
-                    <width>40</width>
-                    <height>20</height>
-                   </size>
-                  </property>
-                 </spacer>
-                </item>
-                <item>
-                 <widget class="QLabel" name="label_acupuncture_cert_date">
-                  <property name="text">
-                   <string>針灸認證合格日期</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QDateEdit" name="dateEdit_acupuncture_date">
-                  <property name="displayFormat">
-                   <string>yyyy/MM/dd</string>
-                  </property>
-                  <property name="calendarPopup">
-                   <bool>true</bool>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <spacer name="horizontalSpacer_11">
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
-                  </property>
-                  <property name="sizeHint" stdset="0">
-                   <size>
-                    <width>40</width>
-                    <height>20</height>
-                   </size>
-                  </property>
-                 </spacer>
-                </item>
-               </layout>
+               <widget class="QDateEdit" name="dateEdit_acupuncture_date">
+                <property name="displayFormat">
+                 <string>yyyy/MM/dd</string>
+                </property>
+                <property name="calendarPopup">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <spacer name="horizontalSpacer_11">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
               </item>
              </layout>
             </item>
@@ -352,47 +435,6 @@
             <bool>true</bool>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_47">
-            <item>
-             <layout class="QHBoxLayout" name="horizontalLayout_14">
-              <item>
-               <widget class="QLabel" name="label_71">
-                <property name="text">
-                 <string>自費批價折扣計算方式</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QRadioButton" name="radioButton_discount_group">
-                <property name="text">
-                 <string>統一計算折扣</string>
-                </property>
-                <property name="checked">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QRadioButton" name="radioButton_discount_individual">
-                <property name="text">
-                 <string>每一帖自費個別計算折扣</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <spacer name="horizontalSpacer_22">
-                <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
-                </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>40</width>
-                  <height>20</height>
-                 </size>
-                </property>
-               </spacer>
-              </item>
-             </layout>
-            </item>
             <item>
              <layout class="QHBoxLayout" name="horizontalLayout_17">
               <item>
@@ -432,6 +474,160 @@
          </item>
          <item>
           <spacer name="verticalSpacer">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>40</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
+       </widget>
+       <widget class="QWidget" name="tab_9">
+        <attribute name="icon">
+         <iconset>
+          <normaloff>../icons/network-receive.png</normaloff>../icons/network-receive.png</iconset>
+        </attribute>
+        <attribute name="title">
+         <string>批價結帳</string>
+        </attribute>
+        <layout class="QVBoxLayout" name="verticalLayout_48">
+         <item>
+          <widget class="QGroupBox" name="groupBox_43">
+           <property name="title">
+            <string>自費批價折扣計算</string>
+           </property>
+           <property name="flat">
+            <bool>true</bool>
+           </property>
+           <layout class="QVBoxLayout" name="verticalLayout_49">
+            <item>
+             <widget class="QRadioButton" name="radioButton_discount_individual">
+              <property name="text">
+               <string>每一帖自費個別計算折扣</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QRadioButton" name="radioButton_discount_group">
+              <property name="text">
+               <string>統一計算折扣</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="QGroupBox" name="groupBox_42">
+           <property name="title">
+            <string>折扣後自費金額計算方式</string>
+           </property>
+           <property name="flat">
+            <bool>true</bool>
+           </property>
+           <layout class="QVBoxLayout" name="verticalLayout_12">
+            <item>
+             <widget class="QRadioButton" name="radioButton_total_fee">
+              <property name="text">
+               <string>原價 (不調整)</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QRadioButton" name="radioButton_round">
+              <property name="text">
+               <string>四捨五入 (尾數均為0)</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QRadioButton" name="radioButton_ceiling">
+              <property name="text">
+               <string>無條件進位</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QRadioButton" name="radioButton_chop">
+              <property name="text">
+               <string>無條件捨去</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="QGroupBox" name="groupBox_44">
+           <property name="title">
+            <string>折扣後自費金額無條件進位或捨去尾數計算</string>
+           </property>
+           <property name="flat">
+            <bool>true</bool>
+           </property>
+           <layout class="QVBoxLayout" name="verticalLayout_52">
+            <item>
+             <widget class="QRadioButton" name="radioButton_tail1">
+              <property name="text">
+               <string>尾數進位或捨去為0</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QRadioButton" name="radioButton_tail2">
+              <property name="text">
+               <string>尾數進位或捨去為0或5</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="QGroupBox" name="groupBox_45">
+           <property name="title">
+            <string>櫃台結帳班別設定</string>
+           </property>
+           <property name="flat">
+            <bool>true</bool>
+           </property>
+           <layout class="QVBoxLayout" name="verticalLayout_50">
+            <item>
+             <widget class="QRadioButton" name="radioButton_checkout_by_charge">
+              <property name="text">
+               <string>以批價班別作為結帳班別</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QRadioButton" name="radioButton_checkout_by_registration">
+              <property name="text">
+               <string>以掛號班別作為結帳班別</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <spacer name="verticalSpacer_8">
            <property name="orientation">
             <enum>Qt::Vertical</enum>
            </property>
@@ -865,6 +1061,73 @@
           </widget>
          </item>
          <item>
+          <widget class="QGroupBox" name="groupBox_46">
+           <property name="title">
+            <string>欠卡日期檢查</string>
+           </property>
+           <property name="flat">
+            <bool>true</bool>
+           </property>
+           <layout class="QGridLayout" name="gridLayout_23">
+            <item row="0" column="0">
+             <layout class="QHBoxLayout" name="horizontalLayout_19">
+              <item>
+               <widget class="QLabel" name="label_79">
+                <property name="text">
+                 <string>檢查提示日期至</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QRadioButton" name="radioButton_deposit_date1">
+                <property name="text">
+                 <string>上個月1日</string>
+                </property>
+                <property name="checked">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QRadioButton" name="radioButton_deposit_date2">
+                <property name="text">
+                 <string>上個月20日</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QRadioButton" name="radioButton_deposit_date3">
+                <property name="text">
+                 <string>本月1日</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QRadioButton" name="radioButton_deposit_date4">
+                <property name="text">
+                 <string>10天前</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <spacer name="horizontalSpacer_22">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
           <spacer name="verticalSpacer_2">
            <property name="orientation">
             <enum>Qt::Vertical</enum>
@@ -899,23 +1162,17 @@
            <layout class="QVBoxLayout" name="verticalLayout_6">
             <item>
              <layout class="QGridLayout" name="gridLayout_4">
-              <item row="0" column="4">
-               <spacer name="horizontalSpacer_5">
-                <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
+              <item row="0" column="1">
+               <widget class="QSpinBox" name="spinBox_room">
+                <property name="minimum">
+                 <number>1</number>
                 </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>40</width>
-                  <height>20</height>
-                 </size>
-                </property>
-               </spacer>
+               </widget>
               </item>
-              <item row="1" column="4">
-               <widget class="QCheckBox" name="checkBox_copy_self_prescript">
+              <item row="3" column="0" colspan="3">
+               <widget class="QCheckBox" name="checkBox_auto_cashier">
                 <property name="text">
-                 <string>預設拷貝自費處方</string>
+                 <string>存檔後自動完成批價作業</string>
                 </property>
                </widget>
               </item>
@@ -926,41 +1183,8 @@
                 </property>
                </widget>
               </item>
-              <item row="1" column="0" colspan="3">
-               <widget class="QCheckBox" name="checkBox_copy_past">
-                <property name="text">
-                 <string>登錄病歷時自動顯示過去病歷</string>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="3">
+              <item row="2" column="3">
                <spacer name="horizontalSpacer_16">
-                <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
-                </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>40</width>
-                  <height>20</height>
-                 </size>
-                </property>
-               </spacer>
-              </item>
-              <item row="0" column="3">
-               <spacer name="horizontalSpacer_14">
-                <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
-                </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>40</width>
-                  <height>20</height>
-                 </size>
-                </property>
-               </spacer>
-              </item>
-              <item row="0" column="5">
-               <spacer name="horizontalSpacer_18">
                 <property name="orientation">
                  <enum>Qt::Horizontal</enum>
                 </property>
@@ -979,8 +1203,8 @@
                 </property>
                </widget>
               </item>
-              <item row="1" column="5">
-               <spacer name="horizontalSpacer_17">
+              <item row="0" column="3">
+               <spacer name="horizontalSpacer_14">
                 <property name="orientation">
                  <enum>Qt::Horizontal</enum>
                 </property>
@@ -992,21 +1216,7 @@
                 </property>
                </spacer>
               </item>
-              <item row="0" column="1">
-               <widget class="QSpinBox" name="spinBox_room">
-                <property name="minimum">
-                 <number>1</number>
-                </property>
-               </widget>
-              </item>
-              <item row="2" column="0" colspan="3">
-               <widget class="QCheckBox" name="checkBox_auto_cashier">
-                <property name="text">
-                 <string>存檔後自動完成批價作業</string>
-                </property>
-               </widget>
-              </item>
-              <item row="2" column="3">
+              <item row="3" column="3">
                <spacer name="horizontalSpacer_19">
                 <property name="orientation">
                  <enum>Qt::Horizontal</enum>
@@ -1019,14 +1229,64 @@
                 </property>
                </spacer>
               </item>
+              <item row="2" column="0" colspan="3">
+               <widget class="QCheckBox" name="checkBox_copy_past">
+                <property name="text">
+                 <string>登錄病歷時自動顯示過去病歷</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="6">
+               <spacer name="horizontalSpacer_18">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item row="0" column="4">
+               <widget class="QLabel" name="label_78">
+                <property name="text">
+                 <string>病歷版面編排設定</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="5">
+               <widget class="QComboBox" name="comboBox_medical_record_page"/>
+              </item>
               <item row="2" column="4">
+               <widget class="QCheckBox" name="checkBox_copy_self_prescript">
+                <property name="text">
+                 <string>預設拷貝自費處方</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="4">
                <widget class="QCheckBox" name="checkBox_round">
                 <property name="text">
                  <string>折扣後金額四捨五入</string>
                 </property>
                </widget>
               </item>
-              <item row="2" column="5">
+              <item row="2" column="5" colspan="2">
+               <spacer name="horizontalSpacer_17">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item row="3" column="5" colspan="2">
                <spacer name="horizontalSpacer_20">
                 <property name="orientation">
                  <enum>Qt::Horizontal</enum>
@@ -1324,7 +1584,7 @@
            <item>
             <widget class="QGroupBox" name="groupBox_35">
              <property name="title">
-              <string>診察詞庫排序方式</string>
+              <string>主訴詞庫排序方式</string>
              </property>
              <property name="flat">
               <bool>true</bool>
@@ -1445,10 +1705,10 @@
               <item>
                <layout class="QGridLayout" name="gridLayout_9">
                 <item row="0" column="1">
-                 <widget class="QComboBox" name="comboBox_reserve_print_mode"/>
+                 <widget class="QComboBox" name="comboBox_reservation_print_mode"/>
                 </item>
                 <item row="2" column="1">
-                 <widget class="QComboBox" name="comboBox_reserve_printer"/>
+                 <widget class="QComboBox" name="comboBox_reservation_printer"/>
                 </item>
                 <item row="0" column="0">
                  <widget class="QLabel" name="label_40">
@@ -1471,7 +1731,7 @@
                  </widget>
                 </item>
                 <item row="1" column="1">
-                 <widget class="QComboBox" name="comboBox_reserve_form"/>
+                 <widget class="QComboBox" name="comboBox_reservation_form"/>
                 </item>
                 <item row="1" column="0">
                  <widget class="QLabel" name="label_39">
@@ -1971,28 +2231,14 @@
             </property>
             <item>
              <layout class="QGridLayout" name="gridLayout_18">
-              <item row="0" column="0">
-               <widget class="QCheckBox" name="checkBox_print_clinic_name">
+              <item row="1" column="0">
+               <widget class="QCheckBox" name="checkBox_print_massager">
                 <property name="text">
-                 <string>掛號收據列印院所名稱</string>
+                 <string>掛號收據列印推拿師父姓名</string>
                 </property>
                </widget>
               </item>
-              <item row="5" column="0">
-               <widget class="QCheckBox" name="checkBox_print_alias">
-                <property name="text">
-                 <string>收費收據列印處方別名</string>
-                </property>
-               </widget>
-              </item>
-              <item row="2" column="0">
-               <widget class="QCheckBox" name="checkBox_print_total_dosage">
-                <property name="text">
-                 <string>處方箋列印藥品總量</string>
-                </property>
-               </widget>
-              </item>
-              <item row="7" column="0">
+              <item row="8" column="0">
                <spacer name="verticalSpacer_10">
                 <property name="orientation">
                  <enum>Qt::Vertical</enum>
@@ -2005,10 +2251,10 @@
                 </property>
                </spacer>
               </item>
-              <item row="4" column="0">
-               <widget class="QCheckBox" name="checkBox_print_remark">
+              <item row="5" column="0">
+               <widget class="QCheckBox" name="checkBox_print_alias">
                 <property name="text">
-                 <string>處方箋列印病歷備註</string>
+                 <string>收費收據列印處方別名</string>
                 </property>
                </widget>
               </item>
@@ -2019,17 +2265,38 @@
                 </property>
                </widget>
               </item>
-              <item row="1" column="0">
-               <widget class="QCheckBox" name="checkBox_print_massager">
-                <property name="text">
-                 <string>掛號收據列印推拿師父姓名</string>
-                </property>
-               </widget>
-              </item>
               <item row="6" column="0">
                <widget class="QCheckBox" name="checkBox_print_treat">
                 <property name="text">
-                 <string>費用收據列印穴道或處置</string>
+                 <string>健保費用收據列印穴道或處置 (自費費用收據不受限制)</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="0">
+               <widget class="QCheckBox" name="checkBox_print_clinic_name">
+                <property name="text">
+                 <string>掛號收據列印院所名稱</string>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="0">
+               <widget class="QCheckBox" name="checkBox_print_remark">
+                <property name="text">
+                 <string>處方箋列印病歷備註</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0">
+               <widget class="QCheckBox" name="checkBox_print_total_dosage">
+                <property name="text">
+                 <string>處方箋列印藥品總量</string>
+                </property>
+               </widget>
+              </item>
+              <item row="7" column="0">
+               <widget class="QCheckBox" name="checkBox_print_certificate_diagnosis_date">
+                <property name="text">
+                 <string>診斷證明列印日期明細</string>
                 </property>
                </widget>
               </item>
@@ -2303,12 +2570,18 @@
            <layout class="QVBoxLayout" name="verticalLayout_39">
             <item>
              <layout class="QGridLayout" name="gridLayout_15">
-              <item row="1" column="0">
-               <widget class="QLabel" name="label_21">
-                <property name="text">
-                 <string>使用地點</string>
+              <item row="0" column="2">
+               <spacer name="horizontalSpacer_15">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
                 </property>
-               </widget>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
               </item>
               <item row="0" column="1">
                <widget class="QSpinBox" name="spinBox_station_no">
@@ -2327,34 +2600,15 @@
                 </property>
                </widget>
               </item>
-              <item row="1" column="1" colspan="4">
+              <item row="1" column="1" colspan="3">
                <widget class="QLineEdit" name="lineEdit_position"/>
               </item>
-              <item row="0" column="2">
-               <spacer name="horizontalSpacer_15">
-                <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
+              <item row="1" column="0">
+               <widget class="QLabel" name="label_21">
+                <property name="text">
+                 <string>使用地點</string>
                 </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>40</width>
-                  <height>20</height>
-                 </size>
-                </property>
-               </spacer>
-              </item>
-              <item row="0" column="3">
-               <spacer name="horizontalSpacer_6">
-                <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
-                </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>40</width>
-                  <height>20</height>
-                 </size>
-                </property>
-               </spacer>
+               </widget>
               </item>
              </layout>
             </item>
@@ -2482,7 +2736,7 @@
          <item>
           <widget class="QGroupBox" name="groupBox_33">
            <property name="title">
-            <string>電子病歷相關設定</string>
+            <string>資料路徑設定</string>
            </property>
            <property name="flat">
             <bool>true</bool>
@@ -2491,15 +2745,32 @@
             <item row="0" column="0">
              <widget class="QLabel" name="label_60">
               <property name="text">
-               <string>電子病歷交換檔xml輸出路徑</string>
+               <string>電子病歷檔路徑</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="2">
+             <widget class="QToolButton" name="toolButton_emr_path">
+              <property name="text">
+               <string>...</string>
               </property>
              </widget>
             </item>
             <item row="0" column="1">
              <widget class="QLineEdit" name="lineEdit_emr_path"/>
             </item>
-            <item row="0" column="2">
-             <widget class="QToolButton" name="toolButton_emr_path">
+            <item row="1" column="0">
+             <widget class="QLabel" name="label_77">
+              <property name="text">
+               <string>申報及備份路徑</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QLineEdit" name="lineEdit_clinic_dir"/>
+            </item>
+            <item row="1" column="2">
+             <widget class="QToolButton" name="toolButton_get_dir">
               <property name="text">
                <string>...</string>
               </property>
@@ -2523,6 +2794,50 @@
                <string>顯示功能表側邊欄</string>
               </property>
              </widget>
+            </item>
+            <item row="1" column="0">
+             <layout class="QHBoxLayout" name="horizontalLayout_14">
+              <item>
+               <widget class="QLabel" name="label_71">
+                <property name="text">
+                 <string>醫療系統背景執行個體</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QRadioButton" name="radioButton_multi_instance">
+                <property name="text">
+                 <string>允許執行多個醫療系統</string>
+                </property>
+                <property name="checked">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QRadioButton" name="radioButton_single_instance">
+                <property name="text">
+                 <string>僅允許醫療系統獨立執行</string>
+                </property>
+                <property name="checked">
+                 <bool>false</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <spacer name="horizontalSpacer_5">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+             </layout>
             </item>
            </layout>
           </widget>
@@ -2574,8 +2889,6 @@
   <tabstop>lineEdit_period3</tabstop>
   <tabstop>spinBox_nurse</tabstop>
   <tabstop>spinBox_pharmacist</tabstop>
-  <tabstop>checkBox_pharmacy_fee</tabstop>
-  <tabstop>checkBox_init_fee</tabstop>
   <tabstop>checkBox_acupuncture_cert</tabstop>
   <tabstop>dateEdit_acupuncture_date</tabstop>
   <tabstop>radioButton_ins</tabstop>
@@ -2596,11 +2909,11 @@
   <tabstop>radioButton_order_time</tabstop>
   <tabstop>radioButton_order_medicine_type</tabstop>
   <tabstop>comboBox_regist_print_mode</tabstop>
-  <tabstop>comboBox_reserve_print_mode</tabstop>
+  <tabstop>comboBox_reservation_print_mode</tabstop>
   <tabstop>comboBox_regist_form</tabstop>
-  <tabstop>comboBox_reserve_form</tabstop>
+  <tabstop>comboBox_reservation_form</tabstop>
   <tabstop>comboBox_regist_printer</tabstop>
-  <tabstop>comboBox_reserve_printer</tabstop>
+  <tabstop>comboBox_reservation_printer</tabstop>
   <tabstop>comboBox_ins_prescript_print_mode</tabstop>
   <tabstop>comboBox_self_prescript_print_mode</tabstop>
   <tabstop>comboBox_ins_prescript_form</tabstop>

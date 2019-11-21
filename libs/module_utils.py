@@ -40,6 +40,10 @@ from statistics_medical_record import *
 from statistics_doctor import *
 from statistics_return_rate import *
 from statistics_medicine import *
+from statistics_ins_performance import *
+from statistics_doctor_performance import *
+from statistics_doctor_commission import *
+from massage_registration import *
 
 
 module_dict = {
@@ -82,8 +86,12 @@ module_dict = {
     '醫師統計': StatisticsDoctor,
     '回診率統計': StatisticsReturnRate,
     '用藥統計': StatisticsMedicine,
+    '健保申報業績': StatisticsInsPerformance,
+    '醫師銷售業績統計': StatisticsDoctorPerformance,
 
     '資料回復': RestoreRecords,
+
+    '養生館掛號': MassageRegistration,
 }
 
 
@@ -94,5 +102,7 @@ def get_module_name(tab_name):
         tab_name = '病患資料'
     elif tab_name.find('檢驗報告-') != -1:
         tab_name = '檢驗報告登錄'
+    elif tab_name.find('醫療費用證明書-') != -1:
+        tab_name = '醫療費用證明書'
 
     return module_dict[tab_name]

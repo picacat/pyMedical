@@ -14,6 +14,7 @@ from libs import string_utils
 from libs import dialog_utils
 from libs import printer_utils
 from libs import system_utils
+from printer import print_receipt
 
 
 # 診斷證明書 2018.12.24
@@ -51,9 +52,14 @@ class CertificateDiagnosis(QtWidgets.QMainWindow):
     def _set_signal(self):
         self.ui.action_close.triggered.connect(self.close_certificate_diagnosis)
         self.ui.action_add_certificate.triggered.connect(self._add_certificate)
-        self.ui.action_remove_certificate.triggered.connect(self._remove_certificate)
+        self.ui.action_modify_certificate.triggered.connect(self._modify_certificate)
+        self.ui.action_remove_certificate.triggered.connect(lambda: self.remove_certificate(show_warning=True))
         self.ui.action_print_certificate.triggered.connect(self._print_certificate)
+        self.ui.action_print_receipt.triggered.connect(self._print_receipt)
         self.ui.action_query_certificate.triggered.connect(self._query_certificate)
+        self.ui.action_export_certificate_payment.triggered.connect(self._export_certificate_payment)
+        self.ui.tableWidget_certificate_list.doubleClicked.connect(self._modify_certificate)
+        self.ui.tableWidget_certificate_list.itemSelectionChanged.connect(self._item_changed)
 
     def close_tab(self):
         current_tab = self.parent.ui.tabWidget_window.currentIndex()
@@ -128,7 +134,7 @@ class CertificateDiagnosis(QtWidgets.QMainWindow):
     # 開立證明
     def _add_certificate(self):
         dialog = dialog_certificate_diagnosis.DialogCertificateDiagnosis(
-            self, self.database, self.system_settings
+            self, self.database, self.system_settings, None
         )
 
         if dialog.exec_():
@@ -137,21 +143,37 @@ class CertificateDiagnosis(QtWidgets.QMainWindow):
         dialog.close_all()
         dialog.deleteLater()
 
-    def _remove_certificate(self):
-        msg_box = dialog_utils.get_message_box(
-            '刪除診斷證明書', QMessageBox.Warning,
-            '<font size="4" color="red"><b>確定刪除{0}的診斷證明書?</b></font>'.format(
-                self.table_widget_certificate_list.field_value(4)),
-            '注意！資料刪除後, 將無法回復!'
+    # 修改證明
+    def _modify_certificate(self):
+        certificate_key = self.table_widget_certificate_list.field_value(0)
+
+        dialog = dialog_certificate_diagnosis.DialogCertificateDiagnosis(
+            self, self.database, self.system_settings, certificate_key,
         )
-        remove_record = msg_box.exec_()
-        if not remove_record:
-            return
+
+        if dialog.exec_():
+            self._read_certificate()
+
+        dialog.close_all()
+        dialog.deleteLater()
+
+    def remove_certificate(self, show_warning=True):
+        if show_warning:
+            msg_box = dialog_utils.get_message_box(
+                '刪除診斷證明書', QMessageBox.Warning,
+                '<font size="4" color="red"><b>確定刪除{0}的診斷證明書?</b></font>'.format(
+                    self.table_widget_certificate_list.field_value(4)),
+                '注意！資料刪除後, 將無法回復!'
+            )
+            remove_record = msg_box.exec_()
+            if not remove_record:
+                return
 
         certificate_key = self.table_widget_certificate_list.field_value(0)
         case_key = self.table_widget_certificate_list.field_value(1)
 
         self.database.exec_sql('DELETE FROM certificate WHERE CertificateKey = {0}'.format(certificate_key))
+        self.database.exec_sql('DELETE FROM certificate_items WHERE CertificateKey = {0}'.format(certificate_key))
         self.database.exec_sql('DELETE FROM cases WHERE CaseKey = {0}'.format(case_key))
         self.database.exec_sql('DELETE FROM wait WHERE CaseKey = {0}'.format(case_key))
 
@@ -177,3 +199,49 @@ class CertificateDiagnosis(QtWidgets.QMainWindow):
         dialog.close_all()
         dialog.deleteLater()
 
+    def _export_certificate_payment(self):
+        patient_key = self.table_widget_certificate_list.field_value(3)
+
+        if patient_key is None:
+            return
+
+        name = self.table_widget_certificate_list.field_value(4)
+        msg_box = dialog_utils.get_message_box(
+            '自動產生醫療費用證明書', QMessageBox.Question,
+            '<font size="4" color="red"><b>確定自動產生{0}的醫療費用證明書?</b></font>'.format(name),
+            '系統將自動產生資料, 請檢視是否正確'
+        )
+        create_record = msg_box.exec_()
+        if not create_record:
+            return
+
+        ins_type = self.table_widget_certificate_list.field_value(5)
+        treat_type = self.table_widget_certificate_list.field_value(6)
+        start_date = self.table_widget_certificate_list.field_value(7)
+        end_date = self.table_widget_certificate_list.field_value(8)
+        doctor = self.table_widget_certificate_list.field_value(9)
+
+        auto_create_list = [
+            patient_key, name, ins_type, treat_type, start_date, end_date, doctor,
+        ]
+
+        self.parent.create_certificate_payment(auto_create_list)
+
+    # 列印醫療收據
+    def _print_receipt(self):
+        case_key = self.table_widget_certificate_list.field_value(1)
+        if case_key in ['0', '', None]:
+            return
+
+        print_charge = print_receipt.PrintReceipt(
+            self, self.database, self.system_settings, case_key, '選擇列印')
+        print_charge.print()
+
+        del print_charge
+
+    def _item_changed(self):
+        self.ui.action_print_receipt.setEnabled(True)
+
+        case_key = self.table_widget_certificate_list.field_value(1)
+        if case_key in ['0', '', None]:
+            self.ui.action_print_receipt.setEnabled(False)

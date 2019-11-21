@@ -7,9 +7,10 @@ import datetime
 from libs import ui_utils
 from libs import system_utils
 from libs import nhi_utils
+from libs import string_utils
 
 
-# 主視窗
+# 自購藥查詢對話方塊
 class DialogPurchaseList(QtWidgets.QDialog):
     # 初始化
     def __init__(self, parent=None, *args):
@@ -49,6 +50,40 @@ class DialogPurchaseList(QtWidgets.QDialog):
     def _set_combo_box(self):
         ui_utils.set_combo_box(self.ui.comboBox_period, nhi_utils.PERIOD, '全部')
 
+        sql = '''
+            SELECT * FROM person
+            WHERE
+                Position NOT IN ("醫師", "支援醫師") 
+        '''
+        rows = self.database.select_record(sql)
+        cashier_list = []
+        for row in rows:
+            cashier_list.append(string_utils.xstr(row['Name']))
+
+        sql = '''
+            SELECT * FROM person
+            WHERE
+                Position IN ("醫師", "支援醫師") 
+        '''
+        rows = self.database.select_record(sql)
+        doctor_list = []
+        for row in rows:
+            doctor_list.append(string_utils.xstr(row['Name']))
+
+        sql = '''
+            SELECT * FROM person
+            WHERE
+                Position IN ("推拿師父") 
+        '''
+        rows = self.database.select_record(sql)
+        massager_list = []
+        for row in rows:
+            massager_list.append(string_utils.xstr(row['Name']))
+
+        ui_utils.set_combo_box(self.ui.comboBox_cashier, cashier_list, '全部')
+        ui_utils.set_combo_box(self.ui.comboBox_doctor, doctor_list, '全部')
+        ui_utils.set_combo_box(self.ui.comboBox_massager, massager_list, '全部')
+
     # 設定 mysql script
     def get_sql(self):
         start_date = self.ui.dateEdit_start_date.date().toString('yyyy-MM-dd 00:00:00')
@@ -66,6 +101,18 @@ class DialogPurchaseList(QtWidgets.QDialog):
         period = self.ui.comboBox_period.currentText()
         if period != '全部':
             script += " AND Period = '{0}'".format(period)
+
+        cashier = self.ui.comboBox_cashier.currentText()
+        if cashier != '全部':
+            script += " AND Cashier = '{0}'".format(cashier)
+
+        doctor = self.ui.comboBox_doctor.currentText()
+        if doctor != '全部':
+            script += " AND Doctor = '{0}'".format(doctor)
+
+        massager = self.ui.comboBox_massager.currentText()
+        if massager != '全部':
+            script += " AND Massager = '{0}'".format(massager)
 
         script += " ORDER BY CaseDate, cases.Room, cases.RegistNo"
 

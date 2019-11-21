@@ -72,7 +72,7 @@ class PrintPrescriptionInsForm5:
         disease_record = printer_utils.get_disease(self.database, self.case_key)
         # prescript_record = printer_utils.get_prescript_block3_html(
         #     self.database, self.system_settings,
-        #     self.case_key, self.medicine_set,
+        #     self.massage_case_key, self.medicine_set,
         #     '處方箋', print_alias=False, print_total_dosage=True)
         prescript_record = printer_utils.get_prescript_html(
             self.database, self.system_settings,

@@ -1,4 +1,5 @@
 import os
+import time
 
 
 def set_xml_file_to_big5(xml_file_name, dest_file_name=None):
@@ -32,3 +33,10 @@ def set_xml_file_to_big5(xml_file_name, dest_file_name=None):
     #         sp = subprocess.Popen(cmd, stderr=subprocess.STDOUT, stdout=out_file)
     #         sp.communicate()
 
+
+def convert_node_to_dict(node):
+    node_dict = {}
+    for node_data in node:
+        node_dict[node_data.tag] = node_data.text
+
+    return node_dict

@@ -36,12 +36,7 @@ class Login(QtWidgets.QDialog):
         self.center()
         self.ui.label_login_error.setVisible(False)
         self._display_info()
-
-        style = '''
-            QDialog#Dialog_login
-            {background-image: url(./images/login.jpg);}
-        '''
-        self.ui.setStyleSheet(style)
+        system_utils.set_login_image(self.ui, self.system_settings)
 
     def _display_info(self):
         sql = 'SHOW VARIABLES LIKE "version"'
@@ -67,19 +62,19 @@ class Login(QtWidgets.QDialog):
                 <head/>
                 <body>
                     <p>
-                        <span style="font-size:9pt;">
-                            PyMedical 2019.1.1<br>
-                            Python {0}, PyQt {1}, MySQL {2}, MySQL Connector {3}<br>
-                            Copyright © 2018-2020 Bountiful H.I.S. Studio. All Rights Reserved.
+                        <span style="font-size:9pt; color: white">
+                            PyMedical 2019.11.1<br>
+                            Python {python_version}, PyQt {pyqt_version}, MySQL {mysql_version}, MySQL Connector {mysql_connector_version}<br>
+                            Copyright © 2018-2020 Bountiful Software. All Rights Reserved.
                         </span>
                     </p>
                 </body>
             </html>
         '''.format(
-            '.'.join(map(str, sys.version_info[0:3])),
-            PYQT_VERSION_STR,
-            mysql_version,
-            mysql.connector.__version__,
+            python_version='.'.join(map(str, sys.version_info[0:3])),
+            pyqt_version=PYQT_VERSION_STR,
+            mysql_version=mysql_version,
+            mysql_connector_version=mysql.connector.__version__,
         )
         self.ui.label_version.setText(version)
 

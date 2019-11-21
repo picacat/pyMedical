@@ -5,6 +5,8 @@ from PyQt5.QtWidgets import QMessageBox, QPushButton
 
 import ctypes
 import os
+import struct
+import io
 
 from threading import Thread
 from queue import Queue
@@ -31,6 +33,7 @@ class CSHIS:
         self.basic_data = cshis_utils.BASIC_DATA
         self.treat_data = cshis_utils.TREAT_DATA
         self.treatment_data = cshis_utils.TREATMENT_DATA
+        self.critical_illness_data = []
 
     def __del__(self):
         if self.cshis is not None:
@@ -153,9 +156,8 @@ class CSHIS:
         return patient_id, patient_birthday
 
     def read_basic_data(self):
-        buffer_size = 72
-        buffer = ctypes.c_buffer(buffer_size)  # c: char *
-        buffer_len = ctypes.c_short(buffer_size)  # c: int *
+        buffer = ctypes.c_buffer(72)  # c: char *
+        buffer_len = ctypes.c_short(72)  # c: int *
         self._open_com()
         error_code = self.cshis.hisGetBasicData(buffer, ctypes.byref(buffer_len))
         self._close_com()
@@ -169,9 +171,8 @@ class CSHIS:
         return True
 
     def read_register_basic_data(self):
-        buffer_size = 78
-        buffer = ctypes.create_string_buffer(buffer_size)  # c: char *
-        buffer_len = ctypes.c_short(buffer_size)  # c: int *
+        buffer = ctypes.create_string_buffer(78)  # c: char *
+        buffer_len = ctypes.c_short(78)  # c: int *
         self._open_com()
         error_code = self.cshis.hisGetRegisterBasic(buffer, ctypes.byref(buffer_len))
         self._close_com()
@@ -185,9 +186,8 @@ class CSHIS:
         return True
 
     def read_treatment_no_need_hpc(self):
-        buffer_size = 498
-        buffer = ctypes.create_string_buffer(buffer_size)  # c: char *
-        buffer_len = ctypes.c_short(buffer_size)  # c: int *
+        buffer = ctypes.create_string_buffer(498)  # c: char *
+        buffer_len = ctypes.c_short(498)  # c: int *
         self._open_com()
         error_code = self.cshis.hisGetTreatmentNoNeedHPC(buffer, ctypes.byref(buffer_len))
         self._close_com()
@@ -200,12 +200,41 @@ class CSHIS:
 
         return True
 
+    def read_critical_illness(self):
+        buffer = ctypes.create_string_buffer(138)  # c: char *
+        buffer_len = ctypes.c_short(138)  # c: int *
+        buffer[0:9] = struct.pack('9s', ('[XXXXXXX]').encode('ascii'))
+        buffer[23:23 + 9] = struct.pack('9s', ('[XXXXXXX]').encode('ascii'))
+        buffer[46:46 + 9] = struct.pack('9s', ('[XXXXXXX]').encode('ascii'))
+        buffer[69:69 + 9] = struct.pack('9s', ('[XXXXXXX]').encode('ascii'))
+        buffer[92:92 + 9] = struct.pack('9s', ('[XXXXXXX]').encode('ascii'))
+        buffer[115:115 + 9] = struct.pack('9s', ('[XXXXXXX]').encode('ascii'))
+        self._open_com()
+        error_code = self.cshis.hisGetCriticalIllness(buffer, ctypes.byref(buffer_len))
+        self._close_com()
+
+        if error_code != 0:
+            cshis_utils.show_ic_card_message(error_code, '健保卡讀取重大傷病')
+
+        self.critical_illness_data = []
+        buffer = io.BytesIO(buffer)
+        buffer.read(1)
+        for index in range(6):
+            buffer.read(1)
+            self.critical_illness_data.append({
+                'CI_CODE': buffer.read(7).decode('ascii'),
+                'CI_VALIDITY_START': buffer.read(7).decode('ascii'),
+                'CI_VALIDITY_END': buffer.read(7).decode('ascii'),
+            })
+            buffer.read(1)
+
+        return True
+
     def get_card_status(self):
         available_count = None
         available_date = None
-        buffer_size = 9
-        buffer = ctypes.create_string_buffer(buffer_size)  # c: char *
-        buffer_len = ctypes.c_short(buffer_size)  # c: int *
+        buffer = ctypes.create_string_buffer(9)  # c: char *
+        buffer_len = ctypes.c_short(9)  # c: int *
         self._open_com()
         error_code = self.cshis.hisGetRegisterBasic2(buffer, ctypes.byref(buffer_len))
         self._close_com()
@@ -270,9 +299,8 @@ class CSHIS:
         p_treat_item = ctypes.c_char_p(treat_item.encode('ascii'))
         p_baby_treat = ctypes.c_char_p(baby_treat.encode('ascii'))
         p_treat_after_check = ctypes.c_char_p(treat_after_check.encode('ascii'))
-        buffer_size = 296
-        buffer = ctypes.c_buffer(buffer_size)  # c: char *
-        buffer_len = ctypes.c_int(buffer_size)  # c: short *
+        buffer = ctypes.c_buffer(296)  # c: char *
+        buffer_len = ctypes.c_int(296)  # c: short *
         self._open_com()
         error_code = self.cshis.hisGetSeqNumber256(
             p_treat_item,
@@ -475,9 +503,8 @@ class CSHIS:
         p_patient_birthday = ctypes.c_char_p(patient_birthday.encode('ascii'))
         p_data_write = ctypes.c_char_p(data_write.encode('ascii'))
 
-        buffer_size = 40
-        buffer = ctypes.create_string_buffer(buffer_size)  # c: char *
-        buffer_len = ctypes.c_short(buffer_size)  # c: int *
+        buffer = ctypes.create_string_buffer(40)  # c: char *
+        buffer_len = ctypes.c_short(40)  # c: int *
         self._open_com()
         error_code = self.cshis.hisWritePrescriptionSign(
             p_registration_datetime,
@@ -645,18 +672,12 @@ class CSHIS:
     def upload_data_thread(self, out_queue, xml_file_name, record_count):
         file_size = str(os.path.getsize(xml_file_name))
 
-        b_file_name = xml_file_name.encode('ascii')
-        b_file_size =  file_size.encode(('ascii'))
-        b_record_count = str(record_count).encode('ascii')
+        p_upload_file_name = ctypes.c_char_p(xml_file_name.encode('ascii'))
+        p_file_size = ctypes.c_char_p(file_size.encode('ascii'))
+        p_number = ctypes.c_char_p(str(record_count).encode('ascii'))
 
-        p_upload_file_name = ctypes.c_char_p(b_file_name)
-        p_file_size = ctypes.c_char_p(b_file_size)
-        p_number = ctypes.c_char_p(b_record_count)
-
-        buffer_size = 50
-        # buffer = ctypes.create_string_buffer(buffer_size)  # c: char *
-        buffer = ctypes.c_buffer(buffer_size)
-        buffer_len = ctypes.c_int(buffer_size)  # c: int *
+        buffer = ctypes.c_buffer(50)  # c: char *
+        buffer_len = ctypes.c_int(50)  # c: int *
         self._open_com()
         error_code = self.cshis.csUploadData(
             p_upload_file_name,
@@ -787,9 +808,20 @@ class CSHIS:
 
         if string_utils.xstr(row['CardNo']) == '':
             sql = '''
-                UPDATE patient SET CardNo = "{0}" WHERE PatientKey = {1}
-            '''.format(self.basic_data['card_no'],
-                       patient_key)
+                UPDATE patient SET CardNo = "{card_no}" WHERE PatientKey = {patient_key}
+            '''.format(
+                card_no=self.basic_data['card_no'],
+                patient_key=patient_key
+            )
+            self.database.exec_sql(sql)
+
+        if row['Birthday'] != self.basic_data['birthday']:
+            sql = '''
+                UPDATE patient SET Birthday = "{birthday}" WHERE PatientKey = {patient_key}
+            '''.format(
+                birthday=self.basic_data['birthday'],
+                patient_key=patient_key
+            )
             self.database.exec_sql(sql)
 
         return True
@@ -814,8 +846,12 @@ class CSHIS:
         patient_birthday = string_utils.xstr(patient_row['Birthday'])
         birthday_nhi_datetime = date_utils.west_date_to_nhi_date(patient_birthday)
 
-        usage = (prescript_utils.get_usage_code(dosage_row['Packages']) +
-                 prescript_utils.get_instruction_code(dosage_row['Instruction']))
+        try:
+            usage = (prescript_utils.get_usage_code(dosage_row['Packages']) +
+                     prescript_utils.get_instruction_code(dosage_row['Instruction']))
+        except:
+            usage = ''
+
         days = number_utils.get_integer(dosage_row['Days'])
 
         data_write = ''

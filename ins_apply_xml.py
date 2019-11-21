@@ -7,6 +7,7 @@ from PyQt5 import QtWidgets, QtGui, QtCore
 import datetime
 import subprocess
 from lxml import etree as ET
+import os
 
 from libs import date_utils
 from libs import string_utils
@@ -68,9 +69,12 @@ class InsApplyXML(QtWidgets.QMainWindow):
         pass
 
     def create_xml_file(self):
+        xml_dir = nhi_utils.get_dir(self.system_settings, '申報路徑')
+        if not os.path.exists(xml_dir):
+            os.mkdir(xml_dir)
+
         xml_file_name = nhi_utils.get_ins_xml_file_name(
-            self.ins_total_fee['apply_type'],
-            self.ins_total_fee['apply_date'],
+            self.system_settings, self.ins_total_fee['apply_type'], self.ins_total_fee['apply_date'],
         )
 
         self._write_xml_file(xml_file_name)
@@ -232,8 +236,14 @@ class InsApplyXML(QtWidgets.QMainWindow):
 
         d28 = ET.SubElement(dbody, 'd28')
         d28.text = string_utils.xstr(row['PresType'])
+
         d29 = ET.SubElement(dbody, 'd29')
-        d29.text = string_utils.xstr(row['Card'])[:4]
+        card = string_utils.xstr(row['Card'])[:4]
+        if card[:2] == '06':
+            card = 'IC06'
+
+        d29.text = card
+
         d30 = ET.SubElement(dbody, 'd30')
         d30.text = string_utils.xstr(row['DoctorID'])
 
@@ -677,7 +687,7 @@ class InsApplyXML(QtWidgets.QMainWindow):
             WHERE
                 (InsType = "健保") AND
                 (Card != "欠卡") AND
-                (TreatType = "腦血管疾病") AND
+                (TreatType IN {auxiliary_treat}) AND
                 (PatientKey = {patient_key}) AND
                 (CaseDate BETWEEN "{start_date}" AND "{end_date}") AND
                 ({apply_type_sql})
@@ -687,6 +697,7 @@ class InsApplyXML(QtWidgets.QMainWindow):
             start_date=self.start_date,
             end_date=self.end_date,
             apply_type_sql=apply_type_sql,
+            auxiliary_treat=tuple(nhi_utils.AUXILIARY_CARE_TREAT),
         )
         rows = self.database.select_record(sql)
 
@@ -849,13 +860,14 @@ class InsApplyXML(QtWidgets.QMainWindow):
         return rows
 
     def _zip_xml_file(self, xml_file):
+        xml_dir = nhi_utils.get_dir(self.system_settings, '申報路徑')
         zip_file = '{zip_file_dir}/{zip_file_name}-{apply_type}.zip'.format(
-            zip_file_dir=nhi_utils.XML_OUT_PATH,
+            zip_file_dir=xml_dir,
             zip_file_name=self.ins_total_fee['apply_date'],
             apply_type=self.apply_type_code,
         )
 
-        cmd = ['7z', 'a', '-tzip', zip_file, xml_file, '-o{0}'.format(nhi_utils.XML_OUT_PATH)]
+        cmd = ['7z', 'a', '-tzip', zip_file, xml_file, '-o{0}'.format(xml_dir)]
         sp = subprocess.Popen(cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
         sp.communicate()
 

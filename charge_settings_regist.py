@@ -43,7 +43,7 @@ class ChargeSettingsRegist(QtWidgets.QMainWindow):
         self.table_widget_regist_fee = table_widget.TableWidget(self.ui.tableWidget_regist_fee, self.database)
         self.table_widget_regist_fee.set_column_hidden([0, 1])
         self.table_widget_discount = table_widget.TableWidget(self.ui.tableWidget_discount, self.database)
-        self.table_widget_discount.set_column_hidden([0, 1])
+        self.table_widget_discount.set_column_hidden([0])
         self._set_table_width()
 
     # 設定信號
@@ -64,7 +64,7 @@ class ChargeSettingsRegist(QtWidgets.QMainWindow):
     def _set_table_width(self):
         regist_fee_width = [60, 60, 300, 100, 100, 100, 100, 100, 310]
         self.table_widget_regist_fee.set_table_heading_width(regist_fee_width)
-        discount_width = [60, 60, 150, 80, 200]
+        discount_width = [60, 150, 180, 100]
         self.table_widget_discount.set_table_heading_width(discount_width)
 
     # 主程式控制關閉此分頁
@@ -186,7 +186,14 @@ class ChargeSettingsRegist(QtWidgets.QMainWindow):
 
     # 掛號費優待 *********************************************************************************************************
     def _read_discount(self):
-        sql = 'SELECT * FROM charge_settings WHERE ChargeType = "掛號費優待" ORDER BY ChargeSettingsKey'
+        sql = '''
+            SELECT * FROM charge_settings 
+            WHERE 
+                ChargeType IN {charge_type}
+            ORDER BY ChargeType, ChargeSettingsKey
+        '''.format(
+            charge_type=tuple(charge_utils.DISCOUNT_TYPE),
+        )
         self.table_widget_discount.set_db_data(sql, self._set_discount_data)
         row_count = self.table_widget_discount.row_count()
         if row_count <= 0:
@@ -195,11 +202,10 @@ class ChargeSettingsRegist(QtWidgets.QMainWindow):
 
     def _set_discount_data(self, rec_no, rec):
         discount_rec = [
-            str(rec['ChargeSettingsKey']),
+            string_utils.xstr(rec['ChargeSettingsKey']),
             string_utils.xstr(rec['ChargeType']),
             string_utils.xstr(rec['ItemName']),
             string_utils.xstr(rec['Amount']),
-            string_utils.xstr(rec['Remark']),
         ]
 
         for column in range(len(discount_rec)):
@@ -218,18 +224,24 @@ class ChargeSettingsRegist(QtWidgets.QMainWindow):
         if result != 0:
             current_row = self.ui.tableWidget_discount.rowCount()
             self.ui.tableWidget_discount.insertRow(current_row)
-            fields = ['ChargeType', 'ItemName', 'Amount', 'Remark']
+            fields = ['ChargeType', 'ItemName', 'Amount']
             data = [
-                '掛號費優待',
+                dialog.ui.comboBox_charge_type.currentText(),
                 dialog.ui.lineEdit_item_name.text(),
                 dialog.ui.spinBox_amount.value(),
-                dialog.ui.lineEdit_remark.text()
             ]
             self.database.insert_record('charge_settings', fields, data)
-            sql = 'SELECT * FROM charge_settings WHERE ChargeType = "掛號費優待" ORDER BY ChargeSettingsKey desc limit 1'
+            sql = '''
+                SELECT * FROM charge_settings 
+                WHERE 
+                    ChargeType IN {charge_type}
+                ORDER BY ChargeSettingsKey DESC LIMIT 1
+            '''.format(
+                charge_type=tuple(charge_utils.DISCOUNT_TYPE),
+            )
             row_data = self.database.select_record(sql)[0]
             self._set_discount_data(current_row, row_data)
-            self.ui.tableWidget_discount.setCurrentCell(current_row, 3)
+            self.ui.tableWidget_discount.setCurrentCell(current_row, 2)
 
         dialog.close_all()
         dialog.deleteLater()
@@ -237,8 +249,8 @@ class ChargeSettingsRegist(QtWidgets.QMainWindow):
     def _discount_delete(self):
         msg_box = QMessageBox()
         msg_box.setIcon(QMessageBox.Warning)
-        msg_box.setWindowTitle('刪除掛號費優待資料')
-        msg_box.setText("<font size='4' color='red'><b>確定刪除此筆掛號費優待資料?</b></font>")
+        msg_box.setWindowTitle('刪除優待資料')
+        msg_box.setText("<font size='4' color='red'><b>確定刪除此筆優待資料?</b></font>")
         msg_box.setInformativeText("注意！資料刪除後, 將無法回復!")
         msg_box.addButton(QPushButton("取消"), QMessageBox.NoRole)
         msg_box.addButton(QPushButton("確定"), QMessageBox.YesRole)

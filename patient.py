@@ -12,6 +12,7 @@ from libs import nhi_utils
 from libs import date_utils
 from libs import validator_utils
 from libs import patient_utils
+from libs import personnel_utils
 from dialog import dialog_address
 from dialog import dialog_select_remote_patient
 
@@ -40,6 +41,9 @@ class Patient(QtWidgets.QMainWindow):
             self._set_patient_by_ic_card()
         elif self.patient_key is not None:
             self._read_patient()
+
+        self.user_name = self.system_settings.field('使用者')
+        self._set_permission()
 
     # 解構
     def __del__(self):
@@ -81,6 +85,44 @@ class Patient(QtWidgets.QMainWindow):
         ui_utils.set_combo_box(self.ui.comboBox_education, nhi_utils.EDUCATION, None)
         ui_utils.set_combo_box(self.ui.comboBox_occupation, nhi_utils.OCCUPATION, None)
         ui_utils.set_combo_box(self.ui.comboBox_discount, '掛號優待', self.database)
+
+    def _set_permission(self):
+        if self.user_name == '超級使用者':
+            return
+
+        if personnel_utils.get_permission(self.database, '病患資料', '病患修正', self.user_name) == 'Y':
+            return
+
+        self.ui.toolButton_address.setEnabled(False)
+
+        self.ui.action_save.setEnabled(False)
+        self.ui.lineEdit_card_no.setReadOnly(True)
+        self.ui.lineEdit_name.setReadOnly(True)
+        self.ui.lineEdit_birthday.setReadOnly(True)
+        self.ui.lineEdit_id.setReadOnly(True)
+        self.ui.lineEdit_init_date.setReadOnly(True)
+
+        self.ui.comboBox_gender.setEnabled(False)
+        self.ui.comboBox_nationality.setEnabled(False)
+        self.ui.comboBox_ins_type.setEnabled(False)
+
+        self.ui.lineEdit_telephone.setReadOnly(True)
+        self.ui.lineEdit_cellphone.setReadOnly(True)
+        self.ui.lineEdit_email.setReadOnly(True)
+        self.ui.lineEdit_address.setReadOnly(True)
+
+        self.ui.comboBox_marriage.setEnabled(False)
+        self.ui.comboBox_education.setEnabled(False)
+        self.ui.comboBox_occupation.setEnabled(False)
+        self.ui.comboBox_discount.setEnabled(False)
+
+        self.ui.lineEdit_family.setReadOnly(True)
+        self.ui.lineEdit_family_telephone.setReadOnly(True)
+
+        self.ui.textEdit_description.setReadOnly(True)
+        self.ui.textEdit_allergy.setReadOnly(True)
+        self.ui.textEdit_history.setReadOnly(True)
+        self.ui.textEdit_remark.setReadOnly(True)
 
     def _validate_birthday(self):
         if self.ic_card:
@@ -286,6 +328,8 @@ class Patient(QtWidgets.QMainWindow):
             field = 'Cellphone'
 
         phone_no = line_edit_phone.text().strip()
+        if phone_no == '':
+            return
 
         sql = '''
             SELECT Address FROM patient

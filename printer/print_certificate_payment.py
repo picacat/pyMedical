@@ -3,7 +3,6 @@
 
 from PyQt5 import QtGui, QtCore, QtPrintSupport, QtWidgets
 from PyQt5.QtPrintSupport import QPrinter
-import datetime
 import os
 
 from libs import printer_utils
@@ -62,7 +61,7 @@ class PrintCertificatePayment:
         self.preview_dialog.exec_()
 
     def save_to_pdf(self):
-        export_dir = '{0}/certificate'.format(nhi_utils.XML_OUT_PATH)
+        export_dir = '{0}/certificate'.format(nhi_utils.get_dir(self.system_settings, '申報路徑'))
         if not os.path.exists(export_dir):
             os.mkdir(export_dir)
 
@@ -109,7 +108,7 @@ class PrintCertificatePayment:
 
         html_title = self._get_html_title(row)
         html_patient = self._get_html_patient(row)
-        html_payment = self._get_html_payment()
+        html_payment = self._get_html_payment(row)
         html_summary = self._get_html_summary(row)
         html_remark = self._get_html_remark()
 
@@ -202,8 +201,9 @@ class PrintCertificatePayment:
 
         return html
 
-    def _get_html_payment(self):
-        fees_detail = self._get_fees_detail()
+    def _get_html_payment(self, row):
+        ins_type = string_utils.xstr(row['InsType'])
+        fees_detail = self._get_fees_detail(ins_type)
 
         html = '''
             <table align=center cellpadding="2" cellspacing="0" width="98%" style="font-size: 14px; border-width: 1px; border-style: solid;">
@@ -229,7 +229,7 @@ class PrintCertificatePayment:
 
         return html
 
-    def _get_fees_detail(self):
+    def _get_fees_detail(self, ins_type):
         sql = 'SELECT * FROM certificate_items WHERE CertificateKey = {0} ORDER BY CaseDate'.format(
             self.certificate_key
         )
@@ -252,6 +252,9 @@ class PrintCertificatePayment:
             cash_fee = regist_fee + diag_share_fee + drug_share_fee
             ins_apply_fee = number_utils.get_integer(row['InsApplyFee'])
             total_fee = number_utils.get_integer(row['TotalFee'])
+            if ins_type in ['健保']:
+                total_fee = 0
+
             cash_total = cash_fee + total_fee
 
             total_regist_fee += regist_fee

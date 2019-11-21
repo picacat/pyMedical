@@ -45,7 +45,7 @@ class DictMedicine(QtWidgets.QMainWindow):
         self.ui.tabWidget_medicine.addTab(
             dict_compound.DictCompound(self, *self.args), '成方資料')
         self.ui.tabWidget_medicine.addTab(
-            dict_instruction.DictInstruction(self, *self.args), '用藥指示')
+            dict_instruction.DictInstruction(self, *self.args), '指示及醫囑')
 
     # 設定信號
     def _set_signal(self):

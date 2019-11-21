@@ -71,6 +71,40 @@ class TableWidget:
 
         self.table_widget.resizeRowsToContents()
 
+    # 設定資料庫資料
+    def set_db_data_without_heading(self, sql, field, align=None):
+        rows = self.database.select_record(sql)
+
+        row_count = len(rows)
+        self.table_widget.setRowCount(0)
+
+        column_count = self.table_widget.columnCount()
+        total_row = int(row_count / column_count)
+        if row_count % column_count > 0:
+            total_row += 1
+
+        for row_no in range(0, total_row):
+            self.table_widget.setRowCount(
+                self.table_widget.rowCount() + 1
+            )
+            for col_no in range(0, column_count):
+                index = (row_no * column_count) + col_no
+                if index >= row_count:
+                    break
+
+                self.table_widget.setItem(
+                    row_no, col_no, QtWidgets.QTableWidgetItem(rows[index][field])
+                )
+                if align is not None:
+                    self.table_widget.item(
+                        row_no, col_no).setTextAlignment(
+                        align | QtCore.Qt.AlignVCenter
+                    )
+
+        self.table_widget.resizeRowsToContents()
+        self.table_widget.setCurrentCell(0, 0)
+        # self.table_widget.setFocus(True)
+
     def row_count(self):
         return self.table_widget.rowCount()
 

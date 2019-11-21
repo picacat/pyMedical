@@ -7,6 +7,7 @@ from libs import ui_utils
 from libs import system_utils
 from dialog import dialog_statistics_doctor
 import statistics_medical_record_diag_time_length
+import statistics_medical_record_disease_rank
 
 
 # 病歷統計 2019.06.10
@@ -106,6 +107,7 @@ class StatisticsMedicalRecord(QtWidgets.QMainWindow):
             )
         )
 
+        self._add_statistic_medical_record_disease_rank(start_date, end_date, ins_type, doctor)
         self._add_statistic_medical_record_diag_time_length(start_date, end_date, ins_type, doctor)
 
     # 醫師門診人數統計
@@ -120,8 +122,22 @@ class StatisticsMedicalRecord(QtWidgets.QMainWindow):
             self.tab_statistics_medical_record_diag_time_length, '看診時間統計'
         )
 
+    # 疾病排行
+    def _add_statistic_medical_record_disease_rank(self, start_date, end_date, ins_type, doctor):
+        self.tab_statistics_medical_record_disease_rank = \
+            statistics_medical_record_disease_rank.StatisticsMedicalRecordDiseaseRank(
+                self, self.database, self.system_settings,
+                start_date, end_date, ins_type, doctor,
+            )
+        self.tab_statistics_medical_record_disease_rank.start_calculate()
+        self.ui.tabWidget_statistics_medical_record.addTab(
+            self.tab_statistics_medical_record_disease_rank, '疾病排行'
+        )
+
     def _export_to_excel(self):
         if self.ui.tabWidget_statistics_medical_record.currentIndex() == 0:
+            self.tab_statistics_medical_record_disease_rank.export_to_excel()
+        elif self.ui.tabWidget_statistics_medical_record.currentIndex() == 1:
             self.tab_statistics_medical_record_diag_time_length.export_to_excel()
 
 

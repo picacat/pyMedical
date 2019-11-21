@@ -232,7 +232,7 @@ class SystemUpdate(QtWidgets.QDialog):
     def _download_file_thread(self, out_queue):
         QtCore.QCoreApplication.processEvents()
 
-        url = 'https://www.dropbox.com/s/38b7ltynil553fn/pymedical.zip?dl=1'
+        url = 'https://www.dropbox.com/s/4h4a35ygzqx7duc/pymedical.zip?dl=1'
         u = urllib.request.urlopen(url)
         data = u.read()
         u.close()

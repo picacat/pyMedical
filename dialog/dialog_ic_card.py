@@ -6,6 +6,7 @@ from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QMessageBox, QPushButton
 from libs import ui_utils
 from libs import system_utils
+from libs import case_utils
 import sys
 
 if sys.platform == 'win32':
@@ -102,6 +103,58 @@ class DialogICCard(QtWidgets.QDialog):
         if not self.ic_card.read_register_basic_data():
             return
 
+        # if not self.ic_card.read_critical_illness():
+        #     critical_illness_data = [
+        #         {'CI_CODE': '', 'CI_VALIDITY_START': '', 'CI_VALIDITY_END': ''},
+        #         {'CI_CODE': '', 'CI_VALIDITY_START': '', 'CI_VALIDITY_END': ''},
+        #         {'CI_CODE': '', 'CI_VALIDITY_START': '', 'CI_VALIDITY_END': ''},
+        #         {'CI_CODE': '', 'CI_VALIDITY_START': '', 'CI_VALIDITY_END': ''},
+        #         {'CI_CODE': '', 'CI_VALIDITY_START': '', 'CI_VALIDITY_END': ''},
+        #         {'CI_CODE': '', 'CI_VALIDITY_START': '', 'CI_VALIDITY_END': ''},
+        #     ]
+        # else:
+        self.ic_card.read_critical_illness()
+        critical_illness_data = self.ic_card.critical_illness_data
+
+        critical_illness_list = ''
+        for i in range(len(critical_illness_data)):
+            icd10 = critical_illness_data[i]['CI_CODE'].strip()
+            disease_name = case_utils.get_disease_name(self.database, icd10)
+            critical_illness_list += '''
+                <tr>
+                    <td align=center>{sequence}</td>
+                    <td>{icd10}</td>
+                    <td>{disease_name}</td>
+                    <td>{start_date}</td>
+                    <td>{end_date}</td>
+                </tr>
+            '''.format(
+                sequence=i+1,
+                icd10=icd10,
+                disease_name=disease_name,
+                start_date=critical_illness_data[i]['CI_VALIDITY_START'],
+                end_date=critical_illness_data[i]['CI_VALIDITY_END'],
+            )
+
+        html = '''
+            <table align=center cellpadding="2" cellspacing="0" width="98%" style="border-width: 1px; border-style: solid;">
+                <thead>
+                    <tr bgcolor="LightGray">
+                        <th style="text-align: center; padding-left: 8px" width="10%">序</th>
+                        <th style="padding-left: 8px" width="50%" align="left">ICD-10</th>
+                        <th style="padding-left: 8px" width="50%" align="left">重大傷病名稱</th>
+                        <th style="padding-right: 8px" align="right" width="25%">有效起日</th>
+                        <th style="padding-left: 8px" align="left" width="15%">有效訖日</th>
+                    </tr>
+                </thead>
+                    {critical_illness_list}
+                <tbody>
+                </tbody>
+            </table>
+        '''.format(
+            critical_illness_list=critical_illness_list,
+        )
+
         msg_box = QMessageBox()
         msg_box.setIcon(QMessageBox.Information)
         msg_box.setWindowTitle('健保卡基本資料')
@@ -122,6 +175,7 @@ class DialogICCard(QtWidgets.QDialog):
               <b>卡片效期</b>: {8}<br>
               <b>可用次數</b>: {9}<br>
             </font> 
+            {html}
         '''.format(
                 self.ic_card.basic_data['card_no'],
                 self.ic_card.basic_data['name'],
@@ -133,6 +187,7 @@ class DialogICCard(QtWidgets.QDialog):
                 self.ic_card.basic_data['insured_mark'],
                 self.ic_card.basic_data['card_valid_date'],
                 self.ic_card.basic_data['card_available_count'],
+                html=html,
             )
         )
         msg_box.setInformativeText('健保IC卡卡片內容讀取完成')

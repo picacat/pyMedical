@@ -122,31 +122,7 @@ class DialogDiagnosticPicker(QtWidgets.QDialog):
             order_type=order_type,
         )
         self.rows = self.database.select_record(sql)
-
-        row_count = len(self.rows)
-        self.ui.tableWidget_diagnostic.setRowCount(0)
-
-        column_count = self.ui.tableWidget_diagnostic.columnCount()
-        total_row = int(row_count / column_count)
-        if row_count % column_count > 0:
-            total_row += 1
-
-        for row_no in range(0, total_row):
-            self.ui.tableWidget_diagnostic.setRowCount(
-                self.ui.tableWidget_diagnostic.rowCount() + 1
-            )
-            for col_no in range(0, column_count):
-                index = (row_no * column_count) + col_no
-                if index >= row_count:
-                    break
-
-                self.ui.tableWidget_diagnostic.setItem(
-                    row_no, col_no, QtWidgets.QTableWidgetItem(self.rows[index]['ClinicName'])
-                )
-
-        self.ui.tableWidget_diagnostic.resizeRowsToContents()
-        self.ui.tableWidget_diagnostic.setCurrentCell(0, 0)
-        self.ui.tableWidget_diagnostic.setFocus(True)
+        self.table_widget_diagnostic.set_db_data_without_heading(sql, 'ClinicName')
 
     def _set_table_data(self, row_no, row):
         diagnostic_row = [

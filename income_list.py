@@ -96,12 +96,14 @@ class IncomeList(QtWidgets.QMainWindow):
         self._merge_table_charge()
         self._calculate_total_income()
 
-    def _table_widget_income_patient_key_exists(self, patient_key, ins_type):
+    def _table_widget_income_patient_key_exists(self, patient_key, name, ins_type):
         row_no_exists = None
         for row_no in range(self.ui.tableWidget_income.rowCount()):
             patient_key_item = self.ui.tableWidget_income.item(row_no, 3)
+            name_item = self.ui.tableWidget_income.item(row_no, 4)
             ins_type_item = self.ui.tableWidget_income.item(row_no, 5)
             if (patient_key_item is not None and patient_key_item.text() == patient_key and
+                    name_item is not None and name_item.text() == name and
                     ins_type_item is not None and ins_type_item.text() == ins_type):
                 row_no_exists = row_no
                 break
@@ -111,11 +113,12 @@ class IncomeList(QtWidgets.QMainWindow):
     def _merge_table_registration(self):
         for row_no in range(self.tableWidget_registration.rowCount()):
             patient_key = self.tableWidget_registration.item(row_no, 3).text()
+            name = self.tableWidget_registration.item(row_no, 4).text()
             ins_type = self.tableWidget_registration.item(row_no, 5).text()
             if patient_key == '':  # at end
                 break
 
-            row_no_exists = self._table_widget_income_patient_key_exists(patient_key, ins_type)
+            row_no_exists = self._table_widget_income_patient_key_exists(patient_key, name, ins_type)
             if row_no_exists is None:  # 不存在
                 self._append_registration_item(row_no)
             else:
@@ -190,11 +193,12 @@ class IncomeList(QtWidgets.QMainWindow):
     def _merge_table_charge(self):
         for row_no in range(self.tableWidget_charge.rowCount()):
             patient_key = self.tableWidget_charge.item(row_no, 3).text()
+            name = self.tableWidget_charge.item(row_no, 4).text()
             ins_type = self.tableWidget_charge.item(row_no, 5).text()
             if patient_key == '':  # at end
                 break
 
-            row_no_exists = self._table_widget_income_patient_key_exists(patient_key, ins_type)
+            row_no_exists = self._table_widget_income_patient_key_exists(patient_key, name, ins_type)
             if row_no_exists is None:
                 self._append_charge_item(row_no)
             else:

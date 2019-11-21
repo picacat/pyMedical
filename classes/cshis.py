@@ -6,6 +6,7 @@ from PyQt5.QtWidgets import QMessageBox, QPushButton
 
 import ctypes
 import os
+import struct
 import io
 
 from threading import Thread
@@ -33,6 +34,8 @@ class CSHIS(QThread):
         self.database = database
         self.com_port = number_utils.get_integer(
             system_settings.field('健保卡讀卡機連接埠')) - 1  # com1=0, com2=1, com3=2,...
+        self.doctor_com_port = number_utils.get_integer(
+            system_settings.field('醫事卡讀卡機連接埠')) - 1  # com1=0, com2=1, com3=2,...
         try:
             self.cshis = ctypes.cdll.LoadLibrary('/nhi/lib/cshis50.so')
         except OSError as e:
@@ -47,6 +50,7 @@ class CSHIS(QThread):
         self.basic_data = cshis_utils.BASIC_DATA
         self.treat_data = cshis_utils.TREAT_DATA
         self.treatment_data = cshis_utils.TREATMENT_DATA
+        self.critical_illness_data = []
 
     def run(self):
         try:
@@ -60,6 +64,10 @@ class CSHIS(QThread):
 
     def _open_com(self):
         com_port = ctypes.c_short(self.com_port)
+        self.cshis.csOpenCom(com_port)
+
+    def _open_doctor_com(self):
+        com_port = ctypes.c_short(self.doctor_com_port)
         self.cshis.csOpenCom(com_port)
 
     def _close_com(self):
@@ -111,9 +119,6 @@ class CSHIS(QThread):
             '正在與健保IDC資訊中心連線, 會花費一些時間.'
         )
 
-    def update_hc(self,  show_message=True):
-        self.start()
-
     def update_hc_card(self,  show_message=False):
         try:
             self._open_com()
@@ -150,10 +155,11 @@ class CSHIS(QThread):
         cshis_utils.show_ic_card_message(error_code, '健保IC卡密碼解除')
 
     def verify_hpc_pin(self):
-        self._open_com()
+        # self._open_doctor_com()
         error_code = self.cshis.hpcVerifyHPCPIN()
-        self._close_com()
-        cshis_utils.show_ic_card_message(error_code, '醫事人員卡密碼驗證')
+        # self._close_com()
+        if error_code == 0:
+            cshis_utils.show_ic_card_message(error_code, '醫事人員卡密碼驗證')
 
     def input_hpc_pin(self):
         self._open_com()
@@ -175,9 +181,8 @@ class CSHIS(QThread):
             cshis_utils.show_ic_card_message(error_code, '讀卡機重新啟動')
 
     def read_basic_data(self):
-        buffer_size = 72
-        buffer = ctypes.c_buffer(buffer_size)  # c: char *
-        buffer_len = ctypes.c_short(buffer_size)  # c: int *
+        buffer = ctypes.c_buffer(72)  # c: char *
+        buffer_len = ctypes.c_short(72)  # c: int *
         self._open_com()
         error_code = self.cshis.hisGetBasicData(buffer, ctypes.byref(buffer_len))
         self._close_com()
@@ -191,9 +196,8 @@ class CSHIS(QThread):
         return True
 
     def read_register_basic_data(self):
-        buffer_size = 78
-        buffer = ctypes.create_string_buffer(buffer_size)  # c: char *
-        buffer_len = ctypes.c_short(buffer_size)  # c: int *
+        buffer = ctypes.create_string_buffer(78)  # c: char *
+        buffer_len = ctypes.c_short(78)  # c: int *
         self._open_com()
         error_code = self.cshis.hisGetRegisterBasic(buffer, ctypes.byref(buffer_len))
         self._close_com()
@@ -207,9 +211,8 @@ class CSHIS(QThread):
         return True
 
     def read_treatment_no_need_hpc(self):
-        buffer_size = 498
-        buffer = ctypes.create_string_buffer(buffer_size)  # c: char *
-        buffer_len = ctypes.c_short(buffer_size)  # c: int *
+        buffer = ctypes.create_string_buffer(498)  # c: char *
+        buffer_len = ctypes.c_short(498)  # c: int *
         self._open_com()
         error_code = self.cshis.hisGetTreatmentNoNeedHPC(buffer, ctypes.byref(buffer_len))
         self._close_com()
@@ -219,6 +222,36 @@ class CSHIS(QThread):
             return False
 
         self.treatment_data = cshis_utils.decode_treatment_data(buffer)
+
+        return True
+
+    def read_critical_illness(self):
+        buffer = ctypes.create_string_buffer(138)  # c: char *
+        buffer_len = ctypes.c_short(138)  # c: int *
+        buffer[0:9] = struct.pack('9s', ('[XXXXXXX]').encode('ascii'))
+        buffer[23:23 + 9] = struct.pack('9s', ('[XXXXXXX]').encode('ascii'))
+        buffer[46:46 + 9] = struct.pack('9s', ('[XXXXXXX]').encode('ascii'))
+        buffer[69:69 + 9] = struct.pack('9s', ('[XXXXXXX]').encode('ascii'))
+        buffer[92:92 + 9] = struct.pack('9s', ('[XXXXXXX]').encode('ascii'))
+        buffer[115:115 + 9] = struct.pack('9s', ('[XXXXXXX]').encode('ascii'))
+        self._open_com()
+        error_code = self.cshis.hisGetCriticalIllness(buffer, ctypes.byref(buffer_len))
+        self._close_com()
+
+        if error_code != 0:
+            cshis_utils.show_ic_card_message(error_code, '健保卡讀取重大傷病')
+
+        self.critical_illness_data = []
+        buffer = io.BytesIO(buffer)
+        buffer.read(1)
+        for index in range(6):
+            buffer.read(1)
+            self.critical_illness_data.append({
+                'CI_CODE': buffer.read(7).decode('ascii'),
+                'CI_VALIDITY_START': buffer.read(7).decode('ascii'),
+                'CI_VALIDITY_END': buffer.read(7).decode('ascii'),
+            })
+            buffer.read(1)
 
         return True
 
@@ -238,9 +271,8 @@ class CSHIS(QThread):
     def get_card_status(self):
         available_count = None
         available_date = None
-        buffer_size = 9
-        buffer = ctypes.create_string_buffer(buffer_size)  # c: char *
-        buffer_len = ctypes.c_short(buffer_size)  # c: int *
+        buffer = ctypes.create_string_buffer(9)  # c: char *
+        buffer_len = ctypes.c_short(9)  # c: int *
         self._open_com()
         error_code = self.cshis.hisGetRegisterBasic2(buffer, ctypes.byref(buffer_len))
         self._close_com()
@@ -305,9 +337,8 @@ class CSHIS(QThread):
         p_treat_item = ctypes.c_char_p(treat_item.encode('ascii'))
         p_baby_treat = ctypes.c_char_p(baby_treat.encode('ascii'))
         p_treat_after_check = ctypes.c_char_p(treat_after_check.encode('ascii'))
-        buffer_size = 296
-        buffer = ctypes.c_buffer(buffer_size)  # c: char *
-        buffer_len = ctypes.c_short(buffer_size)  # c: short *
+        buffer = ctypes.c_buffer(296)  # c: char *
+        buffer_len = ctypes.c_short(296)  # c: short *
         self._open_com()
         error_code = self.cshis.hisGetSeqNumber256(
             p_treat_item,
@@ -510,9 +541,8 @@ class CSHIS(QThread):
         p_patient_birthday = ctypes.c_char_p(patient_birthday.encode('ascii'))
         p_data_write = ctypes.c_char_p(data_write.encode('ascii'))
 
-        buffer_size = 40
-        buffer = ctypes.create_string_buffer(buffer_size)  # c: char *
-        buffer_len = ctypes.c_short(buffer_size)  # c: int *
+        buffer = ctypes.create_string_buffer(40)  # c: char *
+        buffer_len = ctypes.c_short(40)  # c: int *
         self._open_com()
         error_code = self.cshis.hisWritePrescriptionSign(
             p_registration_datetime,
@@ -677,14 +707,15 @@ class CSHIS(QThread):
                                                      buffer中的資料長度(buffer的尾端不必補\0)
         );
     '''
-    def upload_data_thread(self, out_queue, xml_file_name, file_size, record_count):
+    def upload_data_thread(self, out_queue, xml_file_name, record_count):
+        file_size = str(os.path.getsize(xml_file_name))
+
         p_upload_file_name = ctypes.c_char_p(xml_file_name.encode('ascii'))
         p_file_size = ctypes.c_char_p(file_size.encode('ascii'))
-        p_number = ctypes.c_char_p(record_count.encode('ascii'))
+        p_number = ctypes.c_char_p(str(record_count).encode('ascii'))
 
-        buffer_size = 50
-        buffer = ctypes.create_string_buffer(buffer_size)  # c: char *
-        buffer_len = ctypes.c_short(buffer_size)  # c: int *
+        buffer = ctypes.create_string_buffer(50)  # c: char *
+        buffer_len = ctypes.c_int(50)  # c: int *
         self._open_com()
         error_code = self.cshis.csUploadData(
             p_upload_file_name,
@@ -705,10 +736,9 @@ class CSHIS(QThread):
         msg_box.show()
         msg_queue = Queue()
 
-        file_size = os.path.getsize(xml_file_name)
         QtCore.QCoreApplication.processEvents()
         t = Thread(target=self.upload_data_thread, args=(
-            msg_queue, xml_file_name, str(file_size), str(record_count)))
+            msg_queue, xml_file_name, str(record_count)))
         t.start()
         (error_code, buffer) = msg_queue.get()
         msg_box.close()
@@ -817,9 +847,20 @@ class CSHIS(QThread):
 
         if string_utils.xstr(row['CardNo']) == '':
             sql = '''
-                UPDATE patient SET CardNo = "{0}" WHERE PatientKey = {1}
-            '''.format(self.basic_data['card_no'],
-                       patient_key)
+                UPDATE patient SET CardNo = "{card_no}" WHERE PatientKey = {patient_key}
+            '''.format(
+                card_no=self.basic_data['card_no'],
+                patient_key=patient_key
+            )
+            self.database.exec_sql(sql)
+
+        if row['Birthday'] != self.basic_data['birthday']:
+            sql = '''
+                UPDATE patient SET Birthday = "{birthday}" WHERE PatientKey = {patient_key}
+            '''.format(
+                birthday=self.basic_data['birthday'],
+                patient_key=patient_key
+            )
             self.database.exec_sql(sql)
 
         return True
@@ -841,8 +882,12 @@ class CSHIS(QThread):
         patient_birthday = string_utils.xstr(patient_row['Birthday'])
         birthday_nhi_datetime = date_utils.west_date_to_nhi_date(patient_birthday)
 
-        usage = (prescript_utils.get_usage_code(dosage_row['Packages']) +
-                 prescript_utils.get_instruction_code(dosage_row['Instruction']))
+        try:
+            usage = (prescript_utils.get_usage_code(dosage_row['Packages']) +
+                     prescript_utils.get_instruction_code(dosage_row['Instruction']))
+        except:
+            usage = ''
+
         days = number_utils.get_integer(dosage_row['Days'])
 
         data_write = ''
@@ -1018,6 +1063,23 @@ class CSHIS(QThread):
         if len(prescript_rows) > 0:
             self.write_medicine_signature(case_row, patient_row, prescript_rows, dosage_row)
 
+    def update_hc_thread(self, out_queue):
+        self._open_com()
+        error_code = self.cshis.csUpdateHCContents()
+        self._close_com()
+        out_queue.put(error_code)
+
+    def update_hc(self,  show_message=True):
+        self.start()
+
+    # # IC退掛
+    # def update_hc(self, show_warning=True):
+    #     self.do_thread(
+    #         self.update_hc_thread,
+    #         '健保IC卡可用次數更新',
+    #         '<font size="4" color="red"><b>健保IC卡可用次數更新中, 請稍後...</b></font>',
+    #         '正在與健保IDC資訊中心連線, 會花費一些時間.'
+    #     )
 
 # class UpdateHCCard(QThread):
 #     signal = pyqtSignal()

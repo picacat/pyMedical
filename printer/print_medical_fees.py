@@ -61,7 +61,7 @@ class PrintMedicalFees:
         self.preview_dialog.exec_()
 
     def save_to_pdf(self):
-        export_dir = '{0}'.format(nhi_utils.XML_OUT_PATH)
+        export_dir = '{0}'.format(nhi_utils.get_dir(self.system_settings, '申報路徑'))
         if not os.path.exists(export_dir):
             os.mkdir(export_dir)
 
@@ -74,7 +74,7 @@ class PrintMedicalFees:
         self.print_html(True)
 
     def save_to_pdf_by_dialog(self):
-        export_dir = '{0}'.format(nhi_utils.XML_OUT_PATH)
+        export_dir = '{0}'.format(nhi_utils.get_dir(self.system_settings, '申報路徑'))
         if not os.path.exists(export_dir):
             os.mkdir(export_dir)
 

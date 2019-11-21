@@ -126,7 +126,7 @@ class StatisticsMedicalRecordDiagTimeLength(QtWidgets.QMainWindow):
             charge_time_delta = row['ChargeDate'] - row['DoctorDate']
             wait_seconds = datetime.timedelta(seconds=charge_time_delta.total_seconds())
             charge_time_cost = '{0}分鐘'.format(wait_seconds.seconds // 60)
-        except AttributeError:
+        except (AttributeError, TypeError):
             charge_finish_time = ''
             charge_time_cost = ''
 
@@ -170,7 +170,7 @@ class StatisticsMedicalRecordDiagTimeLength(QtWidgets.QMainWindow):
             return
 
         export_utils.export_table_widget_to_excel(
-            excel_file_name, self.ui.tableWidget_medical_record,
+            excel_file_name, self.ui.tableWidget_medical_record, [0], [2],
         )
 
         system_utils.show_message_box(

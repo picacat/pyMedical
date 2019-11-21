@@ -91,9 +91,11 @@ class DialogInputDrug(QtWidgets.QDialog):
         ui_utils.set_combo_box(self.ui.comboBox_unit, unit_list)
 
         sql = '''
-            SELECT MedicineMode FROM medicine WHERE
-            (MedicineType != "穴道" AND MedicineType != "處置")
-            GROUP BY MedicineMode ORDER BY MedicineMode
+            SELECT MedicineMode FROM medicine 
+            WHERE
+                (MedicineType != "穴道" AND MedicineType != "處置")
+            GROUP BY MedicineMode 
+            ORDER BY LENGTH(MedicineMode)
         '''
         rows = self.database.select_record(sql)
         medicine_mode_list = [None, ]
@@ -103,6 +105,34 @@ class DialogInputDrug(QtWidgets.QDialog):
             medicine_mode_list.append(str(row['MedicineMode']).strip())
 
         ui_utils.set_combo_box(self.ui.comboBox_medicine_mode, medicine_mode_list)
+
+        sql = '''
+            SELECT Project FROM medicine 
+            WHERE
+                Project IS NOT NULL
+            GROUP BY Project 
+            ORDER BY LENGTH(Project)
+        '''
+        rows = self.database.select_record(sql)
+        project_list = []
+        for row in rows:
+            project_list.append(str(row['Project']).strip())
+
+        ui_utils.set_combo_box(self.ui.comboBox_project, project_list, None)
+
+        sql = '''
+            SELECT DoctorProject FROM medicine 
+            WHERE
+                DoctorProject IS NOT NULL
+            GROUP BY DoctorProject 
+            ORDER BY LENGTH(DoctorProject)
+        '''
+        rows = self.database.select_record(sql)
+        project_list = []
+        for row in rows:
+            project_list.append(str(row['DoctorProject']).strip())
+
+        ui_utils.set_combo_box(self.ui.comboBox_doctor_project, project_list, None)
 
     def _edit_medicine(self):
         sql = 'SELECT * FROM medicine WHERE MedicineKey = {0}'.format(self.medicine_key)
@@ -121,6 +151,8 @@ class DialogInputDrug(QtWidgets.QDialog):
         self.ui.lineEdit_quantity.setText(string_utils.xstr(row['Quantity']))
         self.ui.lineEdit_safe_quantity.setText(string_utils.xstr(row['SafeQuantity']))
         self.ui.lineEdit_commission.setText(string_utils.xstr(row['Commission']))
+        self.ui.comboBox_project.setCurrentText(string_utils.xstr(row['Project']))
+        self.ui.comboBox_doctor_project.setCurrentText(string_utils.xstr(row['DoctorProject']))
         try:
             self.ui.textEdit_description.setPlainText(string_utils.get_str(row['Description'], 'utf8'))
         except TypeError:
@@ -166,7 +198,7 @@ class DialogInputDrug(QtWidgets.QDialog):
     def _save_medicine(self):
         fields = [
             'MedicineCode', 'InputCode', 'MedicineName', 'Unit', 'MedicineMode', 'InsCode',
-            'Dosage', 'MedicineAlias', 'Location', 'InPrice', 'SalePrice', 'Commission',
+            'Dosage', 'MedicineAlias', 'Location', 'InPrice', 'SalePrice', 'Commission', 'Project', 'DoctorProject',
             'Quantity', 'SafeQuantity',
             'Description',
         ]
@@ -183,6 +215,8 @@ class DialogInputDrug(QtWidgets.QDialog):
             self.ui.lineEdit_in_price.text(),
             self.ui.lineEdit_sale_price.text(),
             self.ui.lineEdit_commission.text(),
+            self.ui.comboBox_project.currentText(),
+            self.ui.comboBox_doctor_project.currentText(),
             self.ui.lineEdit_quantity.text(),
             self.ui.lineEdit_safe_quantity.text(),
             self.ui.textEdit_description.toPlainText(),

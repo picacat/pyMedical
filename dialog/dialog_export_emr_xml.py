@@ -226,7 +226,6 @@ class DialogExportEMRXml(QtWidgets.QDialog):
         regist_no = number_utils.get_integer(row['RegistNo'])
         name = string_utils.xstr(row['Name'])
 
-
         xml_file_name = '{cert_card_no}-{doctor_id}-{doctor_name}-TW.Foxconn.Clinic.ChineseMedicine.1-60-{patient_key}-{case_date}-{regist_no}-{name}.xml'.format(
             cert_card_no=cert_card_no,
             doctor_id=doctor_id,
@@ -290,7 +289,7 @@ class DialogExportEMRXml(QtWidgets.QDialog):
         version = ET.SubElement(sheet, 'Version')
         version.text = '1'
 
-        doc = ET.SubElement(document_info, 'doc')
+        doc = ET.SubElement(document_info, 'Doc')
 
         doc_confidentiality_code = ET.SubElement(doc, 'DocConfidentialityCode')
         doc_confidentiality_code.text = 'N'
@@ -503,7 +502,6 @@ class DialogExportEMRXml(QtWidgets.QDialog):
         if medical_record_treatment == '':
             return
 
-
         treatment = ET.SubElement(encounter, 'Treatment')
 
         treatment_nhi_code = ET.SubElement(treatment, 'TreatmentNHICode')
@@ -547,6 +545,14 @@ class DialogExportEMRXml(QtWidgets.QDialog):
 
         if len(rows) <= 0:
             return
+
+        if medical_record_treatment in nhi_utils.ACUPUNCTURE_TREAT:
+            node_name = 'AcupunctureRegionNHICode'
+        else:
+            node_name = 'ContusionRegionNHICode'
+
+        treatment_nhi_code = ET.SubElement(treatment_region, node_name)
+        treatment_nhi_code.text = '9'
 
         electric_acupuncture = ''
         for prescript_row in rows:

@@ -86,7 +86,10 @@ class RestoreMedicalRecords(QtWidgets.QMainWindow):
         self.table_widget_medical_records.set_db_data(sql, self._set_medical_record_data)
 
     def _set_medical_record_data(self, row_no, row):
-        deleted_row = json.loads(row['JSON'])
+        try:
+            deleted_row = json.loads(row['JSON'])[0]
+        except:
+            return
 
         deleted_date = row['DeleteDateTime'].strftime('%Y-%m-%d %H:%M')
 
@@ -187,7 +190,7 @@ class RestoreMedicalRecords(QtWidgets.QMainWindow):
             return
 
         case_key = rows[0]['KeyValue']
-        row = json.loads(rows[0]['JSON'])
+        row = json.loads(rows[0]['JSON'])[0]
 
         fields = list(row.keys())
         data = list(row.values())
@@ -208,11 +211,11 @@ class RestoreMedicalRecords(QtWidgets.QMainWindow):
         )
 
         rows = self.database.select_record(sql)
+        prescript_rows = json.loads(rows[0]['JSON'])
 
-        for row in rows:
-            prescript_row = json.loads(row['JSON'])
-            fields = list(prescript_row.keys())
-            data = list(prescript_row.values())
+        for row in prescript_rows:
+            fields = list(row.keys())
+            data = list(row.values())
 
             self.database.insert_record('prescript', fields, data)
 
@@ -229,10 +232,10 @@ class RestoreMedicalRecords(QtWidgets.QMainWindow):
         )
 
         rows = self.database.select_record(sql)
+        dosage_rows = json.loads(rows[0]['JSON'])
 
-        for row in rows:
-            prescript_row = json.loads(row['JSON'])
-            fields = list(prescript_row.keys())
-            data = list(prescript_row.values())
+        for row in dosage_rows:
+            fields = list(row.keys())
+            data = list(row.values())
 
             self.database.insert_record('dosage', fields, data)

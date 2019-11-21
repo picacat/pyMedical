@@ -3,6 +3,7 @@
 #coding: utf-8
 
 from PyQt5 import QtWidgets, QtCore, QtGui
+from PyQt5.QtWidgets import QMessageBox, QPushButton
 
 from classes import table_widget
 from libs import system_utils
@@ -32,6 +33,7 @@ class IncomeCashFlow(QtWidgets.QMainWindow):
         self.ui = None
 
         self.user_name = self.system_settings.field('使用者')
+        self.problem_records = []
 
         self._set_ui()
         self._set_signal()
@@ -109,9 +111,66 @@ class IncomeCashFlow(QtWidgets.QMainWindow):
 
     # 開始統計現金交帳
     def read_data(self):
+        self.problem_records = []
         self._read_registration_data()
         self._read_charge_data()
         self._calculate_total()
+        if len(self.problem_records) > 0:
+            self._display_problem_info()
+
+    # 讀取健保卡基本資料
+    def _display_problem_info(self):
+        problem_list = ''
+        for item_no, item in zip(range(len(self.problem_records)), self.problem_records):
+            problem_list += '''
+                <tr>
+                    <td align=center>{sequence}</td>
+                    <td>{name}</td>
+                    <td align="right">{total_fee}</td>
+                    <td align="right">{debt}</td>
+                    <td align="right">{receipt_fee}</td>
+                </tr>
+            '''.format(
+                sequence=item_no+1,
+                name=item[0],
+                total_fee=item[1],
+                debt=item[2],
+                receipt_fee=item[2],
+            )
+
+        html = '''
+            <table align=center cellpadding="2" cellspacing="0" width="98%" style="border-width: 1px; border-style: solid;">
+                <thead>
+                    <tr bgcolor="LightGray">
+                        <th style="text-align: center; padding: 8px">序</th>
+                        <th style="padding: 8px">病患姓名</th>
+                        <th style="padding: 8px">應收金額</th>
+                        <th style="padding: 8px">欠款</th>
+                        <th style="padding: 8px">實收金額</th>
+                    </tr>
+                </thead>
+                    {problem_list}
+                <tbody>
+                </tbody>
+            </table>
+        '''.format(
+            problem_list=problem_list,
+        )
+
+        msg_box = QMessageBox()
+        msg_box.setIcon(QMessageBox.Critical)
+        msg_box.setWindowTitle('實收金額疑問')
+        msg_box.setText(
+            '''
+            <font color="red"><h3>應收與實收金額不平衡, 名單如下:</h3></font>
+            {html}
+        '''.format(
+                html=html,
+            )
+        )
+        msg_box.setInformativeText('實收金額有問題')
+        msg_box.addButton(QPushButton("確定"), QMessageBox.AcceptRole)
+        msg_box.exec_()
 
     # 計算掛號收費
     def _read_registration_data(self):
@@ -211,7 +270,7 @@ class IncomeCashFlow(QtWidgets.QMainWindow):
         sql = '''
             SELECT 
                 deposit.*, 
-                cases.InsType, cases.Share, cases.Card, cases.TreatType, cases.Continuance,
+                cases.InsType, cases.Share, cases.Card, cases.TreatType, cases.Continuance, cases.RefundFee,
                 patient.DiscountType
             FROM deposit 
                 LEFT JOIN cases ON deposit.CaseKey = cases.CaseKey
@@ -243,7 +302,7 @@ class IncomeCashFlow(QtWidgets.QMainWindow):
         self.ui.tableWidget_registration.setRowCount(row_no+1)
         case_key = number_utils.get_integer(row['CaseKey'])
 
-        return_fee = -number_utils.get_integer(row['Fee'])
+        return_fee = -number_utils.get_integer(row['RefundFee'])
         subtotal = return_fee
 
         card = case_utils.get_full_card(row['Card'], row['Continuance'])
@@ -417,6 +476,13 @@ class IncomeCashFlow(QtWidgets.QMainWindow):
         self._calculate_charge_total()
 
     def _set_charge_fees(self):
+        if self.system_settings.field('櫃台結帳班別') == '掛號班別':
+            date_field = 'CaseDate'
+            period_field = 'Period'
+        else:
+            date_field = 'ChargeDate'
+            period_field = 'ChargePeriod'
+
         sql = '''
             SELECT 
                 cases.*, debt.DebtType, debt.Fee, patient.DiscountType
@@ -424,21 +490,28 @@ class IncomeCashFlow(QtWidgets.QMainWindow):
                 LEFT JOIN debt ON cases.CaseKey = debt.CaseKey
                 LEFT JOIN patient ON patient.PatientKey = cases.PatientKey
             WHERE 
-                cases.ChargeDate BETWEEN "{0}" AND "{1}" AND 
+                cases.{date_field} BETWEEN "{start_date}" AND "{end_date}" AND 
                 ChargeDone = "True"
         '''.format(
-            self.start_date, self.end_date
+            start_date=self.start_date,
+            end_date=self.end_date,
+            date_field=date_field,
         )
 
         if self.period != '全部':
-            sql += ' AND ChargePeriod = "{0}"'.format(self.period)
+            sql += ' AND cases.{period_field} = "{period}"'.format(
+                period_field=period_field,
+                period=self.period,
+            )
         if self.doctor != '全部':
             sql += ' AND cases.Doctor = "{0}"'.format(self.doctor)
         if self.cashier != '全部':
             sql += ' AND cases.Cashier = "{0}"'.format(self.cashier)
 
-        sql += ' ORDER BY cases.CaseDate, FIELD(cases.ChargePeriod, {0})'.format(
-            string_utils.xstr(nhi_utils.PERIOD)[1:-1])
+        sql += ' ORDER BY cases.CaseDate, FIELD(cases.{period_field}, {period})'.format(
+            period_field=period_field,
+            period=string_utils.xstr(nhi_utils.PERIOD)[1:-1],
+        )
 
         self.table_widget_charge.set_db_data(sql, self._set_charge_table_data)
 
@@ -454,15 +527,16 @@ class IncomeCashFlow(QtWidgets.QMainWindow):
 
         receipt_fee = number_utils.get_integer(row['ReceiptFee'])
         total_fee = number_utils.get_integer(row['TotalFee'])
-        subtotal = drug_share_fee + total_fee + debt_fee
+        subtotal = drug_share_fee + receipt_fee
 
+        name = string_utils.xstr(row['Name'])
         card = case_utils.get_full_card(row['Card'], row['Continuance'])
         medical_record = [
             string_utils.xstr(case_key),
             string_utils.xstr(row['CaseDate'].date()),
             string_utils.xstr(row['Period']),
             string_utils.xstr(row['PatientKey']),
-            string_utils.xstr(row['Name']),
+            name,
             string_utils.xstr(row['InsType']),
             string_utils.xstr(row['Share']),
             string_utils.xstr(row['TreatType']),
@@ -504,11 +578,20 @@ class IncomeCashFlow(QtWidgets.QMainWindow):
                     row_no, col_no).setForeground(
                     QtGui.QColor('darkgreen')
                 )
+            if total_fee + debt_fee != receipt_fee:
+                self.ui.tableWidget_charge.item(
+                    row_no, col_no).setForeground(
+                    QtGui.QColor('red')
+                )
 
         if debt_fee < 0:
             self.ui.tableWidget_charge.item(
                 row_no, 15).setForeground(
                 QtGui.QColor('red')
+            )
+        if total_fee + debt_fee != receipt_fee:
+            self.problem_records.append(
+                [name, total_fee, debt_fee, receipt_fee]
             )
 
     def _calculate_charge_total(self):

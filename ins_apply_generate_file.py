@@ -235,7 +235,7 @@ class InsApplyGenerateFile(QtWidgets.QMainWindow):
 
     def _check_error(self, row):
         message = []
-        doctor_name = string_utils.xstr(row['Doctor'])
+        doctor_name = string_utils.xstr(row['Doctor']).replace(',', '')
         doctor_id = personnel_utils.get_personnel_field_value(self.database, doctor_name, 'ID')
 
         if row['Birthday'] is None:
@@ -266,6 +266,7 @@ class InsApplyGenerateFile(QtWidgets.QMainWindow):
         pres_days = case_utils.get_pres_days(self.database, row['CaseKey'])
         treat_records = nhi_utils.get_treat_records(self.database, row)
         drug_fee = number_utils.get_integer(row['InterDrugFee'])
+        doctor_name = string_utils.xstr(row['Doctor']).replace(',', '')
 
         if string_utils.xstr(row['TreatType']) in ['腦血管疾病']:
             treat_fee = treat_records[0]['TreatFee']
@@ -280,7 +281,7 @@ class InsApplyGenerateFile(QtWidgets.QMainWindow):
         diag_code = nhi_utils.get_diag_code(
             self.database,
             self.system_settings,
-            string_utils.xstr(row['Doctor']),
+            doctor_name,
             string_utils.xstr(row['TreatType']),
             number_utils.get_integer(row['DiagFee']),
         )
@@ -340,9 +341,9 @@ class InsApplyGenerateFile(QtWidgets.QMainWindow):
             string_utils.xstr(row['DiseaseCode1']), string_utils.xstr(row['DiseaseCode2']),
             string_utils.xstr(row['DiseaseCode3']),
             pres_days, nhi_utils.get_pres_type(pres_days),
-            string_utils.xstr(row['Doctor']),
+            doctor_name,
             personnel_utils.get_personnel_field_value(
-                self.database, string_utils.xstr(row['Doctor']), 'ID'
+                self.database, doctor_name, 'ID'
             ),
             nhi_utils.get_pharmacist_id(self.database, self.system_settings, row),
             drug_fee, treat_fee, diag_code, diag_fee,
@@ -409,7 +410,7 @@ class InsApplyGenerateFile(QtWidgets.QMainWindow):
                 number_utils.get_integer(case_row['DrugShareFee'])
         )
 
-        doctor_name = string_utils.xstr(case_row['Doctor'])
+        doctor_name = string_utils.xstr(case_row['Doctor']).replace(',', '')
         doctor_id = personnel_utils.get_personnel_field_value(
             self.database, doctor_name, 'ID'
         )

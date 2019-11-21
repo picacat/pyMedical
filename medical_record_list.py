@@ -7,6 +7,7 @@ from PyQt5.QtWidgets import QMessageBox, QPushButton, QFileDialog
 import datetime
 
 from libs import ui_utils
+from libs import db_utils
 from libs import string_utils
 from libs import number_utils
 from libs import printer_utils
@@ -20,6 +21,7 @@ from classes import table_widget
 from printer import print_prescription
 from printer import print_receipt
 from printer import print_misc
+from printer import print_registration
 
 from dialog import dialog_medical_record_done
 
@@ -88,6 +90,9 @@ class MedicalRecordList(QtWidgets.QMainWindow):
         self.ui.action_set_check.triggered.connect(self._set_check)
         self.ui.action_set_uncheck.triggered.connect(self._set_check)
         self.ui.action_export_excel.triggered.connect(self._export_to_excel)
+        self.ui.action_export_medical_record_excel.triggered.connect(self._export_medical_record_to_excel)
+        self.ui.action_export_json.triggered.connect(self._export_to_json)
+        self.ui.action_print_registration.triggered.connect(self._print_registration)
         self.ui.tableWidget_medical_record_list.doubleClicked.connect(self.open_medical_record)
 
     def _set_permission(self):
@@ -173,6 +178,7 @@ class MedicalRecordList(QtWidgets.QMainWindow):
 
         self.ui.action_open_record.setEnabled(enabled)
         self.ui.action_delete_record.setEnabled(enabled)
+        self.ui.action_print_registration.setEnabled(enabled)
         self.ui.action_print_prescript.setEnabled(enabled)
         self.ui.action_print_receipt.setEnabled(enabled)
 
@@ -549,6 +555,38 @@ class MedicalRecordList(QtWidgets.QMainWindow):
                 patient_key, sql, 'pdf_by_dialog',
             )
 
+    # 匯出病歷資料 2019.10.14
+    def _export_medical_record_to_excel(self):
+        options = QFileDialog.Options()
+        excel_file_name, _ = QFileDialog.getSaveFileName(
+            self.parent,
+            "匯出病歷資料",
+            '{0}至{1}{2}病歷資料.xlsx'.format(
+                self.dialog_setting['start_date'].toString('yyyy-MM-dd'),
+                self.dialog_setting['end_date'].toString('yyyy-MM-dd'),
+                self.dialog_setting['person'],
+            ),
+            "excel檔案 (*.xlsx);;Text Files (*.txt)", options = options
+        )
+        if not excel_file_name:
+            return
+
+        export_utils.export_table_widget_to_excel(
+            excel_file_name, self.ui.tableWidget_medical_record_list,
+            [0, 1, 4, 5], [6, 7, 8, 16, 19, 21, 22, 23, 24],
+            '{0}至{1}{2}病歷資料'.format(
+                self.dialog_setting['start_date'].toString('yyyy-MM-dd'),
+                self.dialog_setting['end_date'].toString('yyyy-MM-dd'),
+                self.dialog_setting['person'],
+            )
+        )
+        system_utils.show_message_box(
+            QMessageBox.Information,
+            '資料匯出完成',
+            '<h3>病歷資料{0}匯出完成.</h3>'.format(excel_file_name),
+            'Microsoft Excel 格式.'
+        )
+
     # 匯出日報表 2019.07.01
     def _export_to_excel(self):
         options = QFileDialog.Options()
@@ -576,3 +614,148 @@ class MedicalRecordList(QtWidgets.QMainWindow):
             'Microsoft Excel 格式.'
         )
 
+    # 匯出JSON 2019.09.26
+    def _export_to_json(self):
+        options = QFileDialog.Options()
+        json_file_name, _ = QFileDialog.getSaveFileName(
+            self.parent,
+            "匯出JSON檔案",
+            '{start_date}至{end_date}病歷資料.json'.format(
+                start_date=self.dialog_setting['start_date'].toString("yyyy-MM-dd"),
+                end_date=self.dialog_setting['end_date'].toString("yyyy-MM-dd"),
+            ),
+            "json檔案 (*.json)",
+            options=options
+        )
+        if not json_file_name:
+            return
+
+        row_count = self.ui.tableWidget_medical_record_list.rowCount()
+        case_key_list = []
+        for row_no in range(row_count):
+            check_box = self.ui.tableWidget_medical_record_list.cellWidget(row_no, 1)
+            if not check_box.isChecked():
+                continue
+
+            case_key = self.ui.tableWidget_medical_record_list.item(row_no, 0).text()
+            case_key_list.append(case_key)
+
+        if len(case_key_list) <= 0:
+            return
+
+        sql = '''
+            SELECT * FROM cases
+            WHERE
+                CaseKey in ({case_key_list})
+        '''.format(
+            case_key_list=str(case_key_list)[1:-1]
+        )
+        rows = self.database.select_record(sql)
+
+        for row in rows:
+            case_key = row['CaseKey']
+            patient_key = row['PatientKey']
+
+            row['PatientJSON'] = self._get_patient_row(patient_key)
+            row['TreatJSON'] = self._get_pres_extend_treat_row(case_key)
+            row['DosageJSON'] = self._get_dosage_row(case_key)
+            row['PrescriptJSON'] = self._get_prescript_row(case_key)
+
+        json_data = db_utils.mysql_to_json(rows)
+        text_file = open(json_file_name, "w", encoding='utf8')
+        text_file.write(str(json_data))
+        text_file.close()
+
+        system_utils.show_message_box(
+            QMessageBox.Information,
+            'JSON資料匯出完成',
+            '<h3>病歷資料 {0}匯出完成.</h3>'.format(json_file_name),
+            'JSON 檔案格式.'
+        )
+
+    def _get_patient_row(self, patient_key):
+        sql = '''
+            SELECT * FROM patient
+            WHERE
+                PatientKey = {patient_key}
+        '''.format(
+            patient_key=patient_key,
+        )
+        rows = self.database.select_record(sql)
+
+        return rows
+
+    def _get_dosage_row(self, case_key):
+        sql = '''
+            SELECT * FROM dosage
+            WHERE
+                CaseKey = {case_key}
+            ORDER BY MedicineSet
+        '''.format(
+            case_key=case_key,
+        )
+        rows = self.database.select_record(sql)
+
+        return rows
+
+    def _get_prescript_row(self, case_key):
+        sql = '''
+            SELECT * FROM prescript
+            WHERE
+                CaseKey = {case_key}
+            ORDER BY PrescriptKey
+        '''.format(
+            case_key=case_key,
+        )
+        rows = self.database.select_record(sql)
+
+        for row in rows:
+            prescript_key = row['PrescriptKey']
+            pres_extend_row = self._get_pres_extend_row(prescript_key)
+            row['PresExtendJSON'] = pres_extend_row
+
+        return rows
+
+    def _get_pres_extend_treat_row(self, case_key):
+        sql = '''
+            SELECT * FROM presextend
+            WHERE
+                PrescriptKey = {case_key} AND
+                ExtendType = "處置簽章"
+            ORDER BY PresExtendKey LIMIT 1
+        '''.format(
+            case_key=case_key,
+        )
+        rows = self.database.select_record(sql)
+
+        return rows
+
+    def _get_pres_extend_row(self, prescript_key):
+        sql = '''
+            SELECT * FROM presextend
+            WHERE
+                PrescriptKey = {prescript_key} AND
+                ExtendType = "處方簽章"
+            ORDER BY PresExtendKey
+        '''.format(
+            prescript_key=prescript_key,
+        )
+        rows = self.database.select_record(sql)
+
+        return rows
+
+    # 列印掛號收據
+    def _print_registration(self):
+        case_key = self.table_widget_medical_record_list.field_value(0)
+        self.print_registration_form('直接列印', case_key)
+
+    # 列印掛號收據
+    def print_registration_form(self, printable, case_key=False):
+        if not case_key:
+            case_key = self.table_widget_medical_record_list.field_value(0)
+
+        print_regist = print_registration.PrintRegistration(
+            self, self.database, self.system_settings, case_key, printable
+        )
+        print_regist.print()
+        del print_regist

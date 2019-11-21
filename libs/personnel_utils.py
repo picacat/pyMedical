@@ -53,10 +53,15 @@ PERMISSION_LIST = [
     ['病患查詢', '資料刪除'],
     ['病患查詢', '匯出名單'],
 
+    ['病患資料', '病患修正'],
+
     ['健保IC卡資料上傳', '執行健保IC卡資料上傳'],
 
     ['醫師看診作業', '執行醫師看診作業'],
     ['醫師看診作業', '病歷登錄'],
+
+    ['病歷資料', '病歷修正'],
+    ['病歷資料', '修改單價'],
 
     ['病歷查詢', '執行病歷查詢'],
     ['病歷查詢', '調閱病歷'],
@@ -109,9 +114,10 @@ def get_personnel(database, personnel_type):
     if personnel_type == '全部':
         position = ''
     elif personnel_type == '醫師':
-        position = 'WHERE (Position IN("醫師", "支援醫師"))'
+        position = 'WHERE (Position IN("醫師", "支援醫師") AND ID IS NOT NULL)'
     else:
         position = 'WHERE Position = "{0}"'.format(personnel_type)
+
     sql = '''
         SELECT * FROM person {0}
         ORDER BY PersonKey
@@ -152,7 +158,7 @@ def person_id_to_name(database, person_id):
     rows = database.select_record(sql)
 
     if len(rows) <= 0:
-        return ''
+        return person_id
     else:
         return string_utils.xstr(rows[0]['Name'])
 

@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 #coding: utf-8
 
-import sys
-
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtWidgets import QFileDialog
 from lxml import etree as ET
@@ -10,6 +8,7 @@ from lxml import etree as ET
 from libs import ui_utils
 from libs import string_utils
 from libs import system_utils
+from libs import xml_utils
 import dict_symptom
 import dict_tongue
 import dict_pulse
@@ -131,7 +130,7 @@ class DictDiagnostic(QtWidgets.QMainWindow):
         progress_dialog.setValue(0)
         for row_no, row in zip(range(row_count), groups):
             progress_dialog.setValue(row_no)
-            data = self._convert_node_to_dict(row)
+            data = xml_utils.convert_node_to_dict(row)
             sql = '''
                 UPDATE icd10
                 SET
@@ -145,11 +144,4 @@ class DictDiagnostic(QtWidgets.QMainWindow):
             self.database.exec_sql(sql)
 
         progress_dialog.setValue(row_count)
-
-    def _convert_node_to_dict(self, node):
-        node_dict = {}
-        for node_data in node:
-            node_dict[node_data.tag] = node_data.text
-
-        return node_dict
 

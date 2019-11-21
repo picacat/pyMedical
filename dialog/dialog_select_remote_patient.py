@@ -87,7 +87,7 @@ class DialogSelectRemotePatient(QtWidgets.QDialog):
                 ORDER BY PatientKey
             '''.format(query_str)
         elif re.compile('^[0-9]{1,4}[-/.][0-9]{1,2}').match(query_str):
-            date_separator = date_utils._get_date_separator(query_str)
+            date_separator = date_utils.get_date_separator(query_str)
             if date_separator == '':
                 return
 

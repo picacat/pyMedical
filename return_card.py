@@ -3,16 +3,20 @@
 
 import sys
 
-from PyQt5 import QtWidgets, QtCore
-from PyQt5.QtWidgets import QMessageBox, QPushButton
+from PyQt5 import QtWidgets, QtCore, QtGui
+from PyQt5.QtWidgets import QMessageBox, QPushButton, QInputDialog
 
 import datetime
 from libs import ui_utils
 from libs import string_utils
 from libs import system_utils
 from libs import personnel_utils
+from libs import dialog_utils
+from libs import number_utils
 from classes import table_widget
 from dialog import dialog_return_card
+from dialog import dialog_add_deposit
+
 from printer import print_registration
 
 
@@ -26,6 +30,7 @@ class ReturnCard(QtWidgets.QMainWindow):
         self.parent = parent
         self.database = args[0]
         self.system_settings = args[1]
+        self.patient_key = args[2]
         self.ui = None
 
         self.user_name = self.system_settings.field('使用者')
@@ -33,7 +38,6 @@ class ReturnCard(QtWidgets.QMainWindow):
         self._set_ui()
         self._set_signal()
         self._set_permission()
-        # self.read_return_card()   # activate by pymedical.py->tab_changed
 
     # 解構
     def __del__(self):
@@ -58,16 +62,32 @@ class ReturnCard(QtWidgets.QMainWindow):
         self.table_widget_return_card = table_widget.TableWidget(self.ui.tableWidget_return_card, self.database)
         self.table_widget_return_card.set_column_hidden([0, 1])
         self._set_table_width()
+        self._set_date()
+        self.ui.statusbar.showMessage('紅色字體代表欠卡日期超過10天')
+
+    def _set_date(self):
+        last_month = datetime.date.today().replace(day=1) - datetime.timedelta(days=1)
+        self.ui.dateEdit_start_date.setDate(last_month.replace(day=1))
+        self.ui.dateEdit_end_date.setDate(datetime.date.today())
 
     # 設定信號
     def _set_signal(self):
         self.ui.action_close.triggered.connect(self.close_return_card)
         self.ui.action_return_card.triggered.connect(self.return_card)
+        self.ui.action_add_deposit.triggered.connect(self._add_deposit)
+        self.ui.action_remove_deposit.triggered.connect(self._remove_deposit)
         self.ui.action_open_medical_record.triggered.connect(self.open_medical_record)
         self.ui.action_undo.triggered.connect(self._undo_return_card)
         self.ui.action_print_registration_form.triggered.connect(self._print_registration_form)
+        self.ui.action_print_return_registration_form.triggered.connect(self._print_return_registration_form)
+        self.ui.action_modify_deposit_fee.triggered.connect(self._modify_deposit_fee)
         self.ui.tableWidget_return_card.doubleClicked.connect(self.open_medical_record)
         self.ui.tableWidget_return_card.itemSelectionChanged.connect(self._return_card_item_changed)
+        self.ui.dateEdit_start_date.dateChanged.connect(self.read_return_card)
+        self.ui.dateEdit_end_date.dateChanged.connect(self.read_return_card)
+        self.ui.radioButton_deposit.clicked.connect(self.read_return_card)
+        self.ui.radioButton_return.clicked.connect(self.read_return_card)
+        self.ui.radioButton_all.clicked.connect(self.read_return_card)
 
     def _set_permission(self):
         if self.user_name == '超級使用者':
@@ -85,21 +105,37 @@ class ReturnCard(QtWidgets.QMainWindow):
         width = [80, 80, 80, 80, 130, 130, 150, 200, 200, 60, 80, 40, 100, 100, 80, 70]
         self.table_widget_return_card.set_table_heading_width(width)
 
-    # 列印收據
-    def _print_registration_form(self, printable, case_key=False):
+    # 列印欠卡收據
+    def _print_registration_form(self):
+        case_key = self.table_widget_return_card.field_value(1)
+        self.print_registration_form('直接列印', case_key)
+
+    # 列印還卡收據
+    def _print_return_registration_form(self):
+        case_key = self.table_widget_return_card.field_value(1)
+        self.print_registration_form('還卡收據', case_key)
+
+    # 列印掛號收據
+    def print_registration_form(self, printable, case_key=False):
         if not case_key:
             case_key = self.table_widget_return_card.field_value(1)
 
         print_regist = print_registration.PrintRegistration(
-            self, self.database, self.system_settings, case_key, '還卡收據')
+            self, self.database, self.system_settings, case_key, printable
+        )
         print_regist.print()
         del print_regist
 
     # 讀取欠卡資料
-    def read_return_card(self, return_date=None):
-        if return_date is None:
-            since_date = datetime.date.today().replace(day=1) - datetime.timedelta(days=1)
-            return_date = since_date.strftime('%Y-%m-01')
+    def read_return_card(self):
+        start_date = self.ui.dateEdit_start_date.date().toString('yyyy-MM-dd 00:00:00')
+        end_date = self.ui.dateEdit_end_date.date().toString('yyyy-MM-dd 23:59:59')
+
+        return_condition = ''
+        if self.ui.radioButton_deposit.isChecked():
+            return_condition = ' AND ReturnDate IS NULL'
+        elif self.ui.radioButton_return.isChecked():
+            return_condition = ' AND ReturnDate IS NOT NULL'
 
         sql = '''
             SELECT 
@@ -109,12 +145,22 @@ class ReturnCard(QtWidgets.QMainWindow):
             FROM deposit 
                 LEFT JOIN cases ON cases.CaseKey = deposit.CaseKey
                 LEFT JOIN patient ON patient.PatientKey = deposit.PatientKey
-            WHERE DepositDate >= "{0}"
+            WHERE 
+                DepositDate BETWEEN "{start_date}" AND "{end_date}"
+                {return_condition}
             ORDER BY DepositDate DESC
-        '''.format(return_date)
+        '''.format(
+            start_date=start_date,
+            end_date=end_date,
+            return_condition=return_condition,
+        )
+
         self.table_widget_return_card.set_db_data(sql, self._set_deposit_data)
         self._set_tool_buttons()
         self._return_card_item_changed()
+
+        if self.patient_key is not None:
+            self._locate_patient(self.patient_key)
 
     def _set_tool_buttons(self):
         if self.ui.tableWidget_return_card.rowCount() <= 0:
@@ -134,6 +180,9 @@ class ReturnCard(QtWidgets.QMainWindow):
         else:
             doctor_done = '否'
 
+        deposit_date = row['DepositDate'].date()
+        present = datetime.datetime.today().date()
+        delta = present - deposit_date
         return_card_data = [
             string_utils.xstr(row['DepositKey']),
             string_utils.xstr(row['CaseKey']),
@@ -142,7 +191,7 @@ class ReturnCard(QtWidgets.QMainWindow):
             string_utils.xstr(row['Birthday']),
             string_utils.xstr(row['ID']),
             string_utils.xstr(row['CardNo']),
-            string_utils.xstr(row['DepositDate']),
+            string_utils.xstr(deposit_date),
             string_utils.xstr(row['ReturnDate']),
             string_utils.xstr(row['Period']),
             string_utils.xstr(row['Card']),
@@ -167,6 +216,12 @@ class ReturnCard(QtWidgets.QMainWindow):
                 self.ui.tableWidget_return_card.item(
                     row_no, column).setTextAlignment(
                     QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
+                )
+
+            if delta.days > 10:
+                self.ui.tableWidget_return_card.item(
+                    row_no, column).setForeground(
+                    QtGui.QColor('red')
                 )
 
     def refresh_record(self):
@@ -276,3 +331,80 @@ class ReturnCard(QtWidgets.QMainWindow):
 
         self._set_permission()
 
+    # 新增欠卡資料
+    def _add_deposit(self):
+        dialog = dialog_add_deposit.DialogAddDeposit(
+            self, self.database, self.system_settings
+        )
+
+        if not dialog.exec_():
+            dialog.deleteLater()
+            return
+
+        self.read_return_card()
+        dialog.deleteLater()
+
+    # 刪除欠卡資料
+    def _remove_deposit(self):
+        msg_box = dialog_utils.get_message_box(
+            '刪除欠卡資料', QMessageBox.Warning,
+            '<font size="4" color="red"><b>確定刪除{0}的欠卡資料?</b></font>'.format(
+                self.table_widget_return_card.field_value(3)),
+            '注意！資料刪除後, 將無法回復!'
+        )
+        remove_record = msg_box.exec_()
+        if not remove_record:
+            return
+
+        key = self.table_widget_return_card.field_value(0)
+        self.database.delete_record('deposit', 'DepositKey', key)
+        self.ui.tableWidget_return_card.removeRow(self.ui.tableWidget_return_card.currentRow())
+
+    def _locate_patient(self, patient_key):
+        patient_key = string_utils.xstr(patient_key)
+
+        for row_no in range(self.ui.tableWidget_return_card.rowCount()):
+            self.ui.tableWidget_return_card.setCurrentCell(row_no, 2)
+            patient_key_item = self.ui.tableWidget_return_card.item(row_no, 2).text()
+            if patient_key == patient_key_item:
+                break
+
+    def _modify_deposit_fee(self):
+        deposit_fee = number_utils.get_integer(self.table_widget_return_card.field_value(14))
+
+        input_dialog = QInputDialog()
+        input_dialog.setOkButtonText('確定')
+        input_dialog.setCancelButtonText('取消')
+        deposit_fee, ok = input_dialog.getInt(
+            self, '更改欠卡費', '請輸入新的欠卡費', deposit_fee, 0, 1000, 100)
+        if not ok:
+            return
+
+        deposit_key = self.table_widget_return_card.field_value(0)
+        case_key = self.table_widget_return_card.field_value(1)
+
+        sql = '''
+            UPDATE deposit
+            SET
+                Fee = {deposit_fee}
+            WHERE
+                DepositKey = {deposit_key}
+        '''.format(
+            deposit_key=deposit_key,
+            deposit_fee=deposit_fee,
+        )
+        self.database.exec_sql(sql)
+
+        sql = '''
+            UPDATE cases 
+            SET 
+                DepositFee = {deposit_fee} 
+            WHERE 
+                CaseKey = {case_key}
+        '''.format(
+            case_key=case_key,
+            deposit_fee=deposit_fee,
+        )
+        self.database.exec_sql(sql)
+
+        self.refresh_record()

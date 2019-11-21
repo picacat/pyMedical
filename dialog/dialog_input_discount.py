@@ -5,6 +5,7 @@
 from PyQt5 import QtWidgets
 from libs import ui_utils
 from libs import system_utils
+from libs import charge_utils
 
 
 # 主視窗
@@ -43,6 +44,10 @@ class DialogInputDiscount(QtWidgets.QDialog):
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setText('存檔')
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Cancel).setText('取消')
         self.ui.lineEdit_item_name.setFocus()
+        self._set_combo_box()
+
+    def _set_combo_box(self):
+        ui_utils.set_combo_box(self.ui.comboBox_charge_type, charge_utils.DISCOUNT_TYPE)
 
     # 設定信號
     def _set_signal(self):
@@ -51,19 +56,19 @@ class DialogInputDiscount(QtWidgets.QDialog):
     def _edit_charge_settings(self):
         sql = 'SELECT * FROM charge_settings where ChargeSettingsKey = {0}'.format(self.charge_settings_key)
         row_data = self.database.select_record(sql)[0]
+        self.ui.comboBox_charge_type.setCurrentText(row_data['ChargeType'])
         self.ui.lineEdit_item_name.setText(row_data['ItemName'])
         self.ui.spinBox_amount.setValue(row_data['Amount'])
-        self.ui.lineEdit_remark.setText(row_data['Remark'])
 
     def accepted_button_clicked(self):
         if self.charge_settings_key is None:
             return
 
-        fields = ['ItemName', 'Amount', 'Remark']
+        fields = ['ChargeType', 'ItemName', 'Amount']
         data = [
+            self.ui.comboBox_charge_type.currentText(),
             self.ui.lineEdit_item_name.text(),
             self.ui.spinBox_amount.value(),
-            self.ui.lineEdit_remark.text()
         ]
         
         self.database.update_record('charge_settings', fields, 'ChargeSettingsKey',

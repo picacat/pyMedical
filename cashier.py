@@ -16,6 +16,7 @@ from libs import case_utils
 from libs import registration_utils
 from libs import cshis_utils
 from libs import personnel_utils
+from libs import charge_utils
 from printer import print_prescription
 from printer import print_receipt
 from printer import print_misc
@@ -39,6 +40,7 @@ class Cashier(QtWidgets.QMainWindow):
         self.ui = None
 
         self.user_name = self.system_settings.field('使用者')
+        self.allow_refresh_wait_list = True
 
         self._set_ui()
         self._set_signal()
@@ -134,7 +136,7 @@ class Cashier(QtWidgets.QMainWindow):
             sort = 'ORDER BY wait.CaseDate'
 
         sql = '''
-            SELECT wait.*, cases.*, patient.Gender, patient.Birthday FROM wait
+            SELECT wait.*, cases.*, patient.Gender, patient.Birthday, patient.DiscountType FROM wait
                 LEFT JOIN patient ON patient.PatientKey = wait.PatientKey
                 LEFT JOIN cases ON cases.CaseKey = wait.CaseKey
             WHERE
@@ -177,7 +179,14 @@ class Cashier(QtWidgets.QMainWindow):
         else:
             age = '{0}歲'.format(age_year)
 
-        charge_total = (number_utils.get_integer(row['DrugShareFee']) +
+        drug_share_fee = number_utils.get_integer(row['DrugShareFee'])
+        drug_share_discount_fee = charge_utils.get_drug_share_discount_fee(
+            self.database, string_utils.xstr(row['DiscountType'])
+        )
+        if drug_share_discount_fee is not None:
+            drug_share_fee = drug_share_discount_fee
+
+        charge_total = (number_utils.get_integer(drug_share_fee) +
                         number_utils.get_integer(row['TotalFee']))
 
         charge_status = '未批價'
@@ -187,6 +196,7 @@ class Cashier(QtWidgets.QMainWindow):
         wait_rec = [
             string_utils.xstr(row['WaitKey']),
             string_utils.xstr(row['CaseKey']),
+            string_utils.xstr(row['Room']),
             string_utils.xstr(row['PatientKey']),
             string_utils.xstr(row['Name']),
             string_utils.xstr(row['Gender']),
@@ -194,7 +204,8 @@ class Cashier(QtWidgets.QMainWindow):
             string_utils.xstr(row['Share']),
             string_utils.xstr(row['InsType']),
             string_utils.xstr(row['TreatType']),
-            string_utils.xstr(row['DrugShareFee']),
+            string_utils.xstr(row['Doctor']),
+            string_utils.xstr(drug_share_fee),
             string_utils.xstr(row['TotalFee']),
             string_utils.xstr(charge_total),
             charge_status,
@@ -206,12 +217,12 @@ class Cashier(QtWidgets.QMainWindow):
                 row_no, column,
                 QtWidgets.QTableWidgetItem(wait_rec[column])
             )
-            if column in [2, 9, 10, 11]:
+            if column in [2, 3, 11, 12, 13]:
                 self.ui.tableWidget_charge_list.item(
                     row_no, column).setTextAlignment(
                     QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
                 )
-            elif column in [4, 12, 13]:
+            elif column in [5, 14, 15]:
                 self.ui.tableWidget_charge_list.item(
                     row_no, column).setTextAlignment(
                     QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
@@ -251,24 +262,70 @@ class Cashier(QtWidgets.QMainWindow):
         if case_key in [None, '']:
             return
 
-        sql = 'SELECT * FROM cases WHERE CaseKey = {0}'.format(case_key)
+        sql = '''
+            SELECT cases.*, patient.DiscountType FROM cases 
+                LEFT JOIN patient on patient.PatientKey = cases.PatientKey
+            WHERE 
+                CaseKey = {case_key}
+        '''.format(
+            case_key=case_key,
+        )
         case_rows = self.database.select_record(sql)
         if len(case_rows) <= 0:
             return
 
         case_row = case_rows[0]
-        html = case_utils.get_prescript_record(self.database, self.system_settings, case_key)
+        if case_row['InsType'] == '健保':
+            card = string_utils.xstr(case_row['Card'])
+            if number_utils.get_integer(case_row['Continuance']) >= 1:
+                card += '-' + string_utils.xstr(case_row['Continuance'])
+            card = '<b>健保</b>: {0}'.format(card)
+        else:
+            card = '<b>自費</b>'
+
+        medical_record = '<b>日期</b>: {case_date} {card} <b>醫師</b>:{doctor}<hr>'.format(
+            case_date=string_utils.xstr(case_row['CaseDate'].date()),
+            card=card,
+            doctor=string_utils.xstr(case_row['Doctor']),
+        )
+        remark = case_row['Remark']
+        if remark is not None and string_utils.xstr(remark) != '':
+            medical_record += '<b>備註</b>: {0}<hr>'.format(string_utils.get_str(remark, 'utf8'))
+
+        prescript_record = case_utils.get_prescript_record(self.database, self.system_settings, case_key)
+
+        html = '''
+            <html>
+                <head>
+                    <meta charset="UTF-8">
+                </head>
+                <body>
+                    {medical_record}
+                    {prescript_record}
+                </body>
+            </html>
+        '''.format(
+            medical_record=medical_record,
+            prescript_record=prescript_record,
+        )
         self.ui.textEdit_prescript.setHtml(html)
 
-        self.ui.lineEdit_drug_share_fee.setText(string_utils.xstr(case_row['DrugShareFee']))
-        self.ui.lineEdit_receipt_drug_share_fee.setText(string_utils.xstr(case_row['SDrugShareFee']))
+        drug_share_fee = number_utils.get_integer(case_row['DrugShareFee'])
+        drug_share_discount_fee = charge_utils.get_drug_share_discount_fee(
+            self.database, string_utils.xstr(case_row['DiscountType'])
+        )
+        if drug_share_discount_fee is not None:
+            drug_share_fee = drug_share_discount_fee
+
+        self.ui.lineEdit_drug_share_fee.setText(string_utils.xstr(drug_share_fee))
+        self.ui.lineEdit_receipt_drug_share_fee.setText(string_utils.xstr(drug_share_fee))
 
         self.ui.lineEdit_total_fee.setText(string_utils.xstr(case_row['TotalFee']))
         self.ui.lineEdit_receipt_fee.setText(string_utils.xstr(case_row['ReceiptFee']))
 
         self.ui.lineEdit_total.setText(
             string_utils.xstr(
-                number_utils.get_integer(case_row['DrugShareFee']) +
+                number_utils.get_integer(drug_share_fee) +
                 number_utils.get_integer(case_row['TotalFee'])
             )
         )
@@ -283,7 +340,15 @@ class Cashier(QtWidgets.QMainWindow):
 
         self._calculate_receipt_fee()
 
+    def refresh_wait(self):
+        if not self.allow_refresh_wait_list:
+            return
+
+        self.read_wait()
+
     def _apply_charge(self):
+        self.allow_refresh_wait_list = False
+
         sender_name = self.sender().objectName()
 
         debt = ''
@@ -296,7 +361,7 @@ class Cashier(QtWidgets.QMainWindow):
         msg_box.setWindowTitle('批價存檔')
         msg_box.setText(
             "<font size='4' color='red'><b>確定將病患資料 {0} 批價存檔?</b></font>".format(
-                self.table_widget_charge_list.field_value(3)
+                self.table_widget_charge_list.field_value(4)
             )
         )
         msg_box.setInformativeText("注意！批價存檔後, 此筆資料將歸檔至已批價名單!{0}".format(debt))
@@ -304,17 +369,20 @@ class Cashier(QtWidgets.QMainWindow):
         msg_box.addButton(QPushButton("確定"), QMessageBox.YesRole)
         apply_charge = msg_box.exec_()
         if not apply_charge:
+            self.allow_refresh_wait_list = True
             return
 
-        self._save_records()
-        if sender_name == 'action_save':
-            self._print_prescription()
-            self._print_receipt()
-            self._print_misc()
+        try:
+            self._save_records()
+            if sender_name == 'action_save':
+                self._print_prescription()
+                self._print_receipt()
+                self._print_misc()
 
-        self._write_ic_card()
-
-        self.read_wait()
+            self._write_ic_card()
+            self.read_wait()
+        finally:
+            self.allow_refresh_wait_list = True
 
     def _calculate_receipt_fee(self):
         receipt_drug_share_fee = number_utils.get_integer(self.ui.lineEdit_receipt_drug_share_fee.text())
@@ -331,39 +399,53 @@ class Cashier(QtWidgets.QMainWindow):
             self.ui.lineEdit_debt.setText(None)
 
     def _save_records(self):
+        self.allow_refresh_wait_list = False
         wait_key = self.table_widget_charge_list.field_value(0)
         case_key = self.table_widget_charge_list.field_value(1)
-
-        if wait_key in [None, '']:
+        if wait_key in ['', None]:
             return
 
-        if case_key in [None, '']:
+        if case_key in ['', None]:
             return
 
         self.database.exec_sql('UPDATE wait SET ChargeDone = "True" WHERE WaitKey = {0}'.format(wait_key))
 
-        sql = 'SELECT Cashier FROM cases WHERE CaseKey = {0}'.format(case_key)
-        row = self.database.select_record(sql)[0]
-        cashier = string_utils.xstr(row['Cashier'])
-        if cashier == '':
-            cashier = self.system_settings.field('使用者')
+        s_drug_share_fee = number_utils.get_integer(self.ui.lineEdit_receipt_drug_share_fee.text())
+        receipt_fee = number_utils.get_integer(self.ui.lineEdit_receipt_fee.text())
+        sql = '''
+            UPDATE cases
+            SET
+                Cashier = "{cashier}",
+                SDrugShareFee = {s_drug_share_fee},
+                ReceiptFee = {receipt_fee},
+                ChargeDone = "True",
+                ChargeDate = "{charge_date}",
+                ChargePeriod = "{charge_period}"
+            WHERE
+                CaseKey = {case_key}
+        '''.format(
+            case_key=case_key,
+            cashier=self.system_settings.field('使用者'),
+            s_drug_share_fee=s_drug_share_fee,
+            receipt_fee=receipt_fee,
+            charge_date=date_utils.now_to_str(),
+            charge_period=registration_utils.get_current_period(self.system_settings),
+        )
+        self.database.exec_sql(sql)
 
-        fields = [
-            'Register', 'Cashier', 'SDrugShareFee', 'ReceiptFee',
-            'ChargeDone', 'ChargeDate', 'ChargePeriod',
-        ]
-
-        data = [
-            self.system_settings.field('使用者'),
-            cashier,
-            self.ui.lineEdit_receipt_drug_share_fee.text(),
-            self.ui.lineEdit_receipt_fee.text(),
-            'True',
-            date_utils.now_to_str(),
-            registration_utils.get_period(self.system_settings),
-        ]
-
-        self.database.update_record('cases', fields, 'CaseKey', case_key, data)
+        # fields = [
+        #     'Cashier', 'SDrugShareFee', 'ReceiptFee',
+        #     'ChargeDone', 'ChargeDate', 'ChargePeriod',
+        # ]
+        # data = [
+        #     self.system_settings.field('使用者'),
+        #     s_drug_share_fee,
+        #     receipt_fee,
+        #     'True',
+        #     date_utils.now_to_str(),
+        #     registration_utils.get_current_period(self.system_settings),
+        # ]
+        # self.database.update_record('cases', fields, 'CaseKey', massage_case_key, data)
 
         debt = number_utils.get_integer(self.ui.lineEdit_debt.text())
         if debt > 0:

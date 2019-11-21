@@ -81,7 +81,7 @@ class PrintInsApplyOrder:
 
         row = rows[0]
         # 14: 中醫 A:病歷本文 案件類別 流水號6碼
-        export_dir = '{0}/emr{1}'.format(nhi_utils.XML_OUT_PATH, row['ApplyDate'])
+        export_dir = '{0}/emr{1}'.format(nhi_utils.get_dir(self.system_settings, '申報路徑'), row['ApplyDate'])
         if not os.path.exists(export_dir):
             os.mkdir(export_dir)
 

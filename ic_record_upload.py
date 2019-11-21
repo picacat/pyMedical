@@ -80,7 +80,8 @@ class ICRecordUpload(QtWidgets.QMainWindow):
         self.ui.action_close.triggered.connect(self.close_medical_record_list)
         self.ui.action_open_record.triggered.connect(self.open_medical_record)
         self.ui.action_upload_file.triggered.connect(self.upload_xml_file)
-        self.ui.action_remark.triggered.connect(self.remark_record)
+        self.ui.action_remark.triggered.connect(self._remark_record)
+        self.ui.action_clear_remark.triggered.connect(self._remark_all_records)
         self.ui.action_correct_errors.triggered.connect(self._correct_errors)
         self.ui.tableWidget_ic_record.doubleClicked.connect(self.open_medical_record)
 
@@ -142,7 +143,7 @@ class ICRecordUpload(QtWidgets.QMainWindow):
             string_utils.xstr(row['CaseKey']),
             remark,
             cshis_utils.UPLOAD_TYPE_DICT[upload_type],
-            cshis_utils.UPLOAD_TYPE_DICT[treat_after_check],
+            cshis_utils.TREAT_AFTER_CHECK_DICT[treat_after_check],
             string_utils.xstr(row['CaseDate']),
             string_utils.xstr(row['Period']),
             string_utils.xstr(row['PatientKey']),
@@ -190,7 +191,7 @@ class ICRecordUpload(QtWidgets.QMainWindow):
         patient_record = self.database.select_record(sql)[0]
 
         error_message = []
-        # if string_utils.xstr(row['Card']) in nhi_utils.ABNORMAL_CARD:
+        # if string_utils.xstr(medical_row['Card']) in nhi_utils.ABNORMAL_CARD:
         #     return error_message
 
         if security_row['upload_type'] == '1':
@@ -242,7 +243,7 @@ class ICRecordUpload(QtWidgets.QMainWindow):
         case_key = self.table_widget_medical_record.field_value(0)
         self.parent.open_medical_record(case_key, '病歷查詢')
 
-    def remark_record(self):
+    def _remark_record(self):
         row = self.ui.tableWidget_ic_record.currentRow()
         remark = self.ui.tableWidget_ic_record.item(row, 1).text()
         if remark == '*':
@@ -255,6 +256,20 @@ class ICRecordUpload(QtWidgets.QMainWindow):
         )
         self.ui.tableWidget_ic_record.item(row, 1).setTextAlignment(
             QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter)
+
+    def _remark_all_records(self):
+        for row_no in range(self.ui.tableWidget_ic_record.rowCount()):
+            remark = self.ui.tableWidget_ic_record.item(row_no, 1).text()
+            if remark == '*':
+                remark = ''
+            else:
+                remark = '*'
+
+            self.ui.tableWidget_ic_record.setItem(
+                row_no, 1, QtWidgets.QTableWidgetItem(remark)
+            )
+            self.ui.tableWidget_ic_record.item(row_no, 1).setTextAlignment(
+                QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter)
 
     # 取得上傳筆數
     def get_upload_record_count(self):
@@ -270,7 +285,7 @@ class ICRecordUpload(QtWidgets.QMainWindow):
     # 上傳資料
     def upload_xml_file(self):
         xml_file_name = '{0}/IC-{1}-{2}.xml'.format(
-            nhi_utils.XML_OUT_PATH,
+            nhi_utils.get_dir(self.system_settings, '申報路徑'),
             self.upload_type,
             date_utils.date_to_str()
         )
@@ -631,7 +646,11 @@ class ICRecordUpload(QtWidgets.QMainWindow):
             )
         prescript_type = '1'  # 1-長期藥品
         if len(dosage_row) > 0:
-            frequency = nhi_utils.FREQUENCY[dosage_row[0]['Packages']]
+            try:
+                frequency = nhi_utils.FREQUENCY[dosage_row[0]['Packages']]
+            except KeyError:
+                frequency = ''
+
             days = number_utils.get_integer(dosage_row[0]['Days'])
             try:
                 dosage = prescript_row['Dosage'] * days

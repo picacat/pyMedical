@@ -8,7 +8,7 @@ from classes import table_widget
 from libs import ui_utils
 from libs import system_utils
 from libs import string_utils
-from libs import prescript_utils
+from libs import number_utils
 
 
 # 處方詞庫-滑鼠輸入
@@ -72,6 +72,7 @@ class DialogMedicine(QtWidgets.QDialog):
 
         for tool_button in self.findChildren(QtWidgets.QToolButton):
             tool_button.clicked.connect(self.phonetic_button_clicked)
+
     # 設定欄位寬度
     def _set_table_width(self):
         dict_groups_width = [100, 100]
@@ -91,8 +92,24 @@ class DialogMedicine(QtWidgets.QDialog):
     def _read_data(self):
         self._read_dict_groups()
 
+    # 健保藥品, 藥品, 處置
     def _read_dict_groups(self):
-        if self.dict_type == '成方':
+        if self.dict_type == '處置':
+            sql = '''
+                SELECT * FROM dict_groups 
+                WHERE 
+                    (DictGroupsType = "處置類別" AND DictGroupsName IN ("穴道", "處置"))
+                ORDER BY DictOrderNo, DictGroupsKey
+            '''
+        elif self.dict_type == '健保藥品':
+            sql = '''
+                SELECT * FROM dict_groups 
+                WHERE 
+                    (DictGroupsType = "健保藥品類別") OR 
+                    (DictGroupsType = "成方類別")
+                ORDER BY DictOrderNo, DictGroupsKey
+            '''
+        elif self.dict_type == '成方':
             sql = '''
                 SELECT * FROM dict_groups 
                 WHERE 
@@ -100,15 +117,26 @@ class DialogMedicine(QtWidgets.QDialog):
                     DictGroupsType = "處置類別"
                 ORDER BY DictOrderNo, DictGroupsKey
             '''
-        else:
+        elif self.dict_type == '養生館':
+            sql = '''
+            SELECT * FROM dict_groups 
+            WHERE 
+                DictGroupsName LIKE "養生館%"
+            ORDER BY DictOrderNo, DictGroupsKey
+        '''
+        else:  # 自費處方
             sql = '''
                 SELECT * FROM dict_groups 
                 WHERE 
-                    DictGroupsType = "{0}類別" OR
+                    DictGroupsType = "藥品類別" OR
+                    (DictGroupsType = "處置類別" AND DictGroupsName IN ("穴道", "處置")) OR
                     DictGroupsType = "成方類別" OR
                     (DictGroupsType = "藥品類別" AND 
                      DictGroupsName NOT IN ("單方", "複方", "水藥", "外用", "高貴"))
-                ORDER BY DictOrderNo, DictGroupsKey
+                GROUP BY DictGroupsName
+                ORDER BY 
+                    FIELD(DictGroupsName, "成方", "處置", "穴道", "高貴", "外用", "水藥", "複方", "單方") DESC,
+                    DictOrderNo
             '''.format(self.dict_type)
 
         self.table_widget_dict_groups.set_db_data(sql, self._set_dict_groups_data)
@@ -143,10 +171,14 @@ class DialogMedicine(QtWidgets.QDialog):
         sql = '''
             SELECT * FROM medicine 
             WHERE 
-                (MedicineType = "{0}")
-                {1}
-                {2}
-        '''.format(dict_groups_type, input_code_str, order_type)
+                (MedicineType = "{medicine_type}")
+                {input_code}
+                {order_type}
+        '''.format(
+            medicine_type=dict_groups_type,
+            input_code=input_code_str,
+            order_type=order_type,
+        )
 
         self.table_widget_medicine.set_db_data(sql, self._set_medicine_data)
 
@@ -210,7 +242,9 @@ class DialogMedicine(QtWidgets.QDialog):
     def _add_medicine(self):
         medicine_type = self.table_widget_medicine.field_value(1)
 
-        if medicine_type == '成方':
+        if self.dict_type == '養生館':
+            self._add_massage_prescript()
+        elif medicine_type == '成方':
             self._extract_compound()
         elif medicine_type in ['穴道', '處置']:
             self._add_treat()
@@ -283,13 +317,20 @@ class DialogMedicine(QtWidgets.QDialog):
 
     def _add_treat(self, row=None):
         tab_no = self.medicine_set - 1
-        self.parent.tab_list[tab_no].append_null_treat()
+        if self.medicine_set >= 2:
+            self.parent.tab_list[tab_no].append_null_medicine()
+        else:
+            self.parent.tab_list[tab_no].append_null_treat()
 
         if row is None:
             row = self._get_medicine_row()
 
         self._set_treatment(row['MedicineType'])
-        self.parent.tab_list[tab_no].append_treat(row)
+
+        if self.medicine_set >= 2:
+            self.parent.tab_list[tab_no].append_prescript(row)
+        else:
+            self.parent.tab_list[tab_no].append_treat(row)
 
         self.ui.lineEdit_input_code.setText(None)
         self.ui.lineEdit_input_code.setFocus(True)
@@ -307,3 +348,36 @@ class DialogMedicine(QtWidgets.QDialog):
         }
 
         return row
+
+    def _add_massage_prescript(self):
+        self.table_widget_prescript.setRowCount(
+            self.table_widget_prescript.rowCount() + 1
+        )
+        data = [
+            None,
+            None,
+            self.table_widget_medicine.field_value(0),
+            self.table_widget_medicine.field_value(2),
+            1,
+            self.table_widget_medicine.field_value(4),
+            number_utils.get_float(self.table_widget_medicine.field_value(5)),
+            number_utils.get_float(self.table_widget_medicine.field_value(5)),
+            None,
+        ]
+        row_no = self.table_widget_prescript.rowCount() - 1
+        for col_no in range(len(data)):
+            item = QtWidgets.QTableWidgetItem()
+            item.setData(QtCore.Qt.EditRole, data[col_no])
+            self.table_widget_prescript.setItem(row_no, col_no, item)
+            if col_no in [4, 6, 7]:
+                self.table_widget_prescript.item(
+                    row_no, col_no).setTextAlignment(
+                    QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
+                )
+            elif col_no in [5]:
+                self.table_widget_prescript.item(
+                    row_no, col_no).setTextAlignment(
+                    QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
+                )
+
+        self.parent.calculate_total_fee()

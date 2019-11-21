@@ -70,6 +70,7 @@ class InsApplyList(QtWidgets.QMainWindow):
     def _set_signal(self):
         self.ui.tableWidget_ins_apply_list.doubleClicked.connect(self.open_medical_record)
         self.ui.toolButton_jump.clicked.connect(self._jump_sequence)
+        self.ui.toolButton_change_sequence.clicked.connect(self._change_sequence)
         self.ui.toolButton_find_error.clicked.connect(self._find_error)
         self.ui.toolButton_bookmark.clicked.connect(self._set_bookmark)
         self.ui.toolButton_open_medical_record.clicked.connect(self.open_medical_record)
@@ -313,6 +314,45 @@ class InsApplyList(QtWidgets.QMainWindow):
 
         self.ui.tableWidget_ins_apply_list.setCurrentCell(sequence-1, 1)
         self.ui.tableWidget_ins_apply_list.setFocus(True)
+
+    # 查詢流水號
+    def _change_sequence(self):
+        input_dialog = QInputDialog()
+        input_dialog.setOkButtonText('確定')
+        input_dialog.setCancelButtonText('取消')
+
+        start_no = 1
+        end_no = self.ui.tableWidget_ins_apply_list.rowCount()
+
+        sequence, ok = input_dialog.getInt(
+            self, '變更流水號', '請輸入流水號', start_no, 0, end_no, 1)
+        if not ok:
+            return
+
+        ins_apply_key = self.table_widget_ins_apply_list.field_value(0)
+        sql = '''
+            UPDATE insapply
+            SET
+                Sequence = {sequence}
+            WHERE
+                InsApplyKey = {ins_apply_key}
+        '''.format(
+            sequence=sequence,
+            ins_apply_key=ins_apply_key,
+        )
+        self.database.exec_sql(sql)
+
+        item = QtWidgets.QTableWidgetItem()
+        item.setData(QtCore.Qt.EditRole, sequence)
+        row_no = self.ui.tableWidget_ins_apply_list.currentRow()
+        col_no = 7
+        self.ui.tableWidget_ins_apply_list.setItem(
+            row_no, col_no, item,
+        )
+        self.ui.tableWidget_ins_apply_list.item(
+            row_no, col_no).setTextAlignment(
+            QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
+        )
 
     def _find_error(self):
         self.table_widget_ins_apply_list.find_error(41)

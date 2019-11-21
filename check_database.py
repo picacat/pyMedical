@@ -86,6 +86,7 @@ class CheckDatabase(QtWidgets.QDialog):
             self.database.check_field_exists('patient', 'add', 'Allergy', 'text AFTER Alergy'),
             self.database.check_field_exists('patient', 'change', ['EMail', 'Email'], 'varchar(100)'),
             self.database.check_field_exists('patient', 'change', ['Name', 'Name'], 'varchar(100)'),
+            self.database.check_field_exists('patient', 'change', ['RegistNo', 'ChartNo'], 'varchar(10)'),
         ]
         self._exec_process(process_list)
 
@@ -106,6 +107,16 @@ class CheckDatabase(QtWidgets.QDialog):
             self.database.check_field_exists('cases', 'add', 'ChargePeriod', 'varchar(4) AFTER Period'),
             self.database.check_field_exists('cases', 'add', 'ChargeDate', 'datetime AFTER DoctorDate'),
             self.database.check_field_exists('cases', 'add', 'DiscountRate', 'int DEFAULT 100 AFTER DiscountFee'),
+            self.database.check_field_exists('cases', 'add', 'TourArea', 'varchar(20) AFTER RegistType'),
+            self.database.check_field_exists(
+                'cases', 'add', 'DesignatedDoctor', 'ENUM("False", "True") NOT NULL AFTer DrugDone'
+            ),  # 指定醫師
+            self.database.check_field_exists(
+                'cases', 'add', 'DesignatedDoctor', 'ENUM("False", "True") NOT NULL AFTer DrugDone'
+            ),  # 指定醫師
+            self.database.check_field_exists(
+                'cases', 'add', 'DesignatedMassager', 'ENUM("False", "True") NOT NULL AFTer DesignatedDoctor'
+            ),  # 指定醫師
         ]
         self._exec_process(process_list)
 
@@ -124,6 +135,7 @@ class CheckDatabase(QtWidgets.QDialog):
             self.database.check_field_exists('prescript', 'add', 'DosageMode', 'varchar(10) AFTER MedicineName'),
             self.database.check_field_exists('prescript', 'change', ['price', 'Price'], 'decimal(10,2)'),
             self.database.check_field_exists('prescript', 'change', ['amount', 'Amount'], 'decimal(10,2)'),
+            self.database.check_field_exists('prescript', 'change', ['MedicineType', 'MedicineType'], 'varchar(10)'),
         ]
         self._exec_process(process_list)
 
@@ -133,7 +145,10 @@ class CheckDatabase(QtWidgets.QDialog):
             self.database.check_field_exists('medicine', 'add', 'Charged', 'varchar(4) AFTER InPrice'),
             self.database.check_field_exists('medicine', 'add', 'HitRate', 'int DEFAULT 0 AFTER Description'),
             self.database.check_field_exists('medicine', 'add', 'Commission', 'varchar(10) AFTER InPrice'),
+            self.database.check_field_exists('medicine', 'add', 'Project', 'varchar(50) AFTER Commission'),
+            self.database.check_field_exists('medicine', 'add', 'DoctorProject', 'varchar(50) AFTER Project'),
             self.database.check_field_exists('medicine', 'change', ['location', 'Location'], 'varchar(20)'),
+            self.database.check_field_exists('medicine', 'change', ['MedicineType', 'MedicineType'], 'varchar(10)'),
             self.database.check_field_exists('drug', 'change', ['Supplier', 'Supplier'], 'varchar(50)'),
             self.database.check_field_exists('drug', 'add', 'MedicineType', 'varchar(10) AFTER DrugName'),
         ]
@@ -226,6 +241,8 @@ class CheckDatabase(QtWidgets.QDialog):
             self.database.check_field_exists('hospid', 'change', ['HospName', 'HospName'], 'varchar(100)'),
             self.database.check_field_exists('hospid', 'change', ['Telephone', 'Telephone'], 'varchar(50)'),
             self.database.check_field_exists('hospid', 'change', ['Address', 'Address'], 'varchar(100)'),
+            self.database.check_field_exists('reserve', 'add', 'Registrar', 'varchar(10) AFTER Source'),
+            self.database.check_field_exists('off_day_list', 'add', 'Doctor', 'varchar(20) AFTER Period'),
         ]
         self._exec_process(process_list)
 

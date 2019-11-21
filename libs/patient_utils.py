@@ -2,10 +2,15 @@
 from PyQt5.QtWidgets import QMessageBox
 from dialog import dialog_patient
 import datetime
+import re
+
 from classes import address
 
 from libs import string_utils
 from libs import system_utils
+from libs import date_utils
+from libs import validator_utils
+from dialog import dialog_select_patient
 
 
 # 尋找病患資料
@@ -47,29 +52,68 @@ def search_patient(ui, database, settings, keyword):
     return row
 
 
-def get_patient_by_keyword(database, keyword):
+def select_patient(parent, database, system_settings, table_name, primary_key_field, keyword=None):
+    primary_key = ''
+
+    dialog = dialog_select_patient.DialogSelectPatient(
+        parent, database, system_settings, table_name, primary_key_field, keyword
+    )
+    if dialog.exec_():
+        primary_key = dialog.get_primary_key()
+
+    dialog.deleteLater()
+
+    return primary_key
+
+
+def get_patient_by_keyword(parent, database, system_settings, table_name, primary_key_field, keyword=None):
+    if keyword.isdigit() and len(keyword) <= 6:
+        return keyword  # primary key
+
+    condition = [
+        'Name LIKE "%{0}%"'.format(keyword),
+        'ID LIKE "{0}%"'.format(keyword),
+        'Telephone LIKE "%{0}%"'.format(keyword),
+        'Cellphone LIKE "{0}%"'.format(keyword),
+    ]
+
+    pattern = re.compile(validator_utils.DATE_REGEXP)
+    if pattern.match(keyword):
+        keyword = date_utils.date_to_west_date(keyword)
+        condition.append('Birthday = "{0}"'.format(keyword))
+
+    if len(keyword) >= 2:
+        condition.append('Address LIKE "%{0}%"'.format(keyword))
+
     sql = '''
-        SELECT PatientKey FROM patient
+        SELECT {primary_key_field} FROM {table_name}
         WHERE
-            Birthday = "{0}" OR
-            Name LIKE "%{0}%" OR
-            ID LIKE "{0}%" OR
-            Telephone LIKE "%{0}%" OR
-            Cellphone LIKE "{0}%" OR
-            Address LIKE "%{0}%"
-    '''.format(keyword)
+            {condition}
+    '''.format(
+        table_name=table_name,
+        primary_key_field=primary_key_field,
+        condition=' OR '.join(condition),
+    )
+
     try:
         rows = database.select_record(sql)
     except:
         system_utils.show_message_box(
             QMessageBox.Critical,
             '資料查詢錯誤',
-            '<font size="4" color="red"><b>病歷資料查詢條件設定有誤, 請重新查詢.</b></font>',
-            '請檢查查詢的內容是否有標點符號或其他字元.'
+            '<font size="4" color="red"><b>資料查詢條件設定有誤, 請重新查詢.</b></font>',
+            '請檢視查詢的內容是否有標點符號或其他字元.'
         )
         return None
 
-    return rows
+    if len(rows) == 1:
+        patient_key = rows[0][primary_key_field]
+    else:
+        patient_key = select_patient(
+            parent, database, system_settings, table_name, primary_key_field, keyword,
+        )
+
+    return patient_key
 
 
 # 取得性別

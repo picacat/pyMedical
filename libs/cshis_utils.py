@@ -97,7 +97,7 @@ ERROR_MESSAGE = {
     6007: ['安全模組卡的內部認證失敗', None],
     6008: ['寫入讀卡機日期時間失敗', None],
     6014: ['IDC 驗證簽章失敗', None],
-    6015: ['檔案大小不合或檔案傳輸失敗', None],
+    6015: ['檔案大小不合或檔案傳輸失敗', '建議分段上傳, 一次上傳30筆資料'],
     6016: ['記憶體空間不足', None],
     6017: ['權限不足無法開啟檔案或找不到檔案', None],
     6018: ['傳入參數錯誤', None],
@@ -166,29 +166,29 @@ INSURED_MARK_DICT = {
 }
 
 BASIC_DATA = {
-    'card_no': None,
-    'name': None,
-    'patient_id': None,
-    'birthday': None,
-    'gender': None,
-    'card_date': None,
-    'cancel_mark': None,
-    'emg_phone': None,
-    'insured_code': None,
-    'insured_mark': None,
-    'card_valid_date': None,
-    'card_available_count': None,
-    'new_born_date': None,
-    'new_born_mark': None,
+    'card_no': '',
+    'name': '',
+    'patient_id': '',
+    'birthday': '',
+    'gender': '',
+    'card_date': '',
+    'cancel_mark': '',
+    'emg_phone': '',
+    'insured_code': '',
+    'insured_mark': '',
+    'card_valid_date': '',
+    'card_available_count': '',
+    'new_born_date': '',
+    'new_born_mark': '',
 }
 
 TREAT_DATA = {
-    'registered_date': None,
-    'seq_number': None,
-    'clinic_id': None,
-    'security_signature': None,
-    'sam_id': None,
-    'register_duplicated': None,
+    'registered_date': '',
+    'seq_number': '',
+    'clinic_id': '',
+    'security_signature': '',
+    'sam_id': '',
+    'register_duplicated': '',
 }
 
 TREATMENT_DATA = {
@@ -197,10 +197,10 @@ TREATMENT_DATA = {
 }
 
 XML_FEEDBACK_DATA = {
-    'sam_id': None,
-    'clinic_id': None,
-    'upload_time': None,
-    'receive_time': None,
+    'sam_id': '',
+    'clinic_id': '',
+    'upload_time': '',
+    'receive_time': '',
 }
 
 
@@ -254,46 +254,51 @@ def get_insured_mark(insured_mark_code):
 
 
 # 取得健保卡內容
-def decode_basic_data_common(buffer):
+def decode_basic_data(buffer):
     basic_data_info = BASIC_DATA
-    basic_data_info['card_no'] = buffer[:12].decode('ascii').strip()
-    basic_data_info['name'] = buffer[12:32].decode('big5', 'replace').strip()
-    basic_data_info['patient_id'] = buffer[32:42].decode('ascii').strip()
-    basic_data_info['birthday'] = date_utils.nhi_date_to_west_date(buffer[42:49].decode('ascii').strip())
-    basic_data_info['gender'] = patient_utils.get_gender(buffer[49:50].decode('ascii').strip())
-    basic_data_info['card_date'] = date_utils.nhi_date_to_west_date(buffer[50:57].decode('ascii').strip())
-    basic_data_info['cancel_mark'] = get_cancel_mark(buffer[57:58].decode('ascii').strip())
-
-    return basic_data_info
-
-
-def decode_basic_data(basic_data):
-    basic_data_info = decode_basic_data_common(basic_data)
-    basic_data_info['emg_phone'] = basic_data[58:72].decode('ascii').strip()
+    s = io.BytesIO(buffer)
+    basic_data_info['card_no'] = s.read(12).decode('ascii').strip()
+    basic_data_info['name'] = s.read(20).decode('big5', 'replace').strip()
+    basic_data_info['patient_id'] = s.read(10).decode('ascii').strip()
+    basic_data_info['birthday'] = date_utils.nhi_date_to_west_date(s.read(7).decode('ascii'))
+    basic_data_info['gender'] = patient_utils.get_gender(s.read(1).decode('ascii').strip())
+    basic_data_info['card_date'] = date_utils.nhi_date_to_west_date(s.read(7).decode('ascii'))
+    basic_data_info['cancel_mark'] = get_cancel_mark(s.read(1).decode('ascii').strip())
+    basic_data_info['emg_phone'] = s.read(14).decode('ascii').strip()
 
     return basic_data_info
 
 
 def decode_register_basic_data(buffer):
-    basic_data_info = decode_basic_data_common(buffer)
-    basic_data_info['insured_code'] = buffer[58:60].decode('ascii').strip()  # Reserved, not use
-    basic_data_info['insured_mark'] = get_insured_mark(buffer[60:61].decode('ascii').strip())
-    basic_data_info['card_valid_date'] = date_utils.nhi_date_to_west_date(buffer[61:68].decode('ascii').strip())
-    basic_data_info['card_available_count'] = number_utils.get_integer(buffer[68:70].decode('ascii').strip())
-    basic_data_info['new_born_date'] = date_utils.nhi_date_to_west_date(buffer[70:77].decode('ascii').strip())
-    basic_data_info['new_born_mark'] = buffer[77:78].decode('ascii').strip()
+    basic_data_info = BASIC_DATA
+    s = io.BytesIO(buffer)
+    basic_data_info['card_no'] = s.read(12).decode('ascii').strip()
+    basic_data_info['name'] = s.read(20).decode('big5', 'replace').strip()
+    basic_data_info['patient_id'] = s.read(10).decode('ascii').strip()
+    basic_data_info['birthday'] = date_utils.nhi_date_to_west_date(s.read(7).decode('ascii'))
+    basic_data_info['gender'] = patient_utils.get_gender(s.read(1).decode('ascii').strip())
+    basic_data_info['card_date'] = date_utils.nhi_date_to_west_date(s.read(7).decode('ascii'))
+    basic_data_info['cancel_mark'] = get_cancel_mark(s.read(1).decode('ascii').strip())
+
+    basic_data_info['insured_code'] = s.read(2).decode('ascii').strip()  # Reserved, not use
+    basic_data_info['insured_mark'] = get_insured_mark(s.read(1).decode('ascii').strip())
+    basic_data_info['card_valid_date'] = date_utils.nhi_date_to_west_date(s.read(7).decode('ascii'))
+    basic_data_info['card_available_count'] = number_utils.get_integer(s.read(2).decode('ascii').strip())
+    basic_data_info['new_born_date'] = date_utils.nhi_date_to_west_date(s.read(7).decode('ascii').strip())
+    basic_data_info['new_born_mark'] = s.read(1).decode('ascii').strip()
 
     return basic_data_info
 
 
 def decode_treat_data(buffer):
     treat_data_info = TREAT_DATA
-    treat_data_info['registered_date'] = date_utils.nhi_datetime_to_west_datetime(buffer[:13].decode('ascii').strip())
-    treat_data_info['seq_number'] = buffer[13:17].decode('ascii').strip()
-    treat_data_info['clinic_id'] = buffer[17:27].decode('ascii').strip()
-    treat_data_info['security_signature'] = buffer[27:283].decode('ascii').strip()
-    treat_data_info['sam_id'] = buffer[283:295].decode('ascii').strip()
-    treat_data_info['register_duplicated'] = buffer[295:296].decode('ascii').strip()
+    s = io.BytesIO(buffer)
+    treat_data_info['registered_date'] = date_utils.nhi_datetime_to_west_datetime(s.read(13).decode('ascii'))
+    treat_data_info['seq_number'] = s.read(4).decode('ascii').strip()
+    treat_data_info['clinic_id'] = s.read(10).decode('ascii').strip()
+    treat_data_info['security_signature'] = s.read(256).decode('ascii').strip()
+    treat_data_info['sam_id'] = s.read(12).decode('ascii').strip()
+    treat_data_info['register_duplicated'] = s.read(1).decode('ascii').strip()
 
     return treat_data_info
 
@@ -331,24 +336,25 @@ def decode_treatment_data(buffer):
 
 def decode_xml_data(buffer):
     xml_feedback_data_info = XML_FEEDBACK_DATA
+    s = io.BytesIO(buffer)
 
-    xml_feedback_data_info['sam_id'] = buffer[:12].decode('ascii').strip()
-    xml_feedback_data_info['clinic_id'] = buffer[12:22].decode('ascii').strip()
+    xml_feedback_data_info['sam_id'] = s.read(12).decode('ascii').strip()
+    xml_feedback_data_info['clinic_id'] = s.read(10).decode('ascii').strip()
     xml_feedback_data_info['upload_time'] = '{0}-{1}-{2} {3}:{4}:{5}'.format(
-        buffer[22:26].decode('ascii').strip(),
-        buffer[26:28].decode('ascii').strip(),
-        buffer[28:30].decode('ascii').strip(),
-        buffer[30:32].decode('ascii').strip(),
-        buffer[32:34].decode('ascii').strip(),
-        buffer[34:36].decode('ascii').strip(),
+        s.read(4).decode('ascii').strip(),
+        s.read(2).decode('ascii').strip(),
+        s.read(2).decode('ascii').strip(),
+        s.read(2).decode('ascii').strip(),
+        s.read(2).decode('ascii').strip(),
+        s.read(2).decode('ascii').strip(),
     )
     xml_feedback_data_info['receive_time'] = '{0}-{1}-{2} {3}:{4}:{5}'.format(
-        buffer[36:40].decode('ascii').strip(),
-        buffer[40:42].decode('ascii').strip(),
-        buffer[42:44].decode('ascii').strip(),
-        buffer[44:46].decode('ascii').strip(),
-        buffer[46:48].decode('ascii').strip(),
-        buffer[48:50].decode('ascii').strip(),
+        s.read(4).decode('ascii').strip(),
+        s.read(2).decode('ascii').strip(),
+        s.read(2).decode('ascii').strip(),
+        s.read(2).decode('ascii').strip(),
+        s.read(2).decode('ascii').strip(),
+        s.read(2).decode('ascii').strip(),
     )
 
     return xml_feedback_data_info

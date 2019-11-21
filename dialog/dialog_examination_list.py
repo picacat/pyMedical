@@ -70,6 +70,9 @@ class DialogExaminationList(QtWidgets.QDialog):
         self.ui.lineEdit_patient_key.setEnabled(enabled)
         self.ui.toolButton_select_patient.setEnabled(enabled)
 
+        if self.ui.radioButton_assigned_patient.isChecked():
+            self.ui.lineEdit_patient_key.setFocus()
+
     def _set_date(self):
         if self.ui.radioButton_all_date.isChecked():
             enabled = False
@@ -100,19 +103,14 @@ class DialogExaminationList(QtWidgets.QDialog):
             condition.append('(ExaminationDate BETWEEN "{0}" AND "{1}")'.format(start_date, end_date))
 
         keyword = self.ui.lineEdit_patient_key.text()
-        if keyword == '':
-            pass
-        elif keyword.isdigit() and len(keyword) < 7:
-            condition.append('PatientKey = {0}'.format(keyword))
-        else:
-            rows = patient_utils.get_patient_by_keyword(self.database, keyword)
-            if len(rows) == 1:
-                patient_key = rows[0]['PatientKey']
+        if keyword != '':
+            patient_key = patient_utils.get_patient_by_keyword(
+                self, self.database, self.system_settings,
+                'patient', 'PatientKey', keyword
+            )
+            if patient_key in ['', None]:
+                self.ui.lineEdit_patient_key.setText('')
             else:
-                self._select_patient(keyword)
-                patient_key = self.ui.lineEdit_patient_key.text()
-
-            if patient_key != '':
                 condition.append('PatientKey = {0}'.format(patient_key))
 
         if len(condition) > 0:
@@ -133,10 +131,11 @@ class DialogExaminationList(QtWidgets.QDialog):
         patient_key = ''
 
         dialog = dialog_select_patient.DialogSelectPatient(
-            self, self.database, self.system_settings, keyword
+            self, self.database, self.system_settings,
+            'patient', 'PatientKey', keyword
         )
         if dialog.exec_():
-            patient_key = dialog.get_patient_key()
+            patient_key = dialog.get_primary_key()
 
         self.ui.lineEdit_patient_key.setText(patient_key)
 

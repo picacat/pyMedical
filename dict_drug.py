@@ -79,7 +79,7 @@ class DictDrug(QtWidgets.QMainWindow):
         dict_groups_width = [100, 50, 115, 60]
         self.table_widget_dict_groups.set_table_heading_width(dict_groups_width)
 
-        dict_drug_width = [100, 150, 80, 250, 90, 50, 50, 80, 120, 80, 80, 80, 80, 80, 90]
+        dict_drug_width = [100, 100, 100, 70, 210, 90, 50, 50, 80, 80, 120, 80, 70, 70, 60, 65, 50]
         self.table_widget_dict_drug.set_table_heading_width(dict_drug_width)
 
     def _read_drug(self):
@@ -185,13 +185,15 @@ class DictDrug(QtWidgets.QMainWindow):
     def _set_dict_drug_data(self, row_no, row):
         dict_drug_row = [
             string_utils.xstr(row['MedicineKey']),
+            string_utils.xstr(row['MedicineType']),
             string_utils.xstr(row['MedicineCode']),
             string_utils.xstr(row['InputCode']),
             string_utils.xstr(row['MedicineName']),
             string_utils.xstr(row['InsCode']),
             string_utils.xstr(row['Unit']),
             number_utils.get_float(row['Dosage']),
-            string_utils.xstr(row['MedicineMode']),
+            string_utils.xstr(row['DoctorProject']),
+            string_utils.xstr(row['Project']),
             string_utils.xstr(row['MedicineAlias']),
             string_utils.xstr(row['Location']),
             number_utils.get_float(row['InPrice']),
@@ -205,11 +207,11 @@ class DictDrug(QtWidgets.QMainWindow):
             item = QtWidgets.QTableWidgetItem()
             item.setData(QtCore.Qt.EditRole, dict_drug_row[column])
             self.ui.tableWidget_dict_drug.setItem(row_no, column, item)
-            if column in [6, 10, 11, 12, 13, 14]:
+            if column in [7, 12, 13, 14, 15, 16]:
                 self.ui.tableWidget_dict_drug.item(row_no, column).setTextAlignment(
                     QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
                 )
-            elif column in [5]:
+            elif column in [6]:
                 self.ui.tableWidget_dict_drug.item(row_no, column).setTextAlignment(
                     QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
                 )
@@ -394,7 +396,7 @@ class DictDrug(QtWidgets.QMainWindow):
         msg_box = dialog_utils.get_message_box(
             '刪除{0}資料'.format(self.dict_type), QMessageBox.Warning,
             '<font size="4" color="red"><b>確定刪除{0}: "{1}"?</b></font>'.format(
-                self.dict_type, self.table_widget_dict_drug.field_value(3)),
+                self.dict_type, self.table_widget_dict_drug.field_value(4)),
             '注意！資料刪除後, 將無法回復!'
         )
         remove_record = msg_box.exec_()

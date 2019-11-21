@@ -26,11 +26,15 @@ class MedicalRecordExamination(QtWidgets.QMainWindow):
         self.database = args[0]
         self.system_settings = args[1]
         self.patient_key = args[2]
+        self.call_from = args[3]
 
         self.ui = None
 
         self._set_ui()
         self._set_signal()
+
+        self.user_name = self.system_settings.field('使用者')
+        self._set_permission()
 
     # 解構
     def __del__(self):
@@ -50,6 +54,7 @@ class MedicalRecordExamination(QtWidgets.QMainWindow):
         self.table_widget_test_result = table_widget.TableWidget(
             self.ui.tableWidget_test_result, self.database
         )
+        self.table_widget_test_result.set_column_hidden([0])
         self._set_table_width()
         self._set_examination_groups()
 
@@ -57,12 +62,27 @@ class MedicalRecordExamination(QtWidgets.QMainWindow):
     def _set_signal(self):
         self.ui.tableWidget_groups.itemSelectionChanged.connect(self._groups_changed)
         self.ui.tableWidget_examination_item.itemSelectionChanged.connect(self._examination_item_changed)
+        self.ui.toolButton_add_examination.clicked.connect(self._add_examination)
+        self.ui.tableWidget_test_result.doubleClicked.connect(self._open_examination)
+        self.ui.toolButton_open_examination_item.clicked.connect(self._open_examination)
+
+    def _set_permission(self):
+        if self.call_from == '醫師看診作業':
+            return
+
+        if self.user_name == '超級使用者':
+            return
+
+        if personnel_utils.get_permission(self.database, '病歷資料', '病歷修正', self.user_name) == 'Y':
+            return
+
+        self.ui.toolButton_add_examination.setEnabled(False)
 
     def _set_table_width(self):
         width = [152, 152]
         self.table_widget_examination_item.set_table_heading_width(width)
 
-        width = [150, 150]
+        width = [100, 150, 150]
         self.table_widget_test_result.set_table_heading_width(width)
 
     def _set_examination_groups(self):
@@ -135,6 +155,11 @@ class MedicalRecordExamination(QtWidgets.QMainWindow):
         self._read_examination_item(item_name)
 
     def _read_examination_item(self, item_name):
+        self.ui.toolButton_open_examination_item.setEnabled(True)
+        if self.patient_key is None:
+            self.ui.toolButton_open_examination_item.setEnabled(False)
+            return
+
         sql = '''
             SELECT * FROM examination_item
             WHERE
@@ -146,10 +171,14 @@ class MedicalRecordExamination(QtWidgets.QMainWindow):
             examination_item=item_name,
         )
         self.table_widget_test_result.set_db_data(sql, self._set_table_data)
+        if self.table_widget_test_result.row_count() <= 0:
+            self.ui.toolButton_open_examination_item.setEnabled(False)
+
         self._plot_chart()
 
     def _set_table_data(self, row_no, row):
         examination_item_row = [
+            string_utils.xstr(row['ExaminationKey']),
             string_utils.xstr(row['ExaminationDate']),
             string_utils.xstr(row['TestResult']),
         ]
@@ -208,3 +237,37 @@ class MedicalRecordExamination(QtWidgets.QMainWindow):
 
         self.chartView.setFixedWidth(1000)
         self.ui.verticalLayout_chart.addWidget(self.chartView)
+
+    def _open_examination(self):
+        examination_key = self.table_widget_test_result.field_value(0)
+        self.parent.parent._add_tab(
+            '檢驗報告登錄', self.database, self.system_settings,
+            examination_key, None, None
+        )
+
+    def _add_examination(self):
+        case_date = self.parent.medical_record['CaseDate']
+        examination_key = self._get_examination_key(self.patient_key, case_date)
+
+        self.parent.parent._add_tab(
+            '檢驗報告登錄', self.database, self.system_settings,
+            examination_key, self.patient_key, case_date
+        )
+
+    def _get_examination_key(self, patient_key, case_date):
+        examination_key = None
+
+        sql = '''
+            SELECT ExaminationKey FROM examination
+            WHERE
+                PatientKey = {patient_key} AND
+                ExaminationDate = "{case_date}"
+        '''.format(
+            patient_key=patient_key,
+            case_date=case_date.date(),
+        )
+        rows = self.database.select_record(sql)
+        if len(rows) > 0:
+            examination_key = rows[0]['ExaminationKey']
+
+        return examination_key

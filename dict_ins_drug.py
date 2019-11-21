@@ -6,6 +6,10 @@ import sys
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtWidgets import QMessageBox, QPushButton, QFileDialog, QProgressBar
 
+import urllib.request
+from threading import Thread
+from queue import Queue
+
 import datetime
 from classes import table_widget
 from libs import system_utils
@@ -100,6 +104,7 @@ class DictInsDrug(QtWidgets.QMainWindow):
     # 設定信號
     def _set_signal(self):
         self.ui.action_sync_drug.triggered.connect(self._sync_drug)
+        self.ui.action_update_drug.triggered.connect(self._update_ins_drug)
         self.ui.action_close.triggered.connect(self._close_ins_drug)
         self.ui.action_update_valid_date.triggered.connect(self._update_valid_date)
         self.ui.tableWidget_medicine.itemSelectionChanged.connect(self._medicine_item_selection_changed)
@@ -135,9 +140,9 @@ class DictInsDrug(QtWidgets.QMainWindow):
         error_message = []
 
         medicine_key = string_utils.xstr(row['MedicineKey'])
-        ins_code = string_utils.xstr(row['InsCode'])
+        ins_code = string_utils.xstr(row['InsCode']).strip()
         valid_date = string_utils.xstr(row['ValidDate'])
-        if '-' not in valid_date:
+        if valid_date != '' and '-' not in valid_date:
             valid_date = '{year}-{month:0>2}-{day:0>2}'.format(
                 year=valid_date[:4],
                 month=valid_date[4:6],
@@ -271,11 +276,11 @@ class DictInsDrug(QtWidgets.QMainWindow):
         self.ui.statusbar.removeWidget(progress_bar)
 
     def _write_ins_drug(self, medicine_type, rows, progress_bar):
-        ins_code = self._get_field_number(rows[0], '藥品代碼')
-        drug_name = self._get_field_number(rows[0], '藥品名稱')
-        drug_type = self._get_field_number(rows[0], '劑型')
-        supplier = self._get_field_number(rows[0], '製造廠名稱')
-        valid_date = self._get_field_number(rows[0], '有效期間')
+        ins_code_no = self._get_field_number(rows[0], '藥品代碼')
+        drug_name_no = self._get_field_number(rows[0], '藥品名稱')
+        drug_type_no = self._get_field_number(rows[0], '劑型')
+        supplier_no = self._get_field_number(rows[0], '製造廠名稱')
+        valid_date_no = self._get_field_number(rows[0], '有效期間')
 
         for row_no, row in zip(range(len(rows)), rows):
             progress_bar.setValue(row_no+1)
@@ -283,11 +288,11 @@ class DictInsDrug(QtWidgets.QMainWindow):
                 continue
 
             try:
-                ins_code = row[ins_code]
-                drug_name = row[drug_name]
-                drug_type = row[drug_type]
-                supplier = row[supplier]
-                valid_date = row[valid_date]
+                ins_code = row[ins_code_no]
+                drug_name = row[drug_name_no]
+                drug_type = row[drug_type_no]
+                supplier = row[supplier_no]
+                valid_date = string_utils.xstr(row[valid_date_no])
                 valid_date = '{0}-{1}-{2}'.format(
                     valid_date[:4],
                     valid_date[4:6],
@@ -480,3 +485,85 @@ class DictInsDrug(QtWidgets.QMainWindow):
         progress_dialog.setValue(record_count)
         self._read_medicine()
         self._filter_medicine()
+
+    @staticmethod
+    def _message_box(title, message, hint):
+        msg_box = QMessageBox()
+        msg_box.setIcon(QMessageBox.Information)
+        msg_box.setWindowTitle(title)
+        msg_box.setText(message)
+        msg_box.setInformativeText(hint)
+        msg_box.setStandardButtons(QMessageBox.NoButton)
+
+        return msg_box
+
+    def _download_file_thread(self, out_queue, download_file_name, url):
+        QtCore.QCoreApplication.processEvents()
+
+        u = urllib.request.urlopen(url)
+        data = u.read()
+        u.close()
+        with open(download_file_name, "wb") as f:
+            f.write(data)
+
+        out_queue.put(download_file_name)
+
+    # 取得安全簽章
+    def _download_drug_file(self, file_name, url):
+        title = '下載健保藥品更新檔'
+        message = '<font size="4" color="red"><b>正在下載健保藥品更新檔, 請稍後...</b></font>'
+        hint = '正在與更新檔資料庫連線, 會花費一些時間.'
+        msg_box = self._message_box(title, message, hint)
+        msg_box.show()
+
+        msg_queue = Queue()
+        QtCore.QCoreApplication.processEvents()
+
+        t = Thread(target=self._download_file_thread, args=(msg_queue, file_name, url))
+        t.start()
+        download_file_name = msg_queue.get()
+        msg_box.close()
+
+        return download_file_name
+
+    def _update_drug(self, medicine_type, file_name, url):
+        file_name = self._download_drug_file(file_name, url)
+
+        sql = '''
+            DELETE FROM drug
+            WHERE
+                MedicineType = "{medicine_type}" OR
+                MedicineType IS NULL
+        '''.format(
+            medicine_type=medicine_type,
+        )
+        self.database.exec_sql(sql)
+
+        rows = get_data(file_name)['工作表1']
+
+        progress_bar = QProgressBar()
+        progress_bar.setMaximum(len(rows))
+        progress_bar.setValue(0)
+        self.ui.statusbar.addWidget(progress_bar)
+        self._write_ins_drug(medicine_type, rows, progress_bar)
+        self.ui.statusbar.removeWidget(progress_bar)
+
+    def _update_ins_drug(self):
+        self._update_drug(
+            '單方',
+            'drug1.ods',
+            'https://www.dropbox.com/s/w3g0qdqh47w7i42/drug1.ods?dl=1',
+        )
+        self._update_drug(
+            '複方',
+            'drug2.ods',
+            'https://www.dropbox.com/s/yhdxk52tod05e81/drug2.ods?dl=1',
+        )
+
+        system_utils.show_message_box(
+            QMessageBox.Information,
+            '線上更新健保碼',
+            '<font size="4" color="blue"><b>最新版本的健保碼更新已完成.</b></font>',
+            '恭喜您! 現在已經是最新的健保藥品'
+        )
+

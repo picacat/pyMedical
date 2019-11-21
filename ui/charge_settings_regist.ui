@@ -156,7 +156,7 @@
          </size>
         </property>
         <property name="title">
-         <string>掛號費優待設定</string>
+         <string>掛號費及部份負擔優待設定</string>
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_6">
          <item>
@@ -242,11 +242,6 @@
                <string>優待金額</string>
               </property>
              </column>
-             <column>
-              <property name="text">
-               <string>備註</string>
-              </property>
-             </column>
             </widget>
            </item>
            <item>
@@ -300,6 +295,29 @@
              </item>
             </layout>
            </item>
+           <item>
+            <widget class="QLabel" name="label_3">
+             <property name="text">
+              <string>&lt;html&gt;&lt;head/&gt;
+&lt;body&gt;
+優待金額設定方式:
+&lt;ul&gt;
+&lt;li&gt;
+設定正數, 代表掛號費收此金額 
+&lt;/li&gt;
+&lt;li&gt;
+設定負數, 代表掛號費減免此金額. 
+&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;</string>
+             </property>
+             <property name="wordWrap">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
           </layout>
          </item>
         </layout>
@@ -316,7 +334,7 @@
      <x>0</x>
      <y>0</y>
      <width>1114</width>
-     <height>24</height>
+     <height>25</height>
     </rect>
    </property>
   </widget>

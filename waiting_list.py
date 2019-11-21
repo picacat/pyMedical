@@ -10,6 +10,7 @@ from libs import ui_utils
 from libs import system_utils
 from libs import date_utils
 from libs import string_utils
+from libs import number_utils
 from libs import nhi_utils
 from libs import case_utils
 from libs import statistics_utils
@@ -103,6 +104,7 @@ class WaitingList(QtWidgets.QMainWindow):
         self.ui.tableWidget_waiting_list.doubleClicked.connect(self.open_medical_record)
         self.ui.tableWidget_wait_completed.doubleClicked.connect(self.open_medical_record)
         self.ui.action_medical_record.triggered.connect(self.open_medical_record)
+        self.ui.action_refresh_list.triggered.connect(self.read_wait)
         self.ui.action_close.triggered.connect(self.close_waiting_list)
         self.ui.tableWidget_reservation_list.itemSelectionChanged.connect(self._show_last_medical_record)
         self.ui.toolButton_print_prescript.clicked.connect(self._print_prescript)
@@ -139,11 +141,10 @@ class WaitingList(QtWidgets.QMainWindow):
 
     def read_wait(self):
         sort = 'ORDER BY FIELD(Period, {0}), RegistNo'.format(str(nhi_utils.PERIOD)[1:-1])  # 預設為診號排序
-
-        room = self._get_room_script('wait')
-
         if self.system_settings.field('看診排序') == '時間排序':
             sort = 'ORDER BY CaseDate'
+
+        room = self._get_room_script('wait')
 
         sql = '''
             SELECT wait.*, patient.Gender, patient.Birthday FROM wait 
@@ -362,7 +363,7 @@ class WaitingList(QtWidgets.QMainWindow):
         self.ui.textEdit_medical_record.setHtml(None)
 
         try:
-            patient_key = self.table_widget_reservation_list.field_value(6)
+            patient_key = self.table_widget_reservation_list.field_value(5)
             if patient_key is None:
                 return
 
@@ -400,21 +401,25 @@ class WaitingList(QtWidgets.QMainWindow):
             self._read_wait_completed()
 
     def _read_wait_completed(self):
-        sort = 'ORDER BY FIELD(cases.Period, {0}), cases.RegistNo'.format(str(nhi_utils.PERIOD)[1:-1])  # 預設為診號排序
-
-        room = self._get_room_script('cases')
+        sort_script = 'ORDER BY FIELD(cases.Period, {0}), cases.RegistNo'.format(str(nhi_utils.PERIOD)[1:-1])  # 預設為診號排序
+        room_script = self._get_room_script('cases')
 
         if self.system_settings.field('看診排序') == '時間排序':
-            sort = 'ORDER BY cases.CaseDate'
+            sort_script = 'ORDER BY cases.CaseDate'
 
         sql = '''
             SELECT wait.*, patient.Gender, patient.Birthday, cases.* FROM wait 
                 LEFT JOIN patient ON wait.PatientKey = patient.PatientKey 
                 LEFT JOIN cases ON wait.CaseKey = cases.CaseKey 
             WHERE 
-                cases.DoctorDone = "True" {0}
-                {1}
-        '''.format(room, sort)
+                cases.DoctorDone = "True" AND
+                cases.TreatType != "自購"
+                {room_script}
+                {sort_script}
+        '''.format(
+            room_script=room_script,
+            sort_script=sort_script,
+        )
 
         self.table_widget_wait_completed.set_db_data(sql, self._set_wait_completed_data)
 
@@ -434,12 +439,12 @@ class WaitingList(QtWidgets.QMainWindow):
         wait_row = [
             string_utils.xstr(row['WaitKey']),
             string_utils.xstr(row['CaseKey']),
-            row['PatientKey'],
+            row['RegistNo'],
             string_utils.xstr(row['Name']),
+            row['PatientKey'],
             string_utils.xstr(row['Gender']),
             age,
             row['Room'],
-            row['RegistNo'],
             string_utils.xstr(row['InsType']),
             string_utils.xstr(row['RegistType']),
             string_utils.xstr(row['Share']),
@@ -449,6 +454,7 @@ class WaitingList(QtWidgets.QMainWindow):
             row['Continuance'],
             disease_name,
             pres_days,
+            row['TotalFee'],
             string_utils.xstr(row['Doctor']),
             string_utils.xstr(row['Massager']),
         ]
@@ -459,18 +465,18 @@ class WaitingList(QtWidgets.QMainWindow):
             self.ui.tableWidget_wait_completed.setItem(
                 row_no, col_no, item,
             )
-            if col_no in [2, 5, 6, 7, 9, 16]:
+            if col_no in [2, 4, 6, 7, 16, 17]:
                 self.ui.tableWidget_wait_completed.item(
                     row_no, col_no).setTextAlignment(
                     QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
                 )
-            elif col_no in [4, 14]:
+            elif col_no in [5, 14]:
                 self.ui.tableWidget_wait_completed.item(
                     row_no, col_no).setTextAlignment(
                     QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
                 )
 
-            if row['InsType'] == '自費':
+            if row['InsType'] == '自費' or number_utils.get_integer(row['TotalFee']) > 0:
                 self.ui.tableWidget_wait_completed.item(
                     row_no, col_no).setForeground(
                     QtGui.QColor('blue')

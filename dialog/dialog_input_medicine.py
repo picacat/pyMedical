@@ -126,12 +126,12 @@ class DialogInputMedicine(QtWidgets.QDialog):
         self.table_widget_medicine.set_db_data(sql, self._set_medicine_data)
 
     def _set_medicine_data(self, row_no, row):
-        if self.dict_type == '健保藥品':
+        medicine_type = string_utils.xstr(row['MedicineType'])
+        if medicine_type in ['單方', '複方']:
             remark = string_utils.xstr(row['InsCode'])
         else:
             remark = None
 
-        medicine_type = string_utils.xstr(row['MedicineType'])
         medicine_row = [
             string_utils.xstr(row['MedicineKey']),
             medicine_type,

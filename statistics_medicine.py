@@ -111,7 +111,8 @@ class StatisticsMedicine(QtWidgets.QMainWindow):
                 LEFT JOIN cases ON prescript.CaseKey = cases.CaseKey
             WHERE
                 cases.CaseDate BETWEEN "{start_date}" AND "{end_date}" AND
-                MedicineType IS NOT NULL
+                MedicineType IS NOT NULL AND
+                MedicineType NOT IN ("穴道", "處置", "檢驗")
             GROUP BY MedicineType 
             ORDER BY FIELD(MedicineType, "高貴", "外用", "水藥", "複方", "單方") DESC
         '''.format(

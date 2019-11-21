@@ -196,6 +196,17 @@ class CheckCard(QtWidgets.QMainWindow):
             elif patient_key != next_patient_key:  # 換人
                 pass
             else:  # 同一人
+                if card != next_card and 1 <= course <= 5:
+                    delta = nhi_utils.get_first_course_delta(
+                        self.ui.tableWidget_errors, row_no, patient_key, course, next_case_date,
+                    )
+                    if delta is None:
+                        error_message.append('療程未滿6次')
+                    elif delta.days + 1 < 14:  # 當天也算一天 +1
+                        error_message.append('療程14日未完成另開新卡')
+                    elif delta.days + 1 < 30:  # 當天也算一天 +1
+                        error_message.append('療程30日未完成另開新卡')
+
                 if treat_type != next_treat_type and next_course <= 1 and 1 <= course <= 5:
                     is_new_course = False
                     for i in range(row_no, self.ui.tableWidget_errors.rowCount()+1):
@@ -224,7 +235,6 @@ class CheckCard(QtWidgets.QMainWindow):
                 elif ((treat_type in nhi_utils.INS_TREAT and next_treat_type == '內科') or
                         (treat_type == '內科' and next_treat_type in nhi_utils.INS_TREAT)):
                     error_message.append('內科與針傷療程交替')
-
                 if (treat_type in nhi_utils.INS_TREAT and next_treat_type == '內科' and
                         disease_code == next_disease_code):
                     error_message.append('內科與針傷療程同診斷碼')

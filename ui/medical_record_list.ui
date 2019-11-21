@@ -193,6 +193,7 @@
     <addaction name="action_open_record"/>
     <addaction name="action_delete_record"/>
     <addaction name="separator"/>
+    <addaction name="action_print_registration"/>
     <addaction name="action_print_prescript"/>
     <addaction name="action_print_receipt"/>
     <addaction name="action_print_misc"/>
@@ -203,7 +204,9 @@
     <addaction name="action_export_cases_pdf"/>
     <addaction name="action_export_fees_pdf"/>
     <addaction name="separator"/>
+    <addaction name="action_export_medical_record_excel"/>
     <addaction name="action_export_excel"/>
+    <addaction name="action_export_json"/>
     <addaction name="separator"/>
     <addaction name="action_close"/>
    </widget>
@@ -243,6 +246,7 @@
    <addaction name="action_open_record"/>
    <addaction name="action_delete_record"/>
    <addaction name="separator"/>
+   <addaction name="action_print_registration"/>
    <addaction name="action_print_prescript"/>
    <addaction name="action_print_receipt"/>
    <addaction name="separator"/>
@@ -378,6 +382,42 @@
    </property>
    <property name="text">
     <string>列印其他收據</string>
+   </property>
+  </action>
+  <action name="action_print_registration">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/printer-network.png</normaloff>../icons/printer-network.png</iconset>
+   </property>
+   <property name="text">
+    <string>列印掛號收據</string>
+   </property>
+   <property name="toolTip">
+    <string>列印掛號收據</string>
+   </property>
+  </action>
+  <action name="action_export_json">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/folder-documents.png</normaloff>../icons/folder-documents.png</iconset>
+   </property>
+   <property name="text">
+    <string>匯出JSON檔</string>
+   </property>
+   <property name="toolTip">
+    <string>匯出JSON檔</string>
+   </property>
+  </action>
+  <action name="action_export_medical_record_excel">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/document-export.svg</normaloff>../icons/document-export.svg</iconset>
+   </property>
+   <property name="text">
+    <string>匯出病歷資料Excel</string>
+   </property>
+   <property name="toolTip">
+    <string>匯出病歷資料Excel</string>
    </property>
   </action>
  </widget>

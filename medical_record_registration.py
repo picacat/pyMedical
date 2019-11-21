@@ -39,6 +39,9 @@ class MedicalRecordRegistration(QtWidgets.QMainWindow):
             self._set_new_self_medical_record()
             self.case_key = -1
 
+        self.user_name = self.system_settings.field('使用者')
+        self._set_permission()
+
     # 解構
     def __del__(self):
         self.close_all()
@@ -85,11 +88,28 @@ class MedicalRecordRegistration(QtWidgets.QMainWindow):
         self.ui.comboBox_xcard.currentTextChanged.connect(self._set_data_changed)
         self.ui.comboBox_card.currentTextChanged.connect(self._set_data_changed)
         self.ui.comboBox_course.currentTextChanged.connect(self._set_data_changed)
+        self.ui.comboBox_tour_area.currentTextChanged.connect(self._set_data_changed)
 
         self.ui.comboBox_upload_type.currentTextChanged.connect(self._cshis_data_changed)
         self.ui.comboBox_treat_after_check.currentTextChanged.connect(self._cshis_data_changed)
 
         self.ui.lineEdit_special_code.textChanged.connect(self.set_special_code)
+        self.ui.checkBox_designated_doctor.clicked.connect(self._set_data_changed)
+        self.ui.checkBox_designated_massager.clicked.connect(self._set_data_changed)
+
+    def _set_permission(self):
+        if self.call_from == '醫師看診作業':
+            return
+
+        if self.user_name == '超級使用者':
+            return
+
+        if personnel_utils.get_permission(self.database, '病歷資料', '病歷修正', self.user_name) == 'Y':
+            return
+
+        self.ui.groupBox_registration.setEnabled(False)
+        self.ui.groupBox_ins_apply.setEnabled(False)
+        self.ui.groupBox_ic_card.setEnabled(False)
 
     def _set_table_width(self):
         width = [200, 90, 430]
@@ -98,6 +118,31 @@ class MedicalRecordRegistration(QtWidgets.QMainWindow):
     # 檢查資料是否異動
     def _set_data_changed(self):
         self.data_changed = True
+        sender_name = self.sender().objectName()
+
+        if sender_name == 'comboBox_share_type':
+            if self.ui.comboBox_share_type.currentText() == '職業傷害':
+                if self.ui.comboBox_injury_type.currentText() not in ['職業傷害', '職業病']:
+                    self.ui.comboBox_injury_type.setCurrentText('職業傷害')
+                card = string_utils.xstr(self.ui.comboBox_card.currentText()).split(' ')[0]
+                if card != 'IC06':
+                    self.ui.comboBox_card.setCurrentText(nhi_utils.INJURY_CARD_DICT['IC06'])
+            else:
+                if self.ui.comboBox_injury_type.currentText() != '普通疾病':
+                    self.ui.comboBox_injury_type.setCurrentText('普通疾病')
+
+        elif sender_name == 'comboBox_injury_type':
+            if self.ui.comboBox_injury_type.currentText() in ['職業傷害', '職業病']:
+                if self.ui.comboBox_share_type.currentText() != '職業傷害':
+                    self.ui.comboBox_share_type.setCurrentText('職業傷害')
+                card = string_utils.xstr(self.ui.comboBox_card.currentText()).split(' ')[0]
+                if card != 'IC06':
+                    self.ui.comboBox_card.setCurrentText(nhi_utils.INJURY_CARD_DICT['IC06'])
+        elif sender_name == 'comboBox_card':
+            card = string_utils.xstr(self.ui.comboBox_card.currentText()).split(' ')[0]
+            if card == 'IC06':
+                if self.ui.comboBox_injury_type.currentText() not in ['職業傷害', '職業病']:
+                    self.ui.comboBox_injury_type.setCurrentText('職業傷害')
 
     def _set_combo_box(self):
         ui_utils.set_combo_box(self.ui.comboBox_period, nhi_utils.PERIOD, None)
@@ -106,6 +151,11 @@ class MedicalRecordRegistration(QtWidgets.QMainWindow):
         ui_utils.set_combo_box(self.ui.comboBox_ins_type, nhi_utils.INS_TYPE, None)
         ui_utils.set_combo_box(self.ui.comboBox_reg_type, nhi_utils.REG_TYPE, None)
         ui_utils.set_combo_box(self.ui.comboBox_room, nhi_utils.ROOM)
+        ui_utils.set_combo_box(
+            self.ui.comboBox_tour_area,
+            list(nhi_utils.TOUR_AREA_DICT.keys()),
+            None
+        )
         ui_utils.set_combo_box(
             self.ui.comboBox_registrar,
             personnel_utils.get_personnel(self.database, '全部'), None,
@@ -132,7 +182,7 @@ class MedicalRecordRegistration(QtWidgets.QMainWindow):
         ui_utils.set_combo_box(self.ui.comboBox_treat_type, nhi_utils.TREAT_TYPE, None)
         ui_utils.set_combo_box(self.ui.comboBox_injury_type, nhi_utils.INJURY_TYPE, None)
         ui_utils.set_combo_box(self.ui.comboBox_xcard, nhi_utils.ABNORMAL_CARD_WITH_HINT, None)
-        ui_utils.set_combo_box(self.ui.comboBox_card, nhi_utils.ABNORMAL_CARD_WITH_HINT, None, '欠卡')
+        ui_utils.set_combo_box(self.ui.comboBox_card, nhi_utils.CARD, None, '欠卡')
         ui_utils.set_combo_box(self.ui.comboBox_course, nhi_utils.COURSE, None)
 
         ui_utils.set_combo_box(self.ui.comboBox_upload_type, nhi_utils.UPLOAD_TYPE, None)
@@ -173,6 +223,7 @@ class MedicalRecordRegistration(QtWidgets.QMainWindow):
         self.ui.comboBox_reg_type.setCurrentText(string_utils.xstr(row['RegistType']))
         self.ui.comboBox_room.setCurrentText(string_utils.xstr(row['Room']))
         self.ui.lineEdit_regist_no.setText(string_utils.xstr(row['RegistNo']))
+        self.ui.comboBox_tour_area.setCurrentText(string_utils.xstr(row['TourArea']))
 
     def _set_personnel(self, row):
         self.ui.comboBox_registrar.setCurrentText(string_utils.xstr(row['Register']))
@@ -180,16 +231,10 @@ class MedicalRecordRegistration(QtWidgets.QMainWindow):
         self.ui.comboBox_doctor.setCurrentText(string_utils.xstr(row['Doctor']))
         self.ui.comboBox_pharmacist.setCurrentText(string_utils.xstr(row['Pharmacist']))
         self.ui.comboBox_massager.setCurrentText(string_utils.xstr(row['Massager']))
-        # self.ui.lineEdit_doctor_id.setText(
-        #     personnel_utils.get_personnel_field_value(
-        #         self.database, string_utils.xstr(row['Doctor']), 'ID'
-        #     )
-        # )
-        # self.ui.lineEdit_pharmacist_id.setText(
-        #     personnel_utils.get_personnel_field_value(
-        #         self.database, string_utils.xstr(row['Pharmacist']), 'ID'
-        #     )
-        # )
+        if row['DesignatedDoctor'] == 'True':
+            self.ui.checkBox_designated_doctor.setChecked(True)
+        if row['DesignatedMassager'] == 'True':
+            self.ui.checkBox_designated_massager.setChecked(True)
 
     def _set_ic_card_data(self, row):
         card_datetime = case_utils.extract_security_xml(row['Security'], '寫卡時間')
@@ -241,11 +286,11 @@ class MedicalRecordRegistration(QtWidgets.QMainWindow):
         self.ui.lineEdit_ins_total_fee.setText(string_utils.xstr(number_utils.get_integer(row['InsTotalFee'])))
         # self.ui.lineEdit_share_fee.setText(
         #     string_utils.xstr(
-        #         number_utils.get_integer(row['DiagShareFee']) +
-        #         number_utils.get_integer(row['DrugShareFee'])
+        #         number_utils.get_integer(medical_row['DiagShareFee']) +
+        #         number_utils.get_integer(medical_row['DrugShareFee'])
         #     )
         # )
-        # self.ui.lineEdit_ins_apply_fee.setText(string_utils.xstr(number_utils.get_integer(row['InsApplyFee'])))
+        # self.ui.lineEdit_ins_apply_fee.setText(string_utils.xstr(number_utils.get_integer(medical_row['InsApplyFee'])))
 
     def _set_treat_sign(self):
         sql = '''
@@ -313,13 +358,25 @@ class MedicalRecordRegistration(QtWidgets.QMainWindow):
         fields = [
             'CaseDate', 'Period', 'DoctorDate', 'ChargeDate', 'ChargePeriod',
             'Visit', 'PatientKey', 'Name',
-            'InsType', 'RegistType', 'Room', 'RegistNo',
+            'InsType', 'RegistType', 'TourArea', 'Room', 'RegistNo',
             'Register', 'Cashier', 'Doctor', 'Pharmacist', 'Massager',
             'ApplyType', 'PharmacyType', 'Share', 'TreatType', 'Injury',
             'XCard', 'Card', 'Continuance', 'SpecialCode',
+            'DesignatedDoctor', 'DesignatedMassager',
         ]
         xcard = string_utils.xstr(self.ui.comboBox_xcard.currentText()).split(' ')[0]
         card = string_utils.xstr(self.ui.comboBox_card.currentText()).split(' ')[0]
+
+        massager = self.ui.comboBox_massager.currentText()
+        designated_doctor = 'False'
+        designated_massager = 'False'
+
+        if self.ui.checkBox_designated_doctor.isChecked():
+            designated_doctor = 'True'
+        if massager != '' and self.ui.checkBox_designated_massager.isChecked():
+            designated_massager = 'True'
+
+
         data = [
             self.ui.lineEdit_case_date.text(),
             self.ui.comboBox_period.currentText(),
@@ -331,6 +388,7 @@ class MedicalRecordRegistration(QtWidgets.QMainWindow):
             self.ui.lineEdit_name.text(),
             self.ui.comboBox_ins_type.currentText(),
             self.ui.comboBox_reg_type.currentText(),
+            self.ui.comboBox_tour_area.currentText(),
             self.ui.comboBox_room.currentText(),
             self.ui.lineEdit_regist_no.text(),
 
@@ -338,7 +396,7 @@ class MedicalRecordRegistration(QtWidgets.QMainWindow):
             self.ui.comboBox_cashier.currentText(),
             self.ui.comboBox_doctor.currentText(),
             self.ui.comboBox_pharmacist.currentText(),
-            self.ui.comboBox_massager.currentText(),
+            massager,
 
             self.ui.comboBox_apply_type.currentText(),
             self.ui.comboBox_pharmacy_type.currentText(),
@@ -349,6 +407,8 @@ class MedicalRecordRegistration(QtWidgets.QMainWindow):
             card,
             self.ui.comboBox_course.currentText(),
             self.ui.lineEdit_special_code.text(),
+            designated_doctor,
+            designated_massager,
         ]
 
         self.database.update_record('cases', fields, 'CaseKey', self.case_key, data)
@@ -389,7 +449,8 @@ class MedicalRecordRegistration(QtWidgets.QMainWindow):
         self.ui.lineEdit_upload_time.setText('')
         self.ui.textEdit_signature.setPlainText('')
 
-        self.ui.comboBox_reg_type.setCurrentText('內科')
+        self.ui.comboBox_reg_type.setCurrentText(self.system_settings.field('掛號類別'))
+        self.ui.comboBox_treat_type.setCurrentText('內科')
         self.ui.comboBox_card.setCurrentText('不需取得')
         self.ui.comboBox_course.setCurrentText(None)
         self.ui.comboBox_xcard.setCurrentText(None)

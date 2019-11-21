@@ -1,6 +1,6 @@
 
 import socket
-from PyQt5 import QtCore
+from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtWidgets import QMessageBox
 
 from libs import system_utils
@@ -13,6 +13,7 @@ class UDPSocketServer(QtCore.QThread):
         super(UDPSocketServer, self).__init__(parent)
         self.server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.buffer_size = 1024
+        self.socket_connected = False
         self._init_socket_server()
 
     def __del__(self):
@@ -25,18 +26,26 @@ class UDPSocketServer(QtCore.QThread):
         server_address = (host, port)
         try:
             self.server.bind(server_address)
+            self.socket_connected = True
         except OSError:
-            system_utils.show_message_box(
-                QMessageBox.Critical,
-                '驅動網路Socket失敗',
-                '<h3>無法驅動網路Socket功能, 所有的廣播訊息將無法接收.</h3>',
-                '請確定是否有其他的醫療系統正在使用中.'
-            )
+            pass
+            # system_utils.show_message_box(
+            #    QMessageBox.Critical,
+            #    '驅動網路Socket失敗',
+            #    '<h3>無法驅動網路Socket功能, 所有的廣播訊息將無法接收.</h3>',
+            #    '請確定是否有其他的醫療系統正在使用中.'
+            # )
 
-            return False
+    def connected(self):
+        return self.socket_connected
 
     def run(self):
         while True:
-            data, client_address = self.server.recvfrom(self.buffer_size)
+            try:
+                data, client_address = self.server.recvfrom(self.buffer_size)
+            except OSError:
+                # QtWidgets.QApplication.exit(0)
+                break
+
             self.update_signal.emit(str(data, 'utf-8'))
             self.server.sendto(data, client_address)

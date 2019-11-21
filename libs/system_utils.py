@@ -40,10 +40,51 @@ def get_font():
     if sys.platform == 'win32':
         font = "Microsoft JhengHei"
     else:
-        #font = 'Noto Sans Mono'
         font = 'Monospace'
 
     return font
+
+
+def set_login_image(widget, system_settings):
+    image_file = 'login_blue.jpg'
+
+    if system_settings.field('外觀顏色') == '紅色':
+        image_file = 'login_red.jpg'
+    elif system_settings.field('外觀顏色') == '綠色':
+        image_file = 'login_green.jpg'
+    elif system_settings.field('外觀顏色') == '藍色':
+        image_file = 'login_blue.jpg'
+    elif system_settings.field('外觀顏色') == '灰色':
+        image_file = 'login_gray.jpg'
+
+    style = '''
+        QDialog#Dialog_login
+        {{background-image: url(images/{image_file});}}
+    '''.format(
+        image_file=image_file,
+    )
+    widget.setStyleSheet(style)
+
+
+def set_background_image(widget, system_settings):
+    image_file = 'home_blue.jpg'
+
+    if system_settings.field('外觀顏色') == '紅色':
+        image_file = 'home_red.jpg'
+    elif system_settings.field('外觀顏色') == '綠色':
+        image_file = 'home_green.jpg'
+    elif system_settings.field('外觀顏色') == '藍色':
+        image_file = 'home_blue.jpg'
+    elif system_settings.field('外觀顏色') == '灰色':
+        image_file = 'home_gray.jpg'
+
+    style = '''
+        QWidget#tab_home
+        {{background-image: url(./images/{image_file});}}
+    '''.format(
+        image_file=image_file,
+    )
+    widget.setStyleSheet(style)
 
 
 def set_css(widget, system_settings):
@@ -97,3 +138,15 @@ def unzip_file(zip_file, output_directory):
     sp = subprocess.Popen(cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
     sp.communicate()
 
+
+def get_host_ip():
+    import socket
+
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        s.connect(('8.8.8.8', 80))
+        ip = s.getsockname()[0]
+    finally:
+        s.close()
+
+    return ip

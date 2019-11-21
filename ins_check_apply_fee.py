@@ -13,6 +13,7 @@ from libs import system_utils
 from libs import string_utils
 from libs import nhi_utils
 from libs import number_utils
+from libs import xml_utils
 
 
 # 申報金額核對 2018.12.17
@@ -89,7 +90,9 @@ class InsCheckApplyFee(QtWidgets.QMainWindow):
 
         self._parse_ins_calculated_data()
 
-        xml_file_name = nhi_utils.get_ins_xml_file_name(self.apply_type_code, self.apply_date)
+        xml_file_name = nhi_utils.get_ins_xml_file_name(
+            self.system_settings, self.apply_type_code, self.apply_date
+        )
         if not os.path.isfile(xml_file_name):
             return
 
@@ -126,7 +129,7 @@ class InsCheckApplyFee(QtWidgets.QMainWindow):
     def _parse_tdata(self, root):
         tdata = root.xpath('//outpatient/tdata')[0]
 
-        tdata = self._convert_node_to_dict(tdata)
+        tdata = xml_utils.convert_node_to_dict(tdata)
         total_count = number_utils.get_integer(tdata['t37'])
         total_fee = number_utils.get_integer(tdata['t38'])
         total_share_fee = number_utils.get_integer(tdata['t40'])
@@ -186,13 +189,13 @@ class InsCheckApplyFee(QtWidgets.QMainWindow):
             progress_dialog.setValue(row_no)
 
             dhead = root.xpath('//outpatient/ddata/dhead')[row_no]
-            dhead_data = self._convert_node_to_dict(dhead)
+            dhead_data = xml_utils.convert_node_to_dict(dhead)
 
             ddata_fee['case_type'] = dhead_data['d1']
             ddata_fee['sequence'] = dhead_data['d2']
             ddata_fee['total_count'] += 1
 
-            xdata = self._convert_node_to_dict(ddata)
+            xdata = xml_utils.convert_node_to_dict(ddata)
             ddata_fee['name'] = xdata['d49']
 
             try:
@@ -357,7 +360,7 @@ class InsCheckApplyFee(QtWidgets.QMainWindow):
         for row in pdata:
             pdata_fee['total_count'] += 1
 
-            xdata = self._convert_node_to_dict(row)
+            xdata = xml_utils.convert_node_to_dict(row)
 
             try:
                 price = number_utils.get_integer(xdata['p12'])
@@ -374,11 +377,4 @@ class InsCheckApplyFee(QtWidgets.QMainWindow):
                 pdata_fee['pharmacy_fee'] += price
 
         return pdata_fee
-
-    def _convert_node_to_dict(self, node):
-        node_dict = {}
-        for node_data in node:
-            node_dict[node_data.tag] = node_data.text
-
-        return node_dict
 

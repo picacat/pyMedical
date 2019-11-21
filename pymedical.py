@@ -5,8 +5,10 @@ import sys
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtWidgets import QMessageBox, QPushButton
 
+import configparser
 import datetime
 import os
+import urllib
 
 from classes import db
 from classes import system_settings
@@ -21,6 +23,7 @@ from libs import string_utils
 
 from dialog import dialog_system_settings
 from dialog import dialog_hosts
+from dialog import dialog_import_medical_record
 from dialog import dialog_ic_card
 from dialog import dialog_export_emr_xml
 from dialog import dialog_database_repair
@@ -44,23 +47,59 @@ class PyMedical(QtWidgets.QMainWindow):
     def __init__(self, parent=None, *args):
         super(PyMedical, self).__init__(parent)
         # QtWidgets.QMainWindow.__init__(self)
-        self.database = db.Database()
+        self.args = args
+        try:
+            config_file = args[0][1]
+        except IndexError:
+            config_file = None
+
+        if config_file is not None:
+            self.config_file = config_file
+            config_dict = self._parse_config_file(config_file)
+            self.database = db.Database(
+                host=config_dict['host'],
+                user=config_dict['user'],
+                database=config_dict['database'],
+                password=config_dict['password'],
+                charset=config_dict['charset'],
+                buffered=config_dict['buffered'],
+            )
+        else:
+            self.config_file = ui_utils.CONFIG_FILE
+            self.database = db.Database()
+
         if not self.database.connected():
             sys.exit(0)
 
         self.check_system_db()
 
-        self.system_settings = system_settings.SystemSettings(self.database)
+        self.system_settings = system_settings.SystemSettings(self.database, self.config_file)
         self.ui = None
         self.statistics_dicts = None
-        self.socket_server = udp_socket_server.UDPSocketServer()
 
         self._set_ui()
+        self._set_socket_server()
         self._set_signal()
         self._start_udp_socket_server()
         self._set_user_name()
 
         self.reset_wait()
+
+    @staticmethod
+    def _parse_config_file(config_file):
+        config = configparser.ConfigParser()
+        config.read(config_file)
+
+        config_dict = {
+            'host': config['db']['host'],
+            'user': config['db']['user'],
+            'database': config['db']['database'],
+            'password': config['db']['password'],
+            'charset': config['db']['charset'],
+            'buffered': True
+        }
+
+        return config_dict
 
     def _set_user_name(self):
         self.user_name = self.system_settings.field('使用者')
@@ -100,17 +139,7 @@ class PyMedical(QtWidgets.QMainWindow):
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_PY_MEDICAL, self)
-        style = '''
-            QWidget#tab_home
-            {background-image: url(./images/home.jpg);}
-        '''
-        self.ui.tab_home.setStyleSheet(style)
-        self.ui.label_system_name.setText(
-            '{clinic_name} 醫療資訊管理系統'.format(
-                clinic_name=self.system_settings.field('院所名稱'),
-            )
-        )
-
+        self.setWindowIcon(QtGui.QIcon('./icons/python.ico'))
         self.ui.tabWidget_window.setTabsClosable(True)
 
         # self.ui.setWindowFlags(Qt.FramelessWindowHint)  # 無視窗邊框
@@ -127,8 +156,59 @@ class PyMedical(QtWidgets.QMainWindow):
             self.ui.frameSidebar.hide()
             self.ui.action_show_side_bar.setChecked(False)
 
+        self._display_bulletin()
+        self._set_plugin()
+
+    def _display_bulletin(self):
+        self.ui.textBrowser.setStyleSheet('background: transparent;')
+        self.ui.textBrowser.setFrameStyle(QtWidgets.QFrame.NoFrame)
+
+        url = 'https://www.dropbox.com/s/w8jwe9b0gffhgt9/bulletin.html?dl=1'
+        try:
+            u = urllib.request.urlopen(url)
+            data = u.read()
+            u.close()
+        except urllib.error.URLError:
+            return
+
+        html_file = 'bulletin.html'
+        with open(html_file, "wb") as f:
+            f.write(data)
+
+        with open(html_file, 'rt', encoding='utf8') as bulletin_file:
+            html_text = bulletin_file.read()
+
+        self.ui.textBrowser.setHtml(html_text)
+
+    def _set_plugin(self):
+        visible = False
+
+        if self.system_settings.field('院所名稱') in [
+            '黃秀凌中醫診所',
+            '明醫中醫診所',
+            '林錡宏中醫診所',
+
+        ]:
+            visible = True
+
+        self.ui.menu_massage.menuAction().setVisible(visible)
+
+    def _set_socket_server(self):
+        self.socket_server = udp_socket_server.UDPSocketServer()
+        if not self.socket_server.connected():
+            if self.system_settings.field('醫療系統執行個體') == '獨立執行':
+                sys.exit(0)
+            else:
+                self.ui.setWindowTitle('{0} 醫療資訊管理系統  (廣播網路已停用)'.format(
+                    self.system_settings.field('院所名稱'))
+                )
+
     # 設定 status bar
     def set_status_bar(self):
+        self.label_config_file = QtWidgets.QLabel()
+        self.label_config_file.setFixedWidth(250)
+        self.ui.statusbar.addPermanentWidget(self.label_config_file)
+
         self.label_station_no = QtWidgets.QLabel()
         self.label_station_no.setFixedWidth(200)
         self.ui.statusbar.addPermanentWidget(self.label_station_no)
@@ -142,7 +222,7 @@ class PyMedical(QtWidgets.QMainWindow):
         self.socket_server.update_signal.connect(self._refresh_waiting_data)
 
         self.ui.pushButton_registration.clicked.connect(self._open_subroutine)           # 掛號作業
-        self.ui.pushButton_reservation.clicked.connect(self.open_reservation)            # 預約掛號
+        self.ui.pushButton_reservation.clicked.connect(lambda: self.open_reservation(None, None, None))  # 預約掛號
         self.ui.pushButton_cashier.clicked.connect(self._open_subroutine)                # 批價作業
         self.ui.pushButton_return_card.clicked.connect(self._open_subroutine)            # 健保卡欠還卡
         self.ui.pushButton_debt.clicked.connect(self._open_subroutine)                   # 欠還款作業
@@ -156,6 +236,7 @@ class PyMedical(QtWidgets.QMainWindow):
 
         self.ui.pushButton_settings.clicked.connect(self.open_settings)                     # 系統設定
         self.ui.action_hosts.triggered.connect(self.open_hosts_settings)                    # 分院連線設定
+        self.ui.action_import_medical_record.triggered.connect(self.open_import_medical_record)  # 分院連線設定
         self.ui.pushButton_charge.clicked.connect(self._open_subroutine)                    # 收費設定
         self.ui.pushButton_diagnostic.clicked.connect(self._open_subroutine)                # 診察資料
         self.ui.pushButton_medicine.clicked.connect(self._open_subroutine)                  # 處方資料
@@ -201,6 +282,8 @@ class PyMedical(QtWidgets.QMainWindow):
         self.ui.action_statistics_doctor.triggered.connect(self._open_subroutine)
         self.ui.action_statistics_return_rate.triggered.connect(self._open_subroutine)
         self.ui.action_statistics_medicine.triggered.connect(self._open_subroutine)
+        self.ui.action_statistics_ins_performance.triggered.connect(self._open_subroutine)
+        self.ui.action_statistics_doctor_commission.triggered.connect(self._open_subroutine)
 
         self.ui.action_ic_card.triggered.connect(self.open_ic_card)
         self.ui.action_show_side_bar.triggered.connect(self.switch_side_bar)
@@ -208,11 +291,19 @@ class PyMedical(QtWidgets.QMainWindow):
         self.ui.action_certificate_diagnosis.triggered.connect(self._open_subroutine)       # 申請診斷證明書
         self.ui.action_certificate_payment.triggered.connect(self._open_subroutine)         # 申請醫療費用證明書
 
+        self.ui.action_massage_registration.triggered.connect(self._open_subroutine)
+
         self.ui.tabWidget_window.tabCloseRequested.connect(self.close_tab)                  # 關閉分頁
         self.ui.tabWidget_window.currentChanged.connect(self.tab_changed)                   # 切換分頁
 
     # 設定 css style
     def _set_style(self):
+        self.ui.label_system_name.setText(
+            '<b>{clinic_name} 醫療資訊管理系統</b>'.format(
+                clinic_name=self.system_settings.field('院所名稱'),
+            )
+        )
+        system_utils.set_background_image(self.ui.tab_home, self.system_settings)
         system_utils.set_css(self, self.system_settings)
         system_utils.set_theme(self.ui, self.system_settings)
 
@@ -259,6 +350,8 @@ class PyMedical(QtWidgets.QMainWindow):
         if tab_name == '醫師看診作業':
             self._add_tab(tab_name, self.database, self.system_settings, self.statistics_dicts)
         elif tab_name == '檢驗報告登錄':
+            self._add_tab(tab_name, self.database, self.system_settings, None, None, None)
+        elif tab_name in ['醫療費用證明書', '健保卡欠還卡']:
             self._add_tab(tab_name, self.database, self.system_settings, None)
         else:
             self._add_tab(tab_name, self.database, self.system_settings)
@@ -294,6 +387,8 @@ class PyMedical(QtWidgets.QMainWindow):
             '醫師統計',
             '回診率統計',
             '用藥統計',
+            '健保申報業績',
+            '醫師銷售業績統計',
         ]:
             widget.open_dialog()
         elif widget_name == "醫師看診作業":
@@ -415,7 +510,20 @@ class PyMedical(QtWidgets.QMainWindow):
             name=name,
             examination_date=examination_date,
         )
-        self._add_tab(tab_name, self.database, self.system_settings, examination_key)
+        self._add_tab(tab_name, self.database, self.system_settings, examination_key, None, None)
+
+    # 開啟病歷資料
+    def create_certificate_payment(self, auto_create_list):
+        tab_name = '自動產生醫療費用證明書-{name}-{start_date}'.format(
+            name=auto_create_list[1],
+            start_date=auto_create_list[4],
+        )
+        self._add_tab(tab_name, self.database, self.system_settings, auto_create_list)
+
+    # 開啟病歷資料
+    def open_return_card(self, patient_key):
+        tab_name = '健保卡欠還卡'
+        self._add_tab(tab_name, self.database, self.system_settings, patient_key)
 
     # 開啟病歷資料
     def open_medical_record(self, case_key, call_from=None):
@@ -501,7 +609,7 @@ class PyMedical(QtWidgets.QMainWindow):
         self._add_tab(tab_name, self.database, self.system_settings, row['PatientKey'], call_from, None)
 
     # 預約掛號
-    def open_reservation(self, reserve_key):
+    def open_reservation(self, reserve_key, patient_key, doctor):
         tab_name = '預約掛號'
         if self._tab_exists(tab_name):
             current_tab = None
@@ -511,7 +619,9 @@ class PyMedical(QtWidgets.QMainWindow):
                     break
 
         else:
-            current_tab = self._add_tab(tab_name, self.database, self.system_settings, reserve_key)
+            current_tab = self._add_tab(
+                tab_name, self.database, self.system_settings, reserve_key, patient_key, doctor
+            )
 
         if reserve_key is not None:
             current_tab.set_reservation_arrival(reserve_key)
@@ -560,13 +670,19 @@ class PyMedical(QtWidgets.QMainWindow):
         dialog = dialog_system_settings.DialogSystemSettings(self.ui, self.database, self.system_settings)
         dialog.exec_()
         dialog.deleteLater()
-        self.system_settings = system_settings.SystemSettings(self.database)
+        self.system_settings = system_settings.SystemSettings(self.database, self.config_file)
         self.label_station_no.setText('工作站編號: {0}'.format(self.system_settings.field('工作站編號')))
         self._set_button_enabled()
 
-    # 系統設定
+    # 分院資料設定
     def open_hosts_settings(self):
         dialog = dialog_hosts.DialogHosts(self.ui, self.database, self.system_settings)
+        dialog.exec_()
+        dialog.deleteLater()
+
+    # 匯入病歷
+    def open_import_medical_record(self):
+        dialog = dialog_import_medical_record.DialogImportMedicalRecord(self.ui, self.database, self.system_settings)
         dialog.exec_()
         dialog.deleteLater()
 
@@ -663,6 +779,7 @@ class PyMedical(QtWidgets.QMainWindow):
 
             self.ui.action_statistics_doctor,
             self.ui.action_statistics_return_rate,
+            self.ui.action_convert,
         ]
 
         for action in action_list:
@@ -811,7 +928,7 @@ class PyMedical(QtWidgets.QMainWindow):
         current_tab_text = self.ui.tabWidget_window.tabText(index)
         if current_tab_text in ['門診掛號', '醫師看診作業', '批價作業']:
             tab = self.ui.tabWidget_window.currentWidget()
-            if current_tab_text in ['門診掛號']:
+            if current_tab_text in ['門診掛號', '批價作業']:
                 tab.refresh_wait()
             else:
                 tab.read_wait()
@@ -820,6 +937,7 @@ class PyMedical(QtWidgets.QMainWindow):
     def refresh_status_bar(self):
         self.label_user_name.setText('使用者: {0}'.format(self.system_settings.field('使用者')))
         self.label_station_no.setText('工作站編號: {0}'.format(self.system_settings.field('工作站編號')))
+        self.label_config_file.setText('設定檔: {0}'.format(self.config_file))
 
     # 登出
     def logout(self):
@@ -862,10 +980,11 @@ class PyMedical(QtWidgets.QMainWindow):
         dialog.deleteLater()
 
     # 重新啟動系統
-    @staticmethod
-    def restart_pymedical():
+    def restart_pymedical(self):
         if sys.platform == 'win32':
-            os.execv(sys.executable, [sys.executable, __file__] + sys.argv)
+            os.execv(sys.executable,
+                     [sys.executable, os.path.join(sys.path[0], __file__)] + sys.argv[1:])
+            # os.execv(sys.executable, [sys.executable, __file__] + sys.argv)
         else:
             os.execv(__file__, sys.argv)
 
@@ -878,13 +997,24 @@ def main():
 
     app = QtWidgets.QApplication(sys.argv)
 
-    py_medical = PyMedical()
+    splash_pix = QtGui.QPixmap('images/login_green.jpg')
+    splash = QtWidgets.QSplashScreen(splash_pix, QtCore.Qt.WindowStaysOnTopHint)
+    splash.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint | QtCore.Qt.FramelessWindowHint)
+    splash.setEnabled(False)
+    splash.show()
+    splash.showMessage(
+        "<h1><font color='darkgreen'>系統程式載入中, 請稍後...</font></h1>",
+        QtCore.Qt.AlignTop | QtCore.Qt.AlignCenter, QtCore.Qt.black
+    )
+
+    py_medical = PyMedical(None, sys.argv)
     py_medical.system_settings.post('使用者', None)
 
     check_db = check_database.CheckDatabase(py_medical, py_medical.database, py_medical.system_settings)
     check_db.check_database()
     del check_db
 
+    splash.finish(py_medical)
     login_dialog = login.Login(py_medical, py_medical.database, py_medical.system_settings)
     login_dialog.exec_()
     if not login_dialog.login_ok:
@@ -904,6 +1034,7 @@ def main():
     py_medical.set_root_permission()
     py_medical.set_permission()
     py_medical.showMaximized()
+
     py_medical.check_ic_card()
     sys.exit(app.exec_())
 

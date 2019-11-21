@@ -12,14 +12,13 @@ import ctypes
 
 from libs import number_utils
 from libs import string_utils
+from libs import date_utils
 from libs import case_utils
 from libs import personnel_utils
 from libs import charge_utils
 from libs import system_utils
 from libs import dialog_utils
-
-XML_OUT_PATH = '{0}/nhi_upload'.format(os.getcwd())
-EMR_OUT_PATH = '{0}/emr'.format(os.getcwd())
+from libs import icd10_utils
 
 MAX_DIAG_DAYS = 26  # 合理門診量最大日期
 APPLY_TYPE_CODE = {
@@ -61,7 +60,7 @@ MAX_COURSE = 6  # 療程次數
 MAX_TREAT_DRUG = 120  # 針傷給藥限量
 TREAT_DRUG_CODE = ['B41', 'B43', 'B45', 'B53', 'B62', 'B80', 'B85', 'B90']  # 針傷給藥代碼
 TREAT_CODE = ['B42', 'B44', 'B46', 'B54', 'B61', 'B63', 'B81', 'B86', 'B91']  # 針傷未開藥代碼
-TREAT_ALL_CODE = [   # 所有針傷處置代碼
+TREAT_ALL_CODE = [  # 所有針傷處置代碼
     'B41', 'B42', 'B43', 'B44', 'B45', 'B46',
     'B53', 'B54', 'B55', 'B56', 'B57',
     'B61', 'B62', 'B63',
@@ -100,7 +99,10 @@ APPLY_TYPE = ['申報', '不申報'] + REMEDY_TYPE
 
 PHARMACY_APPLY_TYPE = ['申報', '不申報']
 VISIT = ['複診', '初診']
-REG_TYPE = ['一般門診', '預約門診', '夜間急診']
+TOUR_FAR = ['巡迴偏遠']
+TOUR_MOUNTAIN_ISLAND = ['巡迴山地', '巡迴離島']
+TOUR_TYPE = TOUR_FAR + TOUR_MOUNTAIN_ISLAND
+REG_TYPE = ['一般門診', '預約門診', '夜間急診', ] + TOUR_TYPE
 GENERAL_INJURY_TYPE = ['普通疾病']
 
 OCCUPATIONAL_INJURY_TYPE = ['職業傷害', '職業病']
@@ -117,9 +119,9 @@ AGENT_SHARE = [
     '新生兒', '愛滋病', '替代役男', '天然災害',
 ]
 
-ACUPUNCTURE_TREAT = ['針灸治療', '電針治療', '複雜針灸',]
-MASSAGE_TREAT = ['傷科治療', '複雜傷科',]
-DISLOCATE_TREAT = ['脫臼復位', '脫臼整復首次', '脫臼整復',]
+ACUPUNCTURE_TREAT = ['針灸治療', '電針治療', '複雜針灸', ]
+MASSAGE_TREAT = ['傷科治療', '複雜傷科', ]
+DISLOCATE_TREAT = ['脫臼復位', '脫臼整復首次', '脫臼整復', ]
 INS_TREAT = ACUPUNCTURE_TREAT + MASSAGE_TREAT + DISLOCATE_TREAT
 
 # 案件分類: 30
@@ -268,6 +270,274 @@ ABNORMAL_CARD_WITH_HINT = [
     'H000 高齡醫師',
 ]
 
+RESOURCE_TYPE = [
+    '一般',
+    '資源不足巡迴醫療',
+    '資源不足開業',
+    '偏遠地區長期進駐',
+]
+
+TOUR_AREA_LEVEL = {
+    '資源不足': [
+        '新北市三芝區', '新北市金山區', '新北市萬里區', '新北市貢寮區', '新北市石碇區',
+        '宜蘭縣蘇澳鎮', '宜蘭縣三星鄉',
+        '新竹縣關西鎮', '新竹縣新埔鎮', '新竹縣芎林鄉',
+        '苗栗縣卓蘭鎮', '苗栗縣銅鑼鄉', '苗栗縣三義鄉', '苗栗縣造橋鄉', '苗栗縣三灣鄉',
+        '台中市石岡區',
+        '彰化縣線西鄉', '彰化縣埔鹽鄉', '彰化縣二水鄉', '彰化縣田尾鄉', '彰化縣芳苑鄉', '彰化縣竹塘鄉',
+        '南投縣集集鎮', '南投縣鹿谷鄉', '南投縣中寮鄉', '南投縣魚池鄉', '南投縣國姓鄉',
+        '台南市柳營區', '台南市六甲區', '台南市西港區', '台南市七股區', '台南市將軍區', '台南市山上區', '台南市楠西區',
+        '台南市南化區', '台南市官田區',
+        '雲林縣口湖鄉', '雲林縣林內鄉', '雲林縣二崙鄉', '雲林縣褒忠鄉', '雲林縣元長鄉', '雲林縣四湖鄉',
+        '嘉義縣東石鄉', '嘉義縣六腳鄉', '嘉義縣義竹鄉', '嘉義縣水上鄉', '嘉義縣梅山鄉', '嘉義縣大埔鄉',
+        '高雄市湖內區', '高雄市梓官區', '高雄市六龜區', '高雄市杉林區', '高雄市永安區', '高雄市彌陀區', '高雄市甲仙區',
+        '高雄市內門區',
+        '屏東縣恆春鎮', '屏東縣長治鄉', '屏東縣麟洛鄉', '屏東縣里港鄉', '屏東縣鹽埔鄉', '屏東縣高樹鄉', '屏東縣林邊鄉',
+        '屏東縣南州鄉', '屏東縣九如鄉',
+        '花蓮縣鳳林鎮', '花蓮縣壽豐鄉', '花蓮縣瑞穗鄉', '台東縣太麻里鄉', '台東縣卑南鄉', '台東縣池上鄉',
+        '澎湖縣湖西鄉',
+        '金門縣金沙鎮', '金門縣金寧鄉', '金門縣金湖鎮',
+    ],
+    '一級偏遠': [
+        '新北市坪林區', '新北市石門區', '新北市平溪區', '新北市雙溪區',
+        '宜蘭縣冬山鄉', '宜蘭縣壯圍鄉',
+        '新竹縣橫山鄉', '新竹縣寶山鄉', '新竹縣北埔鄉', '新竹縣峨嵋鄉',
+        '苗栗縣南庄鄉', '苗栗縣頭屋鄉', '苗栗縣西湖鄉', '苗栗縣獅潭鄉',
+        '台中市大安區',
+        '彰化縣大城鄉',
+        '雲林縣東勢鄉',
+        '嘉義縣布袋鎮', '嘉義縣溪口鄉', '嘉義縣鹿草鄉', '嘉義縣番路鄉',
+        '台南市後壁區', '台南市大內區', '台南市左鎮區', '台南市龍崎區', '台南市北門區', '台南市東山區', '台南市安定區',
+        '高雄市田寮區',
+        '屏東縣萬巒鄉', '屏東縣竹田鄉', '屏東縣新埤鄉', '屏東縣崁頂鄉', '屏東縣車城鄉', '屏東縣枋山鄉',
+        '花蓮縣富里鄉',
+        '台東縣東河鄉', '台東縣鹿野鄉',
+    ],
+    '二級偏遠': [
+        '花蓮縣豐濱鄉',
+        '台東縣大武鄉', '台東縣長濱鄉',
+    ],
+    '山地鄉': [
+        '新北市烏來區',
+        '宜蘭縣大同鄉', '宜蘭縣南澳鄉',
+        '桃園市復興區',
+        '新竹縣尖石鄉', '新竹縣五峰鄉',
+        '苗栗縣泰安鄉',
+        '台中市和平區',
+        '南投縣信義鄉', '南投縣仁愛鄉',
+        '嘉義縣阿里山鄉',
+        '高雄市茂林區', '高雄市桃源區',
+        '高雄市那瑪夏區',
+        '屏東縣山地門鄉', '屏東縣霧臺鄉', '屏東縣泰武鄉', '屏東縣來義鄉', '屏東縣春日鄉', '屏東縣獅子鄉',
+        '屏東縣牡丹鄉', '屏東縣瑪家鄉',
+        '花蓮縣秀林鄉', '花蓮縣萬榮鄉', '花蓮縣卓溪鄉',
+        '台東縣延平鄉', '台東縣海端鄉', '台東縣達仁鄉', '台東縣金峰鄉',
+    ],
+    '一級離島': [
+        '屏東縣琉球鄉',
+        '連江縣南竿鄉', '連江縣北竿鄉',
+    ],
+    '二級離島': [
+        '澎湖縣白沙鄉', '澎湖縣西嶼鄉',
+        '台東縣綠島鄉',
+    ],
+    '三級離島': [
+        '澎湖縣吉貝村', '澎湖縣望安鄉', '澎湖縣七美鄉',
+        '台東縣蘭嶼鄉',
+        '金門縣烈嶼鄉', '金門縣烏坵鄉',
+        '連江縣莒光鄉', '連江縣東引鄉',
+    ],
+}
+
+TOUR_AREA_DICT = {
+    '-- 資源不足 --': None,
+    '新北市三芝區': 0,
+    '新北市金山區': 0,
+    '新北市萬里區': 0,
+    '新北市貢寮區': 0,
+    '新北市石碇區': 0,
+    '宜蘭縣蘇澳鎮': 0,
+    '宜蘭縣三星鄉': 0,
+    '新竹縣關西鎮': 0,
+    '新竹縣新埔鎮': 0,
+    '新竹縣芎林鄉': 0,
+    '苗栗縣卓蘭鎮': 0,
+    '苗栗縣銅鑼鄉': 0,
+    '苗栗縣三義鄉': 0,
+    '苗栗縣造橋鄉': 0,
+    '苗栗縣三灣鄉': 0,
+    '台中市石岡區': 0,
+    '彰化縣線西鄉': 0,
+    '彰化縣埔鹽鄉': 0,
+    '彰化縣二水鄉': 0,
+    '彰化縣田尾鄉': 0,
+    '彰化縣芳苑鄉': 0,
+    '彰化縣竹塘鄉': 0,
+    '南投縣集集鎮': 0,
+    '南投縣鹿谷鄉': 0,
+    '南投縣中寮鄉': 0,
+    '南投縣魚池鄉': 0,
+    '南投縣國姓鄉': 0,
+    '台南市柳營區': 0,
+    '台南市六甲區': 0,
+    '台南市西港區': 0,
+    '台南市七股區': 0,
+    '台南市將軍區': 0,
+    '台南市山上區': 0,
+    '台南市楠西區': 0,
+    '台南市南化區': 0,
+    '台南市官田區': 0,
+    '雲林縣口湖鄉': 0,
+    '雲林縣林內鄉': 0,
+    '雲林縣二崙鄉': 0,
+    '雲林縣褒忠鄉': 0,
+    '雲林縣元長鄉': 0,
+    '雲林縣四湖鄉': 0,
+    '嘉義縣東石鄉': 0,
+    '嘉義縣六腳鄉': 0,
+    '嘉義縣義竹鄉': 0,
+    '嘉義縣水上鄉': 0,
+    '嘉義縣梅山鄉': 0,
+    '嘉義縣大埔鄉': 0,
+    '高雄市湖內區': 0,
+    '高雄市梓官區': 0,
+    '高雄市六龜區': 0,
+    '高雄市杉林區': 0,
+    '高雄市永安區': 0,
+    '高雄市彌陀區': 0,
+    '高雄市甲仙區': 0,
+    '高雄市內門區': 0,
+    '屏東縣恆春鎮': 0,
+    '屏東縣長治鄉': 0,
+    '屏東縣麟洛鄉': 0,
+    '屏東縣里港鄉': 0,
+    '屏東縣鹽埔鄉': 0,
+    '屏東縣高樹鄉': 0,
+    '屏東縣林邊鄉': 0,
+    '屏東縣南州鄉': 0,
+    '屏東縣九如鄉': 0,
+    '花蓮縣鳳林鎮': 0,
+    '花蓮縣壽豐鄉': 0,
+    '花蓮縣瑞穗鄉': 0,
+    '台東縣太麻里鄉': 0,
+    '台東縣卑南鄉': 0,
+    '台東縣池上鄉': 0,
+    '澎湖縣湖西鄉': 0,
+    '金門縣金沙鎮': 0,
+    '金門縣金寧鄉': 0,
+    '金門縣金湖鎮': 0,
+    '-- 一級偏遠 --': None,
+    '新北市坪林區': 1,
+    '新北市石門區': 1,
+    '新北市平溪區': 1,
+    '新北市雙溪區': 1,
+    '宜蘭縣冬山鄉': 1,
+    '宜蘭縣壯圍鄉': 1,
+    '新竹縣橫山鄉': 1,
+    '新竹縣寶山鄉': 1,
+    '新竹縣北埔鄉': 1,
+    '新竹縣峨嵋鄉': 1,
+    '苗栗縣南庄鄉': 1,
+    '苗栗縣頭屋鄉': 1,
+    '苗栗縣西湖鄉': 1,
+    '苗栗縣獅潭鄉': 1,
+    '台中市大安區': 1,
+    '彰化縣大城鄉': 1,
+    '雲林縣東勢鄉': 1,
+    '嘉義縣布袋鎮': 1,
+    '嘉義縣溪口鄉': 1,
+    '嘉義縣鹿草鄉': 1,
+    '嘉義縣番路鄉': 1,
+    '台南市後壁區': 1,
+    '台南市大內區': 1,
+    '台南市左鎮區': 1,
+    '台南市龍崎區': 1,
+    '台南市北門區': 1,
+    '台南市東山區': 1,
+    '台南市安定區': 1,
+    '高雄市田寮區': 1,
+    '屏東縣萬巒鄉': 1,
+    '屏東縣竹田鄉': 1,
+    '屏東縣新埤鄉': 1,
+    '屏東縣崁頂鄉': 1,
+    '屏東縣車城鄉': 1,
+    '屏東縣枋山鄉': 1,
+    '花蓮縣富里鄉': 1,
+    '台東縣東河鄉': 1,
+    '台東縣鹿野鄉': 1,
+    '-- 二級偏遠 --': None,
+    '花蓮縣豐濱鄉': 2,
+    '台東縣大武鄉': 2,
+    '台東縣長濱鄉': 2,
+    '-- 山地鄉 --': None,
+    '新北市烏來區': 3,
+    '宜蘭縣大同鄉': 3,
+    '宜蘭縣南澳鄉': 3,
+    '桃園市復興區': 3,
+    '新竹縣尖石鄉': 3,
+    '新竹縣五峰鄉': 3,
+    '苗栗縣泰安鄉': 3,
+    '台中市和平區': 3,
+    '南投縣信義鄉': 3,
+    '南投縣仁愛鄉': 3,
+    '嘉義縣阿里山鄉': 3,
+    '高雄市茂林區': 3,
+    '高雄市桃源區': 3,
+    '高雄市那瑪夏區': 3,
+    '屏東縣山地門鄉': 3,
+    '屏東縣霧臺鄉': 3,
+    '屏東縣泰武鄉': 3,
+    '屏東縣來義鄉': 3,
+    '屏東縣春日鄉': 3,
+    '屏東縣獅子鄉': 3,
+    '屏東縣牡丹鄉': 3,
+    '屏東縣瑪家鄉': 3,
+    '花蓮縣秀林鄉': 3,
+    '花蓮縣萬榮鄉': 3,
+    '花蓮縣卓溪鄉': 3,
+    '台東縣延平鄉': 3,
+    '台東縣海端鄉': 3,
+    '台東縣達仁鄉': 3,
+    '台東縣金峰鄉': 3,
+    '-- 一級離島 --': None,
+    '屏東縣琉球鄉': 4,
+    '連江縣南竿鄉': 4,
+    '連江縣北竿鄉': 4,
+    '-- 二級離島 --': None,
+    '澎湖縣白沙鄉': 5,
+    '澎湖縣西嶼鄉': 5,
+    '台東縣綠島鄉': 5,
+    '-- 三級離島 --': None,
+    '澎湖縣吉貝村': 6,
+    '澎湖縣望安鄉': 6,
+    '澎湖縣七美鄉': 6,
+    '台東縣蘭嶼鄉': 6,
+    '金門縣烈嶼鄉': 6,
+    '金門縣烏坵鄉': 6,
+    '連江縣莒光鄉': 6,
+    '連江縣東引鄉': 6,
+}
+
+TOUR_INS_CODE_DICT = {
+    0: 'P23064',
+    1: 'P23007',
+    2: 'P23063',
+    3: 'P23008',
+    4: 'P23009',
+    5: 'P23010',
+    6: 'P23011',
+}
+
+TOUR_INS_FEE_DICT = {
+    'P23064': 2000,
+    'P23007': 3000,
+    'P23063': 5000,
+    'P23008': 8800,
+    'P23009': 11000,
+    'P23010': 12100,
+    'P23011': 13200,
+}
+
 ABNORMAL_CARD = [
     ABNORMAL_CARD_WITH_HINT[i].split(' ')[0] for i in range(len(ABNORMAL_CARD_WITH_HINT))
 ]
@@ -288,8 +558,8 @@ INJURY_CARD_DICT = {
 }
 
 CARD = ['自動取得', '不須取得', '欠卡'] + INJURY_CARD_WITH_HINT + ABNORMAL_CARD_WITH_HINT
-UPLOAD_TYPE = ['1-正常上傳','2-異常上傳', '3-正常補正', '4-異常補正']
-TREAT_AFTER_CHECK = ['1-正常','2-補卡']
+UPLOAD_TYPE = ['1-正常上傳', '2-異常上傳', '3-正常補正', '4-異常補正']
+TREAT_AFTER_CHECK = ['1-正常', '2-補卡']
 
 COURSE = ['1', '2', '3', '4', '5', '6']
 ROOM = ['1', '2', '3', '5', '6', '7', '8', '9', '10', '11', '12', '13', '15', '16', '17', '18', '19', '20']
@@ -336,883 +606,32 @@ nhi_eii_api_error_code = {
     8218: '回饋資料下載未成功連線至伺服器',
 }
 
-COMPLICATED_ACUPUNCTURE_DISEASE_DICT = {
-    '唇舌口惡性腫瘤': [
-        [
-            [('C00-C10',)], [],
-        ]
-    ],
-    '鼻咽食道惡性腫瘤': [
-        [
-            [('C11-C15',)], [],
-        ]
-    ],
-    '胃腸惡性腫瘤': [
-        [
-            [('C16-C20',)], [],
-        ]
-    ],
-    '肛門惡性腫瘤': [
-        [
-            ['C21'], [],
-        ]
-    ],
-    '肝膽胰脾惡性腫瘤': [
-        [
-            [('C22-C29',)], [],
-        ]
-    ],
-    '呼吸系統惡性腫瘤': [
-        [
-            [('C30-C34',)], [],
-        ]
-    ],
-    '胸腔器官惡性腫瘤': [
-        [
-            [('C37-C39',)], [],
-        ]
-    ],
-    '肢體惡性腫瘤': [
-        [
-            [('C40-C41',)], [],
-        ]
-    ],
-    '皮膚惡性腫瘤': [
-        [
-            [('C43-C46',)], [],
-        ]
-    ],
-    '神經系統惡性腫瘤': [
-        [
-            ['C47'], [],
-        ]
-    ],
-    '腹腔惡性腫瘤': [
-        [
-            ['C48'], [],
-        ]
-    ],
-    '結締組織惡性腫瘤': [
-        [
-            ['C49'], [],
-        ]
-    ],
-    '乳房惡性腫瘤': [
-        [
-            ['C50'], [],
-        ]
-    ],
-    '女性生殖器官惡性腫瘤': [
-        [
-            [('C51-C59',)], [],
-        ]
-    ],
-    '男性生殖器官惡性腫瘤': [
-        [
-            [('C60-C63',)], [],
-        ]
-    ],
-    '泌尿系統惡性腫瘤': [
-        [
-            [('C64-C68',)], [],
-        ]
-    ],
-    '眼惡性腫瘤': [
-        [
-            ['C69'], [],
-        ]
-    ],
-    '腦惡性腫瘤': [
-        [
-            [('C70-C71',)], [],
-        ]
-    ],
-    '中樞神經惡性腫瘤': [
-        [
-            ['C72'], [],
-        ]
-    ],
-    '內分泌腺體惡性腫瘤': [
-        [
-            [('C73-C75',)], [],
-        ]
-    ],
-    '其他惡性腫瘤': [
-        [
-            [('C76-C96',)], [],
-        ]
-    ],
-    '腦瘤併發神經功能障礙': [
-        [
-            ['D33'], [],
-        ]
-    ],
-    '老年期及初老年期器質性精神病態': [
-        [
-            [('F03-F05',)], [],
-        ]
-    ],
-    '亞急性譫妄': [
-        [
-            ['F05'], [],
-        ]
-    ],
-    '其他器質性精神病態': [
-        [
-            ['F02', 'F04', 'F09'], [],
-        ]
-    ],
-    '思覺失調症': [
-        [
-            ['F20', 'F21', 'F25'], [],
-        ]
 
-    ],
-    '情感性精神病': [
-        [
-            [('F30-F39',)], [],
-        ]
-    ],
-    '妄想狀態': [
-        [
-            ['F22', 'F23', 'F24'], [],
-        ]
-    ],
-    '源自兒童期之精神病': [
-        [
-            ['F84'], []
-        ]
-    ],
-    '急性脊髓灰白質炎併有其他麻痺者': [
-        [
-            ['A80'], [],
-        ]
-    ],
-    '嬰兒腦性麻痺': [
-        [
-            ['G80'], [],
-        ]
-    ],
-    '其他麻痺性徵候群': [  # 需要輸入次診斷碼
-        [
-            ['G82', 'G83'], ['B91'],
-        ]
-    ],
-    '重症肌無力症': [
-        [
-            ['G70'], [],
-        ]
-    ],
-    '頸椎脊髓損傷, 伴有脊髓病灶': [  # 需要輸入次診斷碼
-        [
-            ['S141'], [('S120-S126',)]
-        ],
-    ],
-    '胸椎脊髓損傷, 伴有脊髓病灶': [  # 需要輸入次診斷碼
-        [
-            ['S241'], ['S220']
-        ],
-    ],
-    '腰部脊髓傷害, 伴有脊髓病灶': [  # 需要輸入次診斷碼
-        [
-            ['S341'], [('S220-S320',)]
-        ],
-    ],
-    '無明顯脊椎損傷之脊髓傷害': [
-        [
-            ['S141', 'S241', 'S341'], [],
-        ]
-    ],
-    '其他脊髓病變': [
-        [
-            ['G95'], [],
-        ]
-    ],
-    '蜘蛛膜下腔出血': [
-        [
-            ['I60'], [],
-        ]
-    ],
-    '腦內出血': [
-        [
-            ['I61', 'I62'], [],
-        ]
-    ],
-    '腦梗塞': [
-        [
-            ['I63', 'I65', 'I66'], [],
-        ]
-    ],
-    '其他腦血管疾病': [
-        [
-            ['G45', 'G46', 'I67'], [],
-        ]
-    ],
-    '癲癇': [
-        [
-            ['G40'], [],
-        ]
-    ],
-    '巴金森病': [
-        [
-            ['G20', 'G21'], [],
-        ]
-    ],
-    '脊髓小腦症': [
-        [
-            ['G11', 'G94'], [],
-        ]
-    ],
-    '腦裂傷及挫傷': [
-        [
-            ['S019', 'S063'], [],
-        ]
-    ],
-    '受傷後之蜘蛛網膜下、硬腦膜下及硬腦膜外出血': [
-        [
-            ['S019', ('S064-S066',)], [],
-        ]
-    ],
-    '視神經及神經徑之損傷': [
-        [
-            [('S0401-S0404',)], [],
-        ]
-    ],
-    '神經根級脊神經叢之損傷': [
-        [
-            ['S142', 'S143' , 'S242', 'S342', 'S344'], [],
-        ]
-    ],
-    '肩及骨盆以外之軀幹神經損傷': [
-        [
-            ['S145', 'S243' , 'S244', 'S248', 'S249', 'S345', 'S346', 'S348', 'S349'], [],
-        ]
-    ],
-    '肩及上肢末梢神經之損傷': [
-        [
-            [('S440-S445',)], [],
-        ],
-        [
-            [('S448-S449',)], [],
-        ],
-        [
-            [('S540-S543',)], [],
-        ],
-        [
-            [('S548-S549',)], [],
-        ],
-        [
-            [('S640-S644',)], [],
-        ],
-        [
-            [('S648-S649',)], [],
+# 取得資料路徑
+def get_dir(system_settings, dir_type):
+    base_dir = system_settings.field('資料路徑')
+    if base_dir in ['', None]:
+        base_dir = os.getcwd()
+        system_utils.show_message_box(
+            QMessageBox.Warning,
+            '尚未設定資料路徑',
+            '<font size="4" color="red"><b>資料路徑尚未設定, 使用預設的資料路徑<br>{base_dir}.</b></font>'.format(
+                base_dir=base_dir
+            ),
+            '請至系統設定->其他->設定申報及備份路徑.'
+        )
 
-        ],
-    ],
-    '骨盆及下肢末梢神經損傷': [
-        [
-            [('S740-S742',)], [],
-        ],
-        [
-            [('S748-S749',)], [],
-        ],
-        [
-            [('S840-S842',)], [],
-        ],
-        [
-            [('S848-S849',)], [],
-        ],
-        [
-            [('S940-S943',)], [],
-        ],
-        [
-            [('S948-S949',)], [],
+    dir_dict = {
+        '申報路徑': '{base_dir}/nhi_upload'.format(base_dir=base_dir),
+        '備份路徑': '{base_dir}/auto_backup'.format(base_dir=base_dir)
+    }
 
-        ],
-    ],
-}
+    directory = dir_dict[dir_type]
 
+    if not os.path.exists(directory):
+        os.mkdir(directory)
 
-COMPLICATED_MASSAGE_DISEASE_DICT = {
-    '雷特病之關節病變及有關病態，多處部位': [
-        [
-            ['M0239'], [],
-        ]
-    ],
-    '畢賽徵候群之關節病變，多處部位': [
-        [
-            ['M352'], [],
-        ]
-    ],
-    '更年期關節炎，多處部位': [
-        [
-            ['M1389'], [],
-        ]
-    ],
-    '未明示之多發性關節病變或多發性關節炎，多處部位': [
-        [
-            ['M130'], [],
-        ]
-    ],
-    '其他明示之關節病變, 多處部位': [
-        [
-            ['M1289'], [],
-        ]
-    ],
-    '未明示之關節病變，多處部位': [
-        [
-            ['M129'], [],
-        ]
-    ],
-    '關節軟骨疾患，多處部位': [
-        [
-            ['M2410'], [],
-        ]
-    ],
-    '關節緊縮，多處部位': [
-        [
-            ['M2450'], [],
-        ]
-    ],
-    '關節粘連，多處部位': [
-        [
-            ['M2460'], [],
-        ]
-    ],
-    '其他關節障礙，他處未歸類，多處部位': [
-        [
-            ['M2480'], [],
-        ]
-    ],
-    '未明示之關節障礙，多處部位': [
-        [
-            ['M249'], [],
-        ]
-    ],
-    '復發性風濕，多處部位': [
-        [
-            ['M1239'], [],
-        ]
-    ],
-    '關節痛，多處部位': [
-        [
-            ['M2550'], [],
-        ]
-    ],
-    '關節僵直，他處未歸類者，多處部位': [
-        [
-            ['M2560'], [],
-        ]
-    ],
-    '行走障礙，多處部位': [
-        [
-            ['R262'], [],
-        ]
-    ],
-    '未明示之關節疾患，多處部位': [
-        [
-            ['M259'], [],
-        ]
-    ],
-    '肩膀及上臂骨折': [
-        [
-            ['S42'], [],
-        ]
-    ],
-    '肩部及上臂其他及未明示損傷': [
-        [
-            ['S49'], [],
-        ]
-    ],
-    '手肘及前臂其他及未明示損傷': [
-        [
-            ['S59'], [],
-        ]
-    ],
-    '腕部及手部骨折': [
-        [
-            ['S62'], [],
-        ]
-    ],
-    '股骨骨折': [
-        [
-            ['S72'], [],
-        ]
-    ],
-    '小腿踝部閉鎖性骨折': [
-        [
-            ['S82'], [],
-        ]
-    ],
-    '足部與腳趾骨折，足踝除外': [
-        [
-            ['S92'], [],
-        ]
-    ],
-    '顱骨穹窿骨折': [
-        [
-            ['S020'], [],
-        ]
-    ],
-    '顱骨底部骨折': [
-        [
-            ['S021'], [],
-        ]
-    ],
-    '臉骨骨折': [
-        [
-            ['S022', 'S026'], [],
-        ]
-    ],
-    '顴骨及上頷骨骨折，閉鎖性': [
-        [
-            ['S024'], [],
-        ]
-    ],
-    '眶底閉鎖性骨折': [
-        [
-            ['S023'], [],
-        ]
-    ],
-    '其他顏面骨閉鎖性骨折': [
-        [
-            [('S028-S029',)], [],
-        ]
-    ],
-    '脊柱骨折，閉鎖性': [
-        [
-            [('S120-S129',)], [],
-        ]
-    ],
-    '頸椎骨折，閉鎖性': [
-        [
-            [('S120-S126',), 'S220'], [],
-        ]
-    ],
-    '腰椎骨折，閉鎖性': [
-        [
-            ['S320'], [],
-        ]
-    ],
-    '胝骨及尾骨骨折，閉鎖性': [
-        [
-            [('S321-S322',)], [],
-        ]
-    ],
-    '未明示之脊柱骨折，閉鎖性': [
-        [
-            ['S129', 'S220', ('S320-S321',)], [],
-        ]
-    ],
-    '肋骨閉鎖性骨折': [
-        [
-            [('S223-S224',)], [],
-        ]
-    ],
-    '胸骨閉鎖性骨折': [
-        [
-            ['S222'], [],
-        ]
-    ],
-    '連枷胸（多條肋骨塌陷性骨折）': [
-        [
-            ['S225'], [],
-        ]
-    ],
-    '喉部及氣管閉鎖性骨折': [
-        [
-            ['S129'], [],
-        ]
-    ],
-    '骨盆骨折': [
-        [
-            [('S323-S329',)], [],
-        ]
-    ],
-    '髖臼閉鎖性骨折': [
-        [
-            ['S324'], [],
-        ]
-    ],
-    '恥骨閉鎖性骨折': [
-        [
-            ['S325'], [],
-        ]
-    ],
-    '骨盆其他明示部位之閉鎖性骨折': [
-        [
-            ['S323', 'S326', ('S32810-S32811',)], [],
-        ]
-    ],
-    '骨盆之其他骨折，閉鎖性': [
-        [
-            ['S3289'], [],
-        ]
-    ],
-    '診斷欠明之軀幹骨骨折': [
-        [
-            ['S229'], [],
-        ]
-    ],
-    '鎖骨閉鎖性骨折': [
-        [
-            [('S42001-S42036',)], [],
-        ]
-    ],
-    '肩胛骨骨折': [
-        [
-            [('S42101-S42199',)], [],
-        ]
-    ],
-    '其他之肩胛骨骨折，閉鎖性': [
-        [
-            [('S42113-S42116',)], [],
-        ]
-    ],
-    '肱骨上端閉鎖性骨折': [
-        [
-            [('S42201-S42296',)], [],
-        ]
-    ],
-    '肱骨骨幹或未明示部位之閉鎖性骨折': [
-        [
-            [('S42301-S42399',)], [],
-        ]
-    ],
-    '肱骨踝上骨折，閉鎖性': [
-        [
-            [('S42101-S42496',)], [],
-        ]
-    ],
-    '橈骨及尺骨上端閉鎖性骨折': [
-        [
-            [('S52101-S52189',)], [],
-        ]
-    ],
-    '橈骨及尺骨骨幹閉鎖性骨折': [
-        [
-            [('S52201-S52399',)], [],
-        ]
-    ],
-    '橈骨及尺骨下端閉鎖性骨折': [
-        [
-            [('S52501-S52699',)], [],
-        ]
-    ],
-    '橈骨及尺骨之閉鎖性骨折': [
-        [
-            [('S5290-S5292',)], [],
-        ]
-    ],
-    '腕骨骨折': [
-        [
-            [('S62001-S62186',)], [],
-        ]
-    ],
-    '掌骨骨折': [
-        [
-            [('S62201-S62399',)], [],
-        ]
-    ],
-    '一個或多個手指骨骨折': [
-        [
-            [('S62501-S62699',)], [],
-        ]
-    ],
-    '手骨之多處閉鎖性骨折': [
-        [
-            [('S6290-S6292',)], [],
-        ]
-    ],
-    '肩帶未明示部位骨折': [
-        [
-            [('S4290-S4292',)], [],
-        ]
-    ],
-    '前臂骨折': [
-        [
-            [('S5290-S5292',)], [],
-        ]
-    ],
-    '胸骨骨折': [
-        [
-            ['S2220', 'S2239', 'S2249'], [],
-        ]
-    ],
-    '股骨頸骨折': [
-        [
-            [('S72001-S72099',)], [],
-        ]
-    ],
-    '經由粗隆之骨折，閉鎖性': [
-        [
-            [('S72101-S7226',)], [],
-        ]
-    ],
-    '未明示部位之股骨頸骨折，閉鎖性': [
-        [
-            [('S72001-S72009',)], [],
-        ]
-    ],
-    '股骨骨折，閉鎖性': [
-        [
-            [('S72301-S72499',)], [],
-        ]
-    ],
-    '閉鎖性髕骨之骨折': [
-        [
-            [('S82001-S82099',)], [],
-        ]
-    ],
-    '脛骨與腓骨之上端閉鎖性骨折': [
-        [
-            [('S82101-S82109',)], [],
-        ]
-    ],
-    '脛骨幹閉鎖性骨折': [
-        [
-            [('S82201-S82299', )], [],
-        ]
-    ],
-    '腓骨幹閉鎖性骨折': [
-        [
-            [('S82401-S82499',)], [],
-        ]
-    ],
-    '閉鎖性踝骨折': [
-        [
-            [('S8251-S8266',)], [],
-        ]
-    ],
-    '閉鎖性跟骨骨折': [
-        [
-            [('S92001-S92066',)], [],
-        ]
-    ],
-    '其他跗骨及蹠骨之骨折，閉鎖性': [
-        [
-            [('S92101-S925',)], [],
-        ]
-    ],
-    '閉鎖性一個或多個腳趾骨骨折': [
-        [
-            [('S92401-S92919',)], [],
-        ]
-    ],
-    '閉鎖性下肢之其他多處及診斷欠明之骨折': [
-        [
-            [('S8290-S8292',)], [],
-        ]
-    ],
-    '閉鎖性多處骨折，侵及兩側下肢，下與上肢及下肢與肋骨和胸骨者': [
-        [
-            ['T07'], [],
-        ]
-    ],
-    '閉鎖性未明示部位之骨折': [
-        [
-            ['T148'], [],
-        ]
-    ],
-    '肩關節半脫位和脫臼': [
-        [
-            [('S430-S433',)], [],
-        ]
-    ],
-    '橈骨頭半脫位及脫臼': [
-        [
-            [('S530-S531',)], [],
-        ]
-    ],
-    '腕部及手部關節半脫位及脫臼': [
-        [
-            ['S630'], [],
-        ]
-    ],
-    '手指半脫位及脫臼': [
-        [
-            [('S631-S632',)], [],
-        ]
-    ],
-    '髖部半脫位及脫臼': [
-        [
-            ['S730'], [],
-        ]
-    ],
-    '內半月板桶柄狀撕裂，近期損傷': [
-        [
-            [('S8321-S8324',)], [],
-        ]
-    ],
-    '髕骨半脫位及脫臼': [
-        [
-            [('S83001-S83096',)], [],
-        ]
-    ],
-    '膝部半脫位及脫臼': [
-        [
-            [('S83101-S83196',)], [],
-        ]
-    ],
-    '踝關節半脫位': [
-        [
-            ['S930'], [],
-        ]
-    ],
-    '足部半脫位及脫臼': [
-        [
-            ['S933'], [],
-        ]
-    ],
-    '頸部關節及韌帶脫臼及扭傷': [
-        [
-            [('S130-S132',)], [],
-        ]
-    ],
-    '腰(部)脊椎半脫位(臼)和脫位(臼)': [
-        [
-            [('S331-S333',)], [],
-        ]
-    ],
-    '胸部關節及靱帶之扭傷及脫位': [
-        [
-            [('S231-S232',)], [],
-        ]
-    ],
-    '胸鎖骨間關節半脫位和脫臼': [
-        [
-            ['S432'], [],
-        ]
-    ],
-    '其他和未明示部位的腰(部)脊椎[腰椎]和骨盆(腔)骨脫位(臼)': [
-        [
-            [('S3330-S3339',)], [],
-        ]
-    ],
-    '軀幹多處挫傷': [
-        [
-            ['T148'], [],
-        ]
-    ],
-    '上肢多處挫傷': [
-        [
-            ['S40019'], [],
-        ]
-    ],
-    '下肢多處挫傷': [
-        [
-            ['S7010', 'S7012', 'S8010', 'S8012'], [],
-        ]
-    ],
-    '下肢挫傷及其他與未明示位置之挫傷，多處位置挫傷，他處未歸類者': [
-        [
-            ['T148'], [],
-        ]
-    ],
-    '肩及上臂多處位置壓砸傷': [
-        [
-            ['S47'], [],
-        ]
-    ],
-    '髖部及大腿壓砸傷': [
-        [
-            ['S770', 'S771', 'S772'], [],
-        ]
-    ],
-    '膝部及小腿壓砸傷': [
-        [
-            ['S870', 'S878'], [],
-        ]
-    ],
-    '踝部、腳趾及足部壓砸傷': [
-        [
-            ['S970', 'S971', 'S978'], [],
-        ]
-    ],
-    '多處及未明示位置之壓砸傷': [
-        [
-            ['S772'], [],
-        ]
-    ],
-    '顱骨及面骨骨折之後期影響': [
-        [
-            ['S02'], [],
-        ]
-    ],
-    '脊柱及軀幹骨折之後期影響，未提及脊髓病灶者': [
-        [
-            ['S129', 'S220', 'S229', 'S329'], [],
-        ]
-    ],
-    '肱骨上端骨折': [
-        [
-            [('S422-S429',)], [],
-        ]
-    ],
-    '頷骨脫臼': [
-        [
-            ['S030'], [],
-        ]
-    ],
-    '鼻中隔軟骨脫位': [
-        [
-            ['S031'], [],
-        ]
-    ],
-    '胸椎間盤創傷性破裂': [
-        [
-            ['S230'], [],
-        ]
-    ],
-    '腰(部)椎間盤創傷性破裂': [
-        [
-            ['S330'], [],
-        ]
-    ],
-}
-
-INS_SPECIAL_CARE_DICT = {
-    '腦血管疾病': [
-        [
-            [('G450-G468',), ('I60-I68',), ], [],
-        ],
-    ],
-    '顱腦損傷': [
-        [
-            [('S021-S024',), ('S026-S029',), ('S060-S069',), ], [],
-        ],
-    ],
-    '脊髓損傷': [
-        [
-            [('S140-S141',), ('S240-S241',), ('S340-S341',), ], [],
-        ],
-    ],
-    '乳癌': [
-        [
-            ['C50', 'C7981'], [],
-        ],
-    ],
-    '肝癌': [
-        [
-            ['C22', 'C23', 'C24'], [],
-        ],
-    ],
-    '肺癌': [
-        [
-            ['C33', 'C34'], [],
-        ],
-    ],
-    '大腸癌': [
-        [
-            ['C18', 'C19', 'C20', 'C21'], [],
-        ],
-    ],
-    '兒童過敏性鼻炎': [
-        [
-            ['J301', 'J302', 'J305', 'J3081', 'J3089', 'J309'], [],
-        ],
-    ],
-}
+    return directory
 
 
 # 取得負擔類別
@@ -1295,7 +714,7 @@ def get_treat_code(database, case_key):
         else:
             treat_code = DISLOCATE_DICT[treatment]
     elif treatment in CARE_TREAT:
-            treat_code = CARE_DICT[treatment]
+        treat_code = CARE_DICT[treatment]
 
     return treat_code
 
@@ -1305,10 +724,13 @@ def get_case_type(database, row):
     treat_type = string_utils.xstr(row['TreatType'])
     course = number_utils.get_integer(row['Continuance'])
     special_code = string_utils.xstr(row['SpecialCode'])
+    regist_type = string_utils.xstr(row['RegistType'])
     treatment = string_utils.xstr(row['Treatment'])
     pres_days = case_utils.get_pres_days(database, row['CaseKey'])
 
-    if treat_type in IMPROVE_CARE_TREAT:  # 加強照護
+    if regist_type in TOUR_TYPE:  # 巡迴醫療
+        case_type = '25'
+    elif treat_type in IMPROVE_CARE_TREAT:  # 加強照護
         case_type = '22'
     elif treat_type in AUXILIARY_CARE_TREAT:  # 輔助照護
         case_type = '30'
@@ -1351,7 +773,10 @@ def get_diag_share_code(database, share_type, treatment, course, case_row=None):
     if case_row is not None:
         if number_utils.get_integer(case_row['DrugShareFee']) > 0:
             diag_share_code = 'S20'
-        elif (number_utils.get_integer(case_row['DiagShareFee']) > 0 and course >= 2):
+        elif number_utils.get_integer(case_row['DiagShareFee']) > 0 and course >= 2:
+            diag_share_code = 'S20'
+
+        if diag_share_code == 'S10' and case_row['RegistType'] in TOUR_TYPE:
             diag_share_code = 'S20'
 
     return diag_share_code
@@ -1361,10 +786,11 @@ def get_diag_share_code(database, share_type, treatment, course, case_row=None):
 def get_special_code(database, case_key):
     special_code_list = []
     sql = '''
-            SELECT TreatType, Treatment, SpecialCode FROM cases WHERE
+            SELECT RegistType, TreatType, Treatment, SpecialCode FROM cases WHERE
             CaseKey = {0}
         '''.format(case_key)
     row = database.select_record(sql)[0]
+    regist_type = string_utils.xstr(row['RegistType'])
     treat_type = string_utils.xstr(row['TreatType'])
     treatment = string_utils.xstr(row['Treatment'])
     special_code = string_utils.xstr(row['SpecialCode'])
@@ -1375,7 +801,10 @@ def get_special_code(database, case_key):
     if treat_type in IMPROVE_CARE_TREAT:
         special_code_list.append(SPECIAL_CODE_DICT[treat_type])
         special_code_list = special_code_list + [None] * (4 - len(special_code_list))
-        return  special_code_list
+        return special_code_list
+
+    if regist_type in TOUR_TYPE:
+        special_code_list.append('C6')
 
     if treat_type == '長期臥床':
         special_code_list.append('J1')
@@ -1400,7 +829,10 @@ def get_special_code(database, case_key):
 
 # 取得初診照護
 def get_visit(database, row):
-    if string_utils.xstr(row['TreatType']) in AUXILIARY_CARE_TREAT:  # 腦血管疾病, 小兒氣喘, 小兒腦麻不可申報其他項目
+    if string_utils.xstr(row['RegistType']) in TOUR_TYPE:  # 巡迴醫療不可申報初診照護
+        return None
+
+    if string_utils.xstr(row['TreatType']) in AUXILIARY_CARE_TREAT:  # 腦血管疾病, 小兒氣喘, 小兒腦麻不可申報初診照護
         return None
 
     if string_utils.xstr(row['Visit']) == '初診':
@@ -1698,9 +1130,9 @@ def nurse_schedule_on_duty(database, case_key, doctor_name):
     return on_duty
 
 
-def get_ins_xml_file_name(apply_type, apply_date, prefix=None):
+def get_ins_xml_file_name(system_settings, apply_type, apply_date, prefix=None):
     xml_file_name = '{0}/{1}-{2}'.format(
-        XML_OUT_PATH,
+        get_dir(system_settings, '申報路徑'),
         apply_date,
         apply_type,
     )
@@ -1713,7 +1145,7 @@ def get_ins_xml_file_name(apply_type, apply_date, prefix=None):
 
 
 def get_apply_date(apply_year, apply_month):
-    apply_date = '{0:0>3}{1:0>2}'.format(apply_year-1911, apply_month)
+    apply_date = '{0:0>3}{1:0>2}'.format(apply_year - 1911, apply_month)
 
     return apply_date
 
@@ -1783,7 +1215,7 @@ def get_disease_rows(database, disease_list):
 
 def get_complicated_acupuncture_rows(database, groups_name, disease=1):
     disease_rows = []
-    rows = COMPLICATED_ACUPUNCTURE_DISEASE_DICT[groups_name]
+    rows = icd10_utils.COMPLICATED_ACUPUNCTURE_DISEASE_DICT[groups_name]
     for row in rows:
         disease_list1, disease_list2 = row[0], row[1]
         if disease == 1:
@@ -1799,7 +1231,7 @@ def get_complicated_acupuncture_rows(database, groups_name, disease=1):
 
 def get_complicated_acupuncture_list(database, disease=1):
     disease_rows = []
-    for row in list(COMPLICATED_ACUPUNCTURE_DISEASE_DICT.keys()):
+    for row in list(icd10_utils.COMPLICATED_ACUPUNCTURE_DISEASE_DICT.keys()):
         rows = get_complicated_acupuncture_rows(database, row, disease)
         disease_rows += rows
 
@@ -1808,7 +1240,7 @@ def get_complicated_acupuncture_list(database, disease=1):
 
 def get_complicated_massage_rows(database, groups_name, disease=1):
     disease_rows = []
-    rows = COMPLICATED_MASSAGE_DISEASE_DICT[groups_name]
+    rows = icd10_utils.COMPLICATED_MASSAGE_DISEASE_DICT[groups_name]
     for row in rows:
         disease_list1, disease_list2 = row[0], row[1]
         if disease == 1:
@@ -1824,7 +1256,23 @@ def get_complicated_massage_rows(database, groups_name, disease=1):
 
 def get_ins_special_care_rows(database, groups_name, disease=1):
     disease_rows = []
-    rows = INS_SPECIAL_CARE_DICT[groups_name]
+    rows = icd10_utils.INS_SPECIAL_CARE_DICT[groups_name]
+    for row in rows:
+        disease_list1, disease_list2 = row[0], row[1]
+        if disease == 1:
+            disease_list = disease_list1
+        else:
+            disease_list = disease_list2
+
+        disease_row = get_disease_rows(database, disease_list)
+        disease_rows += disease_row
+
+    return disease_rows
+
+
+def get_custom_groups_name_rows(database, custom_dict, groups_name, disease=1):
+    disease_rows = []
+    rows = custom_dict[groups_name]
     for row in rows:
         disease_list1, disease_list2 = row[0], row[1]
         if disease == 1:
@@ -1840,7 +1288,7 @@ def get_ins_special_care_rows(database, groups_name, disease=1):
 
 def get_complicated_massage_list(database, disease=1):
     disease_rows = []
-    for row in list(COMPLICATED_MASSAGE_DISEASE_DICT.keys()):
+    for row in list(icd10_utils.COMPLICATED_MASSAGE_DISEASE_DICT.keys()):
         rows = get_complicated_massage_rows(database, row, disease)
         disease_rows += rows
 
@@ -1849,7 +1297,7 @@ def get_complicated_massage_list(database, disease=1):
 
 def get_ins_special_care_list(database, disease=1):
     disease_rows = []
-    for row in list(INS_SPECIAL_CARE_DICT.keys()):
+    for row in list(icd10_utils.INS_SPECIAL_CARE_DICT.keys()):
         rows = get_ins_special_care_rows(database, row, disease)
         disease_rows += rows
 
@@ -1957,3 +1405,32 @@ def get_apply_type_sql(apply_type):
     return sql
 
 
+# 取得療程首次日期
+def get_first_course_delta(table_widget, row_no, patient_key, course, next_case_date):
+    first_case_date = None
+    if course == 1:
+        first_case_date = table_widget.item(row_no, 1).text()
+    else:
+        for i in range(course, 0, -1):
+            previous_case_date = table_widget.item(row_no - i, 1)
+            previous_patient_key = table_widget.item(row_no - i, 3)
+            if previous_case_date is None:
+                continue
+
+            if previous_patient_key.text() != patient_key:
+                continue
+
+            previous_case_date = previous_case_date.text()
+            previous_course = number_utils.get_integer(
+                table_widget.item(row_no - i, 7).text()
+            )
+            if previous_course == 1:
+                first_case_date = previous_case_date
+                break
+
+    if first_case_date is not None:
+        delta = date_utils.str_to_date(next_case_date) - date_utils.str_to_date(first_case_date)
+    else:
+        delta = None
+
+    return delta

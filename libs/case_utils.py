@@ -202,7 +202,7 @@ def get_discount_rate(database, case_key, medicine_set=1):
     if len(rows) > 0:
         discount_rate = number_utils.get_integer(rows[0]['DiscountRate'])
     else:
-        discount_rate = None
+        discount_rate = 100
 
     return discount_rate
 
@@ -308,10 +308,10 @@ def get_medical_record_html(database, system_settings, case_key):
     else:
         card = '<b>自費</b>'
 
-    medical_record = '<b>日期</b>: {0} {1} <b>醫師</b>:{2}<hr>'.format(
-        string_utils.xstr(row['CaseDate'].date()),
-        card,
-        string_utils.xstr(row['Doctor']),
+    medical_record = '<b>日期</b>: {case_date} {card} <b>醫師</b>:{doctor}<hr>'.format(
+        case_date=string_utils.xstr(row['CaseDate'].date()),
+        card=card,
+        doctor=string_utils.xstr(row['Doctor']),
     )
 
     if row['Symptom'] is not None and string_utils.xstr(row['Symptom']) != '':
@@ -401,7 +401,7 @@ def get_prescript_html_data(database, system_settings, case_key, medicine_set, t
 
     sequence = 0
     for row in rows:
-        if string_utils.xstr(row['MedicineName']) == '':
+        if string_utils.xstr(row['MedicineName']) in ['', '優待']:
             continue
 
         sequence += 1
@@ -709,7 +709,82 @@ def copy_past_medical_record(
         medical_record.ui.tabWidget_prescript.setCurrentIndex(0)
 
 
-# 拷貝過去病歷
+# 拷貝處方集
+def copy_collection(
+        database, medical_record, medical_row, copy_diagnostic, copy_disease, copy_prescript):
+    ui = medical_record.ui
+    if copy_diagnostic:
+        ui.textEdit_symptom.setText(string_utils.get_str(medical_row['Symptom'], 'utf8'))
+        ui.textEdit_tongue.setText(string_utils.get_str(medical_row['Tongue'], 'utf8'))
+        ui.textEdit_pulse.setText(string_utils.get_str(medical_row['Pulse'], 'utf8'))
+        ui.lineEdit_distinguish.setText(string_utils.xstr(medical_row['Distincts']))
+        ui.lineEdit_cure.setText(string_utils.xstr(medical_row['Cure']))
+
+    if copy_disease:
+        line_edit_disease = [
+            [ui.lineEdit_disease_code1, ui.lineEdit_disease_name1],
+            [ui.lineEdit_disease_code2, ui.lineEdit_disease_name2],
+            [ui.lineEdit_disease_code3, ui.lineEdit_disease_name3],
+        ]
+        disease_list = []
+        for i in range(3):
+            icd9_code = string_utils.xstr(medical_row['ICDCode{0}'.format(i + 1)])
+            if icd9_code == '':
+                continue
+
+            icd10_code, icd10_name = convert_icd9_to_icd10(database, icd9_code)
+            if icd10_name is not None:
+                disease_list.append([icd10_code, icd10_name])
+
+        for item_no, item in zip(range(len(disease_list)), disease_list):
+            disease_code = item[0]
+            disease_name = item[1]
+
+            line_edit_disease[item_no][0].setText(disease_code)
+            line_edit_disease[item_no][1].setText(disease_name)
+
+    if medical_record.tab_list[0] is None:  # 無健保處方
+        return
+
+    if copy_prescript:
+        collection_key = medical_row['CollectionKey']
+        if collection_key is None:
+            return
+
+        sql = '''
+            SELECT * FROM collitems
+            WHERE
+                CollectionKey = {collection_key}
+            ORDER BY CollectionSetKey
+        '''.format(
+            collection_key=collection_key,
+        )
+        prescript_rows = database.select_record(sql)
+
+        treat_dict = {
+            '針灸處置': '針灸治療',
+            '傷科處置': '傷科治療',
+        }
+        medical_record.tab_list[0].ui.tableWidget_treat.setRowCount(0)
+        medical_record.tab_list[0].set_treat_ui()
+
+        for prescript_row in prescript_rows:
+            medicine_name = string_utils.xstr(prescript_row['MedicineName'])
+            if medicine_name in ['針灸處置', '傷科處置']:
+                medical_record.tab_list[0].combo_box_treatment.setCurrentText(treat_dict[medicine_name])
+                continue
+
+            row = {
+                'MedicineType': string_utils.xstr(prescript_row['MedicineType']),
+                'MedicineKey': string_utils.xstr(prescript_row['MedicineKey']),
+                'MedicineName': string_utils.xstr(prescript_row['MedicineName']),
+                'InsCode': string_utils.xstr(prescript_row['InsCode']),
+            }
+            medical_record.tab_list[0].append_treat(row)
+            medical_record.tab_list[0].append_null_treat()
+
+
+# 拷貝分院過去病歷
 def copy_host_medical_record(
         database, medical_record, case_key, copy_diagnostic, copy_remark, copy_disease,
         copy_ins_prescript, copy_ins_prescript_to, copy_ins_treat, copy_self_prescript):
@@ -811,12 +886,15 @@ def icd9_to_icd10(database, icd9_code):
 
     return string_utils.xstr(rows[0]['ICD10Code'])
 
+
 #  取得中(英)文病名
 def get_disease_name(database, disease_code, field_name=None):
     disease_name = ''
     if field_name is None:
         field_name = 'ChineseName'
 
+    if disease_code in ['', None]:
+        return ''
 
     sql = '''
         SELECT {0} FROM icd10
@@ -918,6 +996,7 @@ def is_disease_code_neat(database, disease_code):
 
     return is_neat
 
+
 def is_disease_code_exist(database, disease_code):
     is_exist = True
 
@@ -975,7 +1054,7 @@ def backup_cases(database, case_key, deleter, delete_datetime):
         'cases',
         'CaseKey',
         case_key,
-        json_data[0],
+        json_data,
         deleter,
         delete_datetime,
     ]
@@ -1002,17 +1081,15 @@ def backup_prescript(database, case_key, deleter, delete_datetime):
         'TableName', 'KeyField', 'KeyValue', 'JSON',
         'Deleter', 'DeleteDateTime',
     ]
-
-    for row in json_data:
-        data = [
-            'prescript',
-            'CaseKey',
-            case_key,
-            row,
-            deleter,
-            delete_datetime,
-        ]
-        database.insert_record('backup_records', fields, data)
+    data = [
+        'prescript',
+        'CaseKey',
+        case_key,
+        json_data,
+        deleter,
+        delete_datetime,
+    ]
+    database.insert_record('backup_records', fields, data)
 
 
 def backup_dosage(database, case_key, deleter, delete_datetime):
@@ -1035,16 +1112,15 @@ def backup_dosage(database, case_key, deleter, delete_datetime):
         'Deleter', 'DeleteDateTime',
     ]
 
-    for row in json_data:
-        data = [
-            'dosage',
-            'CaseKey',
-            case_key,
-            row,
-            deleter,
-            delete_datetime,
-        ]
-        database.insert_record('backup_records', fields, data)
+    data = [
+        'dosage',
+        'CaseKey',
+        case_key,
+        json_data,
+        deleter,
+        delete_datetime,
+    ]
+    database.insert_record('backup_records', fields, data)
 
 
 def backup_medical_record(database, case_key, deleter, delete_datetime):
@@ -1080,3 +1156,309 @@ def get_return_date(database, case_key):
 
     return rows[0]['ReturnDate']
 
+
+def convert_icd9_to_icd10(database, icd9_code):
+    sql = '''
+        SELECT * FROM icdmap
+        WHERE
+            ICD9Code = "{icd9_code}"
+        ORDER BY LENGTH(ICD10Code) DESC
+        LIMIT 1
+    '''.format(
+        icd9_code=icd9_code,
+    )
+
+    rows = database.select_record(sql)
+    if len(rows) <= 0:
+        return icd9_code, None
+
+    row = rows[0]
+
+    return string_utils.xstr(row['ICD10Code']), string_utils.xstr(row['ICD10ChineseName'])
+
+
+# 取得病歷html格式
+def get_medical_record_row_html(medical_record_row):
+    if medical_record_row['InsType'] == '健保':
+        card = str(medical_record_row['Card'])
+        if number_utils.get_integer(medical_record_row['Continuance']) >= 1:
+            card += '-' + str(medical_record_row['Continuance'])
+        card = '<b>健保</b>: {0}'.format(card)
+    else:
+        card = '<b>自費</b>'
+
+    medical_record = '<b>日期</b>: {case_date} {card} <b>醫師</b>:{doctor}<hr>'.format(
+        case_date=string_utils.xstr(medical_record_row['CaseDate']),
+        card=card,
+        doctor=string_utils.xstr(medical_record_row['Doctor']),
+    )
+
+    if medical_record_row['Symptom'] is not None and string_utils.xstr(medical_record_row['Symptom']) != '':
+        medical_record += '<b>主訴</b>: {0}<hr>'.format(string_utils.get_str(medical_record_row['Symptom'], 'utf8'))
+    if medical_record_row['Tongue'] is not None and string_utils.xstr(medical_record_row['Tongue']) != '':
+        medical_record += '<b>舌診</b>: {0}<hr>'.format(string_utils.get_str(medical_record_row['Tongue'], 'utf8'))
+    if medical_record_row['Pulse'] is not None and string_utils.xstr(medical_record_row['Pulse']) != '':
+        medical_record += '<b>脈象</b>: {0}<hr>'.format(string_utils.get_str(medical_record_row['Pulse'], 'utf8'))
+    if medical_record_row['Distincts'] is not None and string_utils.xstr(medical_record_row['Distincts']) != '':
+        medical_record += '<b>辨證</b>: {0}<hr>'.format(string_utils.xstr(medical_record_row['Distincts']))
+    if medical_record_row['Cure'] is not None and string_utils.xstr(medical_record_row['Cure']) != '':
+        medical_record += '<b>治則</b>: {0}<hr>'.format(string_utils.xstr(medical_record_row['Cure']))
+    if medical_record_row['Remark'] is not None and string_utils.xstr(medical_record_row['Remark']) != '':
+        medical_record += '<b>備註</b>: {0}<hr>'.format(string_utils.get_str(medical_record_row['Remark'], 'utf8'))
+    if medical_record_row['DiseaseCode1'] is not None and len(str(medical_record_row['DiseaseCode1']).strip()) > 0:
+        medical_record += '<b>主診斷</b>: {0} {1}<br>'.format(str(medical_record_row['DiseaseCode1']), str(medical_record_row['DiseaseName1']))
+    if medical_record_row['DiseaseCode2'] is not None and len(str(medical_record_row['DiseaseCode2']).strip()) > 0:
+        medical_record += '<b>次診斷1</b>: {0} {1}<br>'.format(str(medical_record_row['DiseaseCode2']), str(medical_record_row['DiseaseName2']))
+    if medical_record_row['DiseaseCode3'] is not None and len(str(medical_record_row['DiseaseCode3']).strip()) > 0:
+        medical_record += '<b>次診斷2</b>: {0} {1}<br>'.format(str(medical_record_row['DiseaseCode3']), str(medical_record_row['DiseaseName3']))
+
+    medical_record = '''
+        <div style="width: 95%;">
+            {0}
+        </div>
+    '''.format(medical_record)
+
+    prescript_record = get_prescript_row_html(medical_record_row)
+
+    html = '''
+        <html>
+            <head>
+                <meta charset="UTF-8">
+            </head>
+            <body>
+                {medical_record}
+                {prescript_record}
+            </body>
+        </html>
+    '''.format(
+        medical_record=medical_record,
+        prescript_record=prescript_record,
+    )
+
+    return html
+
+
+def get_prescript_row_html(medical_record_row):
+    rows = medical_record_row['PrescriptJSON']
+
+    if len(rows) <= 0:
+        return '<br><br><br><center>無開立處方</center><br>'
+
+    html = get_prescript_row_medicine_record(medical_record_row, 1)
+    html += get_ins_prescript_treat_row_record(medical_record_row)
+    html += get_self_prescript_medicine_row_record(medical_record_row)
+
+    return html
+
+
+def get_prescript_row_medicine_record(medical_record_row, medicine_set):
+    rows = medical_record_row['PrescriptJSON']
+    medicine_rows = []
+    for row in rows:
+        if row['MedicineType'] not in ['穴道', '處置', '檢驗'] and row['MedicineSet'] == medicine_set:
+            medicine_rows.append(row)
+
+    prescript_data, total_dosage = get_prescript_row_html_data(medicine_rows, medicine_set)
+    if prescript_data == '':
+        return ''
+
+    prescript_data += get_dosage_row_html(medical_record_row, medicine_set, total_dosage)
+    if medicine_set == 1:
+        prescript_heading = '健保處方'
+    else:
+        prescript_heading = '自費處方{0}'.format(medicine_set-1)
+
+    prescript_html = '''
+        <table align=center cellpadding="2" cellspacing="0" width="98%" style="border-width: 1px; border-style: solid;">
+            <thead>
+                <tr bgcolor="LightGray">
+                    <th style="text-align: center; padding-left: 8px" width="10%">序</th>
+                    <th style="padding-left: 8px" width="50%" align="left">{prescript_heading}</th>
+                    <th style="padding-right: 8px" align="right" width="25%">劑量</th>
+                    <th style="padding-left: 8px" align="left" width="15%">指示</th>
+                </tr>
+            </thead>
+            <tbody>
+                {prescript_data}
+            </tbody>
+        </table>
+        <br>
+    '''.format(
+        prescript_heading=prescript_heading,
+        prescript_data=prescript_data,
+    )
+
+    return prescript_html
+
+
+def get_prescript_row_html_data(rows, medicine_set):
+    prescript_data = ''
+    total_dosage = 0
+
+    if len(rows) <= 0:
+        return prescript_data, total_dosage
+
+    sequence = 0
+    for row in rows:
+        if string_utils.xstr(row['MedicineName']) in ['', '優待']:
+            continue
+
+        sequence += 1
+
+        if row['Dosage'] is None or row['Dosage'] == 0.00:
+            dosage = ''
+        else:
+            dosage_value = number_utils.get_float(row['Dosage'])
+            dosage = '{0:.1f}'.format(dosage_value)
+            total_dosage += dosage_value
+
+        unit = string_utils.xstr(row['Unit'])
+        instruction = string_utils.xstr(row['Instruction'])
+
+        if medicine_set >= 2:
+            font_color = 'color: navy'
+        else:
+            font_color = ''
+
+        prescript_data += '''
+            <tr>
+                <td align="center" style="padding-right: 8px; {font_color}">{sequence}</td>
+                <td style="padding-left: 8px; {font_color}">{medicine_set}</td>
+                <td align="right" style="padding-right: 8px; {font_color}">{dosage} {unit}</td>
+                <td style="padding-left: 8px; {font_color}">{instruction}</td>
+            </tr>
+        '''.format(
+            font_color=font_color,
+            sequence=string_utils.xstr(sequence),
+            medicine_set=string_utils.xstr(row['MedicineName']),
+            dosage=dosage,
+            unit=unit,
+            instruction=instruction,
+        )
+
+    return prescript_data, total_dosage
+
+
+def get_dosage_row_html(medical_record_row, medicine_set, total_dosage):
+    dosage_data = ''
+
+    rows = medical_record_row['DosageJSON']
+    if len(rows) <= 0:
+        return dosage_data
+
+    try:
+        row = rows[medicine_set-1]
+    except IndexError:
+        return dosage_data
+
+    pres_days = number_utils.get_integer(row['Days'])
+    packages = number_utils.get_integer(row['Packages'])
+    try:
+        self_total_fee = number_utils.get_integer(row['SelfTotalFee'])
+    except KeyError:
+        self_total_fee = None
+
+    if packages > 0 or pres_days > 0:
+        instruction = string_utils.xstr(row['Instruction'])
+        dosage_data = '''
+            <tr>
+                <td style="text-align: left; padding-left: 30px;" colspan="4">
+                    用法: {packages}包 {pres_days}日份 {instruction}服用 總量: {total_dosage}
+                </td>
+            </tr>
+        '''.format(
+            packages=packages,
+            pres_days=pres_days,
+            instruction=instruction,
+            total_dosage=total_dosage,
+        )
+
+    if self_total_fee is not None and self_total_fee > 0:
+        discount_rate = number_utils.get_integer(row['DiscountRate'])
+        discount_fee = number_utils.get_integer(row['DiscountFee'])
+        total_fee = number_utils.get_integer(row['TotalFee'])
+        dosage_data += '''
+            <tr>
+                <td style="text-align: left; padding-left: 30px;" colspan="4">
+                    自費合計: ${self_total_fee:,} 優待: {discount_rate}% 折扣金額: ${discount_fee:,}
+                    應收金額: ${total_fee:,}
+                </td>
+            </tr>
+        '''.format(
+            self_total_fee=self_total_fee,
+            discount_rate=discount_rate,
+            discount_fee=discount_fee,
+            total_fee=total_fee,
+        )
+
+    return dosage_data
+
+
+def get_ins_prescript_treat_row_record(medical_record_row):
+    medicine_set = 1
+    prescript_html = ''
+    treatment = string_utils.xstr(medical_record_row['Treatment'])
+
+    if treatment == '':
+        return prescript_html
+
+    treatment_data = '''
+        <tr>
+            <td align="center" style="padding-right: 8px;">*</td>
+            <td style="padding-left: 8px;">{treatment}</td>
+            <td align="right" style="padding-right: 8px">1 次</td>
+            <td style="padding-left: 8px;"></td>
+        </tr>
+    '''.format(
+        treatment=treatment,
+    )
+
+    rows = medical_record_row['PrescriptJSON']
+    medicine_rows = []
+    for row in rows:
+        if row['MedicineType'] in ['穴道', '處置', '檢驗'] and row['MedicineSet'] == medicine_set:
+            medicine_rows.append(row)
+
+    prescript_data, _ = get_prescript_row_html_data(medicine_rows, medicine_set)
+
+    prescript_html = '''
+        <table align=center cellpadding="2" cellspacing="0" width="98%" style="border-width: 1px; border-style: solid;">
+            <thead>
+                <tr bgcolor="LightGray">
+                    <th style="text-align: center; padding-left: 8px" width="10%">序</th>
+                    <th style="padding-left: 8px" width="50%" align="left">健保處置</th>
+                    <th style="padding-right: 8px" align="right" width="25%">次數</th>
+                    <th style="padding-left: 8px" align="left" width="15%">備註</th>
+                </tr>
+            </thead>
+            <tbody>
+                {treatment_data}
+                {prescript_data}
+            </tbody>
+        </table>
+        <br>
+    '''.format(
+        treatment_data=treatment_data,
+        prescript_data=prescript_data,
+    )
+
+    return prescript_html
+
+
+def get_self_prescript_medicine_row_record(medical_record_row):
+    prescript_html = ''
+
+    max_medicine_set = 1
+    rows = medical_record_row['PrescriptJSON']
+    for row in rows:
+        medicine_set = row['MedicineSet']
+        if medicine_set > max_medicine_set:
+            max_medicine_set = medicine_set
+
+    if max_medicine_set <= 1:
+        return prescript_html
+
+    for medicine_set in range(2, max_medicine_set+1):
+        prescript_html += get_prescript_row_medicine_record(medical_record_row, medicine_set)
+
+    return prescript_html

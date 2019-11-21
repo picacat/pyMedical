@@ -15,7 +15,7 @@ from libs import case_utils
 from libs import personnel_utils
 
 
-# 候診名單 2018.01.31
+# 申報統計資料 2018.01.31
 class InsApplyCalculate(QtWidgets.QMainWindow):
     # 初始化
     def __init__(self, parent=None, *args):
@@ -186,7 +186,7 @@ class InsApplyCalculate(QtWidgets.QMainWindow):
         return diag_days
 
     # 取得醫師總看診人次
-    def _get_total_count(self, doctor_name):
+    def _get_total_count(self, in_doctor_name):
         total_count = 0
         sql = '''
             SELECT CaseKey1, CaseKey2, CaseKey3, CaseKey4, CaseKey5, CaseKey6
@@ -206,22 +206,14 @@ class InsApplyCalculate(QtWidgets.QMainWindow):
                 if case_key <= 0:
                     continue
 
-                sql = '''
-                    SELECT Doctor FROM cases 
-                    WHERE
-                        CaseKey = {0}
-                '''.format(case_key)
-                doctor_rows = self.database.select_record(sql)
-                if len(doctor_rows) <= 0:
-                    continue
-
-                if string_utils.xstr(doctor_rows[0]['Doctor']) == doctor_name:
+                doctor_name = self._get_doctor_name(case_key)
+                if doctor_name == in_doctor_name:
                     total_count += 1
 
         return total_count
 
     # 取得醫師針傷總人次
-    def _get_treat_count(self, doctor_name):
+    def _get_treat_count(self, in_doctor_name):
         treat_count = 0
         sql = '''
             SELECT 
@@ -248,22 +240,14 @@ class InsApplyCalculate(QtWidgets.QMainWindow):
                 if case_key <= 0:
                     continue
 
-                sql = '''
-                    SELECT Doctor FROM cases 
-                    WHERE
-                        CaseKey = {0}
-                '''.format(case_key)
-                doctor_rows = self.database.select_record(sql)
-                if len(doctor_rows) <= 0:
-                    continue
-
-                if string_utils.xstr(doctor_rows[0]['Doctor']) == doctor_name:
+                doctor_name = self._get_doctor_name(case_key)
+                if doctor_name == in_doctor_name:
                     treat_count += 1
 
         return treat_count
 
     # 取得醫師針傷給藥總人次
-    def _get_treat_drug(self, doctor_name):
+    def _get_treat_drug(self, in_doctor_name):
         treat_drug = 0
         sql = '''
             SELECT 
@@ -290,22 +274,29 @@ class InsApplyCalculate(QtWidgets.QMainWindow):
                 if case_key <= 0:
                     continue
 
-                sql = '''
-                    SELECT Doctor FROM cases 
-                    WHERE
-                        CaseKey = {0}
-                '''.format(case_key)
-                doctor_rows = self.database.select_record(sql)
-                if len(doctor_rows) <= 0:
-                    continue
-
-                if string_utils.xstr(doctor_rows[0]['Doctor']) == doctor_name:
+                doctor_name = self._get_doctor_name(case_key)
+                if doctor_name == in_doctor_name:
                     treat_drug += 1
 
         return treat_drug
 
+    def _get_doctor_name(self, case_key):
+        sql = '''
+            SELECT Doctor FROM cases 
+            WHERE
+                CaseKey = {0}
+        '''.format(case_key)
+        rows = self.database.select_record(sql)
+        if len(rows) <= 0:
+            return None
+
+        row = rows[0]
+        doctor_name = string_utils.xstr(row['Doctor']).replace(',', '')
+
+        return doctor_name
+
     # 取得醫師複雜性傷科總人次
-    def _get_complicated_massage(self, doctor_name):
+    def _get_complicated_massage(self, in_doctor_name):
         treat_drug = 0
         sql = '''
             SELECT 
@@ -332,16 +323,8 @@ class InsApplyCalculate(QtWidgets.QMainWindow):
                 if case_key <= 0:
                     continue
 
-                sql = '''
-                    SELECT Doctor FROM cases 
-                    WHERE
-                        CaseKey = {0}
-                '''.format(case_key)
-                doctor_rows = self.database.select_record(sql)
-                if len(doctor_rows) <= 0:
-                    continue
-
-                if string_utils.xstr(doctor_rows[0]['Doctor']) == doctor_name:
+                doctor_name = self._get_doctor_name(case_key)
+                if doctor_name == in_doctor_name:
                     treat_drug += 1
 
         return treat_drug

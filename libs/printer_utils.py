@@ -27,18 +27,23 @@ from printer.print_receipt_ins_form2 import *
 from printer.print_receipt_ins_form3 import *
 from printer.print_receipt_ins_form4 import *
 from printer.print_receipt_ins_form5 import *
+from printer.print_receipt_ins_form6 import *
 
 from printer.print_receipt_self_form1 import *
 from printer.print_receipt_self_form2 import *
 from printer.print_receipt_self_form3 import *
 from printer.print_receipt_self_form4 import *
 from printer.print_receipt_self_form5 import *
+from printer.print_receipt_self_form6 import *
 
 from printer.print_misc_form5 import *
+
+from printer.print_reservation_form5 import *
 
 from printer.print_ins_apply_total_fee import *
 from printer.print_ins_apply_order import *
 from printer.print_ins_apply_schedule_table import *
+from printer.print_html import *
 
 from printer.print_medical_records import *
 from printer.print_medical_fees import *
@@ -46,6 +51,8 @@ from printer.print_medical_chart import *
 
 from printer.print_certificate_diagnosis import *
 from printer.print_certificate_payment import *
+from printer.print_certificate_payment_total import *
+from printer.print_certificate_payment_prescript import *
 
 PRINT_MODE = ['不印', '列印', '藥品', '詢問', '預覽']
 PRINT_REGISTRATION_FORM = {
@@ -78,6 +85,7 @@ PRINT_RECEIPT_INS_FORM = {
     '03-3"健保醫療收據': PrintReceiptInsForm3,
     '04-4"健保醫療收據': PrintReceiptInsForm4,
     '05-2.5"健保醫療收據': PrintReceiptInsForm5,
+    '06-3"友杏格式健保醫療收據': PrintReceiptInsForm6,
 }
 
 PRINT_RECEIPT_SELF_FORM = {
@@ -86,10 +94,15 @@ PRINT_RECEIPT_SELF_FORM = {
     '03-3"自費醫療收據': PrintReceiptSelfForm3,
     '04-4"自費醫療收據': PrintReceiptSelfForm4,
     '05-2.5"自費醫療收據': PrintReceiptSelfForm5,
+    '06-3"友杏格式自費醫療收據': PrintReceiptSelfForm6,
 }
 
 PRINT_MISC_FORM = {
     '05-2.5"醫療費用收據': PrintMiscForm5,
+}
+
+PRINT_RESERVATION_FORM = {
+    '05-2.5"預約單': PrintReservationForm5,
 }
 
 
@@ -298,6 +311,84 @@ def get_case_html_2(database, case_key, ins_type, background_color=None):
     return html
 
 
+# 處方箋格式6使用
+def get_case_html_3(database, case_key, ins_type, medicine_set, background_color=None):
+    sql = '''
+        SELECT cases.*, patient.Birthday, patient.ID, patient.Gender FROM cases 
+            LEFT JOIN patient on patient.PatientKey = cases.PatientKey
+        WHERE 
+            CaseKey = {0}
+    '''.format(case_key)
+
+    rows = database.select_record(sql)
+    if len(rows) <= 0:
+        return ''
+
+    row = rows[0]
+    card = string_utils.xstr(row['Card'])
+    if number_utils.get_integer(row['Continuance']) >= 1:
+        card += '-' + string_utils.xstr(row['Continuance'])
+
+    birthday = row['Birthday']
+    if birthday is not None:
+        birthday = birthday.strftime('%Y-*-*')
+    else:
+        birthday = ''
+
+    patient_id = row['ID']
+    if patient_id is not None:
+        patient_id = patient_id[:6] + '****'
+
+    if background_color is not None:
+        color = ' style="background-color: {0}"'.format(background_color)
+    else:
+        color = ''
+
+    if ins_type == '健保':
+        html = '''
+            <tr>
+              <td width="33%">姓名:{name} ({gender})</td>
+              <td width="34%">出生日:{birthday}</td>
+              <td width="33%">健保卡序:{card}</td>
+            </tr> 
+        '''.format(
+            name=string_utils.xstr(row['Name']),
+            gender=string_utils.xstr(row['Gender']),
+            birthday=string_utils.xstr(birthday),
+            color=color,
+            card=card,
+        )
+    else:
+        html = '''
+            <tr>
+              <td width="33%">姓名:{name} ({gender})</td>
+              <td width="34%">出生日:{birthday}</td>
+              <td width="33%">保險別:{ins_type} ({medicine_set})</td>
+            </tr> 
+        '''.format(
+            name=string_utils.xstr(row['Name']),
+            gender=string_utils.xstr(row['Gender']),
+            birthday=string_utils.xstr(birthday),
+            color=color,
+            ins_type=ins_type,
+            medicine_set=medicine_set-1,
+        )
+
+    html += '''
+        <tr>
+          <td width="30%">病歷號:{patient_key}</td>
+          <td width="30%">身分證:{patient_id}</td>
+          <td width="40%">就診日:{case_date}</td>
+        </tr>
+    '''.format(
+            patient_key=string_utils.xstr(row['PatientKey']),
+            patient_id=string_utils.xstr(patient_id),
+            case_date=row['CaseDate'].strftime('%Y-%m-%d'),
+    )
+
+    return html
+
+
 # 處方箋格式(主訴)1
 def get_symptom_html(database, case_key, colspan=1):
     sql = '''
@@ -454,7 +545,7 @@ def get_prescript_html(database, system_setting, case_key, medicine_set,
     treatment = rows[0]['Treatment']
 
     treat_condition = ''
-    if print_type == '費用收據' and system_setting.field('列印穴道處置') == 'N':
+    if print_type == '費用收據' and system_setting.field('列印穴道處置') == 'N' and medicine_set == 1:  # 健保才過濾
         treat_condition = ' AND (prescript.MedicineType NOT IN ("穴道")) '
 
     sql = '''
@@ -515,14 +606,18 @@ def get_prescript_html(database, system_setting, case_key, medicine_set,
         prescript_line = ''
         for i in range(blocks):
             prescript_block = get_medicine_detail(
+                medicine_set,
                 rows, (row_no-1)*blocks + i, pres_days, print_alias)
 
+            medicine_name = string_utils.xstr(prescript_block[0])
             location=string_utils.xstr(prescript_block[1])
             if system_setting.field('列印藥品存放位置') != 'Y':
                 location = ''
 
             total_dosage=string_utils.xstr(prescript_block[4])
-            if system_setting.field('列印藥品總量') != 'Y' or not print_total_dosage:
+            if (system_setting.field('列印藥品總量') != 'Y' or
+                    medicine_name in ['優待'] or
+                    not print_total_dosage):
                 total_dosage = ''
 
             prescript_line += '''
@@ -531,7 +626,7 @@ def get_prescript_html(database, system_setting, case_key, medicine_set,
                 <td align="right" width="{total_dosage_width}%">{total_dosage}</td>
                 <td width="{separator_width}%">{separator}</td> 
             '''.format(
-                medicine_name=string_utils.xstr(prescript_block[0]),
+                medicine_name=medicine_name,
                 location=location,
                 dosage=string_utils.xstr(prescript_block[2]),
                 unit=string_utils.xstr(prescript_block[3]),
@@ -554,9 +649,136 @@ def get_prescript_html(database, system_setting, case_key, medicine_set,
     return prescript
 
 
+def get_prescript_html2(database, system_setting, case_key, medicine_set,
+                       print_type, print_alias, print_total_dosage, blocks):
+    if medicine_set is None:
+        prescript = '''
+            <tr>
+              <td>無處方</td>
+            </tr>
+            <hr>
+        '''
+        return prescript
+
+    pres_days = case_utils.get_pres_days(database, case_key, medicine_set)
+
+    sql = '''
+        SELECT Treatment FROM cases
+        WHERE
+            CaseKey = {0}
+    '''.format(case_key)
+    rows = database.select_record(sql)
+    treatment = rows[0]['Treatment']
+
+    treat_condition = ''
+    if print_type == '費用收據' and system_setting.field('列印穴道處置') == 'N' and medicine_set == 1:  # 健保才過濾
+        treat_condition = ' AND (prescript.MedicineType NOT IN ("穴道")) '
+
+    sql = '''
+        SELECT prescript.*, medicine.Location, medicine.MedicineAlias FROM prescript 
+            LEFT JOIN medicine ON medicine.MedicineKey = prescript.MedicineKey
+        WHERE 
+            CaseKey = {case_key} AND
+            MedicineSet = {medicine_set} AND
+            (prescript.MedicineName IS NOT NULL AND LENGTH(prescript.MedicineName) > 0)
+            {treat_condition}
+        ORDER BY PrescriptNo, PrescriptKey
+    '''.format(
+        case_key=case_key,
+        medicine_set=medicine_set,
+        treat_condition=treat_condition,
+    )
+
+    rows = database.select_record(sql)
+    if medicine_set == 1 and treatment in nhi_utils.INS_TREAT:
+        if treatment in nhi_utils.ACUPUNCTURE_TREAT:
+            medicine_type = '穴道'
+        else:
+            medicine_type = '處置'
+
+        rows.insert(
+            0,
+            {
+                'MedicineName': treatment,
+                'MedicineAlias': treatment,
+                'MedicineType': medicine_type,
+                'Dosage': 1,
+                'Unit': '次',
+                'Location': ''
+            }
+        )
+
+    if len(rows) <= 0:
+        return '<br><br><br><br><br><br><br>'
+
+    if pres_days is None or pres_days <= 0:
+        pres_days = 1
+
+    block_width = {
+        3: {'medicine_name_width': 35,
+            'total_dosage_width': 14,
+            'separator_width': 1},
+        2: {'medicine_name_width': 35,
+            'total_dosage_width': 14,
+            'separator_width': 1},
+    }
+
+    prescript = ''
+    row_count = int((len(rows)-1) / blocks) + 1
+    for row_no in range(1, row_count+1):
+        separator = ''
+        prescript_line = ''
+        for i in range(blocks):
+            prescript_block = get_medicine_detail(
+                medicine_set,
+                rows, (row_no-1)*blocks + i, pres_days, print_alias)
+
+            medicine_name = string_utils.xstr(prescript_block[0])
+            location=string_utils.xstr(prescript_block[1])
+            if system_setting.field('列印藥品存放位置') != 'Y':
+                location = ''
+
+            total_dosage=string_utils.xstr(prescript_block[4])
+
+            prescript_line += '''
+                <td align="left" width="{medicine_name_width}%">{medicine_name} {location}</td>
+                <td align="right" width="{total_dosage_width}%">{total_dosage}{unit}</td>
+                <td width="{separator_width}%">{separator}</td> 
+            '''.format(
+                medicine_name=medicine_name,
+                location=location,
+                dosage=string_utils.xstr(prescript_block[2]),
+                unit=string_utils.xstr(prescript_block[3]),
+                total_dosage=total_dosage,
+                separator=string_utils.xstr(separator),
+                medicine_name_width=block_width[blocks]['medicine_name_width'],
+                total_dosage_width=block_width[blocks]['total_dosage_width'],
+                separator_width=block_width[blocks]['separator_width'],
+            )
+
+        prescript += '''
+            <tr>
+              {prescript_line}
+            </tr>
+        '''.format(
+            prescript_line=prescript_line
+        )
+
+    lines = int(len(rows) / 2)
+    if len(rows) % 2 > 0:
+        lines += 1
+
+    br_lines = 6 - lines
+    if br_lines > 0:
+        prescript += '<br>' * br_lines
+
+    return prescript
+
+
 # 明醫
-def get_prescript_block3_html(database, system_setting, case_key, medicine_set,
-                       print_type, print_alias, print_total_dosage, blocks=3):
+def get_prescript_block3_html(
+        database, system_setting, case_key, medicine_set, print_type,
+        print_alias, print_total_dosage, blocks=3):
     if medicine_set is None:
         prescript = '''
             <tr>
@@ -638,6 +860,7 @@ def get_prescript_block3_html(database, system_setting, case_key, medicine_set,
         prescript_line = ''
         for i in range(blocks):
             prescript_block = get_medicine_detail(
+                medicine_set,
                 rows, (row_no-1)*blocks + i, pres_days, print_alias)
 
             location=string_utils.xstr(prescript_block[1])
@@ -882,7 +1105,7 @@ def get_fees_html(database, case_key):
     return html
 
 
-def get_medicine_detail(rows, row_no, pres_days, print_alias=False):
+def get_medicine_detail(medicine_set, rows, row_no, pres_days, print_alias=False):
     try:
         medicine_name = rows[row_no]['MedicineName']
         medicine_ailas = string_utils.xstr(rows[row_no]['MedicineAlias'])
@@ -896,7 +1119,7 @@ def get_medicine_detail(rows, row_no, pres_days, print_alias=False):
         medicine_name, medicine_type, unit, location = '', '', '', ''
 
     try:
-        if medicine_type in ['穴道', '處置', '檢驗']:
+        if medicine_set == 1 and medicine_type in ['穴道', '處置', '檢驗']:
             dosage, unit, total_dosage = '', '', ''
         else:
             dosage = rows[row_no]['Dosage']
@@ -940,6 +1163,7 @@ def get_instruction_html(database, system_settings, case_key, medicine_set):
             database, system_settings, case_key, medicine_set
         )
         total_dosage *= pres_days
+        total_dosage = '{0:.1f}'.format(total_dosage)
 
         html = '''
               醫師: {doctor} 調劑者: {doctor} 指示: 一日{package}包, 共{pres_days}日份 {instruction}服用 總量: {total_dosage}
@@ -953,6 +1177,59 @@ def get_instruction_html(database, system_settings, case_key, medicine_set):
     else:
         html = '''
               主治醫師: {doctor}
+        '''.format(
+            doctor=string_utils.xstr(row['Doctor']),
+        )
+
+    return html
+
+
+def get_instruction_html2(database, system_settings, case_key, medicine_set):
+    sql = '''
+        SELECT * FROM cases 
+        WHERE 
+            CaseKey = {0}
+    '''.format(case_key)
+
+    rows = database.select_record(sql)
+    if len(rows) <= 0:
+        return ''
+
+    row = rows[0]
+
+    if medicine_set is None:
+        html = '''
+              醫師: {doctor}
+        '''.format(
+            doctor=string_utils.xstr(row['Doctor']),
+        )
+        return html
+
+    pres_days = case_utils.get_pres_days(database, case_key, medicine_set)
+    packages = case_utils.get_packages(database, case_key, medicine_set)
+    instruction = case_utils.get_instruction(database, case_key, medicine_set)
+
+    if pres_days > 0:
+        _, total_dosage = case_utils.get_prescript_html_data(
+            database, system_settings, case_key, medicine_set
+        )
+        total_dosage *= pres_days
+        total_dosage = '{0:.1f}'.format(total_dosage)
+
+        html = '''
+              藥日: {package}包 * {pres_days}天 {instruction} 總量: {total_dosage}<br>
+              醫師: {doctor} 調劑者: {doctor} 調劑日: {case_date}<br>
+        '''.format(
+            doctor=string_utils.xstr(row['Doctor']),
+            package=string_utils.xstr(packages),
+            pres_days=string_utils.xstr(pres_days),
+            instruction=instruction,
+            total_dosage=total_dosage,
+            case_date=row['CaseDate'].date(),
+        )
+    else:
+        html = '''
+              主治醫師: {doctor}<br>
         '''.format(
             doctor=string_utils.xstr(row['Doctor']),
         )
@@ -1088,7 +1365,7 @@ def print_registration(parent, database, system_settings, case_key,
     if print_option != '系統設定' and printable == '不印':
         printable = '列印'
 
-    if printable == '不印' :
+    if printable == '不印':
         return
     elif system_settings.field('列印門診掛號單') == '詢問':
         dialog = QtPrintSupport.QPrintDialog()
@@ -1104,12 +1381,10 @@ def print_registration(parent, database, system_settings, case_key,
     print_registration_form = PRINT_REGISTRATION_FORM[form](
         parent, database, system_settings, case_key)
 
-    if print_option == '還卡收據':
+    if print_type == 'print':
         print_registration_form.print(print_option)
-    elif print_type == 'print':
-        print_registration_form.print()
     else:
-        print_registration_form.preview()
+        print_registration_form.preview(print_option)
 
     del print_registration_form
 
@@ -1277,6 +1552,37 @@ def print_misc(parent, database, system_settings, case_key,
     del print_misc_form
 
 
+# 列印預約單
+def print_reservation(parent, database, system_settings, reservation_key,
+                      print_type, print_option='系統設定'):
+    printable = system_settings.field('列印預約掛號單')
+    if print_option != '系統設定' and printable == '不印':
+        printable = '列印'
+
+    if printable == '不印':
+        return
+    elif printable == '詢問':
+        dialog = QtPrintSupport.QPrintDialog()
+        if dialog.exec() == QtWidgets.QDialog.Rejected:
+            return
+    elif printable == '預覽':
+        print_type = 'preview'
+
+    form = system_settings.field('預約掛號單格式')
+    if form not in list(PRINT_RESERVATION_FORM.keys()):
+        return
+
+    print_reservation_form = PRINT_RESERVATION_FORM[form](
+        parent, database, system_settings, reservation_key)
+
+    if print_type == 'print':
+        print_reservation_form.print()
+    else:
+        print_reservation_form.preview()
+
+    del print_reservation_form
+
+
 # 列印申請總表
 def print_ins_apply_total_fee(parent, database, system_settings, ins_total_fee):
     print_type = 'print'
@@ -1299,6 +1605,29 @@ def print_ins_apply_total_fee(parent, database, system_settings, ins_total_fee):
         print_total_fee.preview()
 
     del print_total_fee
+
+
+# 列印html
+def print_html(parent, database, system_settings, html, orientation):
+    print_type = 'print'
+
+    if system_settings.field('列印報表') == '詢問':
+        dialog = QtPrintSupport.QPrintDialog()
+        if dialog.exec() == QtWidgets.QDialog.Rejected:
+            return
+    elif system_settings.field('列印報表') == '預覽':
+        print_type = 'preview'
+
+    print_html_form = PrintHtml(
+        parent, database, system_settings, html, orientation
+    )
+
+    if print_type == 'print':
+        print_html_form.print()
+    else:
+        print_html_form.preview()
+
+    del print_html_form
 
 
 # 列印申請總表
@@ -1477,7 +1806,7 @@ def print_certificate_diagnosis(parent, database, system_settings, certificate_k
     del print_certificate
 
 
-# 列印醫療費用證明書
+# 列印醫療費用證明書明細
 def print_certificate_payment(parent, database, system_settings, certificate_key, print_type=None):
     if print_type is None:  # 如果未指定列印方式，以系統設定為主
         if system_settings.field('列印報表') == '不印':
@@ -1491,19 +1820,77 @@ def print_certificate_payment(parent, database, system_settings, certificate_key
         elif system_settings.field('列印報表') == '列印':
             print_type = 'print'
 
-    print_certificate = PrintCertificatePayment(
+    print_cert_payment = PrintCertificatePayment(
         parent, database, system_settings,
         certificate_key,
     )
 
     if print_type == 'print':
-        print_certificate.print()
+        print_cert_payment.print()
     elif print_type == 'preview':
-        print_certificate.preview()
+        print_cert_payment.preview()
     elif print_type == 'pdf':
-        print_certificate.save_to_pdf()
+        print_cert_payment.save_to_pdf()
 
-    del print_certificate
+    del print_cert_payment
+
+
+# 列印醫療費用證明書總表
+def print_certificate_total(parent, database, system_settings, certificate_key, print_type=None):
+    if print_type is None:  # 如果未指定列印方式，以系統設定為主
+        if system_settings.field('列印報表') == '不印':
+            return
+        elif system_settings.field('列印報表') == '詢問':
+            dialog = QtPrintSupport.QPrintDialog()
+            if dialog.exec() == QtWidgets.QDialog.Rejected:
+                return
+        elif system_settings.field('列印報表') == '預覽':
+            print_type = 'preview'
+        elif system_settings.field('列印報表') == '列印':
+            print_type = 'print'
+
+    print_cert_total = PrintCertificatePaymentTotal(
+        parent, database, system_settings,
+        certificate_key,
+    )
+
+    if print_type == 'print':
+        print_cert_total.print()
+    elif print_type == 'preview':
+        print_cert_total.preview()
+    elif print_type == 'pdf':
+        print_cert_total.save_to_pdf()
+
+    del print_cert_total
+
+
+# 列印醫療費用證明書處方明細
+def print_certificate_prescript(parent, database, system_settings, certificate_key, print_type=None):
+    if print_type is None:  # 如果未指定列印方式，以系統設定為主
+        if system_settings.field('列印報表') == '不印':
+            return
+        elif system_settings.field('列印報表') == '詢問':
+            dialog = QtPrintSupport.QPrintDialog()
+            if dialog.exec() == QtWidgets.QDialog.Rejected:
+                return
+        elif system_settings.field('列印報表') == '預覽':
+            print_type = 'preview'
+        elif system_settings.field('列印報表') == '列印':
+            print_type = 'print'
+
+    print_cert_prescript = PrintCertificatePaymentPrescript(
+        parent, database, system_settings,
+        certificate_key,
+    )
+
+    if print_type == 'print':
+        print_cert_prescript.print()
+    elif print_type == 'preview':
+        print_cert_prescript.preview()
+    elif print_type == 'pdf':
+        print_cert_prescript.save_to_pdf()
+
+    del print_cert_prescript
 
 
 def get_prescript_count(database, case_key, medicine_set):

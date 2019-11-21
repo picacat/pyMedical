@@ -180,7 +180,6 @@ class Income(QtWidgets.QMainWindow):
                 '<font size="4" color="red"><b>今日門診資料尚有未批價名單, 請檢查是否已經全部批價.</b></font>',
                 '請確定所有病歷均已批價, 否則櫃台結帳會無法統計尚未批價的資料.'
             )
-            print('unpaid')
 
     def _print_income(self):
         sender_name = self.sender().objectName()

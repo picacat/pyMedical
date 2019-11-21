@@ -30,6 +30,7 @@ class DialogReservationBooking(QtWidgets.QDialog):
         self.period = args[3]
         self.doctor = args[4]
         self.reserve_no = args[5]
+        self.patient_key = args[6]
         self.ui = None
 
         self._set_ui()
@@ -65,6 +66,14 @@ class DialogReservationBooking(QtWidgets.QDialog):
         ui_utils.set_combo_box(self.ui.comboBox_source, ['現場預約', '初診預約'])
         self._clear_patient_data()
         self._set_patient_read_only(True)
+
+        if self.patient_key is not None:
+            self.ui.lineEdit_query.setText(string_utils.xstr(self.patient_key))
+            self._query_patient()
+            self.ui.label_query.setVisible(False)
+            self.ui.lineEdit_query.setVisible(False)
+            self.ui.pushButton_query.setVisible(False)
+            self.ui.comboBox_source.setEnabled(False)
 
     def keyPressEvent(self, event):
         if event.key() in [QtCore.Qt.Key_Return, QtCore.Qt.Key_Enter]:
@@ -134,7 +143,7 @@ class DialogReservationBooking(QtWidgets.QDialog):
 
         fields = [
             'PatientKey', 'Name', 'ReserveDate', 'Period',
-            'Room', 'Doctor', 'ReserveNo', 'Source'
+            'Room', 'Doctor', 'ReserveNo', 'Source', 'Registrar',
         ]
 
         source = self.ui.comboBox_source.currentText()
@@ -143,10 +152,11 @@ class DialogReservationBooking(QtWidgets.QDialog):
 
         patient_key = self.ui.lineEdit_patient_key.text()
         name = self.ui.lineEdit_name.text()
+        registrar = self.system_settings.field('使用者')
 
         data = [
             patient_key, name, reservation_date, period,
-            room, doctor, reserve_no, source,
+            room, doctor, reserve_no, source, registrar,
         ]
 
         self.database.insert_record('reserve', fields, data)
@@ -210,19 +220,23 @@ class DialogReservationBooking(QtWidgets.QDialog):
         self.ui.lineEdit_id.setText(string_utils.xstr(row['ID']))
         self.ui.lineEdit_telephone.setText(telephone)
 
-        self._check_reservation_status(patient_key, name)
+        if not self._check_reservation_status(patient_key, name):
+            if self.patient_key is not None:
+                self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Cancel).animateClick()
 
     def _check_reservation_status(self, patient_key, name):
         if not self._check_reservation_duplicated(patient_key, name):
-            return
+            return False
 
         if not self._check_reservation_limit(patient_key, name):
-            return
+            return False
 
         if not self._check_reservation_missing_appointment(patient_key, name):
-            return
+            return False
 
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setEnabled(True)
+
+        return True
 
     # 檢查重複預約
     def _check_reservation_duplicated(self, patient_key, name):

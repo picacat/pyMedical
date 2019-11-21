@@ -5,10 +5,12 @@
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtWidgets import QMessageBox, QPushButton
 import os
+import sys
 import configparser
 import datetime
 
 from libs import ui_utils
+from libs import nhi_utils
 
 
 # 系統設定 2018.03.19
@@ -19,7 +21,7 @@ class Backup(QtWidgets.QDialog):
         self.database = args[0]
         self.system_settings = args[1]
         self.parent = parent
-        self.BACKUP_PATH = './auto_backup'
+        self.BACKUP_PATH = nhi_utils.get_dir(self.system_settings, '備份路徑')
 
         self._set_ui()
 
@@ -50,14 +52,24 @@ class Backup(QtWidgets.QDialog):
 
         self._check_backup_path(backup_path)
 
+        # backup_list = [
+        #     ['patient.sql', '"PatientKey IN (SELECT PatientKey FROM cases WHERE CaseDate BETWEEN \'{0}\' AND \'{1}\')"'.format(start_date, end_date)],
+        #     ['cases.sql', '"CaseDate BETWEEN \'{0}\' AND \'{1}\'"'.format(start_date, end_date)],
+        #     ['prescript.sql', '"CaseKey IN (SELECT CaseKey FROM cases WHERE CaseDate BETWEEN \'{0}\' AND \'{1}\')"'.format(start_date, end_date)],
+        #     ['dosage.sql', '"CaseKey IN (SELECT CaseKey FROM cases WHERE CaseDate BETWEEN \'{0}\' AND \'{1}\')"'.format(start_date, end_date)],
+        #     ['deposit.sql', '"CaseKey IN (SELECT CaseKey FROM cases WHERE CaseDate BETWEEN \'{0}\' AND \'{1}\')"'.format(start_date, end_date)],
+        #     ['debt.sql', '"CaseKey IN (SELECT CaseKey FROM cases WHERE CaseDate BETWEEN \'{0}\' AND \'{1}\')"'.format(start_date, end_date)],
+        #     ['reserve.sql', '"ReserveDate BETWEEN \'{0}\' AND \'{1}\'"'.format(start_date, end_date)],
+        # ]
         backup_list = [
-            ['patient.sql', '"PatientKey IN (SELECT PatientKey FROM cases WHERE CaseDate BETWEEN \'{0}\' AND \'{1}\')"'.format(start_date, end_date)],
-            ['cases.sql', '"CaseDate BETWEEN \'{0}\' AND \'{1}\'"'.format(start_date, end_date)],
-            ['prescript.sql', '"CaseKey IN (SELECT CaseKey FROM cases WHERE CaseDate BETWEEN \'{0}\' AND \'{1}\')"'.format(start_date, end_date)],
-            ['dosage.sql', '"CaseKey IN (SELECT CaseKey FROM cases WHERE CaseDate BETWEEN \'{0}\' AND \'{1}\')"'.format(start_date, end_date)],
-            ['deposit.sql', '"CaseKey IN (SELECT CaseKey FROM cases WHERE CaseDate BETWEEN \'{0}\' AND \'{1}\')"'.format(start_date, end_date)],
-            ['debt.sql', '"CaseKey IN (SELECT CaseKey FROM cases WHERE CaseDate BETWEEN \'{0}\' AND \'{1}\')"'.format(start_date, end_date)],
-            ['reserve.sql', '"ReserveDate BETWEEN \'{0}\' AND \'{1}\'"'.format(start_date, end_date)],
+            ['patient.sql', None],
+            ['cases.sql', None],
+            ['prescript.sql', None],
+            ['presextend.sql', None],
+            ['dosage.sql', None],
+            ['deposit.sql', None],
+            ['debt.sql', None],
+            ['reserve.sql', None],
         ]
         max_progress = len(backup_list)
 
@@ -72,10 +84,10 @@ class Backup(QtWidgets.QDialog):
             self._dump_file(backup_path, filename[0], filename[1])
             progress_dialog.setValue(i)
 
-        progress_dialog.setValue(max_progress)
-
-        if datetime.datetime.today().day in [5, 10, 15, 20, 25, 30]:  # 每個月5, 10, 15, 20, 25, 30日備份所有資料
+        if datetime.datetime.today().day in [1, 11, 21]:  # 每個月1, 11, 21備份所有資料
             self._dump_database(backup_path)
+
+        progress_dialog.setValue(max_progress)
 
     def _check_backup_path(self, backup_path):
         try:
@@ -106,8 +118,9 @@ class Backup(QtWidgets.QDialog):
             where = ''
 
         dump_cmd = '''
-            mysqldump --host={host} --user={user} --password={password} --lock-all-tables --complete-insert --no-create-info {where} {database} {table_name} > {dump_file}
+            {backup_cmd} --host={host} --user={user} --password={password} --lock-all-tables --complete-insert --no-create-info {where} {database} {table_name} > {dump_file}
         '''.format(
+            backup_cmd=self._get_backup_cmd(),
             host=host_name, user=user_name, password=password, where=where,
             database=database_name, table_name=table_name, dump_file=filename,
         )
@@ -117,15 +130,16 @@ class Backup(QtWidgets.QDialog):
         config = configparser.ConfigParser()
         config.read(ui_utils.CONFIG_FILE)
 
-        host_name =config['db']['host']
-        user_name =config['db']['user']
-        password=config['db']['password']
-        database_name =config['db']['database']
+        host_name = config['db']['host']
+        user_name = config['db']['user']
+        password = config['db']['password']
+        database_name = config['db']['database']
         dump_file = os.path.join(backup_path, '{0}.sql'.format(database_name))
 
         dump_cmd = '''
-            mysqldump --host={host} --user={user} --password={password} --complete-insert {database} > {dump_file}
+            {backup_cmd} --host={host} --user={user} --password={password} --complete-insert {database} > {dump_file}
         '''.format(
+            backup_cmd=self._get_backup_cmd(),
             host=host_name, user=user_name, password=password,
             database=database_name, dump_file=dump_file,
         )
@@ -136,7 +150,15 @@ class Backup(QtWidgets.QDialog):
             msg_box.setIcon(QMessageBox.Warning)
             msg_box.setWindowTitle('備份失敗')
             msg_box.setText("<font size='4' color='red'><b>無法備份全部的資料庫, 資料庫檔案需要檢查.</b></font>")
-            msg_box.setInformativeText("請與本公司聯繫, 並告知上面的訊息.")
+            msg_box.setInformativeText("錯誤代碼: {0}".format(err_no))
             msg_box.addButton(QPushButton("確定"), QMessageBox.YesRole)
             msg_box.exec_()
+
+    def _get_backup_cmd(self):
+        if sys.platform == 'win32':
+            backup_cmd = 'mysqldump.exe'
+        else:
+            backup_cmd = 'mysqldump'
+
+        return backup_cmd
 

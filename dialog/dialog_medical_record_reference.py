@@ -112,6 +112,7 @@ class DialogMedicalRecordReference(QtWidgets.QDialog):
             SELECT DiseaseCode1, DiseaseName1 FROM cases
             WHERE
                 CaseKey != {case_key} AND
+                DiseaseName1 IS NOT NULL AND
                 cases.Reference = "True"
                 {disease_name_script}
             GROUP BY DiseaseCode1
@@ -160,6 +161,7 @@ class DialogMedicalRecordReference(QtWidgets.QDialog):
 
         self.table_widget_reference_symptom.set_db_data(sql, self._set_reference_symptom_data)
         self._reference_symptom_changed()
+        self.ui.tableWidget_reference_list.setFocus()
 
     def _set_reference_symptom_data(self, row_no, row):
         medical_record_summary = '''日期: {case_date} 病歷號: {patient_key} 姓名: {name}\n{symptom} '''.format(
@@ -186,6 +188,9 @@ class DialogMedicalRecordReference(QtWidgets.QDialog):
 
     def _reference_symptom_changed(self):
         case_key = self.table_widget_reference_symptom.field_value(0)
+        if case_key is None:
+            return
+
         patient_key = self.table_widget_reference_symptom.field_value(1)
         name = self.table_widget_reference_symptom.field_value(2)
         gender = self.table_widget_reference_symptom.field_value(3)

@@ -53,7 +53,8 @@ class PrintRegistrationForm5:
         self.print_html(True)
         # self.print_painter()
 
-    def preview(self):
+    def preview(self, return_card=None):
+        self.return_card = return_card
         geometry = QtWidgets.QApplication.desktop().screenGeometry()
 
         self.preview_dialog.paintRequested.connect(self.print_html)
@@ -142,6 +143,7 @@ class PrintRegistrationForm5:
             )
             regist_fee = 0
             diag_share_fee = 0
+            deposit_fee = -number_utils.get_integer(row['DepositFee'])
             return_card_note = '還卡'
 
         html = '''

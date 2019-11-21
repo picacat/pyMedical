@@ -61,7 +61,7 @@ class PrintCertificateDiagnosis:
         self.preview_dialog.exec_()
 
     def save_to_pdf(self):
-        export_dir = '{0}/certificate'.format(nhi_utils.XML_OUT_PATH)
+        export_dir = '{0}/certificate'.format(nhi_utils.get_dir(self.system_settings, '申報路徑'))
         if not os.path.exists(export_dir):
             os.mkdir(export_dir)
 
@@ -212,6 +212,18 @@ class PrintCertificateDiagnosis:
 
         case_list = self._get_case_list(row)
 
+        if self.system_settings.field('列印診斷證明日期明細') == 'Y':
+            case_list_row = '''
+                <tr>
+                    <th bgcolor="LightGray">診療日期明細<br><font size="3">List of Date</font></th>
+                    <td colspan="5" style="text-align: left; vertical-align: middle">{case_list}</td>
+                </tr>
+            '''.format(
+                case_list=', '.join(case_list),
+            )
+        else:
+            case_list_row = ''
+
         html = '''
             <table align=center cellpadding="2" cellspacing="0" width="98%" style="font-size: 14px; border-width: 1px; border-style: solid;">
                 <tbody>
@@ -238,12 +250,9 @@ class PrintCertificateDiagnosis:
                         <th bgcolor="LightGray" style="vertical-align: middle">科別<br><font size="3">Speciality</font></th>
                         <td style="text-align: center; vertical-align: middle">60 中醫科</td>
                         <th bgcolor="LightGray">診療日期<br><font size="3">Date of Examination</font></th>
-                        <td colspan="3" style="text-align: center; vertical-align: middle">{case_date}<br></td>
+                        <td colspan="3" style="text-align: center; vertical-align: middle">{case_date}<br>共{case_times}次</td>
                     </tr>
-                    <tr>
-                        <th bgcolor="LightGray">診療日期明細<br><font size="3">List of Date</font></th>
-                        <td colspan="5" style="text-align: left; vertical-align: middle">{case_list}<br>共{case_times}次</td>
-                    </tr>
+                    {case_list_row}
                 </tbody>  
             </table>
         '''.format(
@@ -256,8 +265,8 @@ class PrintCertificateDiagnosis:
             telephone=string_utils.xstr(patient_row['Telephone']),
             cellphone=string_utils.xstr(patient_row['Cellphone']),
             address=string_utils.xstr(patient_row['Address']),
-            case_list=', '.join(case_list),
             case_times=len(case_list),
+            case_list_row=case_list_row,
         )
         return html
 

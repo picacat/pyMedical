@@ -21,6 +21,9 @@ from classes import table_widget
 from dialog import dialog_reservation_booking
 from dialog import dialog_reservation_modify
 from dialog import dialog_reservation_query
+from dialog import dialog_off_day_setting
+
+from printer import print_reservation
 
 
 # 主視窗
@@ -34,6 +37,8 @@ class Reservation(QtWidgets.QMainWindow):
         self.database = args[0]
         self.system_settings = args[1]
         self.reserve_key = args[2]
+        self.patient_key = args[3]
+        self.doctor = args[4]
         self.ui = None
         self.max_reservation_table_times = 4
         self.max_reservation_table_rows = 20
@@ -47,6 +52,9 @@ class Reservation(QtWidgets.QMainWindow):
         self._set_signal()
         self._set_permission()
         self.read_reservation()
+
+        if self.patient_key is not None:  # 醫師預約
+            self._set_reservation_by_doctor()
 
     # 解構
     def __del__(self):
@@ -76,12 +84,13 @@ class Reservation(QtWidgets.QMainWindow):
         self.table_widget_reservation_list.set_column_hidden([0])
         self.ui.tabWidget_reservation.setCurrentIndex(0)
 
-        period = registration_utils.get_period(self.system_settings)
+        period = registration_utils.get_current_period(self.system_settings)
         self._set_radio_button_period(period)
 
         self.ui.action_add_reservation.setEnabled(False)
         self.ui.action_cancel_reservation.setEnabled(False)
         self.ui.action_modify_reservation.setEnabled(False)
+        self.ui.action_print_reservation.setEnabled(False)
         # self.ui.action_reservation_arrival.setEnabled(False)
 
         self._set_permission()
@@ -95,9 +104,11 @@ class Reservation(QtWidgets.QMainWindow):
         self.ui.action_remove_assigned_table.triggered.connect(self._remove_assigned_table)
         self.ui.action_modify_reservation.triggered.connect(self._modify_reservation)
         self.ui.action_cancel_reservation.triggered.connect(self._cancel_reservation)
+        self.ui.action_print_reservation.triggered.connect(self._print_reservation)
         self.ui.action_reservation_arrival.triggered.connect(self.reservation_arrival)
         self.ui.action_reservation_query.triggered.connect(self._reservation_query)
         self.ui.action_export_reservation_excel.triggered.connect(self._export_reservation_excel)
+        self.ui.action_off_day_setting.triggered.connect(self._off_day_setting)
 
         self.ui.dateEdit_reservation_date.dateChanged.connect(self.read_reservation)
         self.ui.radioButton_period1.clicked.connect(self.read_reservation)
@@ -175,7 +186,8 @@ class Reservation(QtWidgets.QMainWindow):
         script = '''
             SELECT * FROM person 
             WHERE 
-                Position IN ("醫師", "支援醫師")
+                Position IN ("醫師", "支援醫師") AND
+                ID IS NOT NULL
         '''
         rows = self.database.select_record(script)
 
@@ -184,6 +196,21 @@ class Reservation(QtWidgets.QMainWindow):
             doctor_list.append(row['Name'])
 
         ui_utils.set_combo_box(self.ui.comboBox_doctor, doctor_list)
+
+        if self.doctor is not None:  # 醫師預約不設定
+            return
+
+        room = self.system_settings.field('診療室')  # 取得預設診療室
+        period = registration_utils.get_current_period(self.system_settings)
+        doctor = registration_utils.get_doctor_schedule(self.database, room, period)
+        if doctor is None or doctor == '':
+            for i in range(1, 20):
+                room = string_utils.xstr(i)
+                doctor = registration_utils.get_doctor_schedule(self.database, room, period)
+                if doctor is not None and doctor != '':
+                    break
+
+        self.ui.comboBox_doctor.setCurrentText(doctor)
 
     def _set_radio_button_period(self, period):
         if period == '早班':
@@ -198,7 +225,7 @@ class Reservation(QtWidgets.QMainWindow):
         self._set_reservation_data()
         self._set_calendar()
 
-    def _set_reservation_table(self):
+    def _clear_reservation_table(self):
         self.ui.tableWidget_reservation.clear()
 
         max_reservation_table_columns = len(self.table_header) * self.max_reservation_table_times
@@ -209,8 +236,11 @@ class Reservation(QtWidgets.QMainWindow):
         )
         self._set_table_width()
 
-        hidden_columns = [i * len(self.table_header) - 1 for i in range(1, self.max_reservation_table_times+1)]
+        hidden_columns = [i * len(self.table_header) - 1 for i in range(1, self.max_reservation_table_times + 1)]
         self.table_widget_reservation.set_column_hidden(hidden_columns)
+
+    def _set_reservation_table(self):
+        self._clear_reservation_table()
 
         reservation_table_rows = self._get_reservation_table_rows()
 
@@ -272,8 +302,14 @@ class Reservation(QtWidgets.QMainWindow):
         return rows
 
     def _set_reservation_data(self):
-        doctor = self.ui.comboBox_doctor.currentText()
+        reservation_date = self.ui.dateEdit_reservation_date.date().toString('yyyy-MM-dd')
         period = self._get_period()
+        doctor = self.ui.comboBox_doctor.currentText()
+        start_date = '{reservation_date} 00:00:00'.format(reservation_date=reservation_date)
+        end_date = '{reservation_date} 23:59:59'.format(reservation_date=reservation_date)
+        if self._get_off_day_list(reservation_date, period, doctor):
+            self._clear_reservation_table()
+            return
 
         for row_no in range(self.ui.tableWidget_reservation.rowCount()):
             for i in range(1, self.max_reservation_table_times+1):
@@ -286,27 +322,6 @@ class Reservation(QtWidgets.QMainWindow):
                 if reserve_no.text() == '':
                     continue
 
-                # reservation_date = '{0} {1}'.format(
-                #     self.ui.dateEdit_reservation_date.date().toString('yyyy-MM-dd'),
-                #     time.text()
-                # )
-                # sql = '''
-                #     SELECT * FROM reserve
-                #     WHERE
-                #         ReserveDate = "{reservation_date}" AND
-                #         Period = "{period}" AND
-                #         Doctor = "{doctor}" AND
-                #         ReserveNo = {reserve_no}
-                # '''.format(
-                #     reservation_date=reservation_date,
-                #     period=period,
-                #     doctor=doctor,
-                #     reserve_no=reserve_no.text(),
-                # )
-
-                reservation_date = self.ui.dateEdit_reservation_date.date().toString('yyyy-MM-dd')
-                start_date = '{reservation_date} 00:00:00'.format(reservation_date=reservation_date)
-                end_date = '{reservation_date} 23:59:59'.format(reservation_date=reservation_date)
                 sql = '''
                     SELECT * FROM reserve 
                     WHERE
@@ -387,7 +402,7 @@ class Reservation(QtWidgets.QMainWindow):
                 col_no = (i-1) * len(self.table_header)
                 time = self.ui.tableWidget_reservation.item(row_no, col_no)
                 reserve_no = self.ui.tableWidget_reservation.item(row_no, col_no+1)
-                if time != None and reserve_no != None:
+                if time is not None and reserve_no is not None:
                     self._insert_reservation_table(
                         period, weekday, doctor, row_no, col_no,
                         time.text(), reserve_no.text()
@@ -469,7 +484,7 @@ class Reservation(QtWidgets.QMainWindow):
 
         dialog = dialog_reservation_booking.DialogReservationBooking(
             self, self.database, self.system_settings,
-            reservation_date, period, doctor, reserve_no,
+            reservation_date, period, doctor, reserve_no, self.patient_key,
         )
 
         dialog.exec_()
@@ -506,6 +521,7 @@ class Reservation(QtWidgets.QMainWindow):
 
             self.ui.action_cancel_reservation.setEnabled(enabled)
             self.ui.action_modify_reservation.setEnabled(enabled)
+            self.ui.action_print_reservation.setEnabled(enabled)
             self._set_permission()
 
     def _read_reservation_list(self):
@@ -521,7 +537,8 @@ class Reservation(QtWidgets.QMainWindow):
             arrival = 'AND Arrival = "True"'
 
         sql = '''
-            SELECT * FROM reserve
+            SELECT reserve.*, patient.Telephone, patient.Cellphone FROM reserve
+                LEFT JOIN patient ON patient.PatientKey = reserve.PatientKey
             WHERE
                 ReserveDate BETWEEN "{0}" AND "{1}"
                 {2}
@@ -561,6 +578,9 @@ class Reservation(QtWidgets.QMainWindow):
             string_utils.xstr(row_data['ReserveNo']),
             arrival,
             string_utils.xstr(row_data['Source']),
+            string_utils.xstr(row_data['Registrar']),
+            string_utils.xstr(row_data['Telephone']),
+            string_utils.xstr(row_data['Cellphone']),
         ]
 
         for column in range(len(reservation_list_data)):
@@ -715,6 +735,7 @@ class Reservation(QtWidgets.QMainWindow):
 
         self.ui.action_cancel_reservation.setEnabled(enabled)
         self.ui.action_modify_reservation.setEnabled(enabled)
+        self.ui.action_print_reservation.setEnabled(enabled)
         self.ui.action_reservation_arrival.setEnabled(enabled)
 
         self._set_action_add_reservation()
@@ -757,6 +778,9 @@ class Reservation(QtWidgets.QMainWindow):
         self._set_permission()
 
     def reservation_arrival(self):
+        if self.doctor is not None:  # 醫師預約不可報到
+            return
+
         if self.tab_name == '預約一覽表':
             self._arrival_by_table()
         else:
@@ -994,6 +1018,7 @@ class Reservation(QtWidgets.QMainWindow):
 
         self.ui.action_cancel_reservation.setEnabled(enabled)
         self.ui.action_modify_reservation.setEnabled(enabled)
+        self.ui.action_print_reservation.setEnabled(enabled)
         self._set_permission()
 
         enabled = True
@@ -1065,6 +1090,9 @@ class Reservation(QtWidgets.QMainWindow):
             )
 
         last_day = calendar.monthrange(year, month)[1]
+        current_month = datetime.date.today().month
+        today = datetime.date.today().day
+
         for i in range(0, last_day):
             day = i + 1
             reservation_date = '{0}-{1}-{2}'.format(year, month, day)
@@ -1072,26 +1100,106 @@ class Reservation(QtWidgets.QMainWindow):
             reservation2 = self._get_reservation_status(reservation_date, '午班', doctor)
             reservation3 = self._get_reservation_status(reservation_date, '晚班', doctor)
 
-            self.ui.tableWidget_calendar.setItem(
-                calendar_list[start_day+i][0],
-                calendar_list[start_day+i][1],
-                QtWidgets.QTableWidgetItem(
-                    str(day) + '\n' +
-                    reservation1 + '\n' +
-                    reservation2 + '\n' +
-                    reservation3
-                )
+            row_no = calendar_list[start_day + i][0]
+            col_no = calendar_list[start_day + i][1]
+            content = '{day}\n{reservation1}\n{reservation2}\n{reservation3}'.format(
+                day=day,
+                reservation1=reservation1,
+                reservation2=reservation2,
+                reservation3=reservation3,
             )
-            self.ui.tableWidget_calendar.item(
-                calendar_list[start_day+i][0],
-                calendar_list[start_day+i][1],
-            ).setBackground(QtGui.QColor('white'))
+            self.ui.tableWidget_calendar.setItem(
+                row_no, col_no, QtWidgets.QTableWidgetItem(content)
+            )
+
+            # widget = QtWidgets.QWidget()
+            # label = QtWidgets.QLabel()
+            # label.setText(
+            #     str(day) + '\n' +
+            #     reservation1 + '\n' +
+            #     reservation2 + '\n' +
+            #     reservation3
+            # )
+            #
+            # button1 = QtWidgets.QPushButton(self.ui.tableWidget_calendar)
+            # button1.setFlat(True)
+            # button1.setText(reservation1)
+            # button2 = QtWidgets.QPushButton(self.ui.tableWidget_calendar)
+            # button2.setFlat(True)
+            # button2.setText(reservation2)
+            # button3 = QtWidgets.QPushButton(self.ui.tableWidget_calendar)
+            # button3.setFlat(True)
+            # button3.setText(reservation3)
+            #
+            # layout = QtWidgets.QVBoxLayout()
+            # layout.addWidget(label)
+            # layout.addWidget(button1)
+            # layout.addWidget(button2)
+            # layout.addWidget(button3)
+            # widget.setLayout(layout)
+            # self.ui.tableWidget_calendar.setCellWidget(row_no, col_no, widget)
+
+            color = 'white'
+            if current_month == month and i == today - 1:
+                color = 'lightSteelBlue'
+            elif calendar_list[start_day+i][1] == 0:
+                color = 'mistyrose'
+
+            self.ui.tableWidget_calendar.item(row_no, col_no).setBackground(QtGui.QColor(color))
+
+    def _get_off_day_list(self, reservation_date, period, doctor):
+        start_date = '{0} 00:00:00'.format(reservation_date)
+        end_date = '{0} 23:59:59'.format(reservation_date)
+
+        sql = '''
+            SELECT * FROM off_day_list
+            WHERE
+                (OffDate BETWEEN "{start_date}" AND "{end_date}") AND
+                (Period = "{period}")
+        '''.format(
+            start_date=start_date,
+            end_date=end_date,
+            period=period,
+        )
+        rows = self.database.select_record(sql)
+        if len(rows) <= 0:
+            return False
+
+        row = rows[0]
+        off_doctor = string_utils.xstr(row['Doctor'])
+        if off_doctor in ['', doctor]:
+            return True
+
+        return False
 
     def _get_reservation_status(self, reservation_date, period, doctor):
         status = ''
 
+        if self._get_off_day_list(reservation_date, period, doctor):
+            return '暫停預約'
+
         start_date = '{0} 00:00:00'.format(reservation_date)
         end_date = '{0} 23:59:59'.format(reservation_date)
+
+        sql = '''
+            SELECT * FROM off_day_list
+            WHERE
+                (OffDate BETWEEN "{start_date}" AND "{end_date}") AND
+                (Period = "{period}")
+        '''.format(
+            start_date=start_date,
+            end_date=end_date,
+            period=period,
+        )
+        rows = self.database.select_record(sql)
+        if len(rows) <= 0:
+            pass
+        else:
+            row = rows[0]
+            off_doctor = string_utils.xstr(row['Doctor'])
+            if off_doctor in ['', doctor]:
+                status = '暫停預約'
+                return status
 
         sql = '''
             SELECT ReserveKey FROM reserve
@@ -1150,4 +1258,48 @@ class Reservation(QtWidgets.QMainWindow):
             '<h3>預約資料檔{0}匯出完成.</h3>'.format(excel_file_name),
             'Microsoft Excel 格式.'
         )
+
+    def _print_reservation(self):
+        if self.tab_name == '預約一覽表':
+            i = 0
+            current_row = self.ui.tableWidget_reservation.currentRow()
+            current_column = self.ui.tableWidget_reservation.currentColumn()
+            reservation_key = self._get_reserve_key_by_table(current_row, current_column, True)
+        else:
+            i = 1
+            reservation_key = self.table_widget_reservation_list.field_value(0)
+
+        if reservation_key is None:
+            return
+
+        self.print_reservation_form('系統設定', reservation_key)
+
+    # 列印收據
+    def print_reservation_form(self, printable, reservation_key=False):
+        if not reservation_key:
+            reservation_key = self.table_widget_wait.field_value(1)
+
+        print_reserve = print_reservation.PrintReservation(
+            self, self.database, self.system_settings, reservation_key, printable)
+        print_reserve.print()
+
+        del print_reserve
+
+    # 由醫師預約
+    def _set_reservation_by_doctor(self):
+        self.ui.action_reservation_arrival.setEnabled(False)
+        self.ui.comboBox_doctor.setEnabled(False)
+
+        if self.doctor is not None:
+            self.ui.comboBox_doctor.setCurrentText(self.doctor)
+
+    def _off_day_setting(self):
+        dialog = dialog_off_day_setting.DialogOffDaySetting(
+            self, self.database, self.system_settings,
+        )
+
+        dialog.exec_()
+        dialog.deleteLater()
+        self.read_reservation()
+
 

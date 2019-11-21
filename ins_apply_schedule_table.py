@@ -39,7 +39,6 @@ class InsApplyScheduleTable(QtWidgets.QMainWindow):
         self.month_table = self._get_month_table()
         self.medical_record = self._get_medical_record()
 
-
         self._set_ui()
         self._set_signal()
         self._display_schedule_table()
@@ -91,7 +90,7 @@ class InsApplyScheduleTable(QtWidgets.QMainWindow):
 
         rows = self.database.select_record(sql)
         for row in rows:
-            doctor_name = string_utils.xstr(row['Doctor'])
+            doctor_name = string_utils.xstr(row['Doctor']).replace(',', '')
             schedule_date = '{0}-{1}-{2}'.format(self.apply_year, self.apply_month, row['CaseDay'])
             nurse = personnel_utils.get_doctor_nurse(self.database, schedule_date, row['Period'], doctor_name)
             if nurse != '':
