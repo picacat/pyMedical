@@ -65,15 +65,19 @@ class DialogReservationQuery(QtWidgets.QDialog):
         else:
             condition = ''
 
+        if keyword.isdigit():
+            patient_condition = 'PatientKey = {0}'.format(keyword)
+        else:
+            patient_condition = 'Name LIKE "%{0}%"'.format(keyword)
+
         sql = '''
             SELECT * FROM reserve 
             WHERE
-                (PatientKey = "{keyword}" OR
-                 Name Like "%{keyword}%")
+                {patient_condition}
                 {condition}
             ORDER BY PatientKey, ReserveDate DESC
         '''.format(
-            keyword=keyword,
+            patient_condition=patient_condition,
             condition=condition,
         )
         self.table_widget_reservation.set_db_data(sql, self._set_reservation_data)
@@ -87,10 +91,15 @@ class DialogReservationQuery(QtWidgets.QDialog):
         else:
             status = '未報到'
 
+        if row['ReserveDate'] is None:
+            reserve_date = None
+        else:
+            reserve_date = string_utils.xstr(row['ReserveDate'].date())
+
         reservation_data = [
             string_utils.xstr(row['PatientKey']),
             string_utils.xstr(row['Name']),
-            string_utils.xstr(row['ReserveDate'].date()),
+            reserve_date,
             string_utils.xstr(row['Period']),
             string_utils.xstr(row['ReserveNo']),
             string_utils.xstr(row['Doctor']),

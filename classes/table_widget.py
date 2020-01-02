@@ -103,7 +103,7 @@ class TableWidget:
 
         self.table_widget.resizeRowsToContents()
         self.table_widget.setCurrentCell(0, 0)
-        # self.table_widget.setFocus(True)
+        # database.table_widget.setFocus(True)
 
     def row_count(self):
         return self.table_widget.rowCount()
@@ -178,11 +178,11 @@ class TableWidget:
             self.table_widget.setCurrentCell(0, field_no)
 
             # error_message = string_utils.xstr(
-            #     self.table_widget_wait.item(0, field_no).text()
+            #     database.table_widget_wait.item(0, field_no).text()
             # )
             #
             # if error_message == '':
-            #     self.find_error(field_no)
+            #     database.find_error(field_no)
 
     def set_dict(self, in_dict):
         self.table_widget.setRowCount(len(in_dict))

@@ -37,7 +37,7 @@ class PurchaseList(QtWidgets.QMainWindow):
             "end_date": None,
             "period": None,
             "cashier": None,
-            "doctor": None,
+            "therapist": None,
             "massager": None,
         }
 
@@ -99,7 +99,7 @@ class PurchaseList(QtWidgets.QMainWindow):
             dialog.ui.dateEdit_end_date.setDate(self.dialog_setting['end_date'])
             dialog.ui.comboBox_period.setCurrentText(self.dialog_setting['period'])
             dialog.ui.comboBox_cashier.setCurrentText(self.dialog_setting['cashier'])
-            dialog.ui.comboBox_doctor.setCurrentText(self.dialog_setting['doctor'])
+            dialog.ui.comboBox_doctor.setCurrentText(self.dialog_setting['therapist'])
             dialog.ui.comboBox_massager.setCurrentText(self.dialog_setting['massager'])
 
         result = dialog.exec_()
@@ -108,7 +108,7 @@ class PurchaseList(QtWidgets.QMainWindow):
         self.dialog_setting['end_date'] = dialog.ui.dateEdit_end_date.date()
         self.dialog_setting['period'] = dialog.comboBox_period.currentText()
         self.dialog_setting['cashier'] = dialog.comboBox_cashier.currentText()
-        self.dialog_setting['doctor'] = dialog.comboBox_doctor.currentText()
+        self.dialog_setting['therapist'] = dialog.comboBox_doctor.currentText()
         self.dialog_setting['massager'] = dialog.comboBox_massager.currentText()
 
         sql = dialog.get_sql()

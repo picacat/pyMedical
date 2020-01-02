@@ -299,6 +299,17 @@ class DialogReservationBooking(QtWidgets.QDialog):
             name=name,
         )
         rows = self.database.select_record(sql)
+
+        reservation_list = []
+        for row in rows:
+            reservation_list.append(
+                '{reservation_date} {period} 預約診號: {reservation_no}'.format(
+                    reservation_date=string_utils.xstr(row['ReserveDate'].date()),
+                    period=string_utils.xstr(row['Period']),
+                    reservation_no=string_utils.xstr(row['ReserveNo']),
+                )
+            )
+
         if len(rows) >= reservation_limit:
             is_ok = False
 
@@ -306,7 +317,9 @@ class DialogReservationBooking(QtWidgets.QDialog):
             msg_box.setIcon(QMessageBox.Critical)
             msg_box.setWindowTitle('已有預約')
             msg_box.setText("此人預約已超過系統設定內, 預約次數{0}次的限制, 無法再次預約掛號.".format(reservation_limit))
-            msg_box.setInformativeText("超過次數, 無法預約掛號.")
+            msg_box.setInformativeText('預約記錄:\n{reservation_list}'.format(
+                reservation_list='\n'.join(reservation_list)
+            ))
             msg_box.addButton(QPushButton("確定"), QMessageBox.YesRole)
             msg_box.exec_()
             self.ui.lineEdit_patient_key.setText(None)
@@ -363,10 +376,10 @@ class DialogReservationBooking(QtWidgets.QDialog):
 
             msg_box = QMessageBox()
             msg_box.setIcon(QMessageBox.Critical)
-            msg_box.setWindowTitle('預約警告')
-            msg_box.setText("此人預約已超過系統設定內, {0}天內預約超過{0}次的限制, 無法再次預約掛號.".format(
+            msg_box.setWindowTitle('爽約警告')
+            msg_box.setText("此人預約已超過系統設定內, {0}天內爽約超過{1}次的限制, 無法再次預約掛號.".format(
                 reservation_period, reservation_missing_appointment))
-            msg_box.setInformativeText("超過次數, 無法預約掛號.")
+            msg_box.setInformativeText("爽約超過次數, 無法預約掛號.")
             msg_box.addButton(QPushButton("確定"), QMessageBox.YesRole)
             msg_box.exec_()
             self._clear_patient_data()

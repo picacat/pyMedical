@@ -7,6 +7,7 @@ from PyQt5.QtWidgets import QMessageBox
 import datetime
 import calendar
 
+from classes import table_widget
 from libs import ui_utils
 from libs import system_utils
 from libs import string_utils
@@ -15,7 +16,9 @@ from libs import date_utils
 from libs import registration_utils
 from libs import number_utils
 from libs import dialog_utils
+from libs import nhi_utils
 from dialog import dialog_massage_reservation
+from dialog import dialog_off_day_setting
 
 
 # 櫃台購藥
@@ -59,9 +62,23 @@ class MassageRegistration(QtWidgets.QMainWindow):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_MASSAGE_REGISTRATION, self)
         system_utils.set_css(self, self.system_settings)
         self.ui.dateEdit_reservation_date.setDate(datetime.datetime.today())
+        self.ui.dateEdit_start_date.setDate(datetime.datetime.today())
+        self.ui.dateEdit_end_date.setDate(datetime.datetime.today())
+        self.table_widget_reservation_list = table_widget.TableWidget(
+            self.ui.tableWidget_reservation_list, self.database
+        )
+        self.table_widget_reservation_list.set_column_hidden([0])
+        self._set_table_width()
         self._set_week_day()
         self._set_reservation_tool_button(False)
         self._set_current_period()
+        self.ui.tabWidget_reservation.setCurrentIndex(0)
+
+    def _set_table_width(self):
+        width = [
+            100, 110, 120, 60, 80, 100, 120, 120, 100, 100, 80, 80,
+        ]
+        self.table_widget_reservation_list.set_table_heading_width(width)
 
     # 設定信號
     def _set_signal(self):
@@ -69,11 +86,22 @@ class MassageRegistration(QtWidgets.QMainWindow):
         self.ui.action_modify_reservation.triggered.connect(self._modify_reservation)
         self.ui.action_cancel_reservation.triggered.connect(self._cancel_reservation)
         self.ui.action_close.triggered.connect(self.close_app)
+        self.ui.action_off_day_setting.triggered.connect(self._off_day_setting)
+
         self.ui.radioButton_period1.clicked.connect(self._read_timeline)
         self.ui.radioButton_period2.clicked.connect(self._read_timeline)
         self.ui.radioButton_period3.clicked.connect(self._read_timeline)
         self.ui.dateEdit_reservation_date.dateChanged.connect(self._read_timeline)
         self.ui.tableWidget_schedule.itemSelectionChanged.connect(self._schedule_item_selection_changed)
+        self.ui.tableWidget_schedule.doubleClicked.connect(self._schedule_double_clicked)
+        self.ui.tableWidget_calendar.cellClicked.connect(self._calendar_changed)
+
+        self.ui.dateEdit_start_date.dateChanged.connect(self._read_reservation_list)
+        self.ui.dateEdit_end_date.dateChanged.connect(self._read_reservation_list)
+
+        self.ui.tabWidget_reservation.currentChanged.connect(self._tab_changed)                   # 切換分頁
+        self.ui.toolButton_previous.clicked.connect(self._previous_calendar)
+        self.ui.toolButton_next.clicked.connect(self._next_calendar)
 
     def _set_permission(self):
         if self.user_name == '超級使用者':
@@ -110,10 +138,48 @@ class MassageRegistration(QtWidgets.QMainWindow):
         self._set_schedule_table()
         self._set_calendar()
         self._set_reservation_tool_button(False)
+        self._read_reservation_list()
 
     def _set_schedule_table(self):
         self._set_schedule_table_header()
+        self._set_schedule_table_color()
         self._set_schedule_data()
+        self._set_off_day_list()
+
+    def _get_massager_off_day_list(self, reservation_date, period, massager):
+        off_day = False
+        start_date = '{0} 00:00:00'.format(reservation_date)
+        end_date = '{0} 23:59:59'.format(reservation_date)
+
+        sql = '''
+            SELECT * FROM massage_off_day_list
+            WHERE
+                (OffDate BETWEEN "{start_date}" AND "{end_date}") AND
+                (Period = "{period}") AND
+                (Massager = "{massager}" OR Massager IS NULL) 
+        '''.format(
+            start_date=start_date,
+            end_date=end_date,
+            period=period,
+            massager=massager,
+        )
+        rows = self.database.select_record(sql)
+        if len(rows) > 0:
+            off_day = True
+
+        return off_day
+
+    def _set_off_day_list(self):
+        reservation_date = self.ui.dateEdit_reservation_date.date().toPyDate()
+        period = self._get_period()
+        for row_no in range(self.ui.tableWidget_schedule.rowCount(), 1, -1):
+            item = self.ui.tableWidget_schedule.item(row_no, 1)
+            if item is None:
+                continue
+
+            massager = item.text()
+            if self._get_massager_off_day_list(reservation_date, period, massager):
+                self.ui.tableWidget_schedule.removeRow(row_no)
 
     def _set_schedule_data(self):
         start_date = self.ui.dateEdit_reservation_date.date().toString('yyyy-MM-dd 00:00:00')
@@ -315,7 +381,7 @@ class MassageRegistration(QtWidgets.QMainWindow):
         interval_minute = 0
         row_no = 1
         for col_no in range(start_col, self.ui.tableWidget_schedule.columnCount()):
-            self.ui.tableWidget_schedule.setColumnWidth(col_no, 20)
+            self.ui.tableWidget_schedule.setColumnWidth(col_no, 30)
             self.ui.tableWidget_schedule.setItem(
                 row_no, col_no,
                 QtWidgets.QTableWidgetItem('{minute:0>2}'.format(minute=interval_minute))
@@ -346,12 +412,24 @@ class MassageRegistration(QtWidgets.QMainWindow):
                 item.setFlags(QtCore.Qt.ItemIsEnabled)
                 item.setBackground(color)
 
+    def _set_schedule_table_color(self):
+        for row_no in range(2, self.ui.tableWidget_schedule.rowCount()):
+            for col_no in range(2, self.ui.tableWidget_schedule.columnCount()):
+                self.ui.tableWidget_schedule.setItem(
+                    row_no, col_no,
+                    QtWidgets.QTableWidgetItem('')
+                )
+                item = self.ui.tableWidget_schedule.item(row_no, col_no)
+                hour = self._get_hour(col_no)
+                if hour % 2 == 1:
+                    item.setBackground(QtGui.QColor('#F2F3F4'))
+
     def _set_calendar(self):
         for i in range(0, self.ui.tableWidget_calendar.columnCount()):
             self.ui.tableWidget_calendar.setColumnWidth(i, 84)
 
         for i in range(0, self.ui.tableWidget_calendar.rowCount()):
-            self.ui.tableWidget_calendar.setRowHeight(i, 110)
+            self.ui.tableWidget_calendar.setRowHeight(i, 108)
 
         calendar_list = {
             0:  [0, 0], 1:  [0, 1], 2:  [0, 2], 3:  [0, 3], 4:  [0, 4], 5:  [0, 5], 6:  [0, 6],
@@ -418,58 +496,55 @@ class MassageRegistration(QtWidgets.QMainWindow):
             if current_month == month and i == today - 1:
                 color = 'lightSteelBlue'
             elif calendar_list[start_day+i][1] == 0:
-                color = 'mistyrose'
+                color = '#EBDEF0'
 
             self.ui.tableWidget_calendar.item(row_no, col_no).setBackground(QtGui.QColor(color))
 
+    def _get_off_day_list(self, reservation_date, period):
+        off_day = False
+        start_date = '{0} 00:00:00'.format(reservation_date)
+        end_date = '{0} 23:59:59'.format(reservation_date)
+
+        sql = '''
+            SELECT * FROM massage_off_day_list
+            WHERE
+                (OffDate BETWEEN "{start_date}" AND "{end_date}") AND
+                (Period = "{period}") AND
+                (Massager IS NULL) 
+        '''.format(
+            start_date=start_date,
+            end_date=end_date,
+            period=period,
+        )
+        rows = self.database.select_record(sql)
+        if len(rows) > 0:
+            off_day = True
+
+        return off_day
+
     def _get_reservation_status(self, reservation_date, period):
         status = ''
-
-        return status
 
         if self._get_off_day_list(reservation_date, period):
             return '暫停預約'
 
         start_date = '{0} 00:00:00'.format(reservation_date)
         end_date = '{0} 23:59:59'.format(reservation_date)
-
         sql = '''
-            SELECT * FROM off_day_list
+            SELECT MassageCaseKey FROM massage_cases
             WHERE
-                (OffDate BETWEEN "{start_date}" AND "{end_date}") AND
+                (CaseDate BETWEEN "{start_date}" AND "{end_date}") AND
                 (Period = "{period}")
         '''.format(
             start_date=start_date,
             end_date=end_date,
-            period=period,
-        )
-        rows = self.database.select_record(sql)
-        if len(rows) <= 0:
-            pass
-        else:
-            row = rows[0]
-            off_doctor = string_utils.xstr(row['Doctor'])
-            if off_doctor in ['', doctor]:
-                status = '暫停預約'
-                return status
-
-        sql = '''
-            SELECT ReserveKey FROM reserve
-            WHERE
-                (ReserveDate BETWEEN "{start_date}" AND "{end_date}") AND
-                (Doctor="{doctor}") AND
-                (Period = "{period}")
-        '''.format(
-            start_date=start_date,
-            end_date=end_date,
-            doctor=doctor,
             period=period,
         )
         rows = self.database.select_record(sql)
         reservation_count = len(rows)
 
         if reservation_count > 0:
-            status = '預約: {0}人'.format(reservation_count)
+            status = '預約{0}人'.format(reservation_count)
 
         return status
 
@@ -477,6 +552,7 @@ class MassageRegistration(QtWidgets.QMainWindow):
         self.ui.action_add_reservation.setEnabled(enabled)
         self.ui.action_modify_reservation.setEnabled(enabled)
         self.ui.action_cancel_reservation.setEnabled(enabled)
+        self.ui.action_print_reservation.setEnabled(enabled)
 
     def _schedule_item_selection_changed(self):
         self._set_reservation_tool_button(False)
@@ -484,17 +560,19 @@ class MassageRegistration(QtWidgets.QMainWindow):
         current_row = self.ui.tableWidget_schedule.currentRow()
         current_column = self.ui.tableWidget_schedule.currentColumn()
         item = self.ui.tableWidget_schedule.item(current_row, current_column)
-        if item is not None:
+        if item is not None and item.text() != '':
             self.ui.action_add_reservation.setEnabled(False)
             self.ui.action_modify_reservation.setEnabled(True)
             self.ui.action_cancel_reservation.setEnabled(True)
+            self.ui.action_print_reservation.setEnabled(True)
         elif self._get_massager() is not None:
             self.ui.action_add_reservation.setEnabled(True)
 
             left_column = self.ui.tableWidget_schedule.selectedRanges()[0].leftColumn()
             right_column = self.ui.tableWidget_schedule.selectedRanges()[-1].rightColumn()
             for col_no in range(left_column, right_column+1):
-                if self.ui.tableWidget_schedule.item(current_row, col_no) is not None:
+                select_item = self.ui.tableWidget_schedule.item(current_row, col_no)
+                if select_item is not None and select_item.text() != '':
                     self._set_reservation_tool_button(False)
 
     def _get_period(self):
@@ -509,7 +587,7 @@ class MassageRegistration(QtWidgets.QMainWindow):
 
         return period
 
-    def _get_massage_case_key(self):
+    def _get_schedule_massage_case_key(self):
         item = self.ui.tableWidget_schedule.item(
             self.ui.tableWidget_schedule.currentRow(),
             self.ui.tableWidget_schedule.currentColumn(),
@@ -548,8 +626,20 @@ class MassageRegistration(QtWidgets.QMainWindow):
 
         return massage_case_key
 
+    def _get_massage_case_key(self):
+        tab_name = self.ui.tabWidget_reservation.tabText(self.ui.tabWidget_reservation.currentIndex())
+        if tab_name == '預約一覽表':
+            massage_case_key = self._get_schedule_massage_case_key()
+        else:
+            massage_case_key = self.table_widget_reservation_list.field_value(0)
+
+        return massage_case_key
+
     def _modify_reservation(self):
         massage_case_key = self._get_massage_case_key()
+        if massage_case_key is None:
+            return
+
         dialog = dialog_massage_reservation.DialogMassageReservation(
             self, self.database, self.system_settings,
             None, None, None, None, None,
@@ -668,4 +758,129 @@ class MassageRegistration(QtWidgets.QMainWindow):
 
         return start_time, end_time
 
+    def _calendar_changed(self):
+        current_row = self.ui.tableWidget_calendar.currentRow()
+        current_column = self.ui.tableWidget_calendar.currentColumn()
+        item = self.ui.tableWidget_calendar.item(
+            current_row, current_column
+        )
 
+        if item is None:
+            return
+
+        year = int(self.ui.dateEdit_reservation_date.date().year())
+        month = int(self.ui.dateEdit_reservation_date.date().month())
+        day = int(item.text().split('\n')[0])
+        self.ui.dateEdit_reservation_date.setDate(QtCore.QDate(year, month, day))
+
+    def _schedule_double_clicked(self):
+        if not self.ui.action_modify_reservation.isEnabled():
+            return
+
+        self._modify_reservation()
+
+    def _read_reservation_list(self):
+        self.ui.tableWidget_reservation_list.setRowCount(1)
+
+        start_date = self.ui.dateEdit_start_date.date().toString('yyyy-MM-dd 00:00:00')
+        end_date = self.ui.dateEdit_end_date.date().toString('yyyy-MM-dd 23:59:59')
+
+        sql = '''
+            SELECT 
+                massage_cases.*, massage_customer.Telephone, massage_customer.Cellphone
+            FROM massage_cases
+                LEFT JOIN massage_customer 
+                ON massage_cases.MassageCustomerKey = massage_customer.MassageCustomerKey
+            WHERE
+                CaseDate BETWEEN "{start_date}" AND "{end_date}"
+            ORDER BY CaseDate, FIELD(Period, {period}), MassageCaseKey
+        '''.format(
+            start_date=start_date,
+            end_date=end_date,
+            period=string_utils.xstr(nhi_utils.PERIOD)[1:-1],
+        )
+
+        self.table_widget_reservation_list.set_db_data(sql, self._set_table_data)
+        if self.ui.tableWidget_reservation_list.rowCount() > 0:
+            self._set_reservation_tool_button(True)
+        else:
+            self._set_reservation_tool_button(False)
+
+    def _set_table_data(self, row_no, row):
+        time = '{start_time} - {end_time}'.format(
+            start_time= row['CaseDate'].strftime('%H:%M'),
+            end_time=row['FinishDate'].strftime('%H:%M'),
+        )
+
+        reservation_list_data = [
+            string_utils.xstr(row['MassageCaseKey']),
+            string_utils.xstr(row['CaseDate'].date()),
+            time,
+            string_utils.xstr(row['Period']),
+            number_utils.get_integer(row['MassageCustomerKey']),
+            string_utils.xstr(row['Name']),
+            string_utils.xstr(row['Telephone']),
+            string_utils.xstr(row['Cellphone']),
+            string_utils.xstr(row['Massager']),
+            string_utils.xstr(row['Registrar']),
+            number_utils.get_integer(row['TotalFee']),
+            number_utils.get_integer(row['ReceiptFee']),
+        ]
+
+        for col_no in range(len(reservation_list_data)):
+            item = QtWidgets.QTableWidgetItem()
+            item.setData(QtCore.Qt.EditRole, reservation_list_data[col_no])
+            self.ui.tableWidget_reservation_list.setItem(row_no, col_no, item)
+            if col_no in [4, 10, 11]:
+                self.ui.tableWidget_reservation_list.item(
+                    row_no, col_no).setTextAlignment(
+                    QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
+                )
+            elif col_no in [3]:
+                self.ui.tableWidget_reservation_list.item(
+                    row_no, col_no).setTextAlignment(
+                    QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
+                )
+
+    def _tab_changed(self, i):
+        self.tab_name = self.ui.tabWidget_reservation.tabText(i)
+
+        if self.tab_name == '預約一覽表':
+            self._read_timeline()
+        else:
+            self._read_reservation_list()
+
+            self.ui.action_add_reservation.setEnabled(False)
+            self.ui.action_modify_reservation.setEnabled(False)
+            self.ui.action_cancel_reservation.setEnabled(False)
+            self.ui.action_print_reservation.setEnabled(False)
+
+            if self.table_widget_reservation_list.row_count() > 0:
+                enabled = True
+            else:
+                enabled = False
+
+            self.ui.action_modify_reservation.setEnabled(enabled)
+            self.ui.action_cancel_reservation.setEnabled(enabled)
+            self.ui.action_print_reservation.setEnabled(enabled)
+
+    def _previous_calendar(self):
+        current_date = self.ui.dateEdit_reservation_date.date().toPyDate()
+        self.ui.dateEdit_reservation_date.setDate(
+            date_utils.add_months(current_date, -1)
+        )
+
+    def _next_calendar(self):
+        current_date = self.ui.dateEdit_reservation_date.date().toPyDate()
+        self.ui.dateEdit_reservation_date.setDate(
+            date_utils.add_months(current_date, 1)
+        )
+
+    def _off_day_setting(self):
+        dialog = dialog_off_day_setting.DialogOffDaySetting(
+            self, self.database, self.system_settings, 'massage_off_day_list',
+        )
+
+        dialog.exec_()
+        dialog.deleteLater()
+        self._read_timeline()

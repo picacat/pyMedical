@@ -1,0 +1,20 @@
+CREATE TABLE `prescript` (
+  `PrescriptKey` int(11) NOT NULL AUTO_INCREMENT,
+  `PrescriptNo` int(11) DEFAULT NULL,
+  `CaseKey` int(11) NOT NULL DEFAULT 0,
+  `CaseDate` datetime DEFAULT NULL,
+  `MedicineSet` int(11) DEFAULT NULL,
+  `MedicineType` varchar(10) DEFAULT NULL,
+  `MedicineKey` int(11) DEFAULT NULL,
+  `InsCode` varchar(12) DEFAULT NULL,
+  `MedicineName` varchar(40) DEFAULT NULL,
+  `DosageMode` varchar(10) DEFAULT NULL,
+  `Dosage` decimal(10,2) DEFAULT NULL,
+  `Unit` varchar(10) DEFAULT NULL,
+  `Instruction` varchar(40) DEFAULT NULL,
+  `Price` decimal(10,2) DEFAULT NULL,
+  `Amount` decimal(10,2) DEFAULT NULL,
+  `TimeStamp` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`PrescriptKey`),
+  KEY `CaseKey` (`CaseKey`,`CaseDate`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;

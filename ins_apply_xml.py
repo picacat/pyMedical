@@ -440,7 +440,7 @@ class InsApplyXML(QtWidgets.QMainWindow):
         if pres_days <= 0:
             return
 
-        if string_utils.xstr(row['Card'][:4]) == 'G000':  # 新特約院所新增虛擬碼 R005 2019.08.10
+        if row['Card'] is not None and string_utils.xstr(row['Card'][:4]) == 'G000':  # 新特約院所新增虛擬碼 R005 2019.08.10
             self._set_virtual_order(dbody, row, case_row, pres_days)
 
         if number_utils.get_integer(row['DrugFee']) > 0:

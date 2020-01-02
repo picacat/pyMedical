@@ -30,6 +30,7 @@ class CheckCard(QtWidgets.QMainWindow):
         self.apply_type = args[4]
         self.ui = None
         self.errors = 0
+        self.rows = None
 
         self._set_ui()
         self._set_signal()
@@ -155,47 +156,46 @@ class CheckCard(QtWidgets.QMainWindow):
         for row_no in range(row_count):
             case_date = self.ui.tableWidget_errors.item(row_no, 1).text()
             patient_key = self.ui.tableWidget_errors.item(row_no, 3).text()
-            share_type = self.ui.tableWidget_errors.item(row_no, 5).text()
             card = self.ui.tableWidget_errors.item(row_no, 6).text()
             course = number_utils.get_integer(self.ui.tableWidget_errors.item(row_no, 7).text())
             disease_code = self.ui.tableWidget_errors.item(row_no, 8).text()
             treat_type = self.ui.tableWidget_errors.item(row_no, 10).text()
-            pres_days = number_utils.get_integer(self.ui.tableWidget_errors.item(row_no, 12).text())
 
             try:
                 next_case_date = self.ui.tableWidget_errors.item(row_no+1, 1).text()
                 next_patient_key = self.ui.tableWidget_errors.item(row_no+1, 3).text()
-                next_share_type = self.ui.tableWidget_errors.item(row_no+1, 5).text()
                 next_card = self.ui.tableWidget_errors.item(row_no+1, 6).text()
                 next_course = number_utils.get_integer(
                     self.ui.tableWidget_errors.item(row_no+1, 7).text()
                 )
                 next_disease_code = self.ui.tableWidget_errors.item(row_no+1, 8).text()
                 next_treat_type = self.ui.tableWidget_errors.item(row_no+1, 10).text()
-                next_pres_days = number_utils.get_integer(
-                    self.ui.tableWidget_errors.item(row_no+1, 12).text()
-                )
             except AttributeError:
                 next_case_date = None
                 next_patient_key = 0
-                next_share_type = None
                 next_card = None
                 next_course = 0
                 next_disease_code = None
                 next_treat_type = None
-                next_pres_days = 0
 
             error_message = []
             if next_card == '':
                 error_message.append('卡序空白')
-            # elif next_card == '欠卡':
-            #     error_message.append('欠卡')
 
             if next_patient_key == 0:
                 pass
             elif patient_key != next_patient_key:  # 換人
                 pass
             else:  # 同一人
+                if card == next_card and next_course <= 1:
+                    error_message.append('卡序與{0}相同'.format(case_date))
+                elif next_course <= 1:  # 2020.01.03 板橋新生堂
+                    duplicated_case_date = nhi_utils.get_duplicated_card(
+                        self.ui.tableWidget_errors, row_no, patient_key, next_card,
+                    )
+                    if duplicated_case_date:
+                        error_message.append('卡序與{0}相同'.format(duplicated_case_date))
+
                 if card != next_card and 1 <= course <= 5:
                     delta = nhi_utils.get_first_course_delta(
                         self.ui.tableWidget_errors, row_no, patient_key, course, next_case_date,
@@ -260,7 +260,10 @@ class CheckCard(QtWidgets.QMainWindow):
                         ', '.join(error_message)
                     )
                 )
-                self._set_row_color(row_no+1, 'red')
+                try:
+                    self._set_row_color(row_no+1, 'red')
+                except AttributeError:
+                    pass
 
             progress_dialog.setValue(row_no)
 

@@ -47,7 +47,7 @@ class DialogSelectPatient(QtWidgets.QDialog):
         self.table_widget_patient_list = table_widget.TableWidget(
             self.ui.tableWidget_patient_list, self.database
         )
-        # self._set_table_width()
+        # database._set_table_width()
 
     # 設定信號
     def _set_signal(self):

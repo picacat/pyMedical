@@ -23,6 +23,7 @@ class DialogOffDaySetting(QtWidgets.QDialog):
         self.parent = parent
         self.database = args[0]
         self.system_settings = args[1]
+        self.table_name = args[2]
 
         self.ui = None
 
@@ -41,7 +42,7 @@ class DialogOffDaySetting(QtWidgets.QDialog):
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_DIALOG_OFF_DAY_SETTING, self)
-        # self.setFixedSize(self.size())  # non resizable dialog
+        # database.setFixedSize(database.size())  # non resizable dialog
         system_utils.set_css(self, self.system_settings)
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Close).setText('關閉')
         self.ui.dateEdit_off_date.setDate(datetime.datetime.now().date())
@@ -52,17 +53,30 @@ class DialogOffDaySetting(QtWidgets.QDialog):
         self.table_widget_off_day.set_column_hidden([0])
         self._set_table_width()
         self._set_combo_box()
+        if self.table_name == 'massage_off_day_list':
+            field_name = '推拿師父'
+            self.ui.label_therapist.setText(field_name)
+            self.ui.tableWidget_off_day.setHorizontalHeaderLabels(
+                ['off_day_key', '暫停預約日期', '班別', field_name, '備註', '刪除']
+            )
 
     def _set_table_width(self):
         width = [100, 130, 60, 120, 260, 60]
         self.table_widget_off_day.set_table_heading_width(width)
 
     def _set_combo_box(self):
+        if self.table_name == 'off_day_list':
+            condition = ' Position IN("醫師", "支援醫師") AND ID IS NOT NULL '
+        else:
+            condition = ' Position IN("推拿師父") '
+
         sql = '''
             SELECT * FROM person
             WHERE
-                Position IN ("醫師", "支援醫師") 
-        '''
+                {condition}
+        '''.format(
+            condition=condition,
+        )
         rows = self.database.select_record(sql)
         doctor_list = []
         for row in rows:
@@ -82,24 +96,35 @@ class DialogOffDaySetting(QtWidgets.QDialog):
     def _read_off_day(self):
         self.ui.tableWidget_off_day.setRowCount(0)
         sql = '''
-            SELECT * FROM off_day_list
+            SELECT * FROM {table_name}
             ORDER BY OffDate DESC, FIELD(Period, {period})
         '''.format(
+            table_name=self.table_name,
             period=string_utils.xstr(nhi_utils.PERIOD)[1:-1],
         )
         self.table_widget_off_day.set_db_data(sql, self._set_table_data)
 
+    def _get_therapist_field(self):
+        if self.table_name == 'off_day_list':
+            field = 'Doctor'
+        else:
+            field = 'Massager'
+
+        return field
+
     def _set_table_data(self, row_no, row):
-        doctor = string_utils.xstr(row['Doctor'])
+        field = self._get_therapist_field()
+
+        therapist = string_utils.xstr(row[field])
         remark = ''
-        if doctor in ['', None]:
+        if therapist in ['', None]:
             remark = '全院暫停預約'
 
         off_day_row = [
             string_utils.xstr(row['OffDayListKey']),
             string_utils.xstr(row['OffDate']),
             string_utils.xstr(row['Period']),
-            doctor,
+            therapist,
             remark,
             None,
         ]
@@ -137,25 +162,29 @@ class DialogOffDaySetting(QtWidgets.QDialog):
         if not delete_record:
             return
 
-        self.database.exec_sql('DELETE FROM off_day_list where OffDayListKey = {0}'.format(off_day_list_key))
+        self.database.exec_sql('DELETE FROM {table_name} where OffDayListKey = {primary_key}'.format(
+            table_name=self.table_name,
+            primary_key=off_day_list_key,
+        ))
         self.ui.tableWidget_off_day.removeRow(self.ui.tableWidget_off_day.currentRow())
 
     def accepted_button_clicked(self):
         self.close()
 
     def _insert_off_day(self):
-        doctor = self.ui.comboBox_doctor.currentText()
-        if doctor == '':
-            doctor = None
+        therapist_field = self._get_therapist_field()
+        therapist = self.ui.comboBox_doctor.currentText()
+        if therapist == '':
+            therapist = None
 
         field = [
-            'OffDate', 'Period', 'Doctor'
+            'OffDate', 'Period', therapist_field,
         ]
         data = [
             self.ui.dateEdit_off_date.date().toString('yyyy-MM-dd'),
             self.ui.comboBox_period.currentText(),
-            doctor,
+            therapist,
         ]
 
-        self.database.insert_record('off_day_list', field, data)
+        self.database.insert_record(self.table_name, field, data)
         self._read_off_day()

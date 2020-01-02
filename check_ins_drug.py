@@ -148,7 +148,7 @@ class CheckInsDrug(QtWidgets.QMainWindow):
                 continue
 
             error_messages += self._check_valid_date(row, drug_rows)
-            # error_messages += self._check_drug_name(medical_row, drug_rows)
+            # error_messages += database._check_drug_name(medical_row, drug_rows)
 
             self._insert_error_record(row_no, row, drug_rows, error_messages)
 

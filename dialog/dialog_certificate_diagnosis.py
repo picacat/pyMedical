@@ -113,7 +113,7 @@ class DialogCertificateDiagnosis(QtWidgets.QDialog):
         self._set_doctor()
 
     def _set_doctor(self):
-        script = 'select * from person where Position IN("醫師", "支援醫師") '
+        script = 'select * from person where Position IN ("醫師", "支援醫師") '
         rows = self.database.select_record(script)
         doctor_list = []
         for row in rows:
@@ -179,7 +179,7 @@ class DialogCertificateDiagnosis(QtWidgets.QDialog):
 
         treat_type = self.ui.comboBox_treat_type.currentText()
         if treat_type == '內科':
-            condition += ' AND TreatType = "內科" '
+            condition += ' AND TreatType IN ("內科", "一般") '
         elif treat_type != '全部':
             condition += ' AND TreatType IN {0} '.format(tuple(treat_type_dict[treat_type]))
 
@@ -501,8 +501,8 @@ class DialogCertificateDiagnosis(QtWidgets.QDialog):
 
     def _open_past_history(self):
         patient_key = self.ui.lineEdit_patient_key.text()
-        # self.dialog_past_history = dialog_past_history.DialogPastHistory(self, self.database, self.system_settings)
-        # self.dialog_past_history.show_past_history(primary_key, None)
+        # database.dialog_past_history = dialog_past_history.DialogPastHistory(database, database.database, database.system_settings)
+        # database.dialog_past_history.show_past_history(primary_key, None)
         dialog = dialog_medical_record_past_history.DialogMedicalRecordPastHistory(
             self, self.database, self.system_settings, None, patient_key, '診斷證明'
         )

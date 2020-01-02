@@ -96,24 +96,7 @@ class DialogAcupuncturePoint(QtWidgets.QDialog):
             [self.ui.widget_caudal_vertebra, './images/caudal_vertebra.jpg'],
         ]
         for image in image_list:
-            self._set_image(image[0], image[1])
-
-    def _set_image(self, widget, image_file):
-        style_sheet = '''
-            QWidget {{
-                background-image: url({image_file});
-                background-repeat: none;
-                background-position: center;
-            }}
-            QPushButton {{
-                color: rgb(255, 0, 0);
-                font: 10pt;
-            }}
-        '''.format(
-            image_file=image_file,
-        )
-
-        widget.setStyleSheet(style_sheet)
+            system_utils.set_widget_image(image[0], image[1])
 
     def _button_clicked(self):
         acupuncture_point = self.sender().text()

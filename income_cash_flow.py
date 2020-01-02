@@ -174,8 +174,8 @@ class IncomeCashFlow(QtWidgets.QMainWindow):
 
     # 計算掛號收費
     def _read_registration_data(self):
-        # income_date = self.start_date.split(' ')[0]
-        # self.ui.label_registration.setText('掛號收費日期: {0}'.format(mb1))
+        # income_date = database.start_date.split(' ')[0]
+        # database.ui.label_registration.setText('掛號收費日期: {0}'.format(mb1))
 
         self._set_registration_fees()
         self._set_refund_fees()
@@ -469,8 +469,8 @@ class IncomeCashFlow(QtWidgets.QMainWindow):
 
     # 計算批價收費
     def _read_charge_data(self):
-        # income_date = self.start_date.split(' ')[0]
-        # self.ui.label_charge.setText('批價收費日期: {0}'.format(income_date))
+        # income_date = database.start_date.split(' ')[0]
+        # database.ui.label_charge.setText('批價收費日期: {0}'.format(income_date))
 
         self._set_charge_fees()
         self._calculate_charge_total()

@@ -42,11 +42,19 @@ class DialogMedicalRecordPastHistory(QtWidgets.QDialog):
     def close_all(self):
         pass
 
+    def center(self):
+        frame_geometry = self.frameGeometry()
+        screen = QtWidgets.QApplication.desktop().screenNumber(QtWidgets.QApplication.desktop().cursor().pos())
+        center_point = QtWidgets.QApplication.desktop().screenGeometry(screen).center()
+        frame_geometry.moveCenter(center_point)
+        self.move(frame_geometry.topLeft())
+
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_DIALOG_MEDICAL_RECORD_PAST_HISTORY, self)
         system_utils.set_css(self, self.system_settings)
         self.setFixedSize(self.size())  # non resizable dialog
+        self.center()
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setText('拷貝病歷')
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Cancel).setText('取消')
         self.table_widget_past_history = table_widget.TableWidget(self.ui.tableWidget_past_history, self.database)
@@ -69,7 +77,7 @@ class DialogMedicalRecordPastHistory(QtWidgets.QDialog):
     def _set_signal(self):
         self.ui.buttonBox.accepted.connect(self.accepted_button_clicked)
         self.ui.tableWidget_past_history.itemSelectionChanged.connect(self._past_history_changed)
-        # self.ui.tableWidget_past_history.doubleClicked.connect(self._edit_past_history)
+        # database.ui.tableWidget_past_history.doubleClicked.connect(database._edit_past_history)
         self.ui.tabWidget_past_history.currentChanged.connect(self._tab_changed)    # 切換分頁
 
     def _tab_changed(self, i):
@@ -207,6 +215,9 @@ class DialogMedicalRecordPastHistory(QtWidgets.QDialog):
         button.setIcon(QtGui.QIcon('./icons/gtk-open.svg'))
         button.setFlat(True)
         button.clicked.connect(self._edit_past_history)
+        if self.call_from == '門診掛號':
+            button.setEnabled(False)
+
         self.ui.tableWidget_past_history.setCellWidget(row_no, 10, button)
 
     def _set_group_box_title(self, row):

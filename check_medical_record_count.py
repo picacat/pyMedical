@@ -13,6 +13,7 @@ from libs import number_utils
 from libs import string_utils
 from libs import system_utils
 from libs import nhi_utils
+from libs import case_utils
 
 
 # 候診名單 2018.01.31
@@ -237,41 +238,43 @@ class CheckMedicalRecordCount(QtWidgets.QMainWindow):
         self.ui.tableWidget_medical_record_treat.setCurrentCell(0, 1)
         self.ui.tableWidget_patient_treat.setFocus(True)
 
-    def _set_medical_record_treat_data(self, rec_no, rec):
+    def _set_medical_record_treat_data(self, row_no, row):
+        case_key = row['CaseKey']
+
         medical_record_treat = [
-            string_utils.xstr(rec['CaseKey']),
-            string_utils.xstr(rec['ApplyType']),
+            string_utils.xstr(case_key),
+            string_utils.xstr(row['ApplyType']),
             '{0}-{1:0>2}-{2:0>2}'.format(
-                rec['CaseDate'].year, rec['CaseDate'].month, rec['CaseDate'].day
+                row['CaseDate'].year, row['CaseDate'].month, row['CaseDate'].day
             ),
-            string_utils.xstr(rec['PatientKey']),
-            string_utils.xstr(rec['Name']),
-            string_utils.xstr(rec['Share']),
-            string_utils.xstr(rec['Card']),
-            string_utils.xstr(rec['Continuance']),
-            string_utils.xstr(rec['DiseaseCode1']),
-            string_utils.xstr(rec['DiseaseName1']),
-            string_utils.xstr(rec['Treatment']),
-            string_utils.xstr(rec['Doctor']),
-            string_utils.xstr(rec['DiagFee']),
+            string_utils.xstr(row['PatientKey']),
+            string_utils.xstr(row['Name']),
+            string_utils.xstr(row['TreatType']),
+            string_utils.xstr(row['Card']),
+            string_utils.xstr(row['Continuance']),
+            string_utils.xstr(row['DiseaseCode1']),
+            string_utils.xstr(row['DiseaseName1']),
+            string_utils.xstr(row['Treatment']),
+            string_utils.xstr(row['Doctor']),
+            string_utils.xstr(row['DiagFee']),
             string_utils.xstr(
-                number_utils.get_integer(rec['AcupunctureFee']) +
-                number_utils.get_integer(rec['MassageFee']) +
-                number_utils.get_integer(rec['DislocateFee'])
+                number_utils.get_integer(row['AcupunctureFee']) +
+                number_utils.get_integer(row['MassageFee']) +
+                number_utils.get_integer(row['DislocateFee'])
             ),
         ]
 
         for column in range(len(medical_record_treat)):
             self.ui.tableWidget_medical_record_treat.setItem(
-                rec_no, column, QtWidgets.QTableWidgetItem(medical_record_treat[column]))
+                row_no, column, QtWidgets.QTableWidgetItem(medical_record_treat[column]))
             if column in [3, 12, 13]:
                 self.ui.tableWidget_medical_record_treat.item(
-                    rec_no, column).setTextAlignment(
+                    row_no, column).setTextAlignment(
                     QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
                 )
             elif column in [7]:
                 self.ui.tableWidget_medical_record_treat.item(
-                    rec_no, column).setTextAlignment(
+                    row_no, column).setTextAlignment(
                     QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
                 )
 
@@ -279,9 +282,7 @@ class CheckMedicalRecordCount(QtWidgets.QMainWindow):
         patient_key = self.table_widget_patient_diag.field_value(0)
 
         sql = '''
-            SELECT 
-               *
-            FROM cases 
+            SELECT * FROM cases 
             WHERE
                 (PatientKey = {0}) AND
                 (CaseDate BETWEEN "{1}" AND "{2}") AND
@@ -297,41 +298,47 @@ class CheckMedicalRecordCount(QtWidgets.QMainWindow):
         self.ui.tableWidget_medical_record_diag.setCurrentCell(0, 1)
         self.ui.tableWidget_patient_diag.setFocus(True)
 
-    def _set_medical_record_diag_data(self, rec_no, rec):
+    def _set_medical_record_diag_data(self, row_no, row):
+        case_key = row['CaseKey']
+        pres_days = case_utils.get_pres_days(self.database, case_key)
+        if pres_days <= 0:
+            pres_days = ''
+
         medical_record_diag = [
-            string_utils.xstr(rec['CaseKey']),
-            string_utils.xstr(rec['ApplyType']),
+            string_utils.xstr(row['CaseKey']),
+            string_utils.xstr(row['ApplyType']),
             '{0}-{1:0>2}-{2:0>2}'.format(
-                rec['CaseDate'].year, rec['CaseDate'].month, rec['CaseDate'].day
+                row['CaseDate'].year, row['CaseDate'].month, row['CaseDate'].day
             ),
-            string_utils.xstr(rec['PatientKey']),
-            string_utils.xstr(rec['Name']),
-            string_utils.xstr(rec['Share']),
-            string_utils.xstr(rec['Card']),
-            string_utils.xstr(rec['Continuance']),
-            string_utils.xstr(rec['DiseaseCode1']),
-            string_utils.xstr(rec['DiseaseName1']),
-            string_utils.xstr(rec['Treatment']),
-            string_utils.xstr(rec['Doctor']),
-            string_utils.xstr(rec['DiagFee']),
+            string_utils.xstr(row['PatientKey']),
+            string_utils.xstr(row['Name']),
+            string_utils.xstr(row['TreatType']),
+            string_utils.xstr(row['Card']),
+            string_utils.xstr(row['Continuance']),
+            string_utils.xstr(pres_days),
+            string_utils.xstr(row['DiseaseCode1']),
+            string_utils.xstr(row['DiseaseName1']),
+            string_utils.xstr(row['Treatment']),
+            string_utils.xstr(row['Doctor']),
+            string_utils.xstr(row['DiagFee']),
             string_utils.xstr(
-                number_utils.get_integer(rec['AcupunctureFee']) +
-                number_utils.get_integer(rec['MassageFee']) +
-                number_utils.get_integer(rec['DislocateFee'])
+                number_utils.get_integer(row['AcupunctureFee']) +
+                number_utils.get_integer(row['MassageFee']) +
+                number_utils.get_integer(row['DislocateFee'])
             ),
         ]
 
         for column in range(len(medical_record_diag)):
             self.ui.tableWidget_medical_record_diag.setItem(
-                rec_no, column, QtWidgets.QTableWidgetItem(medical_record_diag[column]))
-            if column in [3, 12, 13]:
+                row_no, column, QtWidgets.QTableWidgetItem(medical_record_diag[column]))
+            if column in [3, 8, 13, 14]:
                 self.ui.tableWidget_medical_record_diag.item(
-                    rec_no, column).setTextAlignment(
+                    row_no, column).setTextAlignment(
                     QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
                 )
             elif column in [7]:
                 self.ui.tableWidget_medical_record_diag.item(
-                    rec_no, column).setTextAlignment(
+                    row_no, column).setTextAlignment(
                     QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
                 )
 

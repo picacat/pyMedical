@@ -83,7 +83,7 @@ class CheckErrors(QtWidgets.QMainWindow):
         self.ui.tableWidget_errors.doubleClicked.connect(self.open_medical_record)
         self.ui.toolButton_calculate_ins_fee.clicked.connect(self._calculate_ins_fee)
         self.ui.toolButton_correct_error.clicked.connect(self._correct_errors)
-        # self.ui.action_close.triggered.connect(self.close_app)
+        # database.ui.action_close.triggered.connect(database.close_app)
 
     def open_medical_record(self):
         case_key = self.table_widget_errors.field_value(0)
@@ -301,7 +301,7 @@ class CheckErrors(QtWidgets.QMainWindow):
                 error_messages.append('{0}為慢性病但病歷無慢性病代碼'.format(disease_code1))
             if special_code == '' and treat_type == '內科' and pres_days > 7:
                 error_messages.append('病名非慢性病但內科開藥超過七日'.format(disease_code1))
-            if special_code != '' and treat_type == '內科' and pres_days <= 6:
+            if special_code != '' and treat_type == '內科' and 1 <= pres_days <= 6:
                 error_messages.append('病名為慢性病但內科開藥少於七日'.format(disease_code1))
 
             for i in range(1, 4):

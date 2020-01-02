@@ -289,3 +289,24 @@ def get_patient_id(database, patient_key):
         return None
 
     return string_utils.xstr(rows[0]['ID'])
+
+
+def get_temp_patient(database, temp_patient_key, field):
+    if temp_patient_key is None:
+        return None
+
+    sql = '''
+        SELECT * FROM temp_patient
+        WHERE
+            TempPatientKey = {temp_patient_key}
+    '''.format(
+        temp_patient_key=temp_patient_key,
+    )
+
+    rows = database.select_record(sql)
+    if len(rows) <= 0:
+        return None
+
+    row = rows[0]
+
+    return row[field]

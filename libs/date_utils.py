@@ -203,3 +203,12 @@ def get_two_month_date(database, patient_key, apply_year, apply_month):
     end_date = get_end_date_by_year_month(apply_year, apply_month)
 
     return start_date, end_date
+
+
+def add_months(in_date, months):
+    month = in_date.month - 1 + months
+    year = in_date.year + month // 12
+    month = month % 12 + 1
+    day = min(in_date.day, calendar.monthrange(year, month)[1])
+
+    return datetime.date(year, month, day)

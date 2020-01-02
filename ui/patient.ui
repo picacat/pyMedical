@@ -235,59 +235,18 @@
              <item row="0" column="3">
               <widget class="QComboBox" name="comboBox_education"/>
              </item>
-             <item row="0" column="0">
-              <widget class="QLabel" name="label_3">
-               <property name="text">
-                <string>婚姻狀況</string>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="2">
-              <widget class="QLabel" name="label_14">
-               <property name="text">
-                <string>教育程度</string>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="1">
-              <widget class="QComboBox" name="comboBox_occupation"/>
-             </item>
-             <item row="0" column="1">
-              <widget class="QComboBox" name="comboBox_marriage"/>
-             </item>
-             <item row="1" column="0">
-              <widget class="QLabel" name="label_15">
-               <property name="text">
-                <string>職業類別</string>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="2">
-              <widget class="QLabel" name="label_16">
-               <property name="text">
-                <string>優待類別</string>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="3">
-              <widget class="QComboBox" name="comboBox_discount">
-               <property name="editable">
-                <bool>true</bool>
-               </property>
-              </widget>
-             </item>
              <item row="2" column="0">
               <widget class="QLabel" name="label_17">
                <property name="text">
-                <string>聯絡人</string>
+                <string>家族代表</string>
                </property>
                <property name="alignment">
                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                </property>
               </widget>
              </item>
-             <item row="2" column="1">
-              <widget class="QLineEdit" name="lineEdit_family"/>
+             <item row="2" column="3">
+              <widget class="QLineEdit" name="lineEdit_family_telephone"/>
              </item>
              <item row="2" column="2">
               <widget class="QLabel" name="label_18">
@@ -299,8 +258,53 @@
                </property>
               </widget>
              </item>
-             <item row="2" column="3">
-              <widget class="QLineEdit" name="lineEdit_family_telephone"/>
+             <item row="0" column="1">
+              <widget class="QComboBox" name="comboBox_marriage"/>
+             </item>
+             <item row="1" column="3">
+              <widget class="QComboBox" name="comboBox_discount">
+               <property name="editable">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="1">
+              <widget class="QLineEdit" name="lineEdit_family">
+               <property name="placeholderText">
+                <string>請輸入家族代表人的病歷號碼或姓名</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="0">
+              <widget class="QLabel" name="label_15">
+               <property name="text">
+                <string>職業類別</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1">
+              <widget class="QComboBox" name="comboBox_occupation"/>
+             </item>
+             <item row="1" column="2">
+              <widget class="QLabel" name="label_16">
+               <property name="text">
+                <string>優待類別</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="2">
+              <widget class="QLabel" name="label_14">
+               <property name="text">
+                <string>教育程度</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="0">
+              <widget class="QLabel" name="label_3">
+               <property name="text">
+                <string>婚姻狀況</string>
+               </property>
+              </widget>
              </item>
             </layout>
            </item>

@@ -120,6 +120,8 @@ class CSHIS(QThread):
         )
 
     def update_hc_card(self,  show_message=False):
+        # import cshis50
+        # cshis50.csUpdateHCContents()
         try:
             self._open_com()
             error_code = self.cshis.csUpdateHCContents()
@@ -155,9 +157,9 @@ class CSHIS(QThread):
         cshis_utils.show_ic_card_message(error_code, '健保IC卡密碼解除')
 
     def verify_hpc_pin(self):
-        # self._open_doctor_com()
+        # database._open_doctor_com()
         error_code = self.cshis.hpcVerifyHPCPIN()
-        # self._close_com()
+        # database._close_com()
         if error_code == 0:
             cshis_utils.show_ic_card_message(error_code, '醫事人員卡密碼驗證')
 
@@ -1073,9 +1075,9 @@ class CSHIS(QThread):
         self.start()
 
     # # IC退掛
-    # def update_hc(self, show_warning=True):
-    #     self.do_thread(
-    #         self.update_hc_thread,
+    # def update_hc(database, show_warning=True):
+    #     database.do_thread(
+    #         database.update_hc_thread,
     #         '健保IC卡可用次數更新',
     #         '<font size="4" color="red"><b>健保IC卡可用次數更新中, 請稍後...</b></font>',
     #         '正在與健保IDC資訊中心連線, 會花費一些時間.'
@@ -1084,13 +1086,13 @@ class CSHIS(QThread):
 # class UpdateHCCard(QThread):
 #     signal = pyqtSignal()
 #
-#     def __init__(self):
-#         super(QThread, self).__init__()
+#     def __init__(database):
+#         super(QThread, database).__init__()
 #
-#     def __del__(self):
-#         self.wait()
+#     def __del__(database):
+#         database.wait()
 #
-#     def run(self):
+#     def run(database):
 #         import cshis50
 #
 #         try:
@@ -1100,4 +1102,4 @@ class CSHIS(QThread):
 #         except cshis50.CshisError:
 #             pass
 #         finally:
-#             self.signal.emit()
+#             database.signal.emit()

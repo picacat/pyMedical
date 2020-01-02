@@ -137,11 +137,11 @@ class StatisticsInsPerformanceMedicalRecord(QtWidgets.QMainWindow):
 
     def _get_row_no(self, case_date):
         for row_no in range(self.ui.tableWidget_medical_record.rowCount()):
-            case_date_filed = self.ui.tableWidget_medical_record.item(row_no, 0)
-            if case_date_filed is None:
+            case_date_field = self.ui.tableWidget_medical_record.item(row_no, 0)
+            if case_date_field is None:
                 continue
 
-            if case_date == case_date_filed.text():
+            if case_date == case_date_field.text():
                 return row_no
 
         return None

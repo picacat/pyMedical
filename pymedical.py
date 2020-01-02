@@ -46,7 +46,7 @@ class PyMedical(QtWidgets.QMainWindow):
     # 初始化
     def __init__(self, parent=None, *args):
         super(PyMedical, self).__init__(parent)
-        # QtWidgets.QMainWindow.__init__(self)
+        # QtWidgets.QMainWindow.__init__(database)
         self.args = args
         try:
             config_file = args[0][1]
@@ -106,7 +106,12 @@ class PyMedical(QtWidgets.QMainWindow):
 
     # 解構
     def __del__(self):
-        self.database.close_database()
+        try:
+            self.system_settings.post('使用者', None)
+            self.system_settings.post('使用者ip', None)
+            self.system_settings.post('登入日期', None)
+        finally:
+            self.database.close_database()
 
     # 關閉主程式
     def closeEvent(self, event: QtGui.QCloseEvent):
@@ -142,8 +147,9 @@ class PyMedical(QtWidgets.QMainWindow):
         self.setWindowIcon(QtGui.QIcon('./icons/python.ico'))
         self.ui.tabWidget_window.setTabsClosable(True)
 
-        # self.ui.setWindowFlags(Qt.FramelessWindowHint)  # 無視窗邊框
+        # database.ui.setWindowFlags(Qt.FramelessWindowHint)  # 無視窗邊框
 
+        self._set_images()
         self._set_button_enabled()
         self.ui.setWindowTitle('{0} 醫療資訊管理系統'.format(self.system_settings.field('院所名稱')))
         self._set_style()
@@ -158,6 +164,14 @@ class PyMedical(QtWidgets.QMainWindow):
 
         self._display_bulletin()
         self._set_plugin()
+
+    def _set_images(self):
+        icon_size = 128
+
+        self.ui.label_line_qrcode.setPixmap(QtGui.QPixmap('./images/line_qrcode.jpg'))
+        self.ui.label_line_qrcode.setMaximumWidth(icon_size)
+        self.ui.label_line_qrcode.setMaximumHeight(icon_size)
+        self.ui.label_line_qrcode.setScaledContents(True)
 
     def _display_bulletin(self):
         self.ui.textBrowser.setStyleSheet('background: transparent;')
@@ -210,8 +224,12 @@ class PyMedical(QtWidgets.QMainWindow):
         self.ui.statusbar.addPermanentWidget(self.label_config_file)
 
         self.label_station_no = QtWidgets.QLabel()
-        self.label_station_no.setFixedWidth(200)
+        self.label_station_no.setFixedWidth(180)
         self.ui.statusbar.addPermanentWidget(self.label_station_no)
+
+        self.label_ip = QtWidgets.QLabel()
+        self.label_ip.setFixedWidth(200)
+        self.ui.statusbar.addPermanentWidget(self.label_ip)
 
         self.label_user_name = QtWidgets.QLabel()
         self.label_user_name.setFixedWidth(200)
@@ -292,6 +310,13 @@ class PyMedical(QtWidgets.QMainWindow):
         self.ui.action_certificate_payment.triggered.connect(self._open_subroutine)         # 申請醫療費用證明書
 
         self.ui.action_massage_registration.triggered.connect(self._open_subroutine)
+        self.ui.action_massage_purchase_list.triggered.connect(self._open_subroutine)
+        self.ui.action_massage_income.triggered.connect(self._open_subroutine)
+        self.ui.action_massage_customer_list.triggered.connect(self._open_subroutine)
+        self.ui.action_massage_case_list.triggered.connect(self._open_subroutine)
+        self.ui.action_statistics_massage_income.triggered.connect(self._open_subroutine)
+
+        self.ui.action_event_log.triggered.connect(self._open_subroutine)
 
         self.ui.tabWidget_window.tabCloseRequested.connect(self.close_tab)                  # 關閉分頁
         self.ui.tabWidget_window.currentChanged.connect(self.tab_changed)                   # 切換分頁
@@ -389,6 +414,9 @@ class PyMedical(QtWidgets.QMainWindow):
             '用藥統計',
             '健保申報業績',
             '醫師銷售業績統計',
+            '養生館櫃台結帳',
+            '消費資料查詢',
+            '養生館統計',
         ]:
             widget.open_dialog()
         elif widget_name == "醫師看診作業":
@@ -412,6 +440,8 @@ class PyMedical(QtWidgets.QMainWindow):
         if tab_name.find('病歷資料') != -1:
             self._set_tab(current_tab.call_from)
         elif tab_name.find('病患資料') != -1:
+            self._set_tab(current_tab.call_from)
+        elif tab_name.find('養生館購買商品') != -1:
             self._set_tab(current_tab.call_from)
         elif tab_name.find('購買商品') != -1:
             self._set_tab(current_tab.call_from)
@@ -482,8 +512,15 @@ class PyMedical(QtWidgets.QMainWindow):
                 elif tab_name == '櫃台購藥':
                     current_tab.ui.tableWidget_purchase_list.setFocus(True)
                     current_tab.read_purchase_today()
+                elif tab_name == '養生館購物':
+                    current_tab.ui.tableWidget_purchase_list.setFocus(True)
+                    current_tab.read_purchase_today()
                 elif tab_name == '門診掛號':
                     current_tab.read_wait()
+                elif tab_name == '消費資料查詢':
+                    current_tab.refresh_massage_case()
+                elif tab_name == '養生館櫃台結帳':
+                    current_tab.refresh_massage_case()
 
                 return
 
@@ -626,8 +663,8 @@ class PyMedical(QtWidgets.QMainWindow):
         if reserve_key is not None:
             current_tab.set_reservation_arrival(reserve_key)
 
-    # 預約掛號
-    def open_purchase_tab(self, case_key=None):
+    # 櫃台購藥
+    def open_purchase_tab(self):
         tab_name = '購買商品'
         if self._tab_exists(tab_name):
             current_tab = None
@@ -636,7 +673,19 @@ class PyMedical(QtWidgets.QMainWindow):
                     current_tab = self.ui.tabWidget_window.widget(i)
                     break
         else:
-            self._add_tab(tab_name, self.database, self.system_settings, '櫃台購藥', case_key)
+            self._add_tab(tab_name, self.database, self.system_settings, '櫃台購藥')
+
+    # 養生館購物
+    def open_massage_purchase_tab(self, call_from, massage_case_key=None):
+        tab_name = '養生館購買商品'
+        if self._tab_exists(tab_name):
+            current_tab = None
+            for i in range(self.ui.tabWidget_window.count()):
+                if self.ui.tabWidget_window.tabText(i) == tab_name:
+                    current_tab = self.ui.tabWidget_window.widget(i)
+                    break
+        else:
+            self._add_tab(tab_name, self.database, self.system_settings, massage_case_key, call_from)
 
     # 預約掛號
     def registration_arrival(self, reserve_key):
@@ -937,6 +986,7 @@ class PyMedical(QtWidgets.QMainWindow):
     def refresh_status_bar(self):
         self.label_user_name.setText('使用者: {0}'.format(self.system_settings.field('使用者')))
         self.label_station_no.setText('工作站編號: {0}'.format(self.system_settings.field('工作站編號')))
+        self.label_ip.setText('IP: {0}'.format(self.system_settings.field('使用者ip')))
         self.label_config_file.setText('設定檔: {0}'.format(self.config_file))
 
     # 登出
@@ -1004,22 +1054,41 @@ def main():
     splash.show()
     splash.showMessage(
         "<h1><font color='darkgreen'>系統程式載入中, 請稍後...</font></h1>",
-        QtCore.Qt.AlignTop | QtCore.Qt.AlignCenter, QtCore.Qt.black
+        QtCore.Qt.AlignCenter, QtCore.Qt.black
     )
 
     py_medical = PyMedical(None, sys.argv)
-    py_medical.system_settings.post('使用者', None)
-
     check_db = check_database.CheckDatabase(py_medical, py_medical.database, py_medical.system_settings)
     check_db.check_database()
     del check_db
-
     splash.finish(py_medical)
+
+    current_ip_address = system_utils.get_ip()
+    last_ip_address = py_medical.system_settings.field('使用者ip')
+    if last_ip_address is not None and current_ip_address != last_ip_address:
+        system_utils.show_message_box(
+            QMessageBox.Critical,
+            '識別編號重複',
+            '''
+                <font size="4" color="red"><b>
+                    已經有IP位置{ip_address}的電腦正在使用相同的識別編號, 請查明是哪一台電腦使用此IP, 並調整識別編號.
+                </b></font>
+            '''.format(
+                ip_address=last_ip_address,
+            ),
+            '您的IP是{ip_address}, 請至系統設定更正識別編號, 以免使用者名稱重複.'.format(
+                ip_address=current_ip_address,
+            )
+        )
+
     login_dialog = login.Login(py_medical, py_medical.database, py_medical.system_settings)
     login_dialog.exec_()
     if not login_dialog.login_ok:
         return
 
+    py_medical.system_settings.post('使用者', None)
+    py_medical.system_settings.post('使用者ip', None)
+    py_medical.system_settings.post('登入日期', None)
     login_dialog.deleteLater()
     user_name = login_dialog.user_name
 
@@ -1030,6 +1099,8 @@ def main():
     del statistics
 
     py_medical.system_settings.post('使用者', user_name)
+    py_medical.system_settings.post('使用者ip', current_ip_address)
+    py_medical.system_settings.post('登入日期', datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
     py_medical.refresh_status_bar()
     py_medical.set_root_permission()
     py_medical.set_permission()

@@ -24,7 +24,7 @@ class StatisticsInsPerformance(QtWidgets.QMainWindow):
             "dialog_executed": False,
             "start_date": None,
             "end_date": None,
-            "doctor": None,
+            "therapist": None,
         }
 
         self._set_ui()
@@ -66,7 +66,7 @@ class StatisticsInsPerformance(QtWidgets.QMainWindow):
         if self.dialog_setting['dialog_executed']:
             dialog.ui.dateEdit_start_date.setDate(self.dialog_setting['start_date'])
             dialog.ui.dateEdit_end_date.setDate(self.dialog_setting['end_date'])
-            dialog.ui.comboBox_doctor.setCurrentText(self.dialog_setting['doctor'])
+            dialog.ui.comboBox_doctor.setCurrentText(self.dialog_setting['therapist'])
 
         if not dialog.exec_():
             dialog.deleteLater()
@@ -79,7 +79,7 @@ class StatisticsInsPerformance(QtWidgets.QMainWindow):
         self.dialog_setting['dialog_executed'] = True
         self.dialog_setting['start_date'] = dialog.ui.dateEdit_start_date.date()
         self.dialog_setting['end_date'] = dialog.ui.dateEdit_end_date.date()
-        self.dialog_setting['doctor'] = doctor
+        self.dialog_setting['therapist'] = doctor
 
         dialog.deleteLater()
         self._set_tab_widget(start_date, end_date, doctor)
@@ -96,8 +96,8 @@ class StatisticsInsPerformance(QtWidgets.QMainWindow):
         )
 
         self._add_statistic_ins_performance_medical_record(start_date, end_date, doctor)
-        # self._add_statistic_doctor_income(start_date, end_date, period, ins_type, doctor)
-        # self._add_statistic_doctor_sale(start_date, end_date, period, doctor)
+        # database._add_statistic_massage_income(start_date, end_date, period, ins_type, therapist)
+        # database._add_statistic_massage_sale(start_date, end_date, period, therapist)
 
     # 醫師門診人數統計
     def _add_statistic_ins_performance_medical_record(self, start_date, end_date, doctor):
@@ -110,29 +110,29 @@ class StatisticsInsPerformance(QtWidgets.QMainWindow):
         self.ui.tabWidget_ins_performance.addTab(self.tab_ins_performance_medical_record, '健保業績-依病歷')
     #
     # # 醫師門診收入統計
-    # def _add_statistic_doctor_income(self, start_date, end_date, period, ins_type, doctor):
-    #     self.tab_statistics_doctor_income = statistics_doctor_income.StatisticsDoctorIncome(
-    #         self, self.database, self.system_settings,
-    #         start_date, end_date, period, ins_type, doctor,
+    # def _add_statistic_massage_income(database, start_date, end_date, period, ins_type, therapist):
+    #     database.tab_statistics_massage_income = statistics_doctor_income.StatisticsDoctorIncome(
+    #         database, database.database, database.system_settings,
+    #         start_date, end_date, period, ins_type, therapist,
     #     )
-    #     self.tab_statistics_doctor_income.start_calculate()
-    #     self.ui.tabWidget_statistics_doctor.addTab(self.tab_statistics_doctor_income, '門診收入統計')
+    #     database.tab_statistics_massage_income.start_calculate()
+    #     database.ui.tabWidget_statistics_doctor.addTab(database.tab_statistics_massage_income, '門診收入統計')
     #
     # # 醫師自費銷售統計
-    # def _add_statistic_doctor_sale(self, start_date, end_date, period, doctor):
-    #     self.tab_statistics_doctor_sale = statistics_doctor_sale.StatisticsDoctorSale(
-    #         self, self.database, self.system_settings,
-    #         start_date, end_date, period, doctor,
+    # def _add_statistic_massage_sale(database, start_date, end_date, period, therapist):
+    #     database.tab_statistics_massage_sale = statistics_doctor_sale.StatisticsDoctorSale(
+    #         database, database.database, database.system_settings,
+    #         start_date, end_date, period, therapist,
     #     )
-    #     self.tab_statistics_doctor_sale.start_calculate()
-    #     self.ui.tabWidget_statistics_doctor.addTab(self.tab_statistics_doctor_sale, '自費銷售統計')
+    #     database.tab_statistics_massage_sale.start_calculate()
+    #     database.ui.tabWidget_statistics_doctor.addTab(database.tab_statistics_massage_sale, '自費銷售統計')
 
     def _export_to_excel(self):
         if self.ui.tabWidget_ins_performance.currentIndex() == 0:
             self.tab_ins_performance_medical_record.export_to_excel()
-        # elif self.ui.tabWidget_statistics_doctor.currentIndex() == 1:
-        #     self.tab_statistics_doctor_income.export_to_excel()
-        # elif self.ui.tabWidget_statistics_doctor.currentIndex() == 2:
-        #     self.tab_statistics_doctor_sale.export_to_excel()
+        # elif database.ui.tabWidget_statistics_doctor.currentIndex() == 1:
+        #     database.tab_statistics_massage_income.export_to_excel()
+        # elif database.ui.tabWidget_statistics_doctor.currentIndex() == 2:
+        #     database.tab_statistics_massage_sale.export_to_excel()
 
 

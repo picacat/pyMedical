@@ -183,7 +183,7 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
 
         # medicine_key_item = prescript_row[prescript_utils.SELF_PRESCRIPT_COL_NO['MedicineKey']]
         # if medicine_key_item is not None:
-        #     self._add_prescript_info_button(target_row, medicine_key_item.text())
+        #     database._add_prescript_info_button(target_row, medicine_key_item.text())
 
         if target_row > source_row:
             remove_row = source_row
@@ -376,7 +376,7 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
         self._adjust_prescript_column(row_no)
 
         # medicine_key = medical_row[prescript_utils.SELF_PRESCRIPT_COL_NO['MedicineKey']][1]
-        # self._add_prescript_info_button(row_no, medicine_key)
+        # database._add_prescript_info_button(row_no, medicine_key)
         self.ui.tableWidget_prescript.resizeRowsToContents()
 
     def _set_table_width(self):
@@ -420,8 +420,8 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
         self.ui.lineEdit_discount_fee.setText(string_utils.xstr(discount_fee))
         self.ui.lineEdit_self_total_fee.setText(string_utils.xstr(self_total_fee))
         self.ui.lineEdit_total_fee.setText(string_utils.xstr(total_fee))
-        # self.ui.label_self_total_fee.setText('自費合計: ${0:,}'.format(self_total_fee))
-        # self.ui.label_total_fee.setText('應收金額: ${0:,}'.format(total_fee))
+        # database.ui.label_self_total_fee.setText('自費合計: ${0:,}'.format(self_total_fee))
+        # database.ui.label_total_fee.setText('應收金額: ${0:,}'.format(total_fee))
 
     def _read_medicine(self):
         sql = '''
@@ -476,7 +476,7 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
 
         self._adjust_prescript_column(row_no)
 
-        # self._add_prescript_info_button(row_no, medicine_key)
+        # database._add_prescript_info_button(row_no, medicine_key)
 
     def _add_prescript_info_button(self, row_no, medicine_key):
         description = prescript_utils.get_medicine_description(self.database, medicine_key)
@@ -639,14 +639,16 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
         ]
 
         sql = '''
-            SELECT * FROM dosage WHERE
-            CaseKey = {0} AND MedicineSet = {1} 
-        '''.format(self.case_key, self.medicine_set)
-        rows = self.database.select_record(sql)
-        if len(rows) > 0:
-            self.database.update_record('dosage', fields, 'DosageKey', rows[0]['DosageKey'], data)
-        else:
-            self.database.insert_record('dosage', fields, data)
+            DELETE FROM dosage
+            WHERE
+                CaseKey = {case_key} AND
+                MedicineSet = {medicine_set}
+        '''.format(
+            case_key=self.case_key,
+            medicine_set=medicine_set,
+        )
+        self.database.exec_sql(sql)
+        self.database.insert_record('dosage', fields, data)
 
     def _save_medicine(self, medicine_set):
         prescript_data_set = []
@@ -1092,7 +1094,7 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
         discount_fee = number_utils.get_integer(self.ui.lineEdit_discount_fee.text())
         total_fee = self_total_fee - discount_fee
 
-        # self.ui.label_total_fee.setText('應收金額: ${0:,}'.format(
+        # database.ui.label_total_fee.setText('應收金額: ${0:,}'.format(
         #     number_utils.get_integer(total_fee)
         # ))
         self.ui.lineEdit_total_fee.setText(string_utils.xstr(total_fee))
@@ -1124,7 +1126,7 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
             row['MedicineType'] = table_widget_ins_prescript.item(
                 row_no, prescript_utils.INS_PRESCRIPT_COL_NO['MedicineType']).text()
             row['Price'] = prescript_utils.get_medicine_field(
-                self.database, medicine_key, 'InPrice'
+                self.database, medicine_key, 'SalePrice'
             )
             row['Amount'] = None
             row['InsCode'] = table_widget_ins_prescript.item(

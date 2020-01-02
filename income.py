@@ -38,9 +38,11 @@ class Income(QtWidgets.QMainWindow):
             "dialog_executed": False,
             "case_date": None,
             "period": None,
-            "doctor": None,
+            "therapist": None,
             "cashier": None,
         }
+        self.income_date = None
+        self.period = None
 
         self._set_ui()
         self._set_signal()
@@ -89,7 +91,7 @@ class Income(QtWidgets.QMainWindow):
 
     # 讀取病歷
     def open_dialog(self):
-        dialog = dialog_income.DialogIncome(self.ui, self.database, self.system_settings)
+        dialog = dialog_income.DialogIncome(self.ui, self.database, self.system_settings, '掛號櫃台結帳')
         if self.dialog_setting['dialog_executed']:
             dialog.ui.dateEdit_case_date.setDate(self.dialog_setting['case_date'])
             period = self.dialog_setting['period']
@@ -102,7 +104,7 @@ class Income(QtWidgets.QMainWindow):
             else:
                 dialog.ui.radioButton_all.setChecked(True)
 
-            dialog.ui.comboBox_doctor.setCurrentText(self.dialog_setting['doctor'])
+            dialog.ui.comboBox_therapist.setCurrentText(self.dialog_setting['therapist'])
             dialog.ui.comboBox_cashier.setCurrentText(self.dialog_setting['cashier'])
 
         if dialog.exec_():
@@ -119,26 +121,30 @@ class Income(QtWidgets.QMainWindow):
                 period = '全部'
 
             self.dialog_setting['period'] = period
-            self.dialog_setting['doctor'] = dialog.comboBox_doctor.currentText()
+            self.dialog_setting['therapist'] = dialog.comboBox_therapist.currentText()
             self.dialog_setting['cashier'] = dialog.comboBox_cashier.currentText()
+
+            if self._check_unpaid_cases(
+                    dialog.start_date, dialog.end_date, dialog.period, dialog.therapist, dialog.cashier):
+                return
 
             self.tab_income_cash_flow = income_cash_flow.IncomeCashFlow(
                 self, self.database, self.system_settings,
                 dialog.start_date, dialog.end_date,
-                dialog.period, dialog.doctor,
+                dialog.period, dialog.therapist,
                 dialog.cashier,
             )
             self.tab_income_list = income_list.IncomeList(
                 self, self.database, self.system_settings,
                 dialog.start_date, dialog.end_date,
-                dialog.period, dialog.doctor,
+                dialog.period, dialog.therapist,
                 self.tab_income_cash_flow.ui.tableWidget_registration,
                 self.tab_income_cash_flow.ui.tableWidget_charge,
             )
             self.tab_income_self_prescript = income_self_prescript.IncomeSelfPrescript(
                 self, self.database, self.system_settings,
                 dialog.start_date, dialog.end_date,
-                dialog.period, dialog.doctor,
+                dialog.period, dialog.therapist,
                 dialog.cashier,
             )
 
@@ -160,6 +166,41 @@ class Income(QtWidgets.QMainWindow):
 
         dialog.close_all()
         dialog.deleteLater()
+
+    def _check_unpaid_cases(self, start_date, end_date, period, doctor, cashier):
+        if self.system_settings.field('櫃台結帳班別') == '掛號班別':
+            return False
+
+        sql = '''
+            SELECT 
+                Name, Period 
+            FROM cases
+            WHERE 
+                CaseDate BETWEEN "{start_date}" AND "{end_date}" AND 
+                (ChargeDate IS NULL OR ChargePeriod IS NULL) AND
+                ChargeDone = "True"
+        '''.format(
+            start_date=start_date,
+            end_date=end_date,
+        )
+        if period != '全部':
+            sql += ' AND Period = "{0}"'.format(period)
+        if doctor != '全部':
+            sql += ' AND Doctor = "{0}"'.format(doctor)
+        if cashier != '全部':
+            sql += ' AND Cashier = "{0}"'.format(cashier)
+
+        rows = self.database.select_record(sql)
+        if len(rows) > 0:
+            system_utils.show_message_box(
+                QMessageBox.Critical,
+                '尚有未批價名單',
+                '<font color="red"><h3>尚有未批價名單, 請至病歷查詢檢視並批價!</h3></font>',
+                '請確認所有病歷均已完成批價.'
+            )
+            return True
+
+        return False
 
     def _check_unpaid_record(self, start_date, end_date):
         sql = '''

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #coding: utf-8
 
-import sys
+import re
 
 from PyQt5 import QtWidgets, QtCore
 import datetime
@@ -113,7 +113,37 @@ class MedicalRecordFamily(QtWidgets.QMainWindow):
         if self.patient_row is None:
             return
 
-        condition = []
+        patient_key = self.patient_row['PatientKey']
+        patient_name = self.patient_row['Name']
+        script = '''
+            FamilyPatientKey = {patient_key} OR 
+            FamilyPatientKey = "{patient_name}"
+        '''.format(
+            patient_key=patient_key,
+            patient_name=patient_name,
+        )
+        condition = [script]
+
+        family_patient_key = string_utils.xstr(self.patient_row['FamilyPatientKey'])
+        if family_patient_key != '':
+            if family_patient_key.isdigit():
+                script = '''
+                    PatientKey = {family_patient_key} OR 
+                    FamilyPatientKey IN ({patient_key}, {family_patient_key})
+                '''.format(
+                    patient_key=patient_key,
+                    family_patient_key=family_patient_key,
+                )
+            else:
+                script = '''
+                    Name = "{family_patient_key}" OR 
+                    FamilyPatientKey = "{family_patient_key}"
+                '''.format(
+                    patient_name=patient_name,
+                    family_patient_key=family_patient_key,
+                )
+            print(script)
+            condition.append(script)
 
         telephone = string_utils.xstr(self.patient_row['Telephone'])
         if telephone != '':
@@ -126,6 +156,8 @@ class MedicalRecordFamily(QtWidgets.QMainWindow):
                 cellphone=cellphone,
             ))
         address = string_utils.xstr(self.patient_row['Address'])
+        address = re.sub(r'\d+樓', '', address)
+
         if address != '':
             condition.append('(Address Like "%{address}%")'.format(
                 address=address,

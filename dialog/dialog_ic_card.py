@@ -103,7 +103,7 @@ class DialogICCard(QtWidgets.QDialog):
         if not self.ic_card.read_register_basic_data():
             return
 
-        # if not self.ic_card.read_critical_illness():
+        # if not database.ic_card.read_critical_illness():
         #     critical_illness_data = [
         #         {'CI_CODE': '', 'CI_VALIDITY_START': '', 'CI_VALIDITY_END': ''},
         #         {'CI_CODE': '', 'CI_VALIDITY_START': '', 'CI_VALIDITY_END': ''},

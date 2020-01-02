@@ -91,7 +91,7 @@ class Reservation(QtWidgets.QMainWindow):
         self.ui.action_cancel_reservation.setEnabled(False)
         self.ui.action_modify_reservation.setEnabled(False)
         self.ui.action_print_reservation.setEnabled(False)
-        # self.ui.action_reservation_arrival.setEnabled(False)
+        # database.ui.action_reservation_arrival.setEnabled(False)
 
         self._set_permission()
         self._set_combo_box_doctor()
@@ -129,10 +129,11 @@ class Reservation(QtWidgets.QMainWindow):
         self.ui.tableWidget_reservation_list.itemSelectionChanged.connect(self._reservation_list_changed)
 
         self.ui.comboBox_doctor.currentTextChanged.connect(self.read_reservation)
-
         self.ui.dateEdit_reservation_date.dateChanged.connect(self._set_week_day)
-
         self.ui.tableWidget_calendar.cellClicked.connect(self._calendar_changed)
+
+        self.ui.toolButton_previous.clicked.connect(self._previous_calendar)
+        self.ui.toolButton_next.clicked.connect(self._next_calendar)
 
     def _set_permission(self):
         if self.user_name == '超級使用者':
@@ -250,11 +251,23 @@ class Reservation(QtWidgets.QMainWindow):
                 number_utils.get_integer(row['ColumnNo']),
                 QtWidgets.QTableWidgetItem(string_utils.xstr(row['Time']))
             )
+            self.ui.tableWidget_reservation.item(
+                number_utils.get_integer(row['RowNo']),
+                number_utils.get_integer(row['ColumnNo'])).setBackground(
+                QtGui.QColor('#EAEDED')
+            )
+
             self.ui.tableWidget_reservation.setItem(
                 number_utils.get_integer(row['RowNo']),
                 number_utils.get_integer(row['ColumnNo']+1),
                 QtWidgets.QTableWidgetItem(string_utils.xstr(row['ReserveNo']))
             )
+            self.ui.tableWidget_reservation.item(
+                number_utils.get_integer(row['RowNo']),
+                number_utils.get_integer(row['ColumnNo']+1)).setBackground(
+                QtGui.QColor('#EBDEF0')
+            )
+
             self.ui.tableWidget_reservation.item(
                 number_utils.get_integer(row['RowNo']),
                 number_utils.get_integer(row['ColumnNo'])).setTextAlignment(
@@ -512,7 +525,7 @@ class Reservation(QtWidgets.QMainWindow):
             self.ui.action_save_general_table.setEnabled(False)
             self.ui.action_save_assigned_table.setEnabled(False)
             self.ui.action_remove_assigned_table.setEnabled(False)
-            # self.ui.action_reservation_arrival.setEnabled(False)
+            # database.ui.action_reservation_arrival.setEnabled(False)
 
             if self.table_widget_reservation_list.row_count() > 0:
                 enabled = True
@@ -565,8 +578,14 @@ class Reservation(QtWidgets.QMainWindow):
             arrival = '未報到'
 
         patient_key = string_utils.xstr(row_data['PatientKey'])
+        telephone = string_utils.xstr(row_data['Telephone'])
+        cellphone = string_utils.xstr(row_data['Cellphone'])
         if string_utils.xstr(row_data['Source']) == '網路初診預約':
             patient_key = '網路初診'
+            telephone = None
+            cellphone = patient_utils.get_temp_patient(
+                self.database, row_data['PatientKey'], 'PhoneNo'
+            )
 
         reservation_list_data = [
             string_utils.xstr(row_data['ReserveKey']),
@@ -579,8 +598,8 @@ class Reservation(QtWidgets.QMainWindow):
             arrival,
             string_utils.xstr(row_data['Source']),
             string_utils.xstr(row_data['Registrar']),
-            string_utils.xstr(row_data['Telephone']),
-            string_utils.xstr(row_data['Cellphone']),
+            telephone,
+            cellphone,
         ]
 
         for column in range(len(reservation_list_data)):
@@ -973,7 +992,7 @@ class Reservation(QtWidgets.QMainWindow):
 
     def set_reservation_arrival(self, reserve_key=None):
         # if reserve_key is None:
-        #     reserve_key = self.reserve_key
+        #     reserve_key = database.reserve_key
 
         sql = '''
             SELECT * FROM reserve 
@@ -1047,7 +1066,7 @@ class Reservation(QtWidgets.QMainWindow):
             self.ui.tableWidget_calendar.setColumnWidth(i, 100)
 
         for i in range(0, self.ui.tableWidget_calendar.rowCount()):
-            self.ui.tableWidget_calendar.setRowHeight(i, 110)
+            self.ui.tableWidget_calendar.setRowHeight(i, 108)
 
         calendar_list = {
             0:  [0, 0], 1:  [0, 1], 2:  [0, 2], 3:  [0, 3], 4:  [0, 4], 5:  [0, 5], 6:  [0, 6],
@@ -1121,13 +1140,13 @@ class Reservation(QtWidgets.QMainWindow):
             #     reservation3
             # )
             #
-            # button1 = QtWidgets.QPushButton(self.ui.tableWidget_calendar)
+            # button1 = QtWidgets.QPushButton(database.ui.tableWidget_calendar)
             # button1.setFlat(True)
             # button1.setText(reservation1)
-            # button2 = QtWidgets.QPushButton(self.ui.tableWidget_calendar)
+            # button2 = QtWidgets.QPushButton(database.ui.tableWidget_calendar)
             # button2.setFlat(True)
             # button2.setText(reservation2)
-            # button3 = QtWidgets.QPushButton(self.ui.tableWidget_calendar)
+            # button3 = QtWidgets.QPushButton(database.ui.tableWidget_calendar)
             # button3.setFlat(True)
             # button3.setText(reservation3)
             #
@@ -1137,13 +1156,13 @@ class Reservation(QtWidgets.QMainWindow):
             # layout.addWidget(button2)
             # layout.addWidget(button3)
             # widget.setLayout(layout)
-            # self.ui.tableWidget_calendar.setCellWidget(row_no, col_no, widget)
+            # database.ui.tableWidget_calendar.setCellWidget(row_no, col_no, widget)
 
             color = 'white'
             if current_month == month and i == today - 1:
                 color = 'lightSteelBlue'
             elif calendar_list[start_day+i][1] == 0:
-                color = 'mistyrose'
+                color = '#EBDEF0'
 
             self.ui.tableWidget_calendar.item(row_no, col_no).setBackground(QtGui.QColor(color))
 
@@ -1295,11 +1314,21 @@ class Reservation(QtWidgets.QMainWindow):
 
     def _off_day_setting(self):
         dialog = dialog_off_day_setting.DialogOffDaySetting(
-            self, self.database, self.system_settings,
+            self, self.database, self.system_settings, 'off_day_list'
         )
 
         dialog.exec_()
         dialog.deleteLater()
         self.read_reservation()
 
+    def _previous_calendar(self):
+        current_date = self.ui.dateEdit_reservation_date.date().toPyDate()
+        self.ui.dateEdit_reservation_date.setDate(
+            date_utils.add_months(current_date, -1)
+        )
 
+    def _next_calendar(self):
+        current_date = self.ui.dateEdit_reservation_date.date().toPyDate()
+        self.ui.dateEdit_reservation_date.setDate(
+            date_utils.add_months(current_date, 1)
+        )

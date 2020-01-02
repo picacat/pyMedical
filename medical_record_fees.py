@@ -2,6 +2,8 @@
 #coding: utf-8
 
 from PyQt5 import QtWidgets, QtCore, QtGui
+import datetime
+
 from classes import table_widget
 from libs import ui_utils
 from libs import system_utils
@@ -193,7 +195,7 @@ class MedicalRecordFees(QtWidgets.QMainWindow):
         if row['ChargeDone'] == 'True':  # 批價完成後, 設定批價鎖定
             self.ui.checkBox_disable_calculate.setChecked(True)
 
-        if self.call_from is not None and '醫師看診作業' in self.call_from:
+        if row['CaseDate'].date() == datetime.date.today():  # 當日病歷不要鎖定 2019.12.27
             self.ui.checkBox_disable_calculate.setChecked(False)
 
         self.ui.spinBox_discount.setValue(number_utils.get_integer(row['DiscountRate']))

@@ -35,7 +35,7 @@ class DialogPatient(QtWidgets.QDialog):
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setText('確定')
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Cancel).setText('取消')
         self.table_widget_patient_list = table_widget.TableWidget(self.ui.tableWidget_patient_list, self.database)
-        # self._set_table_width()
+        # database._set_table_width()
 
     # 設定信號
     def _set_signal(self):

@@ -181,7 +181,7 @@ class CheckPrescriptDays(QtWidgets.QMainWindow):
         if patient_key == last_patient_key:
             duplicated_days = (last_case_date +
                                datetime.timedelta(
-                                   days=last_prescript_days + self.duplicated_days - 1) -
+                                   days=last_prescript_days + self.duplicated_days) -
                                row['CaseDate'].date()).days
             if duplicated_days > 0:
                 error_message.append('給藥重複{0}日'.format(duplicated_days))

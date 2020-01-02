@@ -37,15 +37,7 @@ class CheckDatabase(QtWidgets.QDialog):
 
     # 檢查資料庫狀態
     def check_database(self):
-        # self._create_table()
         self._alter_table()
-
-    def _create_table(self):
-        mysql_path = './mysql'
-        mysql_files = [f for f in os.listdir(mysql_path) if os.path.isfile(os.path.join(mysql_path, f))]
-        for file in mysql_files:
-            table_name = file.split('.sql')[0]
-            self.database.check_table_exists(table_name)
 
     def _alter_table(self):
         max_progress = 61

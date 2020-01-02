@@ -4,7 +4,7 @@ import socket
 
 class UDPSocketClient:
     def __init__(self, parent=None):
-        # super(UDPSocketClient, self).__init__(parent)
+        # super(UDPSocketClient, database).__init__(parent)
         self.client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.client.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.client.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)

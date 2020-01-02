@@ -7,6 +7,7 @@ from PyQt5.QtWidgets import QMessageBox, QPushButton, QFileDialog
 import datetime
 
 from libs import ui_utils
+from libs import date_utils
 from libs import db_utils
 from libs import string_utils
 from libs import number_utils
@@ -15,6 +16,7 @@ from libs import system_utils
 from libs import personnel_utils
 from libs import case_utils
 from libs import export_utils
+from libs import log_utils
 
 from dialog import dialog_medical_record_list
 from classes import table_widget
@@ -71,7 +73,7 @@ class MedicalRecordList(QtWidgets.QMainWindow):
         self.table_widget_medical_record_list = table_widget.TableWidget(
             self.ui.tableWidget_medical_record_list, self.database)
         self.table_widget_medical_record_list.set_column_hidden([0])
-        # self._set_table_width()
+        # database._set_table_width()
         self._set_tool_button()
 
     # 設定信號
@@ -361,6 +363,19 @@ class MedicalRecordList(QtWidgets.QMainWindow):
         self.database.delete_record('dosage', 'CaseKey', case_key)
         self.database.delete_record('deposit', 'CaseKey', case_key)
         self.database.delete_record('debt', 'CaseKey', case_key)
+
+        card = self.table_widget_medical_record_list.field_value(15)
+        course = self.table_widget_medical_record_list.field_value(16)
+        log = '{patient_name}於{now}執行病歷刪除, 卡序:{card}, 主治醫師: {room}診{doctor}醫師'.format(
+            patient_name=name,
+            now=date_utils.now_to_str(),
+            ins_type=self.table_widget_medical_record_list.field_value(5),
+            card=card + '-{0}'.format(course) if number_utils.get_integer(course) >= 1 else card,
+            room=self.table_widget_medical_record_list.field_value(6),
+            doctor=self.table_widget_medical_record_list.field_value(17),
+        )
+        self._write_event_log('資料刪除', log)
+
         current_row = self.ui.tableWidget_medical_record_list.currentRow()
         self.ui.tableWidget_medical_record_list.removeRow(current_row)
 
@@ -394,7 +409,11 @@ class MedicalRecordList(QtWidgets.QMainWindow):
             WHERE 
                 cases.CaseKey = {0}
         '''.format(case_key)
-        row = self.database.select_record(sql)[0]
+        rows = self.database.select_record(sql)
+        if len(rows) <= 0:
+            return
+
+        row = rows[0]
         current_row = self.ui.tableWidget_medical_record_list.currentRow()
         self._set_table_data(current_row, row)
 
@@ -673,6 +692,12 @@ class MedicalRecordList(QtWidgets.QMainWindow):
             'JSON 檔案格式.'
         )
 
+        log = '{now}匯出JSON檔案, 檔案名稱: {json_file_name}'.format(
+            now=date_utils.now_to_str(),
+            json_file_name=json_file_name,
+        )
+        self._write_event_log('資料匯出', log)
+
     def _get_patient_row(self, patient_key):
         sql = '''
             SELECT * FROM patient
@@ -759,3 +784,9 @@ class MedicalRecordList(QtWidgets.QMainWindow):
         )
         print_regist.print()
         del print_regist
+
+    def _write_event_log(self, log_type, log):
+        log_utils.write_event_log(
+            self.database, self.system_settings.field('使用者'),
+            log_type, self.program_name, log
+        )

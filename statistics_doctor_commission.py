@@ -2,6 +2,7 @@
 #coding: utf-8
 
 from PyQt5 import QtWidgets, QtCore, QtGui
+from PyQt5.QtWidgets import QFileDialog, QMessageBox
 
 from classes import table_widget
 from libs import ui_utils
@@ -11,6 +12,7 @@ from libs import number_utils
 from libs import case_utils
 from libs import nhi_utils
 from libs import charge_utils
+from libs import export_utils
 
 
 # 醫師銷售業績統計 2019.10.19
@@ -276,3 +278,27 @@ class StatisticsDoctorCommission(QtWidgets.QMainWindow):
             row_count += 1
 
         return row_count
+
+    def export_to_excel(self):
+        options = QFileDialog.Options()
+        excel_file_name, _ = QFileDialog.getSaveFileName(
+            self.parent,
+            "匯出自費產品銷售統計",
+            '{0}至{1}{2}自費產品銷售統計表.xlsx'.format(
+                self.start_date[:10], self.end_date[:10], self.doctor
+            ),
+            "excel檔案 (*.xlsx);;Text Files (*.txt)", options=options
+        )
+        if not excel_file_name:
+            return
+
+        export_utils.export_table_widget_to_excel(
+            excel_file_name, self.ui.tableWidget_self_prescript, [0], [9, 11, 12, 13, 17]
+        )
+
+        system_utils.show_message_box(
+            QMessageBox.Information,
+            '資料匯出完成',
+            '<h3>自費產品銷售統計表{0}匯出完成.</h3>'.format(excel_file_name),
+            'Microsoft Excel 格式.'
+        )

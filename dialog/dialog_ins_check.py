@@ -60,10 +60,24 @@ class DialogInsCheck(QtWidgets.QDialog):
         self.ui.comboBox_year.setCurrentText(str(current_year))
         self.ui.comboBox_month.setCurrentText(str(current_month))
 
-
     # 設定信號
     def _set_signal(self):
         self.ui.buttonBox.accepted.connect(self.accepted_button_clicked)
+        self.ui.toolButton_select_all.clicked.connect(self._select_all_check_box)
 
     def accepted_button_clicked(self):
         pass
+
+    def _select_all_check_box(self):
+        check_box_list = [
+            self.ui.checkBox_check_errors,
+            self.ui.checkBox_check_course,
+            self.ui.checkBox_check_card,
+            self.ui.checkBox_check_medical_record_count,
+            self.ui.checkBox_check_prescript_days,
+            self.ui.checkBox_check_ins_drug,
+            self.ui.checkBox_check_ins_treat,
+        ]
+
+        for check_box in check_box_list:
+            check_box.setChecked(not check_box.isChecked())

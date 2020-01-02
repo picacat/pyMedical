@@ -82,7 +82,7 @@ class StatisticsReturnRateMassager(QtWidgets.QMainWindow):
     def _read_data(self):
         self.ins_type_condition = ''
         if self.ins_type != '全部':
-            self.ins_type_condition = ' AND InsType = "{0}"'.format(self.ins_type)
+            self.ins_type_condition = ' AND cases.InsType = "{0}"'.format(self.ins_type)
 
         self.treat_type_condition = ''
         if self.treat_type != '全部':

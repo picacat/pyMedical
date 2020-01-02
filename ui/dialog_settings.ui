@@ -28,7 +28,7 @@
         <enum>QTabWidget::Rounded</enum>
        </property>
        <property name="currentIndex">
-        <number>3</number>
+        <number>8</number>
        </property>
        <property name="iconSize">
         <size>
@@ -2647,6 +2647,11 @@
               </column>
               <column>
                <property name="text">
+                <string>IP位置</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
                 <string>預設診療室</string>
                </property>
               </column>
@@ -2662,7 +2667,7 @@
               </column>
               <column>
                <property name="text">
-                <string>最近登入日期</string>
+                <string>登入時間</string>
                </property>
               </column>
              </widget>

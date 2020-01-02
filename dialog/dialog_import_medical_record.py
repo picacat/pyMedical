@@ -39,7 +39,7 @@ class DialogImportMedicalRecord(QtWidgets.QDialog):
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_DIALOG_IMPORT_MEDICAL_RECORD, self)
-        # self.setFixedSize(self.size())  # non resizable dialog
+        # database.setFixedSize(database.size())  # non resizable dialog
         system_utils.set_css(self, self.system_settings)
         self.center()
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setText('匯入資料庫')
@@ -181,12 +181,12 @@ class DialogImportMedicalRecord(QtWidgets.QDialog):
 
             case_key = self.database.insert_record('cases', fields, data)
             # try:
-            #     massage_case_key = self.database.insert_record('cases', fields, data)
+            #     massage_case_key = database.database.insert_record('cases', fields, data)
             # except:
             #     del medical_row['Symptom']
             #     fields = list(medical_row.keys())
             #     data = list(medical_row.values())
-            #     massage_case_key = self.database.insert_record('cases', fields, data)
+            #     massage_case_key = database.database.insert_record('cases', fields, data)
 
             self._write_pres_extend(treat_row, case_key)
             self._write_dosage(dosage_row, case_key)

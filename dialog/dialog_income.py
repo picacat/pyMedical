@@ -20,7 +20,12 @@ class DialogIncome(QtWidgets.QDialog):
         self.parent = parent
         self.database = args[0]
         self.system_settings = args[1]
+        self.call_from = args[2]
         self.ui = None
+
+        self.start_date, self.end_date = None, None
+        self.cashier, self.therapist = None, None
+        self.period = '全部'
 
         self._set_ui()
         self._set_signal()
@@ -42,12 +47,16 @@ class DialogIncome(QtWidgets.QDialog):
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Cancel).setText('取消')
 
         script = 'select * from person where Position IN("醫師", "支援醫師") '
-        rows = self.database.select_record(script)
-        doctor_list = []
-        for row in rows:
-            doctor_list.append(row['Name'])
+        if self.call_from == '養生館櫃台結帳':
+            self.ui.label_therapist.setText('推拿師父')
+            script = 'select * from person where Position IN("推拿師父") '
 
-        ui_utils.set_combo_box(self.ui.comboBox_doctor, doctor_list, '全部')
+        rows = self.database.select_record(script)
+        therapist_list = []
+        for row in rows:
+            therapist_list.append(row['Name'])
+
+        ui_utils.set_combo_box(self.ui.comboBox_therapist, therapist_list, '全部')
         ui_utils.set_combo_box(
             self.ui.comboBox_cashier,
             personnel_utils.get_personnel(self.database, '全部'), '全部',
@@ -71,7 +80,7 @@ class DialogIncome(QtWidgets.QDialog):
         elif self.ui.radioButton_period3.isChecked():
             self.period = '晚班'
 
-        self.doctor = self.ui.comboBox_doctor.currentText()
+        self.therapist = self.ui.comboBox_therapist.currentText()
         self.cashier = self.ui.comboBox_cashier.currentText()
 
     def button_rejected(self):

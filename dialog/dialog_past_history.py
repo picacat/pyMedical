@@ -66,7 +66,7 @@ class DialogPastHistory(QtWidgets.QDialog):
             return
 
         dialog = dialog_medical_record_past_history.DialogMedicalRecordPastHistory(
-            self, self.database, self.system_settings, case_key, patient_key, '病歷查詢'
+            self, self.database, self.system_settings, case_key, patient_key, '門診掛號'
         )
 
         dialog.exec_()

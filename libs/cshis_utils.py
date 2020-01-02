@@ -395,6 +395,31 @@ def show_ic_card_message(error_code, process_name=None):
     msg_box.exec_()
 
 
+def need_write_ic_card(database, system_settings, case_key, write_position):
+    if case_key in [None, '']:
+        return False
+
+    sql = 'SELECT InsType, Card, XCard FROM cases WHERE CaseKey = {0}'.format(case_key)
+    rows = database.select_record(sql)
+    if len(rows) <= 0:
+        return False
+
+    row = rows[0]
+    ins_type = string_utils.xstr(row['InsType'])
+    card = string_utils.xstr(row['Card'])
+    xcard = string_utils.xstr(row['XCard'])
+
+    if ((ins_type == '健保') and
+            (system_settings.field('產生醫令簽章位置') == write_position) and
+            (system_settings.field('使用讀卡機') == 'Y') and
+            (card not in nhi_utils.ABNORMAL_CARD) and
+            (xcard not in nhi_utils.ABNORMAL_CARD) and
+            (card != '欠卡')):
+        return True
+
+    return False
+
+
 def get_host_name(database, hosp_id):
     sql = '''
         SELECT * FROM hospid

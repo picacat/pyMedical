@@ -120,7 +120,7 @@ class PrintMedicalRecords:
 
     def print_html(self, printing):
         self.current_print = self.print_html
-        # self.printer.setOrientation(QPrinter.Landscape)
+        # database.printer.setOrientation(QPrinter.Landscape)
         self.printer.setPaperSize(QPrinter.A4)
 
         document = printer_utils.get_document(self.printer, self.font)

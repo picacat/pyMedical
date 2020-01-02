@@ -185,7 +185,7 @@ class CheckCourse(QtWidgets.QMainWindow):
             if next_patient_key == 0:
                 pass
             elif patient_key != next_patient_key:
-                # delta = self._get_first_course_delta(
+                # delta = database._get_first_course_delta(
                 #     row_no, primary_key, course, case_date,
                 # )
                 delta = nhi_utils.get_first_course_delta(
@@ -302,13 +302,13 @@ class CheckCourse(QtWidgets.QMainWindow):
             if remove_flag is not None and remove_flag.text() == '!':
                 self.ui.tableWidget_errors.removeRow(row_no)
 
-        # for row_no in reversed(range(self.ui.tableWidget_errors.rowCount())):
-        #     case_date = self.ui.tableWidget_errors.item(row_no, 1).text()
+        # for row_no in reversed(range(database.ui.tableWidget_errors.rowCount())):
+        #     case_date = database.ui.tableWidget_errors.item(row_no, 1).text()
         #     start_date = date_utils.get_start_date_by_year_month(
-        #         self.apply_year, self.apply_month)
+        #         database.apply_year, database.apply_month)
         #     if (datetime.datetime.strptime(case_date, '%Y-%m-%d') <
         #             datetime.datetime.strptime(start_date, '%Y-%m-%d %H:%M:%S')):
-        #         self._check_remove_need(row_no)
+        #         database._check_remove_need(row_no)
 
     def _check_remove_need(self, row_no):
         start_date = date_utils.get_start_date_by_year_month(

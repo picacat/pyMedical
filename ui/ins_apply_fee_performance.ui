@@ -178,7 +178,7 @@
             <property name="maximumSize">
              <size>
               <width>16777215</width>
-              <height>16777215</height>
+              <height>240</height>
              </size>
             </property>
             <property name="editTriggers">
@@ -240,6 +240,56 @@
             </column>
            </widget>
           </item>
+          <item>
+           <widget class="QTableWidget" name="tableWidget_summary">
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>70</height>
+             </size>
+            </property>
+            <column>
+             <property name="text">
+              <string>申請人數</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>本月診數</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>每診人數</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>看診天數</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>申報件數</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>診察人次</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>申請金額</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>每日金額</string>
+             </property>
+            </column>
+           </widget>
+          </item>
          </layout>
         </item>
         <item>
@@ -258,7 +308,7 @@
      <x>0</x>
      <y>0</y>
      <width>1114</width>
-     <height>21</height>
+     <height>25</height>
     </rect>
    </property>
   </widget>

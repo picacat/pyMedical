@@ -374,3 +374,20 @@ def get_medicine_field(database, medicine_key, field_name):
 
     return rows[0][field_name]
 
+
+def get_total_dosage(table_widget_prescript):
+    total_dosage = 0.0
+    for row_no in range(table_widget_prescript.rowCount()):
+        item = table_widget_prescript.item(row_no, INS_PRESCRIPT_COL_NO['Dosage'])
+        if item is None:
+            continue
+
+        try:
+            dosage = number_utils.get_float(item.text())
+        except ValueError:
+            item.setText(None)
+            continue
+
+        total_dosage += dosage
+
+    return total_dosage

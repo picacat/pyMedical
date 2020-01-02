@@ -51,7 +51,7 @@ class DialogSystemSettings(QtWidgets.QDialog):
         self._set_table_widget_width()
 
     def _set_table_widget_width(self):
-        width = [90, 200, 100, 100, 120, 220]
+        width = [90, 150, 150, 100, 100, 120, 220]
         self.table_widget_station_list.set_table_heading_width(width)
 
     # 設定信號
@@ -822,6 +822,7 @@ class DialogSystemSettings(QtWidgets.QDialog):
     def _set_table_widget_station_list(self, row_no, row):
         station_no = row['StationNo']
         station_position = self._get_system_settings_value(station_no, '工作站位置')
+        ip_address = self._get_system_settings_value(station_no, '使用者ip')
         room = self._get_system_settings_value(station_no, '診療室')
         use_ic_reader = self._get_system_settings_value(station_no, '使用讀卡機')
         user = self._get_system_settings_value(station_no, '使用者')
@@ -829,6 +830,7 @@ class DialogSystemSettings(QtWidgets.QDialog):
         station_list_row = [
             station_no,
             station_position,
+            ip_address,
             room,
             use_ic_reader,
             user,
@@ -846,29 +848,29 @@ class DialogSystemSettings(QtWidgets.QDialog):
                     row_no, col_no).setTextAlignment(
                     QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
                 )
-            elif col_no in [2, 3]:
+            elif col_no in [3, 4]:
                 self.ui.tableWidget_station_list.item(
                     row_no, col_no).setTextAlignment(
                     QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
                 )
 
     def _get_system_settings_value(self, station_no, field_name):
-        if field_name == '登入日期':
-            sql = '''
-            SELECT TimeStamp FROM system_settings
-            WHERE
-                StationNo = {station_no} AND
-                Field = "使用者"
-            '''.format(
-                    station_no=station_no,
-                )
-            rows = self.database.select_record(sql)
-
-            if len(rows) <= 0:
-                return ''
-
-            return string_utils.xstr(rows[0]['TimeStamp'])
-
+        # if field_name == '登入日期':
+        #     sql = '''
+        #     SELECT TimeStamp FROM system_settings
+        #     WHERE
+        #         StationNo = {station_no} AND
+        #         Field = "使用者"
+        #     '''.format(
+        #             station_no=station_no,
+        #         )
+        #     rows = database.database.select_record(sql)
+        #
+        #     if len(rows) <= 0:
+        #         return ''
+        #
+        #     return string_utils.xstr(rows[0]['TimeStamp'])
+        #
         sql = '''
             SELECT Value FROM system_settings
             WHERE

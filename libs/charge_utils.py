@@ -368,7 +368,7 @@ def get_ins_diag_fee(database, system_settings, course=1, diag_code=None):
 
     if diag_code is None:
         nurse = system_settings.field('護士人數')
-        if int(nurse) > 0:
+        if number_utils.get_integer(nurse) > 0:
             diag_code = 'A01'
         else:
             diag_code = 'A02'

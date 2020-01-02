@@ -389,12 +389,13 @@ def check_prescription_finished(database, case_key, patient_key, in_date=None):
         row = rows[0]
         prescription_days = number_utils.get_integer(row['Days'])
         last_prescription_date = row['CaseDate'].date()
-        days = (in_date - last_prescription_date).days + 1  # 已服用天數 (給藥當日也算一日)
+        days = (in_date - last_prescription_date).days  # 已服用天數 (給藥當日也算一日)
         remain_days = prescription_days - days  # 剩餘藥日
         if remain_days > 0:  # 藥還有剩
-            message = '* 用藥檢查: {name}在{case_date}開藥, 到目前尚有{remain_days}日藥未服用完畢.'.format(
+            message = '* 用藥檢查: {name}在{case_date}開了{pres_days}日藥, 到目前尚有{remain_days}日藥未服用完畢.'.format(
                 name=string_utils.xstr(row['Name']),
                 case_date=rows[0]['CaseDate'].strftime('%Y-%m-%d'),
+                pres_days=prescription_days,
                 remain_days=remain_days,
             )
 
@@ -572,6 +573,9 @@ def is_reservation_full(database, reservation_date, period, reserve_no, doctor):
 
 # Monday=0, Tuesday=1...Sunday=6
 def get_doctor_schedule(database, room, period):
+    if room is None:
+        room = 1
+
     sql = '''
         SELECT * FROM doctor_schedule
         WHERE

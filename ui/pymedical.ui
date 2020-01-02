@@ -589,6 +589,30 @@
           </property>
          </spacer>
         </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_3">
+          <item>
+           <spacer name="horizontalSpacer_4">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QLabel" name="label_line_qrcode">
+            <property name="text">
+             <string>line_qrcode</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
        </layout>
       </widget>
      </widget>
@@ -641,6 +665,8 @@
     <addaction name="separator"/>
     <addaction name="action_convert"/>
     <addaction name="action_database_repair"/>
+    <addaction name="separator"/>
+    <addaction name="action_event_log"/>
    </widget>
    <widget class="QMenu" name="menu_insurance">
     <property name="title">
@@ -695,13 +721,14 @@
      <string>養生館</string>
     </property>
     <addaction name="action_massage_registration"/>
-    <addaction name="action_massage_query"/>
-    <addaction name="action_customer_query"/>
-    <addaction name="separator"/>
-    <addaction name="action_5"/>
-    <addaction name="separator"/>
+    <addaction name="action_massage_purchase_list"/>
     <addaction name="action_massage_income"/>
-    <addaction name="action_massage_return_rate"/>
+    <addaction name="separator"/>
+    <addaction name="action_massage_customer_list"/>
+    <addaction name="action_massage_case_list"/>
+    <addaction name="separator"/>
+    <addaction name="action_statistics_massage_income"/>
+    <addaction name="action_statistics_massage_return_rate"/>
    </widget>
    <addaction name="menu_registration"/>
    <addaction name="menu_doctor"/>
@@ -1121,31 +1148,31 @@
     <string>養生館掛號</string>
    </property>
   </action>
-  <action name="action_massage_query">
+  <action name="action_massage_purchase_list">
    <property name="icon">
     <iconset>
      <normaloff>../icons/edit-find.png</normaloff>../icons/edit-find.png</iconset>
    </property>
    <property name="text">
-    <string>掛號資料查詢</string>
+    <string>養生館購物</string>
    </property>
   </action>
-  <action name="action_massage_income">
+  <action name="action_statistics_massage_income">
    <property name="icon">
     <iconset>
-     <normaloff>../icons/accessories-calculator.png</normaloff>../icons/accessories-calculator.png</iconset>
+     <normaloff>../icons/face-smile.png</normaloff>../icons/face-smile.png</iconset>
    </property>
    <property name="text">
-    <string>收入統計</string>
+    <string>養生館統計</string>
    </property>
   </action>
-  <action name="action_massage_return_rate">
+  <action name="action_statistics_massage_return_rate">
    <property name="icon">
     <iconset>
      <normaloff>../icons/edit-redo-rtl.png</normaloff>../icons/edit-redo-rtl.png</iconset>
    </property>
    <property name="text">
-    <string>回診率統計</string>
+    <string>養生館回診率統計</string>
    </property>
   </action>
   <action name="action_5">
@@ -1162,13 +1189,43 @@
     <string>顧客資料</string>
    </property>
   </action>
-  <action name="action_customer_query">
+  <action name="action_massage_customer_list">
    <property name="icon">
     <iconset>
      <normaloff>../icons/avatar-default.png</normaloff>../icons/avatar-default.png</iconset>
    </property>
    <property name="text">
     <string>顧客資料查詢</string>
+   </property>
+  </action>
+  <action name="action_massage_case_list">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/document-open.svg</normaloff>../icons/document-open.svg</iconset>
+   </property>
+   <property name="text">
+    <string>消費資料查詢</string>
+   </property>
+  </action>
+  <action name="action_massage_income">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/accessories-calculator.png</normaloff>../icons/accessories-calculator.png</iconset>
+   </property>
+   <property name="text">
+    <string>養生館櫃台結帳</string>
+   </property>
+  </action>
+  <action name="action_event_log">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/accessories-dictionary.png</normaloff>../icons/accessories-dictionary.png</iconset>
+   </property>
+   <property name="text">
+    <string>系統日誌</string>
+   </property>
+   <property name="toolTip">
+    <string>系統日誌</string>
    </property>
   </action>
  </widget>

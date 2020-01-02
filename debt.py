@@ -47,7 +47,7 @@ class Debt(QtWidgets.QMainWindow):
         system_utils.set_css(self, self.system_settings)
         self.table_widget_debt = table_widget.TableWidget(self.ui.tableWidget_debt, self.database)
         self.table_widget_debt.set_column_hidden([0, 1])
-        # self._set_table_width()
+        # database._set_table_width()
 
     # 設定信號
     def _set_signal(self):

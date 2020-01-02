@@ -1,0 +1,2064 @@
+﻿<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>中央健康保險署 IE瀏覽器設定檢測</title>
+    <style type="text/css">
+        .content
+        {
+            font-family: "微軟正黑體" , "Microsoft JhengHei" , Helvetica, sans-serif;
+            font-size: 14px;
+        }
+        
+        .section TABLE.list
+        {
+            margin: 10px 0px;
+            width: 100%;
+            border-top-style: none;
+            border-right-style: none;
+            border-left-style: none;
+            border-collapse: collapse;
+            border-bottom-style: none;
+        }
+        .section TABLE.list TH
+        {
+            border-right: #eee 1px solid;
+            padding-right: 3px;
+            border-top: #eee 1px solid;
+            padding-left: 3px;
+            padding-bottom: 3px;
+            border-left: #eee 1px solid;
+            padding-top: 3px;
+            border-bottom: #eee 1px solid;
+            background: #e0f4fe;
+            white-space: nowrap;
+        }
+        .section TABLE.list TD
+        {
+            border-right: #eee 1px solid;
+            padding-right: 3px;
+            border-top: #eee 1px solid;
+            padding-left: 3px;
+            padding-bottom: 3px;
+            border-left: #eee 1px solid;
+            padding-top: 3px;
+            border-bottom: #eee 1px solid;
+        }
+        
+        .section TABLE.form-table
+        {
+            margin: 10px 0px;
+            width: 100%;
+            border-top-style: none;
+            border-right-style: none;
+            border-left-style: none;
+            border-collapse: collapse;
+            border-bottom-style: none;
+        }
+        .section TABLE.form-table TH
+        {
+            border-right: #d9d9d9 1px solid;
+            padding-right: 5px;
+            border-top: #d9d9d9 1px solid;
+            padding-left: 5px;
+            padding-bottom: 5px;
+            border-left: #d9d9d9 1px solid;
+            padding-top: 5px;
+            border-bottom: #d9d9d9 1px solid;
+            background: #e0f4fe;
+            white-space: nowrap;
+            text-align: right;
+        }
+        .section TABLE.form-table TD
+        {
+            border-right: #d9d9d9 1px solid;
+            padding-right: 5px;
+            border-top: #d9d9d9 1px solid;
+            padding-left: 5px;
+            padding-bottom: 5px;
+            border-left: #d9d9d9 1px solid;
+            padding-top: 5px;
+            border-bottom: #d9d9d9 1px solid;
+        }
+        
+        .btn-blue
+        {
+            color: #fff;
+            background-color: #45ABEC;
+            text-align: center;
+            border: 1px solid #fff;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: "微軟正黑體" , "Microsoft JhengHei" , Helvetica, sans-serif;
+            font-size: 16px;
+        }
+        
+        
+        .btn-blue:hover:hover
+        {
+            color: #358FDD;
+            background-color: #e0f4fe;
+        }
+    </style>
+    <hta:application id="IHKE0100S04" applicationname="IHKE0100S04" singleinstance="yes">
+</head>
+<body>
+    <form method="post" action="#" id="form1">
+    <div class="content">
+        <div class="section">
+            <div id="img">
+                <table border="0" width="100%">
+                    <tbody>
+                        <tr>
+                            <td valign="bottom" width='205px;'>
+                                <a>
+                                    <img id="imgGen" alt="基本及智慧卡檢測" onmouseover="imgOver(this);" onmouseout="imgOut(this);">
+                                </a>
+                            </td>
+                            <!--                      
+//第二階段 再將註解取消(script也有相同關鍵字)
+      <td valign="bottom" width='205px;'>
+                                <a>
+                                    <img id="imgCom" alt="憑證安裝元件檢測" onclick="" onmouseover="imgOver(this);" onmouseout="imgOut(this);">
+                                </a>
+                            </td>-->
+                            <td valign="bottom">
+                                <a>
+                                    <img id="imgIE" alt="瀏覽器設定檢測" onmouseover="imgOver(this);" onmouseout="imgOut(this);">
+                                </a>
+                            </td>
+                            <td style="vertical-align: top">
+                                <table border="0" cellpadding="3" cellspacing="3">
+                                    <tbody>
+                                        <tr>
+                                            <td align="right">
+                                            </td>
+                                            <td align="left">
+                                                <img id='tip_1' alt='v'><font size="-1">：表示您的設定已完成。</font>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td align="right">
+                                            </td>
+                                            <td align="left">
+                                                <img id='tip_2' alt='?'><font size="-1">：尚有設定未完成，請點選該項目，完成設定。</font>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <span style="color: #f08c21; margin-top: 10px; font-size: 16px">以下為您目前使用電腦狀態說明：</span>
+            <div id="div_table" style="width: 800px;">
+                <div id="tbGeneral" style="display: block;">
+                    <table class="form-table">
+                        <tbody>
+                            <tr style="width: 150px">
+                                <th>
+                                    作業系統版本(OS)
+                                </th>
+                                <td colspan="5" id="OS_Version" style="color: blue;">
+                                    Microsoft Windows 7
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>
+                                    瀏覽器版本(IE)
+                                </th>
+                                <td colspan="5" id="IE_Version" style="color: red;">
+                                    您的瀏覽器為非IE版本
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>
+                                    DNS檢測
+                                </th>
+                                <td colspan="5" id="DNS_Check" style="color: red;">
+                                    檢測中
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <table class="list" style='display: none;'>
+                        <tbody>
+                            <tr>
+                                <th colspan="2">
+                                    檢測項目
+                                </th>
+                                <th>
+                                    您目前的設定
+                                </th>
+                                <th>
+                                    建議設定
+                                </th>
+                            </tr>
+                            <tr>
+                                <td>
+                                    1
+                                </td>
+                                <td>
+                                    Smart Card(智慧卡)服務－啟動類型
+                                </td>
+                                <td>
+                                    <span id="SCardSvrStatus" style="color: red;">無法偵測</span>
+                                </td>
+                                <td>
+                                    已啟動
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    2
+                                </td>
+                                <td>
+                                    Smart Card(智慧卡)服務－目前狀態
+                                </td>
+                                <td>
+                                    <span id="SCardSvrStart" style="color: red;">無法偵測</span>
+                                </td>
+                                <td>
+                                    自動
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    					<div style="text-align: center; width: 800px; margin-top: 20px;">
+						<table cellpadding="0" cellspacing="0">
+							<tbody>
+								<tr>
+									<td style="text-align: left;">
+                                        <table>
+											<tbody>
+												<tr>
+													<td colspan="5" style="font-weight: bold; padding-right: 10px;">
+														注意事項：
+													</td>
+												</tr>
+												<tr>
+													<td>
+														請各特約醫事機構將連接健保資訊網(VPN)的電腦與連接Internet的電腦分開使用，以降低資料外洩的可能性。
+													</td>
+													<td colspan="4">
+																												
+													</td>
+												</tr>
+											</tbody>
+										</table>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+                    <div style="text-align: center; width: 800px; margin-top: 10px;">
+                        <input type="button" id="btnModify_SC" class="btn-blue" value="變更我的設定，以符合系統環境需求"></div>
+                </div>
+                <div id="tbIE" style="display: none;">
+                    <table class="list">
+                        <tbody>
+                            <tr>
+                                <th colspan="2" class="title1_style2">
+                                    檢測項目
+                                </th>
+                                <th class="title1_style3">
+                                    您目前的設定
+                                </th>
+                                <th class="title1_style4">
+                                    建議設定
+                                </th>
+                            </tr>
+                            <tr>
+                                <td>
+                                    1
+                                </td>
+                                <td class="dName">
+                                    下載簽名的ActiveX控制項
+                                </td>
+                                <td>
+                                    <span id="Set_Trust_Item1" style="color: red;">停用</span>
+                                </td>
+                                <td>
+                                    啟用
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    2
+                                </td>
+                                <td>
+                                    下載未簽署的ActiveX控制項
+                                </td>
+                                <td>
+                                    <span id="Set_Trust_Item2" style="color: red;">停用</span>
+                                </td>
+                                <td>
+                                    啟用
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    3
+                                </td>
+                                <td>
+                                    自動提示ActiveX控制項
+                                </td>
+                                <td>
+                                    <span id="Set_Trust_Item3" style="color: red;">停用</span>
+                                </td>
+                                <td>
+                                    啟用
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    4
+                                </td>
+                                <td>
+                                    起始不標示為安全的ActiveX控制項
+                                </td>
+                                <td>
+                                    <span id="Set_Trust_Item4" style="color: red;">停用</span>
+                                </td>
+                                <td>
+                                    啟用
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    5
+                                </td>
+                                <td>
+                                    執行ActiveX控制項與插件
+                                </td>
+                                <td>
+                                    <span id="Set_Trust_Item5" style="color: red;">停用</span>
+                                </td>
+                                <td>
+                                    啟用
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    6
+                                </td>
+                                <td>
+                                    標示為安全的ActiveX控制項
+                                </td>
+                                <td>
+                                    <span id="Set_Trust_Item6" style="color: red;">停用</span>
+                                </td>
+                                <td>
+                                    啟用
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    7
+                                </td>
+                                <td>
+                                    指令碼處理-Active Scripting
+                                </td>
+                                <td>
+                                    <span id="Set_Trust_Item7" style="color: red;">停用</span>
+                                </td>
+                                <td>
+                                    啟用
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    8
+                                </td>
+                                <td>
+                                    指令碼處理-Java Applets的指令碼化
+                                </td>
+                                <td>
+                                    <span id="Set_Trust_Item8" style="color: red;">停用</span>
+                                </td>
+                                <td>
+                                    啟用
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    9
+                                </td>
+                                <td>
+                                    允許網頁使用受限制的通訊協定於主動式內容
+                                </td>
+                                <td>
+                                    <span id="Set_Trust_Item9" style="color: red;">停用</span>
+                                </td>
+                                <td>
+                                    啟用
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    10
+                                </td>
+                                <td>
+                                    使用快顯封鎖程式
+                                </td>
+                                <td>
+                                    <span id="Set_Trust_Item10" style="color: blue;">停用</span>
+                                </td>
+                                <td>
+                                    停用
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    11
+                                </td>
+                                <td>
+                                    隱私權-開啟快顯封鎖程式
+                                </td>
+                                <td>
+                                    <span id="Set_Item11" style="color: blue;">停用</span>
+                                </td>
+                                <td>
+                                    停用
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    12
+                                </td>
+                                <td>
+                                    僅允許認可的網域使用ActiveX而不提示
+                                </td>
+                                <td>
+                                    <span id="Set_Trust_Item17" style="color: blue;"></span>
+                                </td>
+                                <td>
+                                    停用
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    13
+                                </td>
+                                <td>
+                                    加入信任網站
+                                </td>
+                                <td>
+                                    <span id="Set_Item15" style="color: red;">未加入</span>
+                                </td>
+                                <td>
+                                    加入
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    14
+                                </td>
+                                <td>
+                                    啟用記憶體保護以協助避免網路攻擊
+                                </td>
+                                <td>
+                                    <span id="Set_Item16" style="color: red;">有打勾</span>
+                                </td>
+                                <td>
+                                    無打勾
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    15
+                                </td>
+                                <td>
+                                    二進位和指令碼行為
+                                </td>
+                                <td>
+                                    <span id="Set_Trust_Item19" style="color: blue;"></span>
+                                </td>
+                                <td>
+                                    啟用
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    16
+                                </td>
+                                <td>
+                                    允許不提示就執行從未使用過的ActiveX控制項
+                                </td>
+                                <td>
+                                    <span id="Set_Trust_Item20" style="color: blue;"></span>
+                                </td>
+                                <td>
+                                    啟用
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    17
+                                </td>
+                                <td>
+                                    允許程式碼片段
+                                </td>
+                                <td>
+                                    <span id="Set_Trust_Item21" style="color: blue;"></span>
+                                </td>
+                                <td>
+                                    啟用
+                                </td>
+                            </tr>
+                            <!--							<tr id="Set_Item22">
+								<td>
+									18
+								</td>
+								<td>
+									在相容性檢視下顯示所有網站
+								</td>
+								<td>
+									<span class="dResult"><a href="javascript:void(0)" onclick="javascript:clearable();return false;">
+										<input type="button" class="btn1_mouseout" value="下載"></a></span><a href="javascript:void(0)" onclick="javascript:clearable();return false;"> </a>
+								</td>
+								<td>
+									有打勾
+								</td>
+							</tr>-->
+                            <tr>
+                                <td>
+                                    18
+                                </td>
+                                <td>
+                                    啟用受保護模式
+                                </td>
+                                <td>
+                                    <span id="Set_Trust_Item23" style="color: green;">無此設定</span>
+                                </td>
+                                <td>
+                                    無打勾
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    19
+                                </td>
+                                <td>
+                                    檢查儲存的畫面是否有較新的版本
+                                </td>
+                                <td>
+                                    <span id="Set_Item24" style="color: red;">未定義</span>
+                                </td>
+                                <td>
+                                    每次造訪網頁時
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    20
+                                </td>
+                                <td>
+                                    加入我的最愛網站
+                                </td>
+                                <td>
+                                    <span id="Set_Item25" style="color: red;">未加入</span>
+                                </td>
+                                <td>
+                                    加入
+                                </td>
+                            </tr>
+                            </tr>
+                            <tr>
+                                <td>
+                                    21
+                                </td>
+                                <td>
+                                    加入Proxy伺服器例外名單
+                                </td>
+                                <td>
+                                    <span id="Set_Item26" style="color: red;">未加入</span>
+                                </td>
+                                <td>
+                                    <span id="Set_Item26_suggest">--</span>
+                                </td>
+                            </tr>
+                             <tr>
+								<td>
+									22
+								</td>
+								<td>
+									檢查伺服器憑證撤銷(須重啟IE或重新開機)
+								</td>
+								<td>
+									<span id="Set_SSL" style="color: red;">有打勾</span>
+								</td>
+								<td>
+									未打勾
+								</td>
+							</tr>
+                        </tbody>
+                    </table>
+                    <div style="text-align: center; width: 800px; margin-top: 10px;">
+                        <input type="button" id="btnModify_IE" class="btn-blue" value="變更我的設定，以符合系統環境需求"></div>
+                </div>
+                <div id="tbCom" style="display: none;">
+                    <table class="list" id="Table1">
+                        <tbody>
+                            <tr>
+                                <th>
+                                    檢測項目
+                                </th>
+                                <th>
+                                    您目前的設定
+                                </th>
+                                <th>
+                                    建議設定
+                                </th>
+                            </tr>
+                            <tr>
+                                <td>
+                                    HC憑證元件(晶片讀卡機)
+                                </td>
+                                <td>
+                                    <span id="OBJ_Item1" style="color: red;">未安裝(請參考以下操作說明)</span>
+                                </td>
+                                <td>
+                                    已安裝
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    IDC憑證元件(健保讀卡機)
+                                </td>
+                                <td>
+                                    <span id="OBJ_Item2" style="color: red;">未安裝(請參考以下操作說明)</span>
+                                </td>
+                                <td>
+                                    已安裝
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div style="text-align: center; width: 800px; margin-top: 20px;">
+                        <table cellpadding="0" cellspacing="0">
+                            <tbody>
+                                <tr>
+                                    <td style="text-align: left;">
+                                        <table>
+                                            <tbody>
+                                                <tr>
+                                                    <td colspan="5" style="font-weight: bold; padding-right: 10px;">
+                                                        操作說明
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>
+                                                        (1)
+                                                    </td>
+                                                    <td colspan="4">
+                                                        下載健保資訊網憑證元件： 1.<a href="https://medvpn.nhi.gov.tw/iwpe0000/iwpe0400s02.aspx?fn=HC_Setup.msi.zip"
+                                                            target="w1">HC_Setup.msi.zip</a> 2.<a href="https://medvpn.nhi.gov.tw/iwpe0000/iwpe0400s02.aspx?fn=IDC_Setup.msi.zip"
+                                                                target="w1">IDC_Setup.msi.zip</a>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>
+                                                        (2)
+                                                    </td>
+                                                    <td colspan="4">
+                                                        選取「另存新檔」至個人電腦
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>
+                                                        (3)
+                                                    </td>
+                                                    <td colspan="4">
+                                                        解壓縮 1.<font color="red">HC_Setup.msi.zip</font> 2.<font color="red">IDC_Setup.msi.zip</font>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>
+                                                        (4)
+                                                    </td>
+                                                    <td>
+                                                        執行程式 1.<font color="red">HC_Setup.msi</font> 2.<font color="red">IDC_Setup.msi</font>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td colspan="2">
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>
+                                                        ※
+                                                    </td>
+                                                    <td>
+                                                        其他注意事項：下載安裝執行程式時，如遇問題可下載相關說明文件
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>
+                                                    </td>
+                                                    <td>
+                                                        ◎1.<a href="https://medvpn.nhi.gov.tw/iwpe0000/iwpe0400s02.aspx?fn=HC_ECInstall.pdf"
+                                                            target="w1"> 電子憑證元件安裝說明文件(晶片讀卡機)</a> 2.<a href="https://medvpn.nhi.gov.tw/iwpe0000/iwpe0400s02.aspx?fn=VPN_ECInstall.pdf"
+                                                                target="w1"> 電子憑證元件安裝說明文件(健保讀卡機)</a>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>
+                                                    </td>
+                                                    <td>
+                                                        ◎作業系統如為 Win98/2000，另請下載 1.<a href="https://medvpn.nhi.gov.tw/iwpe0000/iwpe0400s02.aspx?fn=HC_Setup.exe.zip"
+                                                            target="w1">HC_Setup.exe.zip</a>。2.<a href="https://medvpn.nhi.gov.tw/iwpe0000/iwpe0400s02.aspx?fn=IDC_Setup.exe.zip"
+                                                                target="w1">IDC_Setup.exe.zip</a>。
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- end content -->
+    <script language="VBScript">
+        Function GetIEVerByArg()
+          if IsObject(IHKE0100S07) then
+                arrCommands = Split(IHKE0100S07.commandLine, chr(32))
+                if Ubound(arrCommands) = 1 then
+                    GetIEVerByArg = arrCommands(1)
+                else 
+                    GetIEVerByArg = "null"
+                end if
+            else
+                GetIEVerByArg = "null"
+            end if 
+        End Function
+    </script>
+    <script type="text/javascript" charset="UTF-8">
+        function my$(element) {
+            var idName = element.toString().substring(1, element.length);
+            var obj = document.getElementById(idName);
+            obj.attr = function (name, arg) {
+                switch (name) {
+                    case 'src':
+                        this.src = arg;
+                        break;
+                }
+            };
+
+            obj.css = function (name, arg) {
+                switch (name) {
+                    case 'color':
+                        this.style.color = arg;
+                        break;
+
+                }
+
+            };
+
+            obj.html = function (arg) {
+                this.innerHTML = arg;
+            };
+
+            obj.text = function (arg) {
+                this.innerHTML = arg;
+            };
+
+            obj.hide = function () {
+                this.style.display = 'none';
+            };
+
+            obj.show = function () {
+                this.style.display = '';
+            };
+
+
+            obj.myclick = function (f) {
+                this.onclick = f;
+            };
+
+            return obj;
+        }
+        window.resizeTo(800, 600);
+
+        /**********************************************全域變數 開始********************************************/
+        var Trust_Site_Flag = 'N'
+        var Favorites_Site_Flag = 'N'
+        var pageRel = new Array(); //分頁籤與顯示頁面的關聯
+        pageRel['imgGen'] = 'tbGeneral';
+        pageRel['imgIE'] = 'tbIE';
+        pageRel['imgCom'] = 'tbCom';
+
+        var allPassRel = new Array(); //各大項檢測結果是否all pass，all pass則為'pass'否則為'error'
+        allPassRel['imgGen'] = 'error';
+        allPassRel['imgIE'] = 'error';
+        allPassRel['imgCom'] = 'error';
+
+        var imgRel = new Array(); imgRel['imgGen'] = new Array(); imgRel['imgIE'] = new Array(); imgRel['imgCom'] = new Array();
+        //imgRel['目標id']['是否allpass'] = { src: '原始圖檔位址' , over:'mouse over 圖檔位址', out: 'mouse out 圖檔位址' };
+        imgRel['imgGen']['error'] = { src: 'https://medvpn.nhi.gov.tw/images/hta/basic2_0_error.jpg', over: 'https://medvpn.nhi.gov.tw/images/hta/basic2_1_error.jpg', out: 'https://medvpn.nhi.gov.tw/images/hta/basic2_0_error.jpg' };
+        imgRel['imgGen']['pass'] = { src: 'https://medvpn.nhi.gov.tw/images/hta/basic2_0_pass.jpg', over: 'https://medvpn.nhi.gov.tw/images/hta/basic2_1_pass.jpg', out: 'https://medvpn.nhi.gov.tw/images/hta/basic2_0_pass.jpg' };
+        imgRel['imgIE']['error'] = { src: 'https://medvpn.nhi.gov.tw/images/hta/browser_0_error.jpg', over: 'https://medvpn.nhi.gov.tw/images/hta/browser_1_error.jpg', out: 'https://medvpn.nhi.gov.tw/images/hta/browser_0_error.jpg' };
+        imgRel['imgIE']['pass'] = { src: 'https://medvpn.nhi.gov.tw/images/hta/browser_0_pass.jpg', over: 'https://medvpn.nhi.gov.tw/images/hta/browser_1_pass.jpg', out: 'https://medvpn.nhi.gov.tw/images/hta/browser_0_pass.jpg' };
+        imgRel['imgCom']['error'] = { src: 'https://medvpn.nhi.gov.tw/hta/images/element_0_error.jpg', over: 'https://medvpn.nhi.gov.tw/images/hta/element_1_error.jpg', out: 'https://medvpn.nhi.gov.tw/images/hta/element_0_error.jpg' };
+        imgRel['imgCom']['pass'] = { src: 'https://medvpn.nhi.gov.tw/hta/images/element_0_passr.jpg', over: 'https://medvpn.nhi.gov.tw/images/hta/element_1_pass.jpg', out: 'https://medvpn.nhi.gov.tw/images/hta/element_0_pass.jpg' };
+
+        var currentPage = 'imgGen'; //將顯示頁面
+        var oldPage = '';                   //上個顯示頁面
+        /**********************************************全域變數 結束********************************************/
+
+        /**********************************************主程式 開始********************************************/
+        //全域變數
+        var osInfo = detectOS();
+        var OS = osInfo.shortName;
+        var ieInfo = detectIE();
+        var IEVer = ieInfo.ver;
+        var bDNSPass = false;
+        var shell; try {
+            if (confirm) {
+
+            }
+            shell = new ActiveXObject("WScript.Shell");
+
+
+        } catch (e) {
+            //alert('無法建立WScript:' + e);
+            alert('請先參閱本網站上方的「常見問題」，再使用本項「環境檢測與安裝」服務。');
+        }
+        window.onload = function () {
+            //DNS Check
+            var domainName = 'medvpn.nhi.gov.tw';
+            if (chkDomain(domainName, '') == true || chkDomainByAllNS(domainName) == true) {
+                my$('#DNS_Check').html('已可正常連至https://medvpn.nhi.gov.tw');
+                my$('#DNS_Check').css('color', 'blue');
+                bDNSPass = true;
+            }
+            else {
+                my$('#DNS_Check').html('請確認您的DNS設定可連線至服務主機(10.253.249.22)');
+                my$('#DNS_Check').css('color', 'red');
+                bDNSPass = false;
+            }
+
+            my$('#tip_1').attr('src', 'https://medvpn.nhi.gov.tw/images/hta/pass_small.gif');
+            my$('#tip_2').attr('src', 'https://medvpn.nhi.gov.tw/images/hta/error_small.gif');
+
+
+            detectAndRender();
+
+            my$('#tbGeneral').hide();
+            my$('#tbIE').hide();
+            my$('#tbCom').hide();
+            showPage();
+
+            //event bind
+            my$('#btnModify_IE').myclick(function () {
+                ChangeNow();
+                detectAndRender();
+            });
+
+            my$('#btnModify_SC').myclick(function () {
+                ChangeNow_SC();
+                setTimeout(function () {
+                    //設定完延遲偵測
+                    ChangeNow_SC_Delay();
+                    detectAndRender();
+                }, 2000);
+            });
+
+
+        };
+
+        //偵測所有項目並變更頁籤狀態
+        function detectAndRender() {
+            //偵測所有項目
+            var isSCPass = detectSmartCard();
+            isSCPass = true; //第二階段之後拿掉
+            detectBrowser();
+            detectIDCHC();
+
+            //設定按鈕
+            if (isSCPass == true) { my$('#btnModify_SC').hide(); }
+            if (allPassRel['imgIE'] == 'pass') { my$('#btnModify_IE').hide(); }
+
+            //依目前狀態設定頁籤圖片
+            my$('#imgGen').attr('src', imgRel['imgGen'][allPassRel['imgGen']].out);
+            my$('#imgIE').attr('src', imgRel['imgIE'][allPassRel['imgIE']].out);
+            // my$('#imgCom').attr('src', imgRel['imgCom'][allPassRel['imgCom']].out);//第二階段 再將註解取消
+        }
+
+        //基本及智慧卡檢測
+        function detectSmartCard() {
+            var isOSPass = true;    //OS與IE版本檢測
+            var isSCPass = true;
+            //寫入os ie版本資料
+            var tmpXP = chkXPSP();
+            isOSPass = tmpXP.chk;
+            my$('#OS_Version').html(osInfo.longName + tmpXP.msg);
+            //my$('#OS_Version').css('color', 'blue');
+            if (ieInfo.isIE == true) {
+                var tmpIEBits = GetIEVerByArg(); //{32:32bits,64:64bits,X:非IE,null:無參數}
+                switch (tmpIEBits) {
+                    case '32':
+                        tmpIEBits = '32-Bits'
+                        break;
+                    case '64':
+                        tmpIEBits = '64-Bits'
+                        break;
+                    case 'X':
+                    case 'null':
+                    default:
+                        tmpIEBits = ieInfo.bits
+                }
+                var tmpMainVer = ieInfo.ver.toString().substring(0, ieInfo.ver.indexOf('.')); //擷取IE主要版本
+                var tmpSuggest1 = '';
+                var tmpSuggest2 = '';
+                var htmlVer = ieInfo.ver.toString();
+                if (tmpMainVer == '6' || tmpMainVer == '7') {
+                    htmlVer = "<font color = 'red'>" + ieInfo.ver + '</font>';
+                    tmpSuggest2 = '<p><font color="red">您目前使用的瀏覽器為 IE: ' + tmpMainVer + ' ，請更新至IE8.0以上之版本。</font>';
+                    isOSPass = (isOSPass && false);
+                }
+                if (tmpIEBits == '64-Bits') {
+                    tmpSuggest1 = '<font color="red">(建議使用32-Bits)</font>';
+                    isOSPass = (isOSPass && false);
+                }
+                my$('#IE_Version').html('<font color="blue">版本：' + htmlVer + '(' + tmpIEBits + ')' + '更新版本：' + ieInfo.updVer + "</font>" + tmpSuggest2 + tmpSuggest1);
+                //my$('#IE_Version').css('color', 'blue');
+
+            } else {
+                my$('#IE_Version').html('您的瀏覽器為非IE版本');
+                my$('#IE_Version').css('color', 'red');
+                isOSPass = (isOSPass && false);
+            }
+
+            var smDetectItem = new Array();  //Smart Card檢測項目
+            //設定檢測項目
+            //ieDetectItem.push(new detectItem('ID', '名稱', Exception Code,  Correct Code, Detection Function,  Translation Function));
+            smDetectItem.push(new detectItem('SCardSvrStart', ' Smart Card(智慧卡)服務－啟動類型', 3, 0, SmartCard_SvrStart, Return_Value2Text_SvrStart));
+            smDetectItem.push(new detectItem('SCardSvrStatus', ' Smart Card(智慧卡)服務－目前狀態', 3, 0, SmartCard_SvrStatus, Return_Value2Text_SvrStatus));
+
+
+            for (var i = 0; i < smDetectItem.length; i++) {
+                my$('#' + smDetectItem[i].id).text(
+                smDetectItem[i].detectResult.text//偵測結果訊息
+                //+ "(" + smDetectItem[i].detectResult.code + ")"//偵測結果代碼 
+                );
+                my$('#' + smDetectItem[i].id).css('color', smDetectItem[i].detectResult.status);
+                if (smDetectItem[i].detectResult.status != 'blue') { isSCPass = (isSCPass && false); } //檢查是否有error
+            }
+
+            //if ((isOSPass == true) && (isSCPass == true)) allPassRel['imgGen'] = 'pass';第二階段後加回
+            if ((isOSPass == true) && (bDNSPass == true)) allPassRel['imgGen'] = 'pass'; //第二階段後刪除
+            return isSCPass;
+        }
+
+        //瀏覽器設定檢測
+        function detectBrowser() {
+            var ieDetectItem = new Array();  //檢測項目
+            //設定檢測項目
+            //ieDetectItem.push(new detectItem('ID', '名稱', Exception Code,  Correct Code, Detection Function,  Translation Function));
+            ieDetectItem.push(new detectItem('Set_Trust_Item1', '下載簽名的ActiveX控制項', 3, 0, Set_Trust_Item1, Return_Value2Text));
+            ieDetectItem.push(new detectItem('Set_Trust_Item2', '下載未簽署的ActiveX控制項', 3, 0, Set_Trust_Item2, Return_Value2Text));
+            ieDetectItem.push(new detectItem('Set_Trust_Item3', '自動提示ActiveX控制項', 3, 0, Set_Trust_Item3, Return_Value2Text));
+            ieDetectItem.push(new detectItem('Set_Trust_Item4', '起始不標示為安全的ActiveX控制項', 3, 0, Set_Trust_Item4, Return_Value2Text));
+            ieDetectItem.push(new detectItem('Set_Trust_Item5', '執行ActiveX控制項與插件', 3, 0, Set_Trust_Item5, Return_Value2Text));
+            ieDetectItem.push(new detectItem('Set_Trust_Item6', '標示為安全的ActiveX控制項', 3, 0, Set_Trust_Item6, Return_Value2Text));
+            ieDetectItem.push(new detectItem('Set_Trust_Item7', '指令碼處理-Active Scripting', 3, 0, Set_Trust_Item7, Return_Value2Text));
+            ieDetectItem.push(new detectItem('Set_Trust_Item8', '指令碼處理-Java Applets的指令碼化', 3, 0, Set_Trust_Item8, Return_Value2Text));
+            ieDetectItem.push(new detectItem('Set_Trust_Item9', '允許網頁使用受限制的通訊協定於主動式內容', 3, 0, Set_Trust_Item9, Return_Value2Text));
+            ieDetectItem.push(new detectItem('Set_Trust_Item10', '使用快顯封鎖程式', 3, 3, Set_Trust_Item10, Return_Value2Text));
+            ieDetectItem.push(new detectItem('Set_Item11', '隱私權-開啟快顯封鎖程式', 3, null, Set_Item11, Return_Value2Text_Item11));
+            ieDetectItem.push(new detectItem('Set_Trust_Item17', '僅允許認可的網域使用ActiveX而不提示', '', 0, Set_Trust_Item17, Return_Value2Text_AllowDomain));
+            ieDetectItem.push(new detectItem('Set_Item15', '加入信任網站', 3, 0, Set_Item15, Return_Value2Text_Site));
+            ieDetectItem.push(new detectItem('Set_Item16', '啟用記憶體保護以協助避免網路攻擊', 3, 0, Set_Item16, Return_Value2Text_Item16));
+            ieDetectItem.push(new detectItem('Set_Trust_Item19', '二進位和指令碼行為', 3, 0, Set_Trust_Item19, Return_Value2Text));
+            ieDetectItem.push(new detectItem('Set_Trust_Item20', '允許不提示就執行從未使用過的ActiveX', 3, 0, Set_Trust_Item20, Return_Value2Text));
+            ieDetectItem.push(new detectItem('Set_Trust_Item21', '允許程式碼片段', 3, 0, Set_Trust_Item21, Return_Value2Text));
+            //ieDetectItem.push(new detectItem('Set_Item22', '在相容性檢視下顯示所有網站', '', null, Set_Item22, Return_Value2Text_BrowserEmulation));
+            ieDetectItem.push(new detectItem('Set_Trust_Item23', '啟用受保護模式 ', '', null, Set_Trust_Item23, Return_Value2Text_Protection));
+            ieDetectItem.push(new detectItem('Set_Item24', '檢查儲存的畫面是否有較新的版本  ', '', null, Set_Item24, Return_Value2Text_ChkNewVer));
+            ieDetectItem.push(new detectItem('Set_Item25', '加入我的最愛網站', 3, 0, Set_Item25, Return_Value2Text_Site));
+            ieDetectItem.push(new detectItem('Set_Item26', '加入Proxy伺服器例外名單', 3, 0, Set_Item26, Return_Value2Text_Item26));
+            ieDetectItem.push(new detectItem('Set_SSL', '檢查伺服器憑證撤銷(須重啟IE或重新開機)', 3, 0, Set_SSL, Return_Value2Text_SSL)); //2018.02.26 加入憑證撤銷檢查
+
+            //依檢測結果逐一寫入網頁
+            var isAllPass = true;
+            for (var i = 0; i < ieDetectItem.length; i++) {
+                my$('#' + ieDetectItem[i].id).text(
+                ieDetectItem[i].detectResult.text//偵測結果訊息
+                //+ "(" + ieDetectItem[i].detectResult.code + ")"//偵測結果代碼 
+                );
+                my$('#' + ieDetectItem[i].id).css('color', ieDetectItem[i].detectResult.status); //顯示偵測內容
+
+                if (ieDetectItem[i].detectResult.status != 'blue') { isAllPass = isAllPass && false } //檢查是否有error
+
+                //特例設定
+                if (ieDetectItem[i].id == 'Set_Item26') {//proxy 的建議值依是否有勾選決定，若無勾選則無建議值，否則建議為「加入」
+                    if (ieDetectItem[i].detectResult.text == '--') { //若Proxy設定無勾選(先偵測再反推建議值)
+                        my$('#Set_Item26_suggest').text('--');
+                    }
+                    else {
+                        my$('#Set_Item26_suggest').text('加入');
+                    }
+                }
+            }
+            if (isAllPass == true) allPassRel['imgIE'] = 'pass';
+
+        }
+
+        //憑證元件安裝檢測
+        function detectIDCHC() {
+            var smDetectItem = new Array();  //憑證元件檢測項目
+            //設定檢測項目
+            //ieDetectItem.push(new detectItem('ID', '名稱', Exception Code,  Correct Code, Detection Function,  Translation Function));
+            smDetectItem.push(new detectItem('OBJ_Item1', 'HC憑證元件 ', 3, 'Y', HCController, Return_Value2Text_OBJ));
+            smDetectItem.push(new detectItem('OBJ_Item2', 'IDC憑證元件 ', 3, 'Y', IDCController, Return_Value2Text_OBJ));
+
+            var isAllPass = true;
+            for (var i = 0; i < smDetectItem.length; i++) {
+                my$('#' + smDetectItem[i].id).text(
+                smDetectItem[i].detectResult.text                           //偵測結果訊息
+                //+ "(" + ieDetectItem[i].detectResult.code + ")"    //偵測結果代碼 
+                );
+                my$('#' + smDetectItem[i].id).css('color', smDetectItem[i].detectResult.status);
+
+                if (smDetectItem[i].detectResult.status != 'blue') { isAllPass = (isAllPass && false); } //檢查是否有error
+            }
+            if (isAllPass == true) allPassRel['imgCom'] = 'pass';
+        }
+
+        /**********************************************主程式 結束********************************************/
+
+        /**********************************************頁面程式相關函式 開始********************************************/
+        //點擊分頁籤
+        function imgClick(img) {
+            if (currentPage == img.id.toString()) return;
+            oldPage = currentPage;
+            currentPage = img.id;
+            showPage();
+        }
+
+        function imgOver(img) {
+            if (img.src == imgRel[img.id][allPassRel[img.id]].over) return false;
+            img.src = imgRel[img.id][allPassRel[img.id]].over;
+            imgClick(img);
+        };
+
+        function imgOut(img) {
+            if (img.src == imgRel[img.id][allPassRel[img.id]].over) return false;
+            img.src = imgRel[img.id][allPassRel[img.id]].out;
+
+            //cp_code=12:瞬發效果;cp_code = 3:延遲效果;
+            my$('#' + currentPage).attr('src', imgRel[currentPage][allPassRel[currentPage]].over); //目前頁籤反灰 cp_code:1 
+            //$('#' + oldPage).attr('src', imgRel[oldPage][allPassRel[oldPage]].out); //上個頁籤復原 cp_code:2
+        }
+
+        function myMsg(msg) {
+            my$('#msg').html(my$('#msg').html() + msg + '<br />');
+        }
+
+        //顯示目前頁面，並隱藏其它頁面
+        function showPage() {
+            my$('#' + pageRel[currentPage]).show();
+            if ('' != oldPage) { my$('#' + pageRel[oldPage]).hide(); }
+            my$('#' + currentPage).attr('src', imgRel[currentPage][allPassRel[currentPage]].over); //目前頁籤反灰 cp_code:4
+            if (oldPage != '') {
+                my$('#' + oldPage).attr('src', imgRel[oldPage][allPassRel[oldPage]].out); //上個頁籤復原 cp_code:8
+            }
+        }
+        /**********************************************頁面程式相關函式 結束********************************************
+
+        /**********************************************類別 開始********************************************/
+        //偵測項目類別
+        function detectItem(strId, strName, strExcepCode, strSuccessCode, funDetect, funTranCode) {
+            //一般設定
+            this.id = strId;                //設定檢測項目ID
+            this.name = strName;    //設定檢測項目名稱
+            this.detectFunc = funDetect;    //設定檢測函式，檢測函式回傳檢測結果代碼
+            this.tranCodeFunc = funTranCode;   //設定代碼轉換函式，代碼轉換函式將以detectFunc()與succcessCode為參考傳回檢測結果。
+            this.detect = function () { this.detectResult = this.tranCodeFunc(this); }
+
+            //定義檢測函式回傳代碼
+            this.excepCode = strExcepCode;          //檢測項目例外代碼
+            this.succcessCode = strSuccessCode; //檢測項目通過代碼，tranCodeFunc()用來判斷是否pass
+            this.detectResult = null; //tranCodeFunc()結果
+
+            //物件初始順便偵測
+            this.detect();
+        }
+        /**********************************************類別 結束********************************************/
+
+        /**********************************************偵測代碼轉文字 開始********************************************/
+        /*以下Return_Value2Text 函式有一樣的界面：
+        傳入detectItem物件。
+        傳出取得該物件檢測結果之文字顯示與狀態。
+        */
+
+        //測試結果代碼轉換  「隱私權-開啟快顯封鎖程式」
+        function Return_Value2Text_Item11(theItem) {
+            var theID; try { theID = theItem.detectFunc(); } catch (e) { alert(e); }
+            if (theID == 'yes') {
+                return { code: theID, text: '啟用', status: 'red' };
+            }
+            else {
+                return { code: theID, text: '停用', status: 'blue' };
+            }
+        }
+
+        //測試結果代碼轉換  「加入信任網站」
+        function Return_Value2Text_Site(theItem) {
+            var theID; try { theID = theItem.detectFunc(); } catch (e) { alert(e); }
+            if (theID == "2") {
+                return { code: theID, text: '加入', status: 'blue' };
+            } else {
+                return { code: theID, text: '未加入', status: 'red' };
+            }
+        }
+
+        //測試結果代碼轉換  「啟用記憶體保護以協助避免網路攻擊」
+        function Return_Value2Text_Item16(theItem) {
+            var theID; try { theID = theItem.detectFunc(); } catch (e) { alert(e); }
+            //顯示『啟用記憶體保護以協助避免網路攻擊』偵測結果，若是IE6 or IE7，只顯示『-』
+            if ((IEVer.indexOf("8.") >= 0) || (OS == "Vista") || (OS == "Win7") || (OS == "Win8")) {
+                if (theID == "Y") {
+                    return { code: theID, text: '有打勾', status: 'red' };
+                } else {
+                    return { code: theID, text: '無打勾', status: 'blue' };
+                }
+            } else { return { code: theID, text: '-', status: 'blue' }; }
+        }
+
+        //測試結果代碼轉換  「僅允許認可的網域使用ActiveX而不提示」
+        function Return_Value2Text_AllowDomain(theItem) {
+            //使用的，不管IE版本，都偵測此項，若偵測不到就顯示『-』
+            var theID, expID;
+            try { theID = theItem.detectFunc(); } catch (e) { alert(e); }
+            expID = theItem.succcessCode;
+
+            var colorS = "";
+            if (theID == expID) {
+                colorS = "blue";
+            } else {
+                colorS = "red";
+            }
+
+            if (theID == "0") {
+                return { code: theID, text: '停用', status: colorS };
+            } else if (theID == "3") {
+                return { code: theID, text: '啟用', status: colorS };
+            } else {
+                return { code: theID, text: '', status: 'blue' };
+            }
+        }
+
+        //測試結果代碼轉換  通用項目
+        function Return_Value2Text(theItem) {
+            var theID, expID;
+            try { theID = theItem.detectFunc(); } catch (e) { alert(e); }
+            expID = theItem.succcessCode;
+
+            var colorS = "";
+            var rtnText = '';
+            if (theID == expID) {
+                colorS = "blue";
+            } else {
+                colorS = "red";
+            }
+
+            if (theID == "0") {
+                if (colorS == "") {
+                    colorS = "blue";
+                }
+                rtnText = '啟用';
+            } else if (theID == "1") {
+                if (colorS == "") {
+                    colorS = "green";
+                }
+                rtnText = '提示';
+            } else if (theID == "3") {
+                if (colorS == "") {
+                    colorS = "red";
+                }
+                rtnText = '停用';
+            } else if (theID == "65536") {
+                if (colorS == "") {
+                    colorS = "green";
+                }
+                rtnText = '系統管理員已批准';
+            }
+            return { code: theID, text: rtnText, status: colorS };
+        }
+
+        //測試結果代碼轉換  「在相容性檢視下顯示所有網站 」
+        function Return_Value2Text_BrowserEmulation(theItem) {
+            var theID; try { theID = theItem.detectFunc(); } catch (e) { alert(e); }
+
+            if (theID == "1") {
+                return { code: theID, text: '有打勾', status: 'blue' };
+            } else if (theID == "0") {
+                return { code: theID, text: '無打勾', status: 'red' };
+
+            } else {
+                return { code: theID, text: '未定義', status: 'red' };
+            }
+        }
+
+        //測試結果代碼轉換  「項目：啟用受保護模式」
+        function Return_Value2Text_Protection(theItem) {
+            var theID; try { theID = theItem.detectFunc(); } catch (e) { alert(e); }
+
+            if (theID == "0") {
+                return { code: theID, text: '有打勾', status: 'red' };
+            } else if (theID == "3") {
+                return { code: theID, text: '無打勾', status: 'blue' };
+            } else if (theID == "") {
+                return { code: theID, text: '無此設定', status: 'green' };
+            }
+        }
+
+        //測試結果代碼轉換  「項目：檢查儲存的畫面是否有較新的版本」
+        function Return_Value2Text_ChkNewVer(theItem) {
+            var theID; try { theID = theItem.detectFunc(); } catch (e) { alert(e); }
+            if (theID == "3") {
+                return { code: theID, text: '每次造訪網頁時', status: 'blue' };
+            } else if (theID == "2") {
+                return { code: theID, text: '每次啟動Internet Explorer時', status: 'red' };
+            } else if (theID == "4") {
+                return { code: theID, text: '自動', status: 'red' };
+            } else if (theID == "0") {
+                return { code: theID, text: '無', status: 'red' };
+            } else {
+                return { code: theID, text: '未定義', status: 'red' };
+            }
+        }
+
+        //加入Proxy伺服器例外名單
+        function Return_Value2Text_Item26(theItem) {
+            var theID; try { theID = theItem.detectFunc(); } catch (e) { alert(e); }
+            if (theID.chk == "Y") {
+                if (theID.has == "Y") {
+                    return { code: theID, text: '加入', status: 'blue' };
+                } else {
+                    return { code: theID, text: '未加入', status: 'red' };
+                }
+            } else { return { code: theID, text: '--', status: 'blue' }; }
+        }
+
+        //測試結果代碼轉換 SmartCard_Status
+        function Return_Value2Text_SvrStatus(theItem) {
+            var theID; try { theID = theItem.detectFunc(); } catch (e) { alert(e); }
+            switch (theID) {
+                case '':
+                    return { code: theID, text: '無法偵測', status: 'red' };
+                case "Running":
+                    return { code: theID, text: '已啟動', status: 'blue' };
+                default:
+                    return { code: theID, text: '停用', status: 'red' };
+            }
+        }
+
+        //測試結果代碼轉換 SmartCard_Start
+        function Return_Value2Text_SvrStart(theItem) {
+            var theID; try { theID = theItem.detectFunc(); } catch (e) { alert(e); }
+            //顯示啟動類型
+            switch (theID) {
+                case '':
+                    return { code: theID, text: '無法偵測', status: 'red' };
+                case "Auto":
+                    return { code: theID, text: '自動', status: 'blue' };
+                case "Manual":
+                    return { code: theID, text: '手動', status: 'red' };
+                case "Disabled":
+                    return { code: theID, text: '停用', status: 'red' };
+                default:
+                    return { code: theID, text: SCardSvrStart, status: 'red' };
+            }
+        }
+
+        function Return_Value2Text_OBJ(theItem) {
+            var theID; try { theID = theItem.detectFunc(); } catch (e) { alert(e); }
+            //顯示啟動類型
+            switch (theID) {
+                case 'Y':
+                    return { code: theID, text: '已安裝', status: 'blue' };
+                default:
+                    return { code: theID, text: '未安裝(請參考以下操作說明)', status: 'red' };
+            }
+        }
+
+        //2018.02.26 加入憑證撤銷檢核
+        function Return_Value2Text_SSL(theItem) {
+            var theID; try { theID = theItem.detectFunc(); } catch (e) { alert(e); }
+
+            if (theID == "Y") {
+                return { code: theID, text: '未打勾', status: 'blue' };
+            } else if (theID == "N") {
+                return { code: theID, text: '有打勾', status: 'red' };
+
+            } else {
+                return { code: theID, text: '-', status: 'red' };
+            }
+        }
+
+        /**********************************************偵測代碼轉文字 結束********************************************/
+
+        /**********************************************共用函式 開始********************************************/
+        //偵測作業系統，並傳回名稱。失敗傳回patter = null且名稱設為「無法偵測」
+        function detectOS() {
+            var OSPattern = navigator.appVersion;
+            var OSRel = new Array();
+            OSRel.push({ pattern: 'Win 9x 4', shortName: 'ME', longName: 'Microsoft Windows ME' });
+            OSRel.push({ pattern: '95', shortName: '95', longName: 'Microsoft Windows 95' });
+            OSRel.push({ pattern: '98', shortName: '98', longName: 'Microsoft Windows 98' });
+            OSRel.push({ pattern: 'NT 5.0', shortName: '2000', longName: 'Microsoft Windows 2000' });
+            OSRel.push({ pattern: 'NT 5.1', shortName: 'XP', longName: '"Microsoft Windows XP' });
+            OSRel.push({ pattern: 'NT 5.2', shortName: '2003', longName: 'Microsoft Windows 2003' });
+            OSRel.push({ pattern: 'NT 6.0', shortName: 'Vista', longName: 'Microsoft Windows Vista' });
+            OSRel.push({ pattern: 'NT 6.1', shortName: 'Win7', longName: 'Microsoft Windows 7' });
+            OSRel.push({ pattern: 'NT 6.2', shortName: 'Win8', longName: 'Microsoft Windows 8' });
+            OSRel.push({ pattern: 'NT 6.3', shortName: 'Win8.1', longName: 'Microsoft Windows 8.1' });
+			OSRel.push({ pattern: 'NT 10.0', shortName: 'Win10', longName: 'Microsoft Windows 10' });
+
+            for (var i = 0; i < OSRel.length; i++) {
+                if (OSPattern.indexOf(OSRel[i].pattern) > 0) {
+                    if (OSRel[i].shortName != 'Win8') {
+                        return OSRel[i];
+                    }
+                    else {
+                        //win8重新由Register查詢，以確認是否真為Win8。
+                        var _OSVer = '';
+                        try {
+                            var shell = new ActiveXObject("WScript.Shell");
+                            _OSVer = shell.RegRead("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\CurrentVersion");
+                        } catch (failed) {
+                            return { pattern: null, shortName: '偵測失敗', longName: '偵測失敗' };
+                        }
+                        if (_OSVer == '6.2')
+                            return { pattern: 'NT 6.2', shortName: 'Win8', longName: 'Microsoft Windows 8' };
+                        else
+                            return { pattern: '10.0', shortName: 'Win10', longName: 'Microsoft Windows 10' };
+                    }
+                }
+            }
+            return { pattern: null, shortName: '無法偵測', longName: '無法偵測' };
+        }
+
+        //應該用不到
+        function detectIEVer() {
+            var useragent = navigator.userAgent;
+            var bName = (useragent.indexOf('Opera') > -1) ? 'Opera' : navigator.appName;
+            var pos = useragent.indexOf('MSIE');
+            if (pos > -1) {
+                bVer = useragent.substring(pos + 5);
+                pos = bVer.indexOf(';');
+                bVer = bVer.substring(0, pos);
+            }
+            pos = useragent.indexOf('Opera');
+            if (pos > -1) {
+                bVer = useragent.substring(pos + 6);
+                pos = bVer.indexOf(' ');
+                bVer = bVer.substring(0, pos);
+            }
+            if (bName == "Netscape") {
+                bVer = useragent.substring(8);
+                pos = bVer.indexOf(' ');
+                bVer = bVer.substring(0, pos);
+            }
+            if (bName == "Netscape" && parseInt(navigator.appVersion) >= 5) {
+                pos = useragent.lastIndexOf('/');
+                bVer = useragent.substring(pos + 1);
+            }
+            pos = navigator.appVersion.lastIndexOf(';');
+        }
+
+        function detectIE_2() {
+            var ua = navigator.userAgent;
+            if (ua.toLowerCase().indexOf("msie") > 0) {
+                var re = new RegExp("MSIE ([0-9]{1,}[\.0-9]{0,})");
+
+                if (re.exec(ua) != null) {
+                    return true;
+                    //document.getElementById("BrowserVersion").innerHTML = "IE " + parseFloat(RegExp.$1);
+                }
+                else {
+                    return false;
+                    //document.getElementById("BrowserVersion").innerHTML = "非微軟瀏覽器";
+                }
+            }
+            else if (navigator.appName == "Netscape") {
+                var re = new RegExp("Trident/.*rv:([0-9]{1,}[\.0-9]{0,})");
+                if (re.exec(ua) != null) {
+                    return true;
+                    //document.getElementById("BrowserVersion").innerHTML = "IE " + parseFloat(RegExp.$1);
+                }
+                else {
+                    return false;
+                    //document.getElementById("BrowserVersion").innerHTML = "非微軟瀏覽器";
+                }
+            }
+            else {
+                return false;
+                //document.getElementById("BrowserVersion").innerHTML = "非微軟瀏覽器";
+            }
+        }
+        //偵測IE版本
+        function detectIE() {
+            var svcUdVer = "";
+            var ieVer = "";
+            var shellIE;
+            try { shellIE = new ActiveXObject("WScript.Shell"); }
+            catch (e) { return { isIE: detectIE_2(), ver: ieVer, updVer: svcUdVer, bits: null} }; //非IE
+
+            //取得IE版本
+            try {
+                ieVer = shellIE.RegRead("HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Internet Explorer\\svcVersion");
+            } catch (failed) {
+                try {
+                    ieVer = shellIE.RegRead("HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Internet Explorer\\Version");
+                } catch (failed) {
+                    ieVer = "0.0";
+                }
+            }
+            try {
+                svcUdVer = shellIE.RegRead("HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Internet Explorer\\svcUpdateVersion");
+            } catch (failed) {
+                svcUdVer = "0.0";
+            }
+
+            var vn = "Microsoft Internet Explorer";
+            //if (navigator.appName != vn) {//IE11預設是傳回Netscap
+            if (detectIE_2() == false) {
+                return { isIE: false, ver: ieVer, updVer: svcUdVer, bits: null }; //您的瀏覽器為非IE版本
+            } else {
+                if (navigator.userAgent.indexOf("Win64") > 0) {
+                    return { isIE: true, ver: ieVer, updVer: svcUdVer, bits: '64-Bits' }; //
+                } else {
+                    return { isIE: true, ver: ieVer, updVer: svcUdVer, bits: '32-Bits' }; //
+                }
+            }
+        }
+
+        function detectActiveX(objProgID) {
+            try {
+                var comActiveX = new ActiveXObject(objProgID);
+                return true;
+            } catch (e) {
+                return false;
+            }
+        }
+        /**********************************************共用函式 結束********************************************/
+
+        /**********************************************健保署憑證元件(IE)設定調整項目 Begin********************************************/
+        //下載簽名的ActiveX控制項
+        function Set_Trust_Item1() {
+            try { return shell.RegRead("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\\Zones\\2\\1001"); }
+            catch (failed) { return "3"; }
+        }
+
+        //下載未簽署的ActiveX控制項
+        function Set_Trust_Item2() {
+            try { return shell.RegRead("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\\Zones\\2\\1004"); }
+            catch (failed) { return "3"; }
+        }
+
+        //自動提示ActiveX控制項
+        function Set_Trust_Item3() {
+            try { return shell.RegRead("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\\Zones\\2\\2201"); }
+            catch (failed) { return "3"; }
+        }
+
+        //起始不標示為安全的ActiveX控制項
+        function Set_Trust_Item4() {
+            try { return shell.RegRead("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\\Zones\\2\\1201"); }
+            catch (failed) { return "3"; }
+        }
+
+        //執行ActiveX控制項與插件
+        function Set_Trust_Item5() {
+            try { return shell.RegRead("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\\Zones\\2\\1200"); }
+            catch (failed) { return "3"; }
+        }
+
+        //標示為安全的ActiveX控制項
+        function Set_Trust_Item6() {
+            try { return shell.RegRead("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\\Zones\\2\\1405"); }
+            catch (failed) { return "3"; }
+        }
+
+        //指令碼處理-Active Scripting
+        function Set_Trust_Item7() {
+            try { return shell.RegRead("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\\Zones\\2\\1400"); }
+            catch (failed) { return "3"; }
+        }
+
+        //指令碼處理-Java Applets的指令碼化
+        function Set_Trust_Item8() {
+            try { return shell.RegRead("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\\Zones\\2\\1402"); }
+            catch (failed) { return "3"; }
+        }
+
+        //允許網頁使用受限制的通訊協定於主動式內容
+        function Set_Trust_Item9() {
+            try { return shell.RegRead("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\\Zones\\2\\2300"); }
+            catch (failed) { return "3"; }
+        }
+
+        //使用快顯封鎖程式
+        function Set_Trust_Item10() {
+            try { return shell.RegRead("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\\Zones\\2\\1809"); }
+            catch (failed) { return "3"; }
+        }
+
+        //隱私權-開啟快顯封鎖程式(yes,1:有打勾  no,0:無打勾)
+        function Set_Item11() {
+            try {
+                var setItem11 = shell.RegRead("HKEY_CURRENT_USER\\Software\\Microsoft\\Internet Explorer\\New Windows\\PopupMgr")
+                if (setItem11 == "1") {
+                    return "yes";
+                }
+            } catch (failed) { return "3"; }
+            return setItem11;
+        }
+
+        //僅允許認可的網域使用ActiveX而不提示
+        function Set_Trust_Item17() {
+            try { return shell.RegRead("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\\Zones\\2\\120B"); }
+            catch (failed) { return ""; }
+        }
+
+        //加入信任網站
+        function Set_Item15() {
+            try {
+                //只要有1個未加入，就算是未加入信任網站
+
+                var setItem15_2 = shell.RegRead("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\\ZoneMap\\Domains\\nhi.gov.tw\\https");
+                if (setItem15_2 == "2") {
+                    /*已經加入*/
+                    Trust_Site_Flag = "N";
+                } else { /*未加入*/
+                    //Trust_Site_Flag = "Y"; return setItem15_2;
+                    var setItem15 = shell.RegRead("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\\ZoneMap\\Domains\\nhi.gov.tw\\medvpn\\https");
+                    if (setItem15 == "2") { /*已經加入*/Trust_Site_Flag = "N"; } else { /*未加入*/Trust_Site_Flag = "Y"; return setItem15; }
+                    var setItem15 = shell.RegRead("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\\ZoneMap\\Domains\\nhi.gov.tw\\medcloud\\https");
+                    if (setItem15 == "2") { /*已經加入*/Trust_Site_Flag = "N"; } else { /*未加入*/Trust_Site_Flag = "Y"; return setItem15; }
+                }
+
+                var setItem15 = ContainsTrustIP("10.253.253.243") ? "2" : "10.253.253.243";
+                if (setItem15 == "2") { /*已經加入*/Trust_Site_Flag = "N"; } else { /*未加入*/Trust_Site_Flag = "Y"; return setItem15; }
+                var setItem15 = ContainsTrustIP("10.253.253.245") ? "2" : "10.253.253.245";
+                if (setItem15 == "2") { /*已經加入*/Trust_Site_Flag = "N"; } else { /*未加入*/Trust_Site_Flag = "Y"; return setItem15; }
+
+                //查看IP是否加入
+            } catch (failed) {
+                Trust_Site_Flag = "Y";
+                return "0";
+            }
+            return setItem15;
+        }
+
+        //檢查ip是否在信任網站中
+        function ContainsTrustIP(ip) {
+            try { if (ip == shell.RegRead("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\\ZoneMap\\Ranges\\Range101\\:Range")) return true; } catch (e) { }
+            try { if (ip == shell.RegRead("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\\ZoneMap\\Ranges\\Range103\\:Range")) return true; } catch (e) { }
+            for (i = 1; i <= 50; i = i + 1) {
+                try { if (ip == shell.RegRead("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\\ZoneMap\\Ranges\\Range" + i + "\\:Range")) return true; } catch (e) { }
+            }
+            return false;
+        }
+
+        //啟用記憶體保護以協助避免網路攻擊(Vista機碼位置不同)
+        function Set_Item16() {
+            try {
+                var setItem16;
+                if (OS == "Vista") {
+                    setItem16 = shell.RegRead("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\iexplore.exe\\ExecuteOptions");
+                } else {
+                    setItem16 = shell.RegRead("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Internet Explorer\\Main\\DEPOff");
+                }
+
+                if (setItem16 == "0") {
+                    //此項有打勾
+                    return "Y";
+                } else {
+                    return "N";
+                }
+            } catch (failed) {
+                //如果無此機碼，也是有打勾
+                return "Y";
+            }
+        }
+
+        //二進位和指令碼行為(0:啟用, 3:停用, 65536:系統管理員已批准)
+        function Set_Trust_Item19() {
+            try { return shell.RegRead("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\\Zones\\2\\2000"); }
+            catch (failed) { return ""; }
+        }
+
+        //允許不提示就執行從未使用過的ActiveX(0:啟用, 3:停用)
+        function Set_Trust_Item20() {
+            try { return shell.RegRead("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\\Zones\\2\\1208"); }
+            catch (failed) { return ""; }
+        }
+
+        //允許程式碼片段(0:啟用, 1:提示, 3:停用)
+        function Set_Trust_Item21() {
+            try { return shell.RegRead("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\\Zones\\2\\1209"); }
+            catch (failed) { return ""; }
+        }
+
+        //在相容性檢視下顯示所有網站(1:啟用, 0:停用)
+        function Set_Item22() {
+            try { return shell.RegRead("HKEY_CURRENT_USER\\Software\\Microsoft\\Internet Explorer\\BrowserEmulation\\AllSitesCompatibilityMode"); }
+            catch (failed) { return ""; }
+        }
+
+        //啟用受保護模式(0:有打勾, 3:無打勾)
+        function Set_Trust_Item23() {
+            try { return shell.RegRead("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\\Zones\\2\\2500"); }
+            catch (failed) { return ""; }
+        }
+
+        //檢查儲存的畫面是否有較新的版本
+        function Set_Item24() {
+            try { return shell.RegRead("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\\SyncMode5"); }
+            catch (failed) { return ""; }
+        }
+
+        //加入我的最愛網站
+        function Set_Item25() {
+            try {
+                //讀出我的最愛所在資料夾
+                var setItem25 = shell.RegRead("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders\\Favorites");
+                //掃瞄該目錄下的所有我的最愛link，並讀取檔案中是否包含其我的最愛「健保資訊網(VPN,104年8月)」
+                var fso = new ActiveXObject("Scripting.FileSystemObject");
+                var objFolder = fso.GetFolder(setItem25.replace(/\\/g, '\\\\'));
+                var FileCollection = objFolder.Files;
+                for (var objEnum = new Enumerator(FileCollection); !objEnum.atEnd(); objEnum.moveNext()) {
+                    strFileName = objEnum.item();
+                    if (strFileName == (setItem25 + "\\健保資訊網(VPN,104年8月).url")) {
+                        //已經加入
+                        setItem25 = "2"; Favorites_Site_Flag = "N";
+                        return setItem25;
+                    }
+                }
+                Favorites_Site_Flag = "Y"; /*未加入*/
+            } catch (failed) {
+                Favorites_Site_Flag = "Y"; /*未加入*/
+                return "0";
+            }
+            return setItem25;
+        }
+
+
+        //在已勾選Proxy時，加入排除特定例外
+        function Set_Item26() {
+            var strChk = ''; var strHasValue = '';
+            try {
+                var shell = new ActiveXObject("WScript.Shell");
+                //ProxyEnable 0:未勾選;1:勾選
+                strChk = shell.RegRead("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\\ProxyEnable");
+                if ('1' == strChk) strChk = 'Y'; else strChk = 'N';
+            } catch (failed) {
+                strChk = 'N';
+            }
+
+            try {
+                var shell = new ActiveXObject("WScript.Shell");
+                var setItem26 = shell.RegRead("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\\ProxyOverride");
+                if (setItem26.toString().indexOf('*.nhi.gov.tw') > -1) strHasValue = 'Y'; else strHasValue = 'N';
+            } catch (failed) {
+                strHasValue = 'N';
+            }
+
+            return { chk: strChk, has: strHasValue };
+        }
+        //-----------------------健保署憑證元件(IE)設定調整項目 End
+
+        //取得 SmartCard 目前狀態
+        function SmartCard_SvrStatus() {
+            try {
+                var objWmgtRoot = GetObject("winmgmts:\\\\.\\root\\cimv2");
+                var objWmgtItems = objWmgtRoot.ExecQuery("select * from Win32_Service where Name=\"SCardSvr\"");
+                for (var enumItems = new Enumerator(objWmgtItems); !enumItems.atEnd(); enumItems.moveNext()) {
+                    var s = enumItems.item();
+                    var SCardSvrStatus = s.State;
+                    //var SCardSvrStart = s.StartMode;
+                }
+                return SCardSvrStatus;
+            } catch (failed) {
+                alert(failed);
+                return '';
+            }
+        }
+
+        //取得 SmartCard 啟動類型
+        function SmartCard_SvrStart() {
+            try {
+                var objWmgtRoot = GetObject("winmgmts:\\\\.\\root\\cimv2");
+                var objWmgtItems = objWmgtRoot.ExecQuery("select * from Win32_Service where Name=\"SCardSvr\"");
+                for (var enumItems = new Enumerator(objWmgtItems); !enumItems.atEnd(); enumItems.moveNext()) {
+                    var s = enumItems.item();
+                    //var SCardSvrStatus = s.State;
+                    var SCardSvrStart = s.StartMode;
+                }
+                return SCardSvrStart;
+            } catch (failed) {
+                return '';
+            }
+        }
+
+        //加入憑證撤銷檢核 2018.02.26
+        function Set_SSL() {
+            var rootNode = getRootNode(); //2018.01.29 加入root路徑參數
+            try {
+                var setSSL;
+                var intSSL;
+                setSSL = shell.RegRead(rootNode + "Microsoft\\Windows\\CurrentVersion\\Internet Settings\\CertificateRevocation");
+                intSSL = Number(setSSL)
+                if (intSSL == 0) {
+                    return "Y";
+                } else {
+                    return "N";
+                }
+            }
+            catch (failed) { return ""; }
+        }
+
+        /**********************************************健保署憑證元件(IE)設定調整項目 End********************************************/
+
+        /**********************************************健保署憑證元件 元件安裝項目 Begin********************************************/
+        function HCController() {
+            //HCController
+            if (!detectActiveX("HCReaderController.HCController")) {
+                return 'N';
+            } else {
+                return 'Y';
+            }
+        }
+
+        function IDCController() {
+            //IDCController
+            if (!detectActiveX("IDCReaderController.Controller")) {
+                return 'N';
+            } else {
+                return 'Y';
+            }
+        }
+        /**********************************************健保署憑證元件 元件安裝項目 End********************************************/
+
+        //變更設定，以符合系統環境需求
+        function ChangeNow() {
+            var strMsg = "";
+            var rootNode = getRootNode(); //2018.01.29 加入root路徑參數
+            try {
+                //下載簽名的ActiveX控制項
+                shell.RegWrite("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\\Zones\\2\\1001", 0, "REG_DWORD");
+                //下載未簽署的ActiveX控制項
+                shell.RegWrite("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\\Zones\\2\\1004", 0, "REG_DWORD");
+                //自動提示ActiveX控制項
+                shell.RegWrite("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\\Zones\\2\\2201", 0, "REG_DWORD");
+                //起始不標示為安全的ActiveX控制項
+                shell.RegWrite("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\\Zones\\2\\1201", 0, "REG_DWORD");
+                //執行ActiveX控制項與插件
+                shell.RegWrite("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\\Zones\\2\\1200", 0, "REG_DWORD");
+                //標示為安全的ActiveX控制項
+                shell.RegWrite("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\\Zones\\2\\1405", 0, "REG_DWORD");
+                //指令碼處理-Active Scripting
+                shell.RegWrite("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\\Zones\\2\\1400", 0, "REG_DWORD");
+                //指令碼處理-Java Applets的指令碼化
+                shell.RegWrite("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\\Zones\\2\\1402", 0, "REG_DWORD");
+                //允許網頁使用受限制的通訊協定於主動式內容
+                shell.RegWrite("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\\Zones\\2\\2300", 0, "REG_DWORD");
+                //使用快顯封鎖程式
+                shell.RegWrite("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\\Zones\\2\\1809", 3, "REG_DWORD");
+                //隱私權-快顯封鎖程式 yes,1:有打勾  no,0:無打勾
+                shell.RegWrite("HKEY_CURRENT_USER\\Software\\Microsoft\\Internet Explorer\\New Windows\\PopupMgr", 0, "REG_DWORD");
+                //將「僅允許認可的網域使用ActiveX而不提示」設為『0：停用』(信任網站區域)
+                shell.RegWrite("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\\Zones\\2\\120B", 0, "REG_DWORD");
+                //加入信任網站
+                if (Trust_Site_Flag == "Y") {
+                    //*.nhi.gov.tw
+                    var isAdded = '';//是否已加入*.nhi.gov.tw，2為已加入，否則未加入。
+                    try { isAdded =shell.RegRead("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\\ZoneMap\\Domains\\nhi.gov.tw\\https");}
+                    catch (fail) {/*nothing to do*/}
+                    if ('2' !=isAdded ) shell.RegWrite("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\\ZoneMap\\Domains\\nhi.gov.tw\\https", 2, "REG_DWORD");
+
+                    //medvpn.nhi.gov.tw
+                    //shell.RegWrite("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\\ZoneMap\\Domains\\nhi.gov.tw\\medvpn\\https", 2, "REG_DWORD");
+                    //medcloud.nhi.gov.tw
+                    //shell.RegWrite("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\\ZoneMap\\Domains\\nhi.gov.tw\\medcloud\\https", 2, "REG_DWORD");
+                    //10.253.253.243
+                    if (ContainsTrustIP("10.253.253.243") == false) {
+                        shell.RegWrite("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\\ZoneMap\\Ranges\\Range101\\:Range", "10.253.253.243", "REG_SZ");
+                        shell.RegWrite("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\\ZoneMap\\Ranges\\Range101\\https", 2, "REG_DWORD");
+                    }
+                    //10.253.253.245
+                    if (ContainsTrustIP("10.253.253.245") == false) {
+                        shell.RegWrite("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\\ZoneMap\\Ranges\\Range103\\:Range", "10.253.253.245", "REG_SZ");
+                        shell.RegWrite("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\\ZoneMap\\Ranges\\Range103\\https", 2, "REG_DWORD");
+                    }
+                }
+                //啟用記憶體保護以協助避免網路攻擊(Vista機碼位置不同)
+                try {
+                    if (OS == "Vista") {
+                        shell.RegWrite("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\iexplore.exe\\ExecuteOptions", 1, "REG_DWORD");
+                    } else {
+                        if ((IEVer.indexOf("8.") >= 0) || (OS == "Vista") || (OS == "Win7") || (OS == "Win8")) {
+                            shell.RegWrite("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Internet Explorer\\Main\\DEPOff", 1, "REG_DWORD");
+                        }
+                    }
+                } catch (failed) {
+                    strMsg = strMsg + "權限不足，【14.啟用記憶體保護以協助避免網路攻擊】設定失敗，請改用具有「管理員」權限的帳號登入 Windows 後再行設定！\n\n";
+                }
+                //二進位和指令碼行為(0:啟用, 3:停用, 65536:系統管理員已批准)
+                shell.RegWrite("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\\Zones\\2\\2000", 0, "REG_DWORD");
+                //允許不提示就執行從未使用過的ActiveX(0:啟用, 3:停用)
+                shell.RegWrite("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\\Zones\\2\\1208", 0, "REG_DWORD");
+                //允許程式碼片段(0:啟用, 1:提示, 3:停用)
+                shell.RegWrite("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\\Zones\\2\\1209", 0, "REG_DWORD");
+                //啟用受保護模式(0:開啟, 3:關閉)
+                shell.RegWrite("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\\Zones\\2\\2500", 3, "REG_DWORD");
+                //檢查儲存的畫面是否有較新的版本(3:每次造訪網頁時, 2:每次啟動Internet Explorer時, 4:自動, 0:無)
+                shell.RegWrite("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\\SyncMode5", 3, "REG_DWORD");
+                //加入我的最愛網站
+                if (Favorites_Site_Flag == "Y") {
+                    //medvpn.nhi.gov.tw
+                    //讀出我的最愛所在資料夾
+                    var FolderPath = shell.RegRead("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders\\Favorites");
+                    var FileName = FolderPath.replace(/\\/g, '\\\\') + '\\\\健保資訊網(VPN,104年8月).url';
+                    var fso = new ActiveXObject("Scripting.FileSystemObject");
+                    var s = fso.CreateTextFile(FileName, true);
+                    s.WriteLine("[InternetShortcut]");
+                    s.WriteLine("URL=https://medvpn.nhi.gov.tw/");
+                    s.WriteLine("IDList=");
+                    s.WriteLine("HotKey=0");
+                    s.Close();
+                }
+
+                var proxyIsEnable = shell.RegRead("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\\ProxyEnable");
+                if ('1' == proxyIsEnable) {
+                    var originSetting = ''
+
+                    try {
+                        originSetting = shell.RegRead("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\\ProxyOverride");
+                    } catch (fail) {
+                    }
+                    var local = '';
+                    if (originSetting.indexOf('<local>') == -1) local = '<local>';
+                    shell.RegWrite("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\\ProxyOverride", '*.nhi.gov.tw;' + originSetting + local, "REG_SZ");
+                }
+
+                if (strMsg == "") {
+                    alert("IE瀏覽器設定已變更完成！\n\n請關閉所有的IE瀏覽器視窗後，重新開啟 IE瀏覽器，上述設定才會生效。");
+                } else {
+                    alert(strMsg);
+                }
+
+                //加入檢查憑證撤銷設定檢核(1:無打勾，0:有打勾) 2018.02.26
+                try {
+                    shell.RegWrite("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\\CertificateRevocation", 0, "REG_DWORD");
+                }
+                catch (failed) {
+                    strMsg = strMsg + "檢查憑證撤銷設定失敗，請改用具有「管理員」權限的帳號登入 Windows 後再行設定！\n\n" + failed;
+                }
+
+            } catch (err) {
+                alert("電腦環境設定變更失敗！\n\n" + err);
+            }
+        }
+
+        function ChangeNow_SC() {
+            //智慧卡設定
+            try {
+                shell.run("%comspec% /c sc config ScardSvr start= auto", 0, false);
+                shell.run("net start SCardSvr", 0, false);
+                sleep(4);
+            } catch (e) { };
+
+            //            try {
+            //                var objWmgtRoot = GetObject("winmgmts:\\\\.\\root\\cimv2");
+            //                var objWmgtItems = objWmgtRoot.ExecQuery("select * from Win32_Service where Name=\"SCardSvr\"");
+            //                for (var enumItems = new Enumerator(objWmgtItems); !enumItems.atEnd(); enumItems.moveNext()) {
+            //                    var s = enumItems.item();
+            //                    var ss = s.StartService();
+            //                    var csm = s.ChangeStartMode();
+
+            //                    if (ss != 0 || csm != 0) {
+            //                        alert('StartService:' + ss + "、ChangeStartMode:" + sm + '。');
+            //                    }
+            //                    //alert(s.Name + "\n" + s.Description + "\n" + s.State + '\n' + s.StartMode); 
+            //                }
+
+            //            } catch (failed) {
+            //                alert(failed);
+            //            }
+        }
+
+        function ChangeNow_SC_Delay() {
+            var strMsg = "";
+
+            //智慧卡讀取
+            var objWmgtRoot = GetObject("winmgmts:\\\\.\\root\\cimv2");
+            var objWmgtItems = objWmgtRoot.ExecQuery("select * from Win32_Service where Name=\"SCardSvr\"");
+            for (var enumItems = new Enumerator(objWmgtItems); !enumItems.atEnd(); enumItems.moveNext()) {
+                var s = enumItems.item();
+                var SCardSvrStatus = s.State;
+                var SCardSvrStart = s.StartMode;
+                //alert(s.Name + "\n" + s.Description + "\n" + s.State + '\n' + s.StartMode); 
+            } //目前狀態         
+
+
+            if (SCardSvrStatus != "Running" || SCardSvrStart != "Auto") {
+                strMsg = strMsg + "「Smart Card(智慧卡)服務」設定失敗!\n可能是權限不足，請改用具有「管理員」權限的帳號登入 Windows 後再行設定！"
+            }
+
+            if (strMsg == "") {
+                //alert("智慧卡設定已變更成功！");
+            } else {
+                alert(strMsg);
+            }
+        }
+
+        function clearable() {
+            //var download_url = "https://192.168.108.102/ClearableListData.zip";
+            var download_url = "https://medvpn.nhi.gov.tw/ClearableListData.zip";
+            window.open(download_url);
+        }
+
+        //傳回是否能反解傳入的網域(domain name是否能反查ip)
+        //參數nameServer若為空字串則使用預設NS查詢
+        function chkDomain(domainName, nameServer) {
+            var cmd = "nslookup " + domainName + (nameServer != '' ? ' ' + nameServer : '')
+
+            domainName = domainName.replace(/\./g, '\\.'); //將regex關鍵字代換
+            var pat = domainName + '\\s*Address:\\s*' + '\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}';
+            //var pat = domainName + '(\.\\w+)*' + '\\s*Address:\\s*' + '\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}';
+
+            var matches = parseCmdOut(cmd, pat)
+            if (matches) {
+                //alert(cmd);
+                return true;
+            }
+            return false;
+        }
+
+        //用所有設定的Name Server傳回是否能反解傳入的網域(domain name是否能反查ip)
+        function chkDomainByAllNS(domainName) {
+            var NSs = listNS();
+            for (var i = 0; i < NSs.length; i++) {
+                if (true == chkDomain(domainName, NSs[i])) return true;
+            }
+            return false;
+        }
+
+
+        //列出所有網卡所設定的name server 
+        function listNS() {
+            var matches = parseCmdOut('netsh interface ipv4 show dns', '\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}');
+
+            var rtn = new Array();
+            if (matches && matches.length > 0) {
+                for (var i = 0; i < matches.length; i++) {
+                    rtn[i] = matches[i].toString();
+                }
+            }
+            return rtn;
+        }
+
+        //以re規則取得cmd指令輸出內容
+        function parseCmdOut(cmd, pat) {
+            var objShell = new ActiveXObject("WScript.Shell");
+            //objShell.Popup('執行程式，可能需要數分', 3, "訊息", 64);
+            var objWshScriptExec = objShell.Exec(cmd);
+            var txt = '';
+            while (objWshScriptExec.Status == 0) {
+                do {
+                    txt = txt + objWshScriptExec.StdOut.ReadLine();
+                } while (!objWshScriptExec.StdOut.atEndOfStream);
+                objWshScriptExec.StdOut.ReadAll();
+            }
+            var oRe = new RegExp(pat, 'g');
+            return txt.match(oRe);
+        }
+
+        //XP Check
+        function chkXPSP() {
+            var rtnMsg = '';
+            var rtnChk = false;
+            var _OSVer = '';
+            try { _OSVer = shell.RegRead("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ProductName"); } catch (failed) { }
+            if (_OSVer.indexOf("Windows XP") != -1) {
+                var _SPVer = '';
+                try { _SPVer = shell.RegRead("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\CSDVersion"); } catch (failed) { }
+                if (_SPVer.indexOf('Service Pack 3') != -1) {
+                    rtnChk = true;
+                    rtnMsg = " " + _SPVer; //2015/09/11 jerry MARK
+                    //rtn = '';
+                } else {
+                    if (_SPVer == '') _SPVer = ' Service Pack 1';
+                    rtnChk = false;
+                    rtnMsg = '<font color="red"> 目前' + _SPVer + '，建議升級到Service Pack 3版本以上作業系統' + "</font>";
+                }
+            } else {
+                rtnChk = true;
+                rtnMsg = ''; //非WindowsXP略過偵測
+            }
+            return { chk: rtnChk, msg: rtnMsg };
+        }
+
+        //取得機碼路徑 2018.01.29
+        function getRootNode() {
+            try {
+                shell.RegRead(rootNode + "Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\\ZoneMap\\Domains\\nhi.gov.tw\\https");
+            }
+            catch (e) {
+                is64Bit = false;
+            }
+
+            return (is64Bit) ? "HKEY_CURRENT_USER\\Software\\Wow6432Node\\" : "HKEY_CURRENT_USER\\Software\\";
+
+        }
+
+    </script>
+    </form>
+    <div id="fancybox-tmp">
+    </div>
+    <div id="fancybox-loading">
+        <div>
+        </div>
+    </div>
+    <div id="fancybox-overlay">
+    </div>
+    <div id="fancybox-wrap">
+        <div id="fancybox-outer">
+            <div class="fancybox-bg" id="fancybox-bg-n">
+            </div>
+            <div class="fancybox-bg" id="fancybox-bg-ne">
+            </div>
+            <div class="fancybox-bg" id="fancybox-bg-e">
+            </div>
+            <div class="fancybox-bg" id="fancybox-bg-se">
+            </div>
+            <div class="fancybox-bg" id="fancybox-bg-s">
+            </div>
+            <div class="fancybox-bg" id="fancybox-bg-sw">
+            </div>
+            <div class="fancybox-bg" id="fancybox-bg-w">
+            </div>
+            <div class="fancybox-bg" id="fancybox-bg-nw">
+            </div>
+            <div id="fancybox-content">
+            </div>
+            <a id="fancybox-close"></a>
+            <div id="fancybox-title">
+            </div>
+            <a href="javascript:;" id="fancybox-left"><span class="fancy-ico" id="fancybox-left-ico">
+            </span></a><a href="javascript:;" id="fancybox-right"><span class="fancy-ico" id="fancybox-right-ico">
+            </span></a>
+        </div>
+    </div>
+</body>
+</html>

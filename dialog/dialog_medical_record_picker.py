@@ -48,7 +48,7 @@ class DialogMedicalRecordPicker(QtWidgets.QDialog):
 
     def _set_table_width(self):
         # width = [80, 80, 40, 120, 120, 80, 120, 120, 500]
-        # self.table_widget_medical_record.set_table_heading_width(width)
+        # database.table_widget_medical_record.set_table_heading_width(width)
         self.table_widget_medical_record.set_column_hidden([0, 1])
 
     def _read_medical_records(self):

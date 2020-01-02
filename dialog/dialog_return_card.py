@@ -33,6 +33,7 @@ class DialogReturnCard(QtWidgets.QDialog):
         self.patient_key = args[4]
         self.ui = None
         self.ic_card = None
+        self.doctor_done = False
 
         self._set_ui()
         self._set_signal()
@@ -70,7 +71,7 @@ class DialogReturnCard(QtWidgets.QDialog):
         sql = '''
             SELECT 
                 deposit.*, 
-                cases.Card, cases.Continuance, cases.Share, cases.DiagShareFee,
+                cases.Card, cases.Continuance, cases.Share, cases.DiagShareFee, cases.DoctorDone,
                 patient.Birthday, patient.ID, patient.CardNo, patient.InsType
             FROM deposit 
                 LEFT JOIN cases ON cases.CaseKey = deposit.CaseKey
@@ -86,6 +87,9 @@ class DialogReturnCard(QtWidgets.QDialog):
 
         if patient_share == '健保':
             patient_share = '基層醫療'
+
+        if string_utils.xstr(row['DoctorDone']) == 'True':
+            self.doctor_done = True
 
         self.ui.lineEdit_patient_key.setText(string_utils.xstr(patient_key))
         self.ui.lineEdit_name.setText(string_utils.xstr(row['Name']))
@@ -139,6 +143,9 @@ class DialogReturnCard(QtWidgets.QDialog):
             self.update_cases_by_manual_card(card)
             self.update_wait_by_manual_card(card)
         else:
+            if card_no == '':
+                self._write_patient()
+
             ic_card = self._write_ic_card(cshis_utils.RETURN_CARD)
             if ic_card is None:
                 return
@@ -147,11 +154,10 @@ class DialogReturnCard(QtWidgets.QDialog):
                 card = None
 
             self.update_cases_by_ic_card(ic_card, card)
-            ic_card.write_ic_medical_record(self.case_key, cshis_utils.RETURN_CARD)
             self.update_wait_by_ic_card(ic_card, card)
 
-            if card_no == '':
-                self._write_patient()
+            if self.doctor_done:
+                ic_card.write_ic_medical_record(self.case_key, cshis_utils.RETURN_CARD)
 
         self.update_return_card()
         self.update_medical_record()

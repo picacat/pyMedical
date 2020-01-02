@@ -152,6 +152,10 @@ class MedicalRecord(QtWidgets.QMainWindow):
         self._set_hosts()
 
         if self.patient_key is None:
+            self.ui.action_patient.setEnabled(False)
+            self.ui.action_past_history.setEnabled(False)
+            self.ui.action_open_hosts.setEnabled(False)
+            self.ui.action_append_self_medical_record.setEnabled(False)
             return
 
         self.tab_family = medical_record_family.MedicalRecordFamily(
@@ -163,6 +167,10 @@ class MedicalRecord(QtWidgets.QMainWindow):
         self.ui.tabWidget_medical.addTab(self.tab_examination, '檢驗報告')
 
         self._set_event_filter()
+
+        doctor = self.medical_record['Doctor']
+        if doctor is not None:
+            self.ui.groupBox_diagnostic.setTitle('診斷  (主治醫師: {0})'.format(doctor))
 
     def _set_event_filter(self):
         self.ui.textEdit_symptom.installEventFilter(self)
@@ -273,32 +281,6 @@ class MedicalRecord(QtWidgets.QMainWindow):
 
         dialog.exec_()
         dialog.deleteLater()
-
-    def _set_hosts_menu_items(self):
-        sql = '''
-            SELECT * FROM hosts
-            ORDER BY HostsKey
-        '''
-        rows = self.database.select_record(sql)
-
-        menu_item = []
-        for row_no, row in zip(range(len(rows)), rows):
-            clinic_name = string_utils.xstr(row['ClinicName'])
-            menu_item.append(QAction(
-                QtGui.QIcon('./icons/network-server.png'),
-                clinic_name, self
-            ))
-            menu_item[row_no].setStatusTip('開啟分院的病歷資料')
-            menu_item[row_no].triggered.connect(self._open_hosts_medical_records)
-            self.ui.menu_hosts.addAction(menu_item[row_no])
-
-    def _open_hosts_medical_records(self):
-        patient_id = string_utils.xstr(self.patient_record['ID'])
-
-        if patient_id == '':
-            return
-
-        clinic_name = self.sender().text()
 
     # 設定信號
     def _set_signal(self):
@@ -525,6 +507,31 @@ class MedicalRecord(QtWidgets.QMainWindow):
                     disease_list[i][0].setText(disease_list[i+1][0].text())
                     disease_list[i][1].setText(disease_list[i+1][1].text())
                     disease_list[i+1][0].setText(None)
+
+        self._check_primary_disease()
+
+    # 檢查主診斷是否為慢性病
+    def _check_primary_disease(self):
+        icd_code = self.ui.lineEdit_disease_code1.text()
+        if icd_code == '':
+            return
+
+        sql = '''
+            SELECT * FROM icd10
+            WHERE
+                ICDCode = "{icd_code}"
+        '''.format(
+            icd_code=icd_code,
+        )
+
+        rows = self.database.select_record(sql)
+        if len(rows) <= 0 or len(rows) >= 2:
+            return
+
+        row = rows[0]
+        self.tab_registration.ui.lineEdit_special_code.setText(
+            string_utils.xstr(row['SpecialCode'])
+        )
 
     def disease_code_return_pressed(self):
         icd_code = self.sender().text()
@@ -1227,7 +1234,7 @@ class MedicalRecord(QtWidgets.QMainWindow):
             self.save_new_self_medical_record()
             return
 
-        if (self.ins_type == '健保' and self.call_from == '醫師看診作業' and
+        if (self.ins_type == '健保' and
                 self.tab_registration.comboBox_ins_type.currentText() == '健保'):
             treat_type = self.tab_registration.ui.comboBox_treat_type.currentText()
             special_code = self.tab_registration.ui.lineEdit_special_code.text()
@@ -1248,7 +1255,7 @@ class MedicalRecord(QtWidgets.QMainWindow):
                 table_widget_ins_care = None
 
             record_check = medical_record_check.MedicalRecordCheck(
-                self, self.database, self.system_settings,
+                self, self.database, self.system_settings, self.call_from,
                 self.medical_record, self.patient_record,
                 treat_type,
                 disease_code1, disease_code2, disease_code3,
@@ -1266,6 +1273,9 @@ class MedicalRecord(QtWidgets.QMainWindow):
                 return
 
         if not self._check_self_pres_days():
+            return
+
+        if not self._check_self_dosage():
             return
 
         if not self._check_fees():  # 檢查批價
@@ -1348,6 +1358,56 @@ class MedicalRecord(QtWidgets.QMainWindow):
                         )
                     )
                     return False
+
+        return True
+
+    # 檢查自費劑量空白 (無單價不檢查) 2019.12.10
+    def _check_self_dosage(self):
+        for tab_index in range(self.ui.tabWidget_prescript.count()):
+            current_tab = self.ui.tabWidget_prescript.widget(tab_index)
+            tab_name = self.ui.tabWidget_prescript.tabText(tab_index)
+            if tab_name in ['健保', '加強照護']:
+                continue
+
+            table_widget_prescript = current_tab.tableWidget_prescript
+            for row_no in range(table_widget_prescript.rowCount()):
+                dosage = table_widget_prescript.item(
+                    row_no, prescript_utils.SELF_PRESCRIPT_COL_NO['Dosage']
+                )
+                price = table_widget_prescript.item(
+                    row_no, prescript_utils.SELF_PRESCRIPT_COL_NO['Price']
+                )
+                if dosage is not None and dosage.text() != '':
+                    continue
+
+                if price is None or price.text() in ['', '0.0']:
+                    continue
+
+                medicine_name = table_widget_prescript.item(
+                    row_no, prescript_utils.SELF_PRESCRIPT_COL_NO['MedicineName']
+                )
+                if medicine_name is not None:
+                    medicine_name = medicine_name.text()
+                else:
+                    medicine_name = '(處方空白)'
+
+                system_utils.show_message_box(
+                    QMessageBox.Critical,
+                    '劑量空白',
+                    '''
+                        <font size="4" color="red">
+                          <b>
+                           {tab_name}: {medicine_name} 劑量空白! 請更正.
+                           </b>
+                        </font>
+                    '''.format(
+                        tab_name=tab_name,
+                        medicine_name=medicine_name,
+                    ),
+
+                    '請輸入劑量.'
+                )
+                return False
 
         return True
 
@@ -1907,5 +1967,3 @@ class MedicalRecord(QtWidgets.QMainWindow):
     def _open_reservation(self):
         doctor = self.tab_registration.ui.comboBox_doctor.currentText()
         self.parent.open_reservation(None, self.patient_key, doctor)
-
-

@@ -1666,7 +1666,6 @@ def cvt_disease_treat(database):
     data = ['傷骨科病名', disease_type, '17關節及韌帶']
     database.insert_record('dict_groups', fields, data)
 
-
     disease_type = '02腦神經'
     data = ['傷骨科病名類別', None, disease_type]
     database.insert_record('dict_groups', fields, data)

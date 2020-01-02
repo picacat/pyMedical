@@ -44,7 +44,7 @@ class PatientList(QtWidgets.QMainWindow):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_PATIENT_LIST, self)
         system_utils.set_css(self, self.system_settings)
         self.table_widget_patient_list = table_widget.TableWidget(self.ui.tableWidget_patient_list, self.database)
-        # self._set_table_width()
+        # database._set_table_width()
         self._set_tool_button()
 
     # 設定信號

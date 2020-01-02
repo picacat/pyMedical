@@ -16,6 +16,7 @@ from libs import patient_utils
 from libs import nhi_utils
 from libs import number_utils
 from libs import dialog_utils
+from libs import massage_utils
 from dialog import dialog_customer
 from dialog import dialog_medicine
 
@@ -55,7 +56,7 @@ class DialogMassageReservation(QtWidgets.QDialog):
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_DIALOG_MASSAGE_RESERVATION, self)
-        # self.setFixedSize(self.size())  # non resizable dialog
+        # database.setFixedSize(database.size())  # non resizable dialog
         system_utils.set_css(self, self.system_settings)
         button_ok = self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok)
         button_ok.setText('確定')
@@ -123,9 +124,9 @@ class DialogMassageReservation(QtWidgets.QDialog):
 
     def _insert_massage_cases(self):
         fields = [
-            'CustomerKey', 'Name', 'CaseDate', 'FinishDate', 'Period',
+            'MassageCustomerKey', 'Name', 'CaseDate', 'FinishDate', 'Period',
             'InsType', 'TreatType',
-            'Massager', 'DesignatedMassager', 'Remark',
+            'Massager', 'Registrar', 'DesignatedMassager', 'Remark',
             'SelfTotalFee', 'TotalFee', 'ReceiptFee',
         ]
 
@@ -155,6 +156,7 @@ class DialogMassageReservation(QtWidgets.QDialog):
             '自費',
             '養生館',
             self.ui.comboBox_massager.currentText(),
+            self.system_settings.field('使用者'),
             designated_massager,
             self.ui.textEdit_remark.toPlainText(),
             total_fee,
@@ -337,7 +339,7 @@ class DialogMassageReservation(QtWidgets.QDialog):
             return
 
         row = rows[0]
-        self._read_customer(row['CustomerKey'])
+        self._read_customer(row['MassageCustomerKey'])
         self._set_reservation(row)
 
     def _set_reservation(self, row):
@@ -419,17 +421,19 @@ class DialogMassageReservation(QtWidgets.QDialog):
         self.table_widget_massage_payment.set_db_data(sql, self._set_massage_payment_table)
 
     def _set_massage_payment_table(self, row_no, row):
-        payment_row = [
+        massage_payment_row = [
             string_utils.xstr(row['MassagePaymentKey']),
             string_utils.xstr(row['MassageCaseKey']),
             string_utils.xstr(row['PaymentType']),
             number_utils.get_float(row['Amount']),
             string_utils.xstr(row['Remark']),
         ]
+        self._set_massage_payment_row(massage_payment_row, row_no)
 
-        for col_no in range(len(payment_row)):
+    def _set_massage_payment_row(self, massage_payment_row, row_no):
+        for col_no in range(len(massage_payment_row)):
             item = QtWidgets.QTableWidgetItem()
-            item.setData(QtCore.Qt.EditRole, payment_row[col_no])
+            item.setData(QtCore.Qt.EditRole, massage_payment_row[col_no])
 
             self.ui.tableWidget_massage_payment.setItem(row_no, col_no, item)
             if col_no in [3]:
@@ -443,30 +447,20 @@ class DialogMassageReservation(QtWidgets.QDialog):
                     QtCore.Qt.ItemIsEnabled
                 )
 
+        self._calculate_receipt_fee()
+
     def _update_records(self):
         self._update_massage_cases()
-        self.database.exec_sql('''
-            DELETE FROM massage_prescript 
-            WHERE
-                MassageCaseKey = {massage_case_key}
-        '''.format(
-            massage_case_key=self.massage_case_key,
-        ))
-        self._insert_massage_prescript(self.massage_case_key)
 
-        self.database.exec_sql('''
-            DELETE FROM massage_payment 
-            WHERE
-                MassageCaseKey = {massage_case_key}
-        '''.format(
-            massage_case_key=self.massage_case_key,
-        ))
+        self.database.delete_record('massage_prescript', 'MassageCaseKey', self.massage_case_key)
+        self.database.delete_record('massage_payment', 'MassageCaseKey', self.massage_case_key)
+        self._insert_massage_prescript(self.massage_case_key)
         self._insert_massage_payment(self.massage_case_key)
 
     def _update_massage_cases(self):
         fields = [
-            'CustomerKey', 'Name', 'CaseDate', 'FinishDate', 'Period',
-            'Massager', 'DesignatedMassager', 'Remark',
+            'MassageCustomerKey', 'Name', 'CaseDate', 'FinishDate', 'Period',
+            'Massager', 'Registrar', 'DesignatedMassager', 'Remark',
             'SelfTotalFee', 'TotalFee', 'ReceiptFee'
         ]
 
@@ -494,6 +488,7 @@ class DialogMassageReservation(QtWidgets.QDialog):
             end_date,
             self.ui.comboBox_period.currentText(),
             self.ui.comboBox_massager.currentText(),
+            self.system_settings.field('使用者'),
             designated_massager,
             self.ui.textEdit_remark.toPlainText(),
             total_fee,
@@ -577,15 +572,10 @@ class DialogMassageReservation(QtWidgets.QDialog):
         self.calculate_total_fee()
 
     def _add_payment(self):
-        items = [
-            '現金',
-            '自費券',
-            '優惠券',
-        ]
         input_dialog = dialog_utils.get_dialog(
             '付款方式', '請選擇付款方式',
             None, QInputDialog.TextInput, 320, 200)
-        input_dialog.setComboBoxItems(items)
+        input_dialog.setComboBoxItems(massage_utils.PAYMENT_ITEMS)
         ok = input_dialog.exec_()
 
         if not ok:
@@ -596,7 +586,7 @@ class DialogMassageReservation(QtWidgets.QDialog):
         self.ui.tableWidget_massage_payment.setRowCount(
             self.ui.tableWidget_massage_payment.rowCount() + 1
         )
-        data = [
+        massage_payment_row = [
             None,
             None,
             item,
@@ -604,21 +594,11 @@ class DialogMassageReservation(QtWidgets.QDialog):
             None,
         ]
         row_no = self.ui.tableWidget_massage_payment.rowCount() - 1
-        for col_no in range(len(data)):
-            item = QtWidgets.QTableWidgetItem()
-            item.setData(QtCore.Qt.EditRole, data[col_no])
-            self.ui.tableWidget_massage_payment.setItem(row_no, col_no, item)
-            if col_no in [3]:
-                self.ui.tableWidget_massage_payment.item(
-                    row_no, col_no).setTextAlignment(
-                    QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
-                )
-
-        self._calculate_receipt_fee()
+        self._set_massage_payment_row(massage_payment_row, row_no)
 
     def _remove_payment(self):
         self.ui.tableWidget_massage_payment.removeRow(self.ui.tableWidget_massage_payment.currentRow())
-        self.calculate_receipt_fee()
+        self._calculate_receipt_fee()
 
     def _payment_item_changed(self):
         self._calculate_receipt_fee()

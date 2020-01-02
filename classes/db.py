@@ -1,11 +1,15 @@
 import mysql.connector as mysql
 
-from PyQt5.QtWidgets import QMessageBox, QPushButton
+from PyQt5 import QtWidgets, QtCore
+from PyQt5.QtWidgets import QMessageBox, QPushButton, QProgressDialog
 import configparser
 import os
+import json
+
 from libs import ui_utils
 from libs import string_utils
 from libs import charge_utils
+from libs import db_utils
 
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname("__file__")))
@@ -241,12 +245,7 @@ class Database:
             return
 
         self.create_table(table_name)
-        if table_name == 'charge_settings':
-            charge_utils.set_nhi_basic_data(self)
-            charge_utils.set_diag_share_basic_data(self)
-            charge_utils.set_drug_share_basic_data(self)
-            charge_utils.set_discount_basic_data(self)
-            charge_utils.set_regist_fee_basic_data(self)
+        db_utils.set_default_data(self, table_name)
 
     def get_last_auto_increment_key(self, table_name):
         sql = '''

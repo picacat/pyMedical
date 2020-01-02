@@ -6,6 +6,7 @@ from PyQt5.QtWidgets import QMessageBox, QPushButton
 import sys
 import os
 import subprocess
+import socket
 
 if sys.platform == 'win32':
     from win32con import WM_INPUTLANGCHANGEREQUEST
@@ -14,6 +15,20 @@ if sys.platform == 'win32':
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname("__file__")))
 CSS_PATH = "css"
+
+
+def get_ip():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        # doesn't even have to be reachable
+        s.connect(('10.255.255.255', 1))
+        IP = s.getsockname()[0]
+    except:
+        IP = '127.0.0.1'
+    finally:
+        s.close()
+
+    return IP
 
 
 def get_css_file(system_settings):
@@ -150,3 +165,22 @@ def get_host_ip():
         s.close()
 
     return ip
+
+
+def set_widget_image(widget, image_file):
+    style_sheet = '''
+        QWidget {{
+            background-image: url({image_file});
+            background-repeat: none;
+            background-position: center;
+        }}
+        QPushButton {{
+            color: rgb(255, 0, 0);
+            font: 10pt;
+        }}
+    '''.format(
+        image_file=image_file,
+    )
+
+    widget.setStyleSheet(style_sheet)
+

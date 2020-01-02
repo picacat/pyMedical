@@ -1,12 +1,15 @@
 import mysql.connector
 
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtCore
 from PyQt5.Qt import PYQT_VERSION_STR
 import sys
+import datetime
 
 from libs import ui_utils
+from libs import date_utils
 from libs import system_utils
 from libs import personnel_utils
+from libs import log_utils
 
 
 # 系統設定 2018.03.19
@@ -118,6 +121,7 @@ class Login(QtWidgets.QDialog):
         if user_name == '' and password == '50374':
             self.login_ok = True
             self.user_name = '超級使用者'
+            self._write_log()
             self.close()
 
         if user_name == '' or password == '':
@@ -141,10 +145,20 @@ class Login(QtWidgets.QDialog):
         self.login_ok = True
         self.user_name = row[0]['Name']
         self._clear_in_progress(self.user_name)
+        self._write_log()
+
         self.close()
 
-    def _clear_in_progress(self, user_name):
+    def _write_log(self):
+        log_utils.write_event_log(
+            self.database, self.user_name, '系統登入', '登入系統',
+            '{name}於{log_time}登入系統'.format(
+                name=self.user_name,
+                log_time=date_utils.now_to_str(),
+            )
+        )
 
+    def _clear_in_progress(self, user_name):
         position = personnel_utils.get_personnel_field_value(self.database, user_name, 'Position')
         if position not in ['醫師', '支援醫師']:
             return

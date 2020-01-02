@@ -61,7 +61,7 @@ class WaitingList(QtWidgets.QMainWindow):
         self._set_signal()
         self._set_permission()
 
-        # self.read_wait()   # activate by pymedical.py->tab_changed
+        # database.read_wait()   # activate by pymedical.py->tab_changed
 
     # 解構
     def __del__(self):
@@ -93,11 +93,13 @@ class WaitingList(QtWidgets.QMainWindow):
         self.table_widget_reservation_list.set_column_hidden([0])
         self.ui.tabWidget_waiting_list.setCurrentIndex(0)
         self.ui.tabWidget_waiting_list.currentChanged.connect(self._waiting_list_tab_changed)                   # 切換分頁
-        self.table_widget_wait_completed = table_widget.TableWidget(self.ui.tableWidget_wait_completed, self.database)
+        self.table_widget_wait_completed = table_widget.TableWidget(
+            self.ui.tableWidget_wait_completed, self.database
+        )
         self.table_widget_wait_completed.set_column_hidden([0, 1])
         self.table_widget_statistics_list = table_widget.TableWidget(
             self.ui.tableWidget_statistics_list, self.database)
-        # self._set_table_width()
+        self._set_table_width()
 
     # 設定信號
     def _set_signal(self):
@@ -118,10 +120,12 @@ class WaitingList(QtWidgets.QMainWindow):
             self.ui.action_medical_record.setEnabled(False)
 
     def _set_table_width(self):
-        width = [70, 70, 45,
-                 70, 80, 40, 90, 40, 60, 60, 70, 50,
-                 80, 80, 80, 60, 80, 40, 80, 220]
-        self.table_widget_waiting_list.set_table_heading_width(width)
+        # width = [70, 70, 45,
+        #          70, 80, 40, 90, 40, 60, 60, 70, 50,
+        #          80, 80, 80, 60, 80, 40, 80, 220]
+        # database.table_widget_waiting_list.set_table_heading_width(width)
+        width = [220, 100]
+        self.table_widget_statistics_list.set_table_heading_width(width)
 
     def _get_room_script(self, table_name):
         if self.system_settings.field('候診名單顯示診別') == '指定診別':
@@ -521,10 +525,7 @@ class WaitingList(QtWidgets.QMainWindow):
             statistics_list['本月健保傷科人數']
         )
 
-        width = [180, 80]
-        self.table_widget_statistics_list.set_table_heading_width(width)
         self.table_widget_statistics_list.set_dict(statistics_list)
-
         self._plot_chart(statistics_list)
 
     def _plot_chart(self, statistics_list):

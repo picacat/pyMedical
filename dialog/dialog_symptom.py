@@ -41,7 +41,7 @@ class DialogSymptom(QtWidgets.QDialog):
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_DIALOG_SYMPTOM, self)
-        # self.setFixedSize(self.size())  # non resizable dialog
+        # database.setFixedSize(database.size())  # non resizable dialog
         system_utils.set_css(self, self.system_settings)
         self.table_widget_groups = table_widget.TableWidget(self.ui.tableWidget_groups, self.database)
         self.table_widget_symptom = table_widget.TableWidget(self.ui.tableWidget_symptom, self.database)
@@ -126,7 +126,7 @@ class DialogSymptom(QtWidgets.QDialog):
         # symptom += '，' + selected_symptom \
         #     if str(symptom).strip()[-1:] not in ['，', ',', ', ', ':', '='] and len(str(symptom).strip()) > 0 \
         #     else selected_symptom
-        # self.text_edit.setText(string_utils.get_str(symptom, 'utf8'))
+        # database.text_edit.setText(string_utils.get_str(symptom, 'utf8'))
 
         db_utils.increment_hit_rate(self.database, 'clinic', 'ClinicKey', clinic_key)
 

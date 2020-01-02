@@ -70,7 +70,7 @@ class DialogDiagnosticPicker(QtWidgets.QDialog):
         self.ui.tableWidget_diagnostic.doubleClicked.connect(self.accepted_button_clicked)
 
     def _table_item_clicked(self):
-        # self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).animateClick()
+        # database.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).animateClick()
         clinic_name = self._get_clinic_name() + ' '
         self.parent.insert_text(self.text_edit, clinic_name, self.input_code)
         self.input_code = ''
@@ -102,7 +102,7 @@ class DialogDiagnosticPicker(QtWidgets.QDialog):
         return clinic_name
 
     def _read_data(self):
-        # self.table_widget_diagnostic.set_db_data(self.sql, self._set_wait_data)
+        # database.table_widget_diagnostic.set_db_data(database.sql, database._set_wait_data)
         order_type = '''
             ORDER BY LENGTH(ClinicName), CAST(CONVERT(`ClinicName` using big5) AS BINARY)
         '''

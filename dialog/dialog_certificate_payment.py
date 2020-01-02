@@ -161,8 +161,8 @@ class DialogCertificatePayment(QtWidgets.QDialog):
         elif treat_type != '全部':
             condition += ' AND TreatType IN {0} '.format(tuple(treat_type_dict[treat_type]))
 
-        # if doctor != '':
-        #     condition += ' AND Doctor = "{0}" '.format(doctor)
+        # if therapist != '':
+        #     condition += ' AND Doctor = "{0}" '.format(therapist)
 
         sql = '''
             SELECT 

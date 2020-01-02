@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 #coding: utf-8
 
-
 from PyQt5 import QtWidgets
-from PyQt5.QtWidgets import QMessageBox, QPushButton
+from PyQt5.QtWidgets import QMessageBox, QPushButton, QInputDialog
 import os.path
 import webbrowser
 import subprocess
@@ -14,6 +13,7 @@ from libs import string_utils
 from libs import nhi_utils
 from libs import number_utils
 from libs import system_utils
+from libs import log_utils
 from dialog import dialog_ins_apply
 
 import ins_apply_generate_file
@@ -50,10 +50,11 @@ class InsApply(QtWidgets.QMainWindow):
         self.ins_generate_date = None
         self.period = '全月'
         self.ins_calculated_table = []
+        self.lock_type = '申報上鎖'
 
         self._set_ui()
         self._set_signal()
-        # self.read_wait()   # activate by pymedical.py->tab_changed
+        # database.read_wait()   # activate by pymedical.py->tab_changed
 
     # 解構
     def __del__(self):
@@ -82,11 +83,22 @@ class InsApply(QtWidgets.QMainWindow):
         self.ui.action_open_nhi_vpn.triggered.connect(self._open_nhi_vpn)
         self.ui.action_upload.triggered.connect(self._upload_data)
         self.ui.action_close.triggered.connect(self.close_app)
+        self.ui.action_ins_lock.triggered.connect(self._lock_ins_data)
 
     def open_medical_record(self, case_key):
         self.parent.open_medical_record(case_key, '健保申報')
 
     def open_dialog(self):
+        xml_dir = self.system_settings.field('資料路徑')
+        if xml_dir in ['', None] or not os.path.exists(xml_dir):
+            system_utils.show_message_box(
+                QMessageBox.Critical,
+                '申報路徑有誤',
+                '<font color="red"><h3>申報路徑設定有誤, 請檢視申報路徑是否空白或正確.</h3></font>',
+                '請至系統設定->其他頁面檢視申報及備份路徑的設定值.'
+            )
+            return
+
         dialog = dialog_ins_apply.DialogInsApply(self.ui, self.database, self.system_settings)
         if self.apply_year is not None:
             dialog.ui.comboBox_year.setCurrentText(string_utils.xstr(self.apply_year))
@@ -163,7 +175,84 @@ class InsApply(QtWidgets.QMainWindow):
 
         return apply_data_exists
 
+    def _lock_ins_data(self):
+        msg_box = QMessageBox()
+        msg_box.setIcon(QMessageBox.Warning)
+        msg_box.setWindowTitle('申報資料上鎖')
+        msg_box.setText(
+            '''
+            <font size="4" color="red">
+              <b>確定將{0}年{1}月份申報資料上鎖?</b>
+            </font>
+            '''.format(self.apply_year, self.apply_month)
+        )
+        msg_box.setInformativeText("資料上鎖後, 將無法再次執行健保申報作業!")
+        msg_box.addButton(QPushButton("資料上鎖"), QMessageBox.YesRole)
+        msg_box.addButton(QPushButton("取消"), QMessageBox.NoRole)
+        cancel = msg_box.exec_()
+        if cancel:
+            return
+
+        apply_date = '{year}-{month:0>2}'.format(
+            year=self.apply_year,
+            month=self.apply_month,
+        )
+        generate_date = self.ins_generate_date.toString('yyyy-MM-dd')
+
+        self.database.exec_sql(
+            'DELETE FROM system_log WHERE LogType = "{lock_type}" AND LogName = "{apply_date}"'.format(
+                lock_type=self.lock_type,
+                apply_date=apply_date,
+            )
+        )
+
+        log_utils.write_system_log(self.database, self.lock_type, apply_date, generate_date)
+
+        system_utils.show_message_box(
+            QMessageBox.Information,
+            '健保資料已上鎖',
+            '<font size="4" color="red"><b>{apply_year}年{apply_month}月份申報資料已上鎖.</b></font>'.format(
+                apply_year=self.apply_year,
+                apply_month=self.apply_month,
+            ),
+            '資料上鎖後, 就無法再次執行該月份的健保申報作業.'
+        )
+
+    def _check_apply_data_lock(self):
+        lock_data = False
+        apply_date = '{year}-{month:0>2}'.format(
+            year=self.apply_year,
+            month=self.apply_month,
+        )
+
+        sql = '''
+            SELECT * FROM system_log
+            WHERE
+                LogType = "{lock_type}" AND
+                LogName = "{apply_date}"
+        '''.format(
+            lock_type=self.lock_type,
+            apply_date=apply_date,
+        )
+        rows = self.database.select_record(sql)
+        if len(rows) > 0:
+            lock_data = True
+
+        return lock_data
+
     def _generate_ins_data(self):
+        if self._check_apply_data_lock():
+            system_utils.show_message_box(
+                QMessageBox.Critical,
+                '健保資料已上鎖',
+                '<font size="4" color="red"><b>{apply_year}年{apply_month}月份申報資料已上鎖, 不可再次申報.</b></font>'.format(
+                    apply_year=self.apply_year,
+                    apply_month=self.apply_month,
+                ),
+                '請勿再次執行健保申報, 以免造成申報資料流水號與金額與上次申報資料產生差異.'
+            )
+            return
+
         if self._check_apply_data_exists():
             msg_box = QMessageBox()
             msg_box.setIcon(QMessageBox.Warning)
@@ -340,6 +429,7 @@ class InsApply(QtWidgets.QMainWindow):
             pass
 
     def _write_log(self):
+        log_type = '申報日期'
         apply_date = '{year}-{month:0>2}'.format(
             year=self.apply_year,
             month=self.apply_month,
@@ -347,12 +437,11 @@ class InsApply(QtWidgets.QMainWindow):
         generate_date = self.ins_generate_date.toString('yyyy-MM-dd')
 
         self.database.exec_sql(
-            'DELETE FROM system_log WHERE LogType = "申報日期" AND LogName = "{apply_date}"'.format(
+            'DELETE FROM system_log WHERE LogType = "{log_type}" AND LogName = "{apply_date}"'.format(
+                log_type=log_type,
                 apply_date=apply_date,
             )
         )
 
-        fields = ['LogType', 'LogName', 'Log']
-        data = ['申報日期', apply_date, generate_date]
-        self.database.insert_record('system_log', fields, data)
+        log_utils.write_system_log(self.database, '申報日期', apply_date, generate_date)
 

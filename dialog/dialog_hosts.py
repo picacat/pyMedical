@@ -39,7 +39,7 @@ class DialogHosts(QtWidgets.QDialog):
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_DIALOG_HOSTS, self)
-        # self.setFixedSize(self.size())  # non resizable dialog
+        # database.setFixedSize(database.size())  # non resizable dialog
         system_utils.set_css(self, self.system_settings)
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Close).setText('關閉')
 

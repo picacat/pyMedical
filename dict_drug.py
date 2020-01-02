@@ -2,13 +2,16 @@
 #coding: utf-8
 
 from PyQt5 import QtWidgets, QtCore
-from PyQt5.QtWidgets import QInputDialog, QMessageBox
+from PyQt5.QtWidgets import QInputDialog, QMessageBox, QFileDialog
+import json
+
 from libs import system_utils
 from libs import ui_utils
 from libs import string_utils
 from libs import dialog_utils
 from libs import number_utils
 from libs import personnel_utils
+from libs import db_utils
 from classes import table_widget
 from dialog import dialog_input_drug
 
@@ -68,11 +71,14 @@ class DictDrug(QtWidgets.QMainWindow):
         self.ui.toolButton_remove_drug.clicked.connect(self._remove_drug)
         self.ui.toolButton_edit_drug.clicked.connect(self._edit_drug)
         self.ui.toolButton_copy_drug.clicked.connect(self._copy_drug)
+        self.ui.toolButton_cut_drug.clicked.connect(self._cut_drug)
         self.ui.tableWidget_dict_drug.doubleClicked.connect(self._edit_drug)
         self.ui.tableWidget_dict_drug.itemSelectionChanged.connect(self.dict_drug_changed)
         self.ui.lineEdit_search_drug.textChanged.connect(self._search_drug)
         self.ui.toolButton_up.clicked.connect(self._groups_order_up)
         self.ui.toolButton_down.clicked.connect(self._groups_order_down)
+        self.ui.toolButton_export.clicked.connect(self._export_medicine)
+        self.ui.toolButton_import.clicked.connect(self._import_medicine)
 
     # 設定欄位寬度
     def _set_table_width(self):
@@ -150,6 +156,17 @@ class DictDrug(QtWidgets.QMainWindow):
         dict_groups_type = self.table_widget_dict_groups.field_value(2)
         self._read_dict_drug(dict_groups_type)
         self.ui.tableWidget_dict_groups.setFocus(True)
+        self._set_drug_tool_buttons()
+
+    def _set_drug_tool_buttons(self):
+        if self.ui.tableWidget_dict_drug.rowCount() <= 0:
+            enabled = False
+        else:
+            enabled = True
+
+        self.ui.toolButton_remove_drug.setEnabled(enabled)
+        self.ui.toolButton_edit_drug.setEnabled(enabled)
+        self.ui.toolButton_copy_drug.setEnabled(enabled)
 
     def _read_dict_drug(self, dict_groups_type, keyword=None):
         if dict_groups_type is None:
@@ -393,9 +410,43 @@ class DictDrug(QtWidgets.QMainWindow):
 
     # 移除處方
     def _remove_drug(self):
+        selected = self.ui.tableWidget_dict_drug.selectedRanges()
+        drug_list = []
+        for item in selected:
+            for row_no in range(item.topRow(), item.bottomRow() + 1):
+                drug_list.append(self.ui.tableWidget_dict_drug.item(row_no, 0).text())
+
+        if len(drug_list) > 1:
+            self._remove_multiple_drugs(drug_list)
+        else:
+            self._remove_single_drug()
+
+    def _remove_multiple_drugs(self, drug_list):
         msg_box = dialog_utils.get_message_box(
             '刪除{0}資料'.format(self.dict_type), QMessageBox.Warning,
-            '<font size="4" color="red"><b>確定刪除{0}: "{1}"?</b></font>'.format(
+            '<font size="4" color="red"><b>確定刪除選取的處方資料?</b></font>',
+            '注意！資料刪除後, 將無法回復!'
+        )
+
+        remove_record = msg_box.exec_()
+        if not remove_record:
+            return
+
+        sql = '''
+            DELETE FROM medicine
+            WHERE
+                MedicineKey IN ({drug_list})
+        '''.format(
+            drug_list=str(drug_list)[1:-1],
+        )
+        self.database.exec_sql(sql)
+        dict_groups_type = self.table_widget_dict_groups.field_value(2)
+        self._read_dict_drug(dict_groups_type)
+
+    def _remove_single_drug(self):
+        msg_box = dialog_utils.get_message_box(
+            '刪除{0}資料'.format(self.dict_type), QMessageBox.Warning,
+            '<font size="4" color="red"><b>確定刪除{0}: {1}?</b></font>'.format(
                 self.dict_type, self.table_widget_dict_drug.field_value(4)),
             '注意！資料刪除後, 將無法回復!'
         )
@@ -407,6 +458,7 @@ class DictDrug(QtWidgets.QMainWindow):
         self.database.delete_record('medicine', 'MedicineKey', key)
         self.database.delete_record('commission', 'MedicineKey', key)
         self.ui.tableWidget_dict_drug.removeRow(self.ui.tableWidget_dict_drug.currentRow())
+        self._set_drug_tool_buttons()
 
     # 更改處方
     def _edit_drug(self):
@@ -421,71 +473,129 @@ class DictDrug(QtWidgets.QMainWindow):
         self._set_dict_drug_data(self.ui.tableWidget_dict_drug.currentRow(), row_data)
         self.dict_drug_changed()
 
-    # 拷貝處方
+    # 複製處方
     def _copy_drug(self):
+        dict_groups_type = self.table_widget_dict_groups.field_value(2)
+
         sql = '''
             SELECT * FROM dict_groups 
             WHERE 
                 DictGroupsType = "{0}類別" 
-            ORDER BY DictGroupsKey
+            ORDER BY DictOrderNo
         '''.format(self.dict_type)
 
         rows = self.database.select_record(sql)
         items = ()
         for row in rows:
-            items += (string_utils.xstr(row['DictGroupsName']), )
+            dict_groups_name = string_utils.xstr(row['DictGroupsName'])
+            if dict_groups_name == dict_groups_type:
+                continue
 
-        item, ok = QInputDialog.getItem(
+            items += (dict_groups_name, )
+
+        medicine_type, ok = QInputDialog.getItem(
             self, "拷貝處方詞庫", "請選擇拷貝到何處", items, 0, False
         )
 
         if not ok:
             return
 
-        medicine_key = self.table_widget_dict_drug.field_value(0)
-        sql = '''
-            SELECT * FROM medicine
-            WHERE
-                MedicineKey = {medicine_key}
-        '''.format(
-            medicine_key=medicine_key,
-        )
-        rows = self.database.select_record(sql)
-        if len(rows) <= 0:
-            return
+        selected = self.ui.tableWidget_dict_drug.selectedRanges()
+        drug_list = []
+        for item in selected:
+            for row_no in range(item.topRow(), item.bottomRow() + 1):
+                drug_list.append(self.ui.tableWidget_dict_drug.item(row_no, 0).text())
 
-        row = rows[0]
         fields = [
             'MedicineType', 'MedicineMode', 'MedicineCode', 'InputCode', 'InsCode',
             'MedicineName', 'MedicineAlias', 'Unit', 'Dosage', 'Location',
             'SalePrice', 'InPrice', 'Charged', 'SafeQuantity', 'Description',
         ]
-        data = [
-            item,
-            string_utils.xstr(row['MedicineMode']),
-            string_utils.xstr(row['MedicineCode']),
-            string_utils.xstr(row['InputCode']),
-            string_utils.xstr(row['InsCode']),
-            string_utils.xstr(row['MedicineName']),
-            string_utils.xstr(row['MedicineAlias']),
-            string_utils.xstr(row['Unit']),
-            string_utils.xstr(row['Dosage']),
-            string_utils.xstr(row['Location']),
-            string_utils.xstr(row['SalePrice']),
-            string_utils.xstr(row['InPrice']),
-            string_utils.xstr(row['Charged']),
-            string_utils.xstr(row['SafeQuantity']),
-            string_utils.get_str(row['Description'], 'utf8'),
-        ]
-        self.database.insert_record('medicine', fields, data)
+        for medicine_key in drug_list:
+            sql = '''
+                SELECT * FROM medicine
+                WHERE
+                    MedicineKey = {medicine_key}
+            '''.format(
+                medicine_key=medicine_key,
+            )
+            rows = self.database.select_record(sql)
+            if len(rows) <= 0:
+                continue
 
-        dict_groups_type = self.table_widget_dict_groups.field_value(1)
-        if dict_groups_type == item:
+            row = rows[0]
+            data = [
+                medicine_type,
+                string_utils.xstr(row['MedicineMode']),
+                string_utils.xstr(row['MedicineCode']),
+                string_utils.xstr(row['InputCode']),
+                string_utils.xstr(row['InsCode']),
+                string_utils.xstr(row['MedicineName']),
+                string_utils.xstr(row['MedicineAlias']),
+                string_utils.xstr(row['Unit']),
+                string_utils.xstr(row['Dosage']),
+                string_utils.xstr(row['Location']),
+                string_utils.xstr(row['SalePrice']),
+                string_utils.xstr(row['InPrice']),
+                string_utils.xstr(row['Charged']),
+                string_utils.xstr(row['SafeQuantity']),
+                string_utils.get_str(row['Description'], 'utf8'),
+            ]
+            self.database.insert_record('medicine', fields, data)
+
+        if dict_groups_type == medicine_type:
             self._read_dict_drug(dict_groups_type)
+
+    # 剪下處方
+    def _cut_drug(self):
+        dict_groups_type = self.table_widget_dict_groups.field_value(2)
+        sql = '''
+            SELECT * FROM dict_groups 
+            WHERE 
+                DictGroupsType = "{0}類別" 
+            ORDER BY DictOrderNo
+        '''.format(self.dict_type)
+
+        rows = self.database.select_record(sql)
+        items = ()
+        for row in rows:
+            dict_groups_name = string_utils.xstr(row['DictGroupsName'])
+            if dict_groups_name == dict_groups_type:
+                continue
+
+            items += (dict_groups_name, )
+
+        medicine_type, ok = QInputDialog.getItem(
+            self, "剪下處方詞庫", "請選擇貼到到何處", items, 0, False
+        )
+
+        if not ok:
+            return
+
+        selected = self.ui.tableWidget_dict_drug.selectedRanges()
+        drug_list = []
+        for item in selected:
+            for row_no in range(item.topRow(), item.bottomRow() + 1):
+                drug_list.append(self.ui.tableWidget_dict_drug.item(row_no, 0).text())
+
+        for medicine_key in drug_list:
+            sql = '''
+                UPDATE medicine
+                SET MedicineType = "{medicine_type}" 
+                WHERE
+                    MedicineKey = {medicine_key}
+            '''.format(
+                medicine_type=medicine_type,
+                medicine_key=medicine_key,
+            )
+            self.database.exec_sql(sql)
+
+        self._read_dict_drug(dict_groups_type)
 
     def dict_drug_changed(self):
         medicine_key = self.table_widget_dict_drug.field_value(0)
         self._read_drug_description(medicine_key)
+        self._set_drug_tool_buttons()
 
     def _read_drug_description(self, medicine_key):
         self.ui.textEdit_description.setText('')
@@ -593,3 +703,85 @@ class DictDrug(QtWidgets.QMainWindow):
                 row_no, col_no, QtWidgets.QTableWidgetItem(dict_groups_row[col_no]),
             )
 
+    def _export_medicine(self):
+        dict_groups_type = self.table_widget_dict_groups.field_value(2)
+
+        options = QFileDialog.Options()
+        json_file_name, _ = QFileDialog.getSaveFileName(
+            self.parent,
+            "匯出處方JSON檔案", '{medicine_type}藥品資料.json'.format(medicine_type=dict_groups_type),
+            "json檔案 (*.json)",
+            options=options
+        )
+        if not json_file_name:
+            return
+
+        selected = self.ui.tableWidget_dict_drug.selectedRanges()
+        drug_list = []
+        for item in selected:
+            for row_no in range(item.topRow(), item.bottomRow() + 1):
+                drug_list.append(self.ui.tableWidget_dict_drug.item(row_no, 0).text())
+
+        sql = '''
+            SELECT * FROM medicine
+            WHERE
+                MedicineKey IN ({drug_list})
+        '''.format(
+            drug_list=str(drug_list)[1:-1],
+        )
+        rows = self.database.select_record(sql)
+
+        json_data = db_utils.mysql_to_json(rows)
+        text_file = open(json_file_name, "w", encoding='utf8')
+        text_file.write(str(json_data))
+        text_file.close()
+
+        system_utils.show_message_box(
+            QMessageBox.Information,
+            'JSON資料匯出完成',
+            '<h3>處方匯出資料{0}匯出完成.</h3>'.format(json_file_name),
+            'JSON 檔案格式.'
+        )
+
+    def _import_medicine(self):
+        options = QFileDialog.Options()
+
+        file_name, _ = QFileDialog.getOpenFileName(
+            self, "開啟處方JSON檔",
+            '*.json', "json 檔 (*.json);;", options=options
+        )
+        if not file_name:
+            return
+
+        dict_groups_type = self.table_widget_dict_groups.field_value(2)
+        fields = [
+            'MedicineType', 'MedicineCode', 'InputCode', 'MedicineName', 'Unit', 'MedicineMode', 'InsCode',
+            'Dosage', 'MedicineAlias', 'Location', 'InPrice', 'SalePrice', 'Commission',
+            'Quantity', 'SafeQuantity',
+            'Description',
+        ]
+
+        with open(file_name, encoding='utf8') as json_file:
+            rows = json.load(json_file)
+            for row in rows:
+                data = [
+                    dict_groups_type,
+                    row['MedicineCode'],
+                    row['InputCode'],
+                    row['MedicineName'],
+                    row['Unit'],
+                    row['MedicineMode'],
+                    row['InsCode'],
+                    row['Dosage'],
+                    row['MedicineAlias'],
+                    row['Location'],
+                    row['InPrice'],
+                    row['SalePrice'],
+                    row['Commission'],
+                    row['Quantity'],
+                    row['SafeQuantity'],
+                    row['Description'],
+                ]
+                self.database.insert_record('medicine', fields, data)
+
+        self._read_dict_drug(dict_groups_type)

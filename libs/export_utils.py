@@ -232,7 +232,6 @@ def export_daily_medical_records_to_excel(database, system_settings, excel_file_
                     massage_item = ''
                     massage_item_fee = 0
                     total_purchase_item_fee += purchase_item_fee
-                    print(purchase_item_fee)
                 else:
                     purchase_item = ''
                     purchase_item_fee = 0

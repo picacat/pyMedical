@@ -363,6 +363,13 @@
              </property>
             </spacer>
            </item>
+           <item>
+            <widget class="QCheckBox" name="checkBox_pharmacy">
+             <property name="text">
+              <string>申報調劑費</string>
+             </property>
+            </widget>
+           </item>
           </layout>
          </item>
         </layout>

@@ -53,6 +53,8 @@ UI_PURCHASE_LIST = "purchase_list.ui"
 UI_EXAMINATION_LIST = "examination_list.ui"
 UI_EXAMINATION = "examination.ui"
 
+UI_EVENT_LOG = "event_log.ui"
+
 UI_INS_CHECK = "ins_check.ui"
 UI_INS_APPLY = "ins_apply.ui"
 UI_INS_APPLY_LIST = "ins_apply_list.ui"
@@ -136,7 +138,7 @@ UI_DIALOG_MEDICINE = "dialog_medicine.ui"
 
 UI_DIALOG_EXAMINATION_LIST = "dialog_examination_list.ui"
 
-UI_DIALOG_STATISTICS_DOCTOR = "dialog_statistics_doctor.ui"
+UI_DIALOG_STATISTICS_THERAPIST = "dialog_statistics_therapist.ui"
 UI_DIALOG_STATISTICS_RETURN_RATE = "dialog_statistics_return_rate.ui"
 UI_DIALOG_INS_DATE_DOCTOR = "dialog_ins_date_doctor.ui"
 
@@ -192,6 +194,20 @@ UI_DIALOG_DATABASE_REPAIR = "dialog_database_repair.ui"
 
 UI_DIALOG_MASSAGE_RESERVATION = "dialog_massage_reservation.ui"
 UI_DIALOG_CUSTOMER = "dialog_customer.ui"
+UI_DIALOG_MASSAGE_CASE_LIST = "dialog_massage_case_list.ui"
+UI_MASSAGE_PURCHASE_LIST = "massage_purchase_list.ui"
+UI_MASSAGE_PURCHASE = "massage_purchase.ui"
+UI_MASSAGE_INCOME = "massage_income.ui"
+UI_DIALOG_MASSAGE_PURCHASE_LIST = "dialog_massage_purchase_list.ui"
+UI_MASSAGE_INCOME_CASH_FLOW = "massage_income_cash_flow.ui"
+UI_MASSAGE_INCOME_LIST = "massage_income_list.ui"
+UI_MASSAGE_CUSTOMER_LIST = "massage_customer_list.ui"
+UI_MASSAGE_CASE_LIST = "massage_case_list.ui"
+UI_STATISTICS_MASSAGE = "statistics_massage.ui"
+UI_STATISTICS_MASSAGE_COUNT = "statistics_massage_count.ui"
+UI_STATISTICS_MASSAGE_INCOME = "statistics_massage_income.ui"
+UI_STATISTICS_MASSAGE_PAYMENT = "statistics_massage_payment.ui"
+UI_STATISTICS_MASSAGE_SALE = "statistics_massage_sale.ui"
 
 UI_DICT_DIAGNOSTIC = "dict_diagnostic.ui"
 UI_DICT_SYMPTOM = "dict_symptom.ui"

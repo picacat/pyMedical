@@ -47,7 +47,7 @@ class PrintRegistrationForm2:
     def print(self, return_card=None):
         self.return_card = return_card
         self.print_html(True)
-        # self.print_painter()
+        # database.print_painter()
 
     def preview(self, return_card=None):
         self.return_card = return_card

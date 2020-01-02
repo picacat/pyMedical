@@ -1434,3 +1434,22 @@ def get_first_course_delta(table_widget, row_no, patient_key, course, next_case_
         delta = None
 
     return delta
+
+
+# 取得相同卡序日期
+def get_duplicated_card(table_widget, row_no, patient_key, card):
+    duplicated_case_date = None
+
+    for i in range(row_no, 0, -1):
+        previous_patient_key = table_widget.item(i, 3)
+        previous_card = table_widget.item(i, 6)
+        previous_case_date = table_widget.item(i, 1)
+
+        if previous_patient_key is not None and previous_patient_key.text() != patient_key:  # 換人
+            break
+
+        if previous_card.text() == card:
+            duplicated_case_date = previous_case_date.text()
+            break
+
+    return duplicated_case_date

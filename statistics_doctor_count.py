@@ -152,11 +152,11 @@ class StatisticsDoctorCount(QtWidgets.QMainWindow):
 
     def _get_row_no(self, case_date):
         for row_no in range(self.ui.tableWidget_doctor_count.rowCount()):
-            case_date_filed = self.ui.tableWidget_doctor_count.item(row_no, 0)
-            if case_date_filed is None:
+            case_date_field = self.ui.tableWidget_doctor_count.item(row_no, 0)
+            if case_date_field is None:
                 continue
 
-            if case_date == case_date_filed.text():
+            if case_date == case_date_field.text():
                 return row_no
 
         return None
@@ -330,35 +330,19 @@ class StatisticsDoctorCount(QtWidgets.QMainWindow):
         self._plot_outpatient_count_chart()
 
     def _plot_outpatient_count_chart(self):
-        treat_type = ['內科', '針灸', '複針', '傷科', '複傷']
-        set0 = QtChart.QBarSet(treat_type[0])
-        set1 = QtChart.QBarSet(treat_type[1])
-        set2 = QtChart.QBarSet(treat_type[2])
-        set3 = QtChart.QBarSet(treat_type[3])
-        set4 = QtChart.QBarSet(treat_type[4])
-
-        set0 << number_utils.get_integer(
-            self.ui.tableWidget_doctor_count.item(self.ui.tableWidget_doctor_count.rowCount()-1, 6).text(),
-        )
-        set1 << number_utils.get_integer(
-            self.ui.tableWidget_doctor_count.item(self.ui.tableWidget_doctor_count.rowCount()-1, 10).text(),
-        )
-        set2 << number_utils.get_integer(
-            self.ui.tableWidget_doctor_count.item(self.ui.tableWidget_doctor_count.rowCount()-1, 14).text(),
-        )
-        set3 << number_utils.get_integer(
-            self.ui.tableWidget_doctor_count.item(self.ui.tableWidget_doctor_count.rowCount()-1, 18).text(),
-        )
-        set4 << number_utils.get_integer(
-            self.ui.tableWidget_doctor_count.item(self.ui.tableWidget_doctor_count.rowCount()-1, 22).text(),
-        )
-
         series = QtChart.QBarSeries()
-        series.append(set0)
-        series.append(set1)
-        series.append(set2)
-        series.append(set3)
-        series.append(set4)
+
+        treat_type = ['內科', '針灸', '複針', '傷科', '複傷']
+        col_no_list = [6, 10, 14, 18, 22]
+
+        set_list = []
+        for i in range(len(treat_type)):
+            set_list.append(QtChart.QBarSet(treat_type[i]))
+            set_list[i] << number_utils.get_integer(
+                self.ui.tableWidget_doctor_count.item(
+                    self.ui.tableWidget_doctor_count.rowCount() - 1, col_no_list[i]).text()
+            )
+            series.append(set_list[i])
 
         chart = QtChart.QChart()
         chart.addSeries(series)

@@ -26,20 +26,21 @@ class MedicalRecordCheck(QtWidgets.QDialog):
         super(MedicalRecordCheck, self).__init__(parent)
         self.database = args[0]
         self.system_settings = args[1]
-        self.medical_record = args[2]
-        self.patient_record = args[3]
-        self.treat_type = args[4]
-        self.disease_code1 = args[5]
-        self.disease_code2 = args[6]
-        self.disease_code3 = args[7]
-        self.special_code = args[8]
-        self.treatment = args[9]
-        self.pres_days = args[10]
-        self.packages = args[11]
-        self.instruction = args[12]
-        self.table_widget_ins_prescript = args[13]
-        self.table_widget_ins_treat = args[14]
-        self.table_widget_ins_care = args[15]
+        self.call_from = args[2]
+        self.medical_record = args[3]
+        self.patient_record = args[4]
+        self.treat_type = args[5]
+        self.disease_code1 = args[6]
+        self.disease_code2 = args[7]
+        self.disease_code3 = args[8]
+        self.special_code = args[9]
+        self.treatment = args[10]
+        self.pres_days = args[11]
+        self.packages = args[12]
+        self.instruction = args[13]
+        self.table_widget_ins_prescript = args[14]
+        self.table_widget_ins_treat = args[15]
+        self.table_widget_ins_care = args[16]
         self.parent = parent
 
         self._set_ui()
@@ -411,68 +412,56 @@ class MedicalRecordCheck(QtWidgets.QDialog):
         return check_ok
 
     def _check_general(self):
-        check_ok = self._check_empty_disease()
-        if not check_ok:
-            return check_ok
+        if not self._check_empty_disease():
+            return False
 
-        check_ok = self._check_disease_duplicated()
-        if not check_ok:
-            return check_ok
+        if not self._check_disease_duplicated():
+            return False
 
-        check_ok = self._check_disease_neat()
-        if not check_ok:
-            return check_ok
+        if not self._check_disease_neat():
+            return False
 
-        check_ok = self._check_disease_self_payment()
-        if not check_ok:
-            return check_ok
+        if not self._check_disease_self_payment():
+            return False
 
-        check_ok = self._check_course_disease()
-        if not check_ok:
-            return check_ok
+        if not self._check_course_disease():
+            return False
 
-        check_ok = self._check_same_disease_pres_days()
-        if not check_ok:
-            return check_ok
+        if not self._check_same_disease_pres_days():
+            return False
 
-        check_ok = self._check_ins_medicine()
-        if not check_ok:
-            return check_ok
+        if not self._check_ins_medicine():
+            return False
 
-        check_ok = self._check_empty_prescript()
-        if not check_ok:
-            return check_ok
+        if not self._check_empty_prescript():
+            return False
 
-        check_ok = self._check_empty_treat()
-        if not check_ok:
-            return check_ok
+        if not self._check_empty_treat():
+            return False
 
-        check_ok = self._check_injury_treat()
-        if not check_ok:
-            return check_ok
+        if not self._check_injury_treat():
+            return False
 
-        check_ok = self._check_dosage()
-        if not check_ok:
-            return check_ok
+        if not self._check_dosage():
+            return False
 
         if self.treatment == '複雜針灸':
-            check_ok = self._check_complicated_acupuncture()
-            if not check_ok:
-                return check_ok
+            if not self._check_complicated_acupuncture():
+                return False
         elif self.treatment == '複雜傷科':
-            check_ok = self._check_complicated_massage()
-            if not check_ok:
-                return check_ok
+            if not self._check_complicated_massage():
+                return False
 
-        check_ok = self._check_special_code()
-        if not check_ok:
-            return check_ok
+        if not self._check_special_code():
+            return False
 
-        check_ok = self._check_pres_days()
-        if not check_ok:
-            return check_ok
+        if not self._check_pres_days():
+            return False
 
-        return check_ok
+        if not self._check_prescript():
+            return False
+
+        return True
 
     def _check_dosage(self):
         check_ok = True
@@ -853,6 +842,45 @@ class MedicalRecordCheck(QtWidgets.QDialog):
             save_file = msg_box.exec_()
             if save_file == QMessageBox.RejectRole:
                 check_ok = False
+
+        return check_ok
+
+    def _check_prescript(self):
+        check_ok = True
+        error_message = []
+
+        total_dosage = prescript_utils.get_total_dosage(self.table_widget_ins_prescript)
+        if total_dosage <= 0:
+            if self.pres_days > 0:
+                error_message.append('未開藥但給藥天數 > 0')
+            if self.packages > 0:
+                error_message.append('未開藥但給藥包數 > 0')
+            if self.instruction != '':
+                error_message.append('未開藥但用藥指示非空白')
+        else:
+            if self.pres_days <= 0:
+                error_message.append('給藥天數空白')
+            if self.packages <= 0:
+                error_message.append('給藥包數空白')
+            if self.instruction == '':
+                error_message.append('用藥指示空白')
+
+        if len(error_message) > 0:
+            system_utils.show_message_box(
+                QMessageBox.Critical,
+                '給藥檢查錯誤',
+                '''
+                    <font size="4" color="red">
+                      <b>
+                        給藥檢查錯誤如下:<br>
+                        <br>
+                        {0}
+                      </b>
+                    </font>
+                '''.format('<br>'.join(error_message)),
+                '請更正上述的錯誤，以利健保申報.'
+            )
+            check_ok = False
 
         return check_ok
 

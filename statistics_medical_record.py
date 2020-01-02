@@ -5,7 +5,7 @@ from PyQt5 import QtWidgets
 
 from libs import ui_utils
 from libs import system_utils
-from dialog import dialog_statistics_doctor
+from dialog import dialog_statistics_therapist
 import statistics_medical_record_diag_time_length
 import statistics_medical_record_disease_rank
 
@@ -25,7 +25,7 @@ class StatisticsMedicalRecord(QtWidgets.QMainWindow):
             "start_date": None,
             "end_date": None,
             "ins_type": None,
-            "doctor": None,
+            "therapist": None,
         }
 
         self._set_ui()
@@ -60,8 +60,8 @@ class StatisticsMedicalRecord(QtWidgets.QMainWindow):
 
     # 讀取病歷
     def open_dialog(self):
-        dialog = dialog_statistics_doctor.DialogStatisticsDoctor(
-            self, self.database, self.system_settings
+        dialog = dialog_statistics_therapist.DialogStatisticsTherapist(
+            self, self.database, self.system_settings, '醫師',
         )
 
         if self.dialog_setting['dialog_executed']:
@@ -75,7 +75,7 @@ class StatisticsMedicalRecord(QtWidgets.QMainWindow):
             elif self.dialog_setting['ins_type'] == '自費':
                 dialog.ui.radioButton_self.setChecked(True)
 
-            dialog.ui.comboBox_doctor.setCurrentText(self.dialog_setting['doctor'])
+            dialog.ui.comboBox_therapist.setCurrentText(self.dialog_setting['therapist'])
 
         if not dialog.exec_():
             dialog.deleteLater()
@@ -84,16 +84,16 @@ class StatisticsMedicalRecord(QtWidgets.QMainWindow):
         start_date = dialog.start_date()
         end_date = dialog.end_date()
         ins_type = dialog.ins_type()
-        doctor = dialog.ui.comboBox_doctor.currentText()
+        therapist = dialog.therapist()
 
         self.dialog_setting['dialog_executed'] = True
         self.dialog_setting['start_date'] = dialog.ui.dateEdit_start_date.date()
         self.dialog_setting['end_date'] = dialog.ui.dateEdit_end_date.date()
         self.dialog_setting['ins_type'] = ins_type
-        self.dialog_setting['doctor'] = doctor
+        self.dialog_setting['therapist'] = therapist
 
         dialog.deleteLater()
-        self._set_tab_widget(start_date, end_date, ins_type, doctor)
+        self._set_tab_widget(start_date, end_date, ins_type, therapist)
 
     def _set_tab_widget(self, start_date, end_date, ins_type, doctor):
         self.ui.tabWidget_statistics_medical_record.clear()

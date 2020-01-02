@@ -72,7 +72,7 @@ class ICRecordUpload(QtWidgets.QMainWindow):
         self.table_widget_medical_record = table_widget.TableWidget(
             self.ui.tableWidget_ic_record, self.database)
         self.table_widget_medical_record.set_column_hidden([0])
-        # self._set_table_width()
+        # database._set_table_width()
 
     # 設定信號
     def _set_signal(self):
@@ -495,10 +495,15 @@ class ICRecordUpload(QtWidgets.QMainWindow):
         a31.text = string_utils.xstr(ins_total_fee)
         a32 = ET.SubElement(mb1, 'A32')
         a32.text = string_utils.xstr(share_fee)
-        a54 = ET.SubElement(mb1, 'A54')
-        a54.text = string_utils.xstr(date_utils.west_datetime_to_nhi_datetime(
-            medical_record['CaseDate'])
-        )
+
+        if treat_after_check == '2':
+            a54 = ET.SubElement(mb1, 'A54')
+            # a54.text = string_utils.xstr(date_utils.west_datetime_to_nhi_datetime(
+            #     medical_record['CaseDate'])
+            # )
+            a54.text = date_utils.west_datetime_to_nhi_datetime(
+                case_utils.extract_security_xml(medical_record['Security'], '寫卡時間')
+            )[:7]
 
         return True
 

@@ -154,8 +154,9 @@ class Purchase(QtWidgets.QMainWindow):
         sql = '''
             SELECT * FROM dict_groups 
             WHERE 
-                DictGroupsType = "藥品類別" 
-            ORDER BY DictGroupsKey
+                DictGroupsType = "藥品類別" AND
+                DictGroupsName NOT LIKE "養生館%"
+            ORDER BY DictOrderNo
         '''
         self.table_widget_medicine_type.set_db_data_without_heading(sql, 'DictGroupsName')
 
@@ -462,8 +463,12 @@ class Purchase(QtWidgets.QMainWindow):
             self.ui.action_save.setEnabled(True)
             enabled = False
         else:
+            self.ui.lineEdit_not_patient.setText('')
             self.ui.action_save.setEnabled(False)
             enabled = True
+
+        self.ui.label_not_patient.setEnabled(not enabled)
+        self.ui.lineEdit_not_patient.setEnabled(not enabled)
 
         self.ui.label_patient_key.setEnabled(enabled)
         self.ui.lineEdit_patient_key.setEnabled(enabled)
@@ -482,10 +487,17 @@ class Purchase(QtWidgets.QMainWindow):
 
         self.close_purchase()
 
+    def _get_not_patient_name(self):
+        name = self.ui.lineEdit_not_patient.text()
+        if name == '':
+            name = '自購藥'
+
+        return name
+
     def _get_patient_data(self):
         if self.ui.radioButton_1.isChecked():
             patient_key = 0
-            name = '自購藥'
+            name = self._get_not_patient_name()
         else:
             patient_key = number_utils.get_integer(self.ui.lineEdit_patient_key.text())
             name = self.ui.lineEdit_name.text()

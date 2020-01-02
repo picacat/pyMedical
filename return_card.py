@@ -252,14 +252,14 @@ class ReturnCard(QtWidgets.QMainWindow):
             )
             return
 
-        if self.table_widget_return_card.field_value(15) != '是':
-            system_utils.show_message_box(
-                QMessageBox.Critical,
-                '暫時無法還卡',
-                '<font size="4" color="red"><b>此筆病歷尚未看診完畢, 暫時不需執行還卡作業.</b></font>',
-                '請確定此人看診完畢後, 再執行還卡作業, 已利系統進行健保卡病歷及處方寫入的程序.'
-            )
-            return
+        # if database.table_widget_return_card.field_value(15) != '是':
+        #     system_utils.show_message_box(
+        #         QMessageBox.Critical,
+        #         '暫時無法還卡',
+        #         '<font size="4" color="red"><b>此筆病歷尚未看診完畢, 暫時不需執行還卡作業.</b></font>',
+        #         '請確定此人看診完畢後, 再執行還卡作業, 已利系統進行健保卡病歷及處方寫入的程序.'
+        #     )
+        #     return
 
         dialog = dialog_return_card.DialogReturnCard(
             self, self.database, self.system_settings,

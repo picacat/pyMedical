@@ -2,13 +2,14 @@
 #coding: utf-8
 
 from PyQt5 import QtWidgets, QtCore
-from PyQt5.QtWidgets import QFileDialog
+from PyQt5.QtWidgets import QFileDialog, QMessageBox
 from lxml import etree as ET
 
 from libs import ui_utils
 from libs import string_utils
 from libs import system_utils
 from libs import xml_utils
+from libs import db_utils
 import dict_symptom
 import dict_tongue
 import dict_pulse
@@ -63,7 +64,8 @@ class DictDiagnostic(QtWidgets.QMainWindow):
     def _set_signal(self):
         self.ui.action_close.triggered.connect(self.close_template)
         self.ui.action_export_disease_groups.triggered.connect(self._export_disease_groups)
-        self.ui.action_import_disease_groups.triggered.connect(self._import_disease_groups)
+        self.ui.action_export_disease_groups.triggered.connect(self._export_disease_groups)
+        self.ui.action_export_icd10_json.triggered.connect(self._export_icd10_json)
 
     def close_tab(self):
         current_tab = self.parent.ui.tabWidget_window.currentIndex()
@@ -145,3 +147,33 @@ class DictDiagnostic(QtWidgets.QMainWindow):
 
         progress_dialog.setValue(row_count)
 
+    def _export_icd10_json(self):
+        options = QFileDialog.Options()
+        json_file_name, _ = QFileDialog.getSaveFileName(
+            self.parent,
+            "匯出病名JSON檔案", 'icd10.json',
+            "json檔案 (*.json)",
+            options=options
+        )
+        if not json_file_name:
+            return
+
+        sql = '''
+            SELECT * FROM icd10
+            WHERE
+                ICDCode IS NOT NULL AND LENGTH(ICDCode) > 0
+            ORDER BY ICDCode
+        '''
+        rows = self.database.select_record(sql)
+
+        json_data = db_utils.mysql_to_json(rows)
+        text_file = open(json_file_name, "w", encoding='utf8')
+        text_file.write(str(json_data))
+        text_file.close()
+
+        system_utils.show_message_box(
+            QMessageBox.Information,
+            'JSON資料匯出完成',
+            '<h3>{0}匯出完成.</h3>'.format(json_file_name),
+            'JSON 檔案格式.'
+        )

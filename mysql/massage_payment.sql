@@ -13,6 +13,6 @@ CREATE TABLE IF NOT EXISTS massage_payment
 
     PRIMARY KEY(MassagePaymentKey),
     INDEX(MassageCaseKey, PaymentType)
-) CHARACTER SET utf8;
+) ENGINE = MyISAM DEFAULT CHARACTER SET = utf8;
 
 

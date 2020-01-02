@@ -143,6 +143,19 @@ class MedicalRecordRegistration(QtWidgets.QMainWindow):
             if card == 'IC06':
                 if self.ui.comboBox_injury_type.currentText() not in ['職業傷害', '職業病']:
                     self.ui.comboBox_injury_type.setCurrentText('職業傷害')
+        elif sender_name == 'comboBox_pharmacy_type':
+            ins_prescript = self.parent.tab_list[0]
+            if ins_prescript is None:
+                return
+
+            pharmacy_type = self.ui.comboBox_pharmacy_type.currentText()
+            combo_box_pharmacy = ins_prescript.checkBox_pharmacy
+            if pharmacy_type == '申報' and not combo_box_pharmacy.isChecked():
+                combo_box_pharmacy.setChecked(True)
+            elif pharmacy_type == '不申報' and combo_box_pharmacy.isChecked():
+                combo_box_pharmacy.setChecked(False)
+
+            self.parent.calculate_ins_fees()
 
     def _set_combo_box(self):
         ui_utils.set_combo_box(self.ui.comboBox_period, nhi_utils.PERIOD, None)
@@ -284,13 +297,13 @@ class MedicalRecordRegistration(QtWidgets.QMainWindow):
         self.ui.lineEdit_special_code.setText(string_utils.xstr(row['SpecialCode']))
 
         self.ui.lineEdit_ins_total_fee.setText(string_utils.xstr(number_utils.get_integer(row['InsTotalFee'])))
-        # self.ui.lineEdit_share_fee.setText(
+        # database.ui.lineEdit_share_fee.setText(
         #     string_utils.xstr(
         #         number_utils.get_integer(medical_row['DiagShareFee']) +
         #         number_utils.get_integer(medical_row['DrugShareFee'])
         #     )
         # )
-        # self.ui.lineEdit_ins_apply_fee.setText(string_utils.xstr(number_utils.get_integer(medical_row['InsApplyFee'])))
+        # database.ui.lineEdit_ins_apply_fee.setText(string_utils.xstr(number_utils.get_integer(medical_row['InsApplyFee'])))
 
     def _set_treat_sign(self):
         sql = '''

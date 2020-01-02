@@ -62,7 +62,7 @@ class DialogMedicalRecordList(QtWidgets.QDialog):
 
     # 設定comboBox
     def _set_combo_box(self):
-        script = 'select * from person where Position IN("醫師", "支援醫師") '
+        script = 'select * from person where Position IN ("醫師", "支援醫師") '
         rows = self.database.select_record(script)
         doctor_list = []
         for row in rows:
@@ -112,8 +112,8 @@ class DialogMedicalRecordList(QtWidgets.QDialog):
     def get_sql(self):
         start_date = self.ui.dateEdit_start_date.date().toString('yyyy-MM-dd 00:00:00')
         end_date = self.ui.dateEdit_end_date.date().toString('yyyy-MM-dd 23:59:59')
+        medicine_list = self.ui.lineEdit_medicine_name.text().split()
 
-        condition = []
         script = '''
             SELECT 
                 cases.CaseKey, DATE_FORMAT(cases.CaseDate, '%Y-%m-%d %H:%i') AS CaseDate, 
@@ -128,7 +128,10 @@ class DialogMedicalRecordList(QtWidgets.QDialog):
                 LEFT JOIN patient ON patient.PatientKey = cases.PatientKey
                 LEFT JOIN wait ON wait.CaseKey = cases.CaseKey
         '''
+        if len(medicine_list) > 0:
+            script += ' LEFT JOIN prescript ON prescript.CaseKey = cases.CaseKey '
 
+        condition = []
         if self.ui.radioButton_range_date.isChecked():
             condition.append('(cases.CaseDate BETWEEN "{0}" AND "{1}")'.format(start_date, end_date))
             period = self.ui.comboBox_period.currentText()
@@ -159,6 +162,14 @@ class DialogMedicalRecordList(QtWidgets.QDialog):
         if doctor != '全部':
             condition.append('cases.Doctor = "{0}"'.format(doctor))
 
+        if len(medicine_list) > 0:
+            medicine_condition = []
+            for medicine in medicine_list:
+                medicine_condition.append('prescript.MedicineName LIKE "%{0}%"'.format(medicine))
+
+            medicine_condition = '({0})'.format(' OR '.join(medicine_condition))
+            condition.append(medicine_condition)
+
         keyword = self.ui.lineEdit_patient_key.text()
         if keyword != '':
             patient_key = patient_utils.get_patient_by_keyword(
@@ -175,7 +186,12 @@ class DialogMedicalRecordList(QtWidgets.QDialog):
                 condition=' AND '.join(condition),
             )
 
-        script += ' ORDER BY DATE(cases.CaseDate), FIELD(cases.Period, {period}), cases.RegistNo, cases.Room'.format(
+        if len(medicine_list) > 0:
+            script += ' GROUP BY cases.CaseKey HAVING COUNT(cases.CaseKey) >= {0} '.format(len(medicine_list))
+
+        script += '''
+            ORDER BY DATE(cases.CaseDate), FIELD(cases.Period, {period}), cases.RegistNo, cases.Room
+        '''.format(
             period=str(nhi_utils.PERIOD)[1:-1],
         )
 

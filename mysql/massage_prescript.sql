@@ -18,6 +18,6 @@ CREATE TABLE IF NOT EXISTS massage_prescript
 
     PRIMARY KEY(MassagePrescriptKey),
     INDEX(MassageCaseKey, MedicineKey)
-) CHARACTER SET utf8;
+) ENGINE = MyISAM DEFAULT CHARACTER SET = utf8;
 
 

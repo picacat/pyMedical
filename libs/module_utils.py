@@ -44,6 +44,14 @@ from statistics_ins_performance import *
 from statistics_doctor_performance import *
 from statistics_doctor_commission import *
 from massage_registration import *
+from massage_purchase_list import *
+from massage_purchase import *
+from massage_income import *
+from massage_customer_list import *
+from massage_case_list import *
+from statistics_massage import *
+
+from event_log import *
 
 
 module_dict = {
@@ -92,6 +100,14 @@ module_dict = {
     '資料回復': RestoreRecords,
 
     '養生館掛號': MassageRegistration,
+    '養生館購物': MassagePurchaseList,
+    '養生館購買商品': MassagePurchase,
+    '養生館櫃台結帳': MassageIncome,
+    '顧客資料查詢': MassageCustomerList,
+    '消費資料查詢': MassageCaseList,
+    '養生館統計': StatisticsMassage,
+
+    '系統日誌': EventLog,
 }
 
 

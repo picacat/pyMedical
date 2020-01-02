@@ -94,6 +94,7 @@ class InsApplyFeePerformance(QtWidgets.QMainWindow):
     def _check_ins_apply_fee(self):
         self._check_ins_apply_fee_doctor()
         self._check_ins_apply_fee_case_type()
+        self._list_summary()
         self._plot_chart()
 
     def _check_ins_apply_fee_doctor(self):
@@ -123,14 +124,14 @@ class InsApplyFeePerformance(QtWidgets.QMainWindow):
         for row_no in range(self.ui.tableWidget_doctor_xml.rowCount()):
             doctor_item = self.ui.tableWidget_doctor_xml.item(row_no, 0)
             if doctor_item is None:
-                continue
+                doctor_name = '空白'
+                total_fee, share_fee, ins_apply_fee = 0, 0, 0
+            else:
+                doctor_name = personnel_utils.person_id_to_name(self.database, doctor_item.text())
 
-            doctor_id = doctor_item.text()
-            doctor_name = personnel_utils.person_id_to_name(self.database, doctor_id)
-
-            total_fee = number_utils.get_integer(self.ui.tableWidget_doctor_xml.item(row_no, 6).text())
-            share_fee = number_utils.get_integer(self.ui.tableWidget_doctor_xml.item(row_no, 7).text())
-            ins_apply_fee = total_fee - share_fee
+                total_fee = number_utils.get_integer(self.ui.tableWidget_doctor_xml.item(row_no, 6).text())
+                share_fee = number_utils.get_integer(self.ui.tableWidget_doctor_xml.item(row_no, 7).text())
+                ins_apply_fee = total_fee - share_fee
 
             data = [
                 [0, doctor_name],
@@ -348,6 +349,118 @@ class InsApplyFeePerformance(QtWidgets.QMainWindow):
                 if item is not None:
                     item.setTextAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
 
+    def _list_summary(self):
+        patient_count = self._get_ins_apply_patient_count()
+        period_count = self._get_period_count()
+        try:
+            period_patient_count = patient_count // period_count
+        except ZeroDivisionError:
+            period_patient_count = 0
+
+        days = self._get_days()
+        case_count = self._get_case_count()
+        diag_count = self._get_ins_apply_diag_count()
+        ins_apply_fee = self._get_ins_apply_fee()
+        day_apply_fee = ins_apply_fee // days
+
+        row_data = [
+            patient_count,
+            period_count,
+            period_patient_count,
+            days,
+            case_count,
+            diag_count,
+            ins_apply_fee,
+            day_apply_fee,
+        ]
+
+        self.ui.tableWidget_summary.setRowCount(1)
+        for col_no in range(len(row_data)):
+            item = QtWidgets.QTableWidgetItem()
+            item.setData(QtCore.Qt.EditRole, row_data[col_no])
+
+            self.ui.tableWidget_summary.setItem(0, col_no, item)
+            self.ui.tableWidget_summary.item(
+                0, col_no).setTextAlignment(
+                QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
+            )
+
+    def _get_ins_apply_patient_count(self):
+        table_widget_apply = self.parent.tab_ins_apply_calculated_data.tableWidget_ins_apply_data
+        item = table_widget_apply.item(table_widget_apply.rowCount()-1, 4)
+        try:
+            patient_count = number_utils.get_integer(item.text())
+        except AttributeError:
+            patient_count = 0
+
+        return patient_count
+
+    def _get_ins_apply_diag_count(self):
+        table_widget_apply = self.parent.tab_ins_apply_calculated_data.tableWidget_ins_apply_data
+        item = table_widget_apply.item(table_widget_apply.rowCount()-1, 5)
+        try:
+            diag_count = number_utils.get_integer(item.text())
+        except AttributeError:
+            diag_count = 0
+
+        return diag_count
+
+    def _get_period_count(self):
+        sql = '''
+            SELECT CaseKey, CaseDate, DATE(CaseDate) as case_date FROM cases
+                LEFT JOIN person ON cases.Doctor = person.Name
+            WHERE
+                CaseDate BETWEEN "{start_date}" AND "{end_date}" AND
+                InsType = "健保" AND
+                ApplyType = "申報" AND
+                Doctor IS NOT NULL AND
+                LENGTH(Doctor) > 0 AND
+                person.ID IS NOT NULL
+            GROUP BY case_date, Period, Doctor
+        '''.format(
+            start_date=self.start_date.toString('yyyy-MM-dd 00:00:00'),
+            end_date=self.end_date.toString('yyyy-MM-dd 23:59:59'),
+        )
+        rows = self.database.select_record(sql)
+
+        return len(rows)
+
+    def _get_days(self):
+        sql = '''
+            SELECT CaseKey, DATE(CaseDate) as case_date FROM cases
+            WHERE
+                CaseDate BETWEEN "{start_date}" AND "{end_date}" AND
+                InsType = "健保" AND
+                ApplyType = "申報"
+            GROUP BY case_date
+        '''.format(
+            start_date=self.start_date.toString('yyyy-MM-dd 00:00:00'),
+            end_date=self.end_date.toString('yyyy-MM-dd 23:59:59'),
+        )
+        rows = self.database.select_record(sql)
+
+        return len(rows)
+
+    def _get_case_count(self):
+        table_widget_apply = self.ui.tableWidget_case_xml
+        item = table_widget_apply.item(table_widget_apply.rowCount()-1, 1)
+        try:
+            case_count = number_utils.get_integer(item.text())
+        except AttributeError:
+            case_count = 0
+
+        return case_count
+
+    def _get_ins_apply_fee(self):
+        table_widget_apply = self.ui.tableWidget_case_xml
+        item = table_widget_apply.item(table_widget_apply.rowCount()-1, 8)
+        try:
+            ins_apply_fee = number_utils.get_integer(item.text())
+        except AttributeError:
+            ins_apply_fee = 0
+
+        return ins_apply_fee
+
     def _parse_case_ddata(self, root):
         dhead = root.xpath('//outpatient/ddata/dhead')
         dbody = root.xpath('//outpatient/ddata/dbody')
@@ -548,11 +661,21 @@ class InsApplyFeePerformance(QtWidgets.QMainWindow):
     def _plot_doctor_chart(self):
         series = QtChart.QPieSeries()
         for row_no in range(self.ui.tableWidget_doctor_xml.rowCount()-1):
-            doctor_name = self.ui.tableWidget_doctor_xml.item(row_no, 0).text()
-            ins_apply_fee = number_utils.get_integer(self.ui.tableWidget_doctor_xml.item(row_no, 8).text())
+            doctor_item = self.ui.tableWidget_doctor_xml.item(row_no, 0)
+            if doctor_item is None:
+                doctor_name = '空白'
+                ins_apply_fee = 0
+            else:
+                doctor_name = doctor_item.text()
+                ins_apply_fee = number_utils.get_integer(self.ui.tableWidget_doctor_xml.item(row_no, 8).text())
+
             series.append(doctor_name, ins_apply_fee)
 
-            slice = series.slices()[row_no]
+            try:
+                slice = series.slices()[row_no]
+            except IndexError:
+                return
+
             slice.setExploded()
             slice.setLabelVisible()
 
