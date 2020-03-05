@@ -63,6 +63,10 @@ class DialogExportEMRXml(QtWidgets.QDialog):
         self.ui.pushButton_read_medical_record.clicked.connect(self._read_medical_record)
         self.ui.toolButton_set_bookmark.clicked.connect(self._set_bookmark)
         self.ui.toolButton_add_bookmark.clicked.connect(self._add_bookmark)
+        self.ui.dateEdit_start_date.dateChanged.connect(self._set_date_edit)
+
+    def _set_date_edit(self):
+        self.ui.dateEdit_end_date.setDate(self.ui.dateEdit_start_date.date())
 
     def button_accepted(self):
         self._export_xml_files()
@@ -167,6 +171,16 @@ class DialogExportEMRXml(QtWidgets.QDialog):
             self.ui.tableWidget_medical_record.item(row_no, col).setForeground(color)
 
     def _export_xml_files(self):
+        xml_file_path = self.system_settings.field('電子病歷交換檔輸出路徑')
+        if xml_file_path is None or xml_file_path == '':
+            system_utils.show_message_box(
+                QMessageBox.Critical,
+                '查無電子病歷檔路徑',
+                '<font color="red"><h3>系統設定內的「電子病歷檔路徑尚未設定」, 請設定後再執行!</h3></font>',
+                '請至系統設定->其他->設定電子病歷檔路徑.'
+            )
+            return
+
         row_count = self.ui.tableWidget_medical_record.rowCount()
 
         progress_dialog = QtWidgets.QProgressDialog(
@@ -187,7 +201,7 @@ class DialogExportEMRXml(QtWidgets.QDialog):
             if remark != '*':
                 continue
 
-            self._export_emr_file(case_key)
+            self._export_emr_file(xml_file_path, case_key)
             self._set_emr_date(case_key, case_date)
 
         progress_dialog.setValue(row_count)
@@ -212,7 +226,7 @@ class DialogExportEMRXml(QtWidgets.QDialog):
         ]
         self.database.insert_record('caseextend', fields, data)
 
-    def _get_xml_file_name(self, row):
+    def _get_xml_file_name(self, xml_file_path, row):
         doctor_name = string_utils.xstr(row['Doctor'])
         cert_card_no = personnel_utils.get_personnel_field_value(
             self.database, doctor_name, 'CertCardNo')
@@ -236,11 +250,9 @@ class DialogExportEMRXml(QtWidgets.QDialog):
             name=name,
         )
 
-        xml_file_path = self.system_settings.field('電子病歷交換檔輸出路徑')
-
         return os.path.join(xml_file_path, xml_file_name)
 
-    def _export_emr_file(self, case_key):
+    def _export_emr_file(self, xml_file_path, case_key):
         sql = 'SELECT * FROM cases WHERE CaseKEy = {0}'.format(case_key)
         rows = self.database.select_record(sql)
 
@@ -249,7 +261,9 @@ class DialogExportEMRXml(QtWidgets.QDialog):
 
         row = rows[0]
 
-        xml_file_name = self._get_xml_file_name(row)
+        xml_file_name = self._get_xml_file_name(xml_file_path, row)
+        if xml_file_name is None:
+            return
 
         xsi = 'http://www.w3.org/2001/XMLSchema-instance'
         nsmap = {'xsi': xsi}
@@ -442,29 +456,50 @@ class DialogExportEMRXml(QtWidgets.QDialog):
 
     def _add_diagnosis_data(self, encounter, row):
         symptom = string_utils.get_str(row['Symptom'], 'utf-8')
-        if symptom != '':
+
+        if symptom is not None and symptom != '':
             chief_complain = ET.SubElement(encounter, 'ChiefComplain')
-            chief_complain.text = symptom
+            try:
+                chief_complain.text = symptom
+            except ValueError:
+                symptom = string_utils.remove_control_characters(symptom)
+                chief_complain.text = symptom
 
         tongue = string_utils.get_str(row['Tongue'], 'utf-8')
-        if tongue != '':
+        if tongue is not None and tongue != '':
             tongue_condition = ET.SubElement(encounter, 'TongueCondition')
-            tongue_condition.text = tongue
+            try:
+                tongue_condition.text = tongue
+            except ValueError:
+                tongue = string_utils.remove_control_characters(tongue)
+                tongue_condition.text = tongue
 
         pulse = string_utils.get_str(row['Pulse'], 'utf-8')
-        if pulse != '':
+        if pulse is not None and pulse != '':
             pulse_condition = ET.SubElement(encounter, 'PulseCondition')
-            pulse_condition.text = pulse
+            try:
+                pulse_condition.text = pulse
+            except ValueError:
+                pulse = string_utils.remove_control_characters(pulse)
+                pulse_condition.text = pulse
 
         distinct = string_utils.get_str(row['Distincts'], 'utf-8')
-        if distinct != '':
+        if distinct is not None and distinct != '':
             manifestation = ET.SubElement(encounter, 'Manifestation')
-            manifestation.text = distinct
+            try:
+                manifestation.text = distinct
+            except ValueError:
+                distinct = string_utils.remove_control_characters(distinct)
+                manifestation.text = distinct
 
         cure = string_utils.get_str(row['Cure'], 'utf-8')
-        if cure != '':
+        if cure is not None and cure != '':
             therapeutic_discipline = ET.SubElement(encounter, 'TherapeuticDiscipline')
-            therapeutic_discipline.text = cure
+            try:
+                therapeutic_discipline.text = cure
+            except ValueError:
+                cure = string_utils.remove_control_characters(cure)
+                therapeutic_discipline.text = cure
 
     def _add_disease_data(self, encounter, row):
         for i in range(1, 4):
@@ -523,7 +558,7 @@ class DialogExportEMRXml(QtWidgets.QDialog):
             treatment_region = ET.SubElement(treatment, treatment_region_field)
         elif medical_record_treatment in nhi_utils.MASSAGE_TREAT:
             treatment_region_field = 'ContusionRegion'
-        elif medical_record_treatment in nhi_utils.MASSAGE_TREAT:
+        elif medical_record_treatment in nhi_utils.DISLOCATE_DICT:
             treatment_region_field = 'DislocateRegion'
         else:
             return
@@ -548,11 +583,8 @@ class DialogExportEMRXml(QtWidgets.QDialog):
 
         if medical_record_treatment in nhi_utils.ACUPUNCTURE_TREAT:
             node_name = 'AcupunctureRegionNHICode'
-        else:
-            node_name = 'ContusionRegionNHICode'
-
-        treatment_nhi_code = ET.SubElement(treatment_region, node_name)
-        treatment_nhi_code.text = '9'
+            treatment_nhi_code = ET.SubElement(treatment_region, node_name)
+            treatment_nhi_code.text = '9'
 
         electric_acupuncture = ''
         for prescript_row in rows:
@@ -575,6 +607,10 @@ class DialogExportEMRXml(QtWidgets.QDialog):
                     point_comment.text = electric_acupuncture
             else:
                 treatment_region = ET.SubElement(treatment, treatment_region_field)
+
+                treatment_nhi_code = ET.SubElement(treatment_region, 'ContusionRegionNHICode')
+                treatment_nhi_code.text = '9'
+
                 contusion_technique = ET.SubElement(treatment_region, 'ContusionTechnique')
                 contusion_technique.text = medicine_name
 
@@ -622,8 +658,11 @@ class DialogExportEMRXml(QtWidgets.QDialog):
             drug_name = ET.SubElement(drug, 'DrugName')
             drug_name.text = string_utils.xstr(prescript_row['MedicineName'])
 
-            dose = ET.SubElement(drug, 'Dose')
-            dose.text = '{0:01.2f}'.format(prescript_row['Dosage'] / packages)     # 用量
+            try:
+                dose = ET.SubElement(drug, 'Dose')
+                dose.text = '{0:01.2f}'.format(prescript_row['Dosage'] / packages)     # 用量
+            except TypeError:
+                pass
 
             unit = string_utils.xstr(prescript_row['Unit'])
             if unit == '':
@@ -644,8 +683,11 @@ class DialogExportEMRXml(QtWidgets.QDialog):
                 end_date.year, end_date.month, end_date.day,
             )
 
-            total_amount = ET.SubElement(drug, 'TotalAmount')
-            total_amount.text = '{0:01.2f}'.format(prescript_row['Dosage'] * pres_days)     # 用量
+            try:
+                total_amount = ET.SubElement(drug, 'TotalAmount')
+                total_amount.text = '{0:01.2f}'.format(prescript_row['Dosage'] * pres_days)     # 用量
+            except TypeError:
+                pass
 
             package_number = ET.SubElement(drug, 'PackageNumber')
             package_number.text = string_utils.xstr(packages)

@@ -39,6 +39,7 @@ class DialogPatientList(QtWidgets.QDialog):
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_DIALOG_PATIENT_LIST, self)
         system_utils.set_css(self, self.system_settings)
+        system_utils.center_window(self)
         self.setFixedSize(self.size())  # non resizable dialog
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setText('確定')
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Cancel).setText('取消')
@@ -113,7 +114,10 @@ class DialogPatientList(QtWidgets.QDialog):
                     if year < 1000:
                         year += 1911
 
-                    last_day = calendar.monthrange(year, month)[1]
+                    try:
+                        last_day = calendar.monthrange(year, month)[1]
+                    except calendar.IllegalMonthError:
+                        return
 
                     start_date = '{year}{separator}{month}{separator}01'.format(
                         year=year,

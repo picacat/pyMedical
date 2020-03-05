@@ -17,6 +17,13 @@ BASE_DIR = os.path.abspath(os.path.join(os.path.dirname("__file__")))
 CSS_PATH = "css"
 
 
+def center_window(window):
+    frame_geometry = window.frameGeometry()
+    center_point = QtWidgets.QDesktopWidget().availableGeometry().center()
+    frame_geometry.moveCenter(center_point)
+    window.move(frame_geometry.topLeft())
+
+
 def get_ip():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
@@ -104,6 +111,7 @@ def set_background_image(widget, system_settings):
 
 def set_css(widget, system_settings):
     css_file = os.path.join(BASE_DIR, CSS_PATH, get_css_file(system_settings))
+
     widget.setStyleSheet(open(css_file, "r", encoding='utf-8').read())
 
 
@@ -184,3 +192,15 @@ def set_widget_image(widget, image_file):
 
     widget.setStyleSheet(style_sheet)
 
+
+def set_combo_box_item(combo_box, item_text):
+    item_exists = False
+    for i in range(combo_box.count()):
+        if combo_box.itemText(i) == item_text:
+            item_exists = True
+            break
+
+    if not item_exists:
+        combo_box.insertItem(1, item_text)
+
+    combo_box.setCurrentText(item_text)

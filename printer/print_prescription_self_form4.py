@@ -21,7 +21,7 @@ class PrintPrescriptionSelfForm4:
         self.medicine_set = args[3]
         self.ui = None
 
-        self.printer = printer_utils.get_printer(self.system_settings, '健保處方箋印表機')
+        self.printer = printer_utils.get_printer(self.system_settings, '自費處方箋印表機')
         self.preview_dialog = QtPrintSupport.QPrintPreviewDialog(self.printer)
 
         self.current_print = None

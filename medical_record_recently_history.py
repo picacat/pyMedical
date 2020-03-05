@@ -50,6 +50,7 @@ class MedicalRecordRecentlyHistory(QtWidgets.QMainWindow):
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_MEDICAL_RECORD_RECENTLY_HISTORY, self)
         system_utils.set_css(self, self.system_settings)
+        system_utils.center_window(self)
 
     # 設定信號
     def _set_signal(self):
@@ -61,10 +62,13 @@ class MedicalRecordRecentlyHistory(QtWidgets.QMainWindow):
         self.ui.toolButton_copy.clicked.connect(self.copy_past_medical_record_button_clicked)
 
     def _set_permission(self):
-        if self.call_from == '醫師看診作業':
-            return
+        # if self.call_from == '醫師看診作業':
+        #     return
 
         if self.user_name == '超級使用者':
+            return
+
+        if personnel_utils.get_permission(self.database, '醫師看診作業', '病歷登錄', self.user_name) == 'Y':
             return
 
         if personnel_utils.get_permission(self.database, '病歷資料', '病歷修正', self.user_name) == 'Y':

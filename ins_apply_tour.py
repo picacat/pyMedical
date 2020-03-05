@@ -58,6 +58,7 @@ class InsApplyTour(QtWidgets.QMainWindow):
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_INS_APPLY_TOUR, self)
         system_utils.set_css(self, self.system_settings)
+        system_utils.center_window(self)
         self.table_widget_daily_list = table_widget.TableWidget(
             self.ui.tableWidget_daily_list, self.database)
         self._set_table_width()
@@ -85,7 +86,8 @@ class InsApplyTour(QtWidgets.QMainWindow):
                 ApplyType = "{apply_type}" AND
                 ApplyPeriod = "{period}" AND
                 ClinicID = "{clinic_id}" AND
-                CaseType = "25"
+                CaseType = "25" AND
+                SpecialCode1 = "C6"
             GROUP BY CaseDate
         '''.format(
             apply_date=self.apply_date,
@@ -357,10 +359,13 @@ class InsApplyTour(QtWidgets.QMainWindow):
             '<td style="text-align: center; vertical-align: middle"></td>',
         ]
 
-        if address == '' or tour_area in address:
+        try:
+            if address == '' or tour_area in address:
+                index = 0
+            else:
+                index = 1
+        except TypeError:
             index = 0
-        else:
-            index = 1
 
         native_cell_list[index] = '<td style="text-align: center; vertical-align: middle">V</td>'
 
@@ -375,7 +380,8 @@ class InsApplyTour(QtWidgets.QMainWindow):
                 insapply.ApplyType = "{apply_type}" AND
                 ApplyPeriod = "{period}" AND
                 ClinicID = "{clinic_id}" AND
-                CaseType = "25"
+                CaseType = "25" AND
+                SpecialCode1 = "C6"
             GROUP BY insapply.CaseDate
         '''.format(
             apply_date=self.apply_date,
@@ -503,7 +509,10 @@ class InsApplyTour(QtWidgets.QMainWindow):
         total_case_count = 0
         total_tour_fee = 0
         self.tour_ins_code_list = []
-        for row_no, row in zip(range(10), rows):
+        for row_no, row in zip(range(row_count), rows):
+            if row['CaseDate'] is None:
+                continue
+                
             sequence = row_no + 1
             tour_area = string_utils.xstr(row['TourArea'])
             case_date = date_utils.west_date_to_nhi_date(row['CaseDate'], '-')

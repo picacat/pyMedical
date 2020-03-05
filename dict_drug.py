@@ -46,11 +46,15 @@ class DictDrug(QtWidgets.QMainWindow):
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_DICT_DRUG, self)
         system_utils.set_css(self, self.system_settings)
+        system_utils.center_window(self)
         self.table_widget_dict_groups = table_widget.TableWidget(self.ui.tableWidget_dict_groups, self.database)
         self.table_widget_dict_groups.set_column_hidden([0, 1])
         self.table_widget_dict_drug = table_widget.TableWidget(self.ui.tableWidget_dict_drug, self.database)
         self.table_widget_dict_drug.set_column_hidden([0])
         self._set_table_width()
+        self.ui.statusbar.showMessage(
+            '若藥品類別的自費批價欄為空白, 除了「水藥」自動歸類為「水藥費」, 「高貴」歸類為「高貴藥費」, 其他均歸為「自費藥費」.'
+        )
 
     def _set_permission(self):
         if self.user_name == '超級使用者':
@@ -66,6 +70,7 @@ class DictDrug(QtWidgets.QMainWindow):
         self.ui.toolButton_add_dict_groups.clicked.connect(self._add_dict_groups)
         self.ui.toolButton_remove_dict_groups.clicked.connect(self._remove_dict_groups)
         self.ui.toolButton_edit_dict_groups.clicked.connect(self._edit_dict_groups)
+        self.ui.toolButton_charge_field.clicked.connect(self._add_charge_field)
         self.ui.tableWidget_dict_groups.doubleClicked.connect(self._edit_dict_groups)
         self.ui.toolButton_add_drug.clicked.connect(self._add_drug)
         self.ui.toolButton_remove_drug.clicked.connect(self._remove_drug)
@@ -85,7 +90,7 @@ class DictDrug(QtWidgets.QMainWindow):
         dict_groups_width = [100, 50, 115, 60]
         self.table_widget_dict_groups.set_table_heading_width(dict_groups_width)
 
-        dict_drug_width = [100, 100, 100, 70, 210, 90, 50, 50, 80, 80, 120, 80, 70, 70, 60, 65, 50]
+        dict_drug_width = [100, 100, 120, 70, 250, 90, 50, 50, 80, 80, 120, 80, 80, 80, 70, 70, 60]
         self.table_widget_dict_drug.set_table_heading_width(dict_drug_width)
 
     def _read_drug(self):
@@ -139,6 +144,7 @@ class DictDrug(QtWidgets.QMainWindow):
             string_utils.xstr(row['DictOrderNo']),
             string_utils.xstr(row['DictGroupsName']),
             percent,
+            string_utils.xstr(row['DictGroupsTopLevel']),
         ]
 
         for column in range(len(dict_groups_row)):
@@ -352,6 +358,42 @@ class DictDrug(QtWidgets.QMainWindow):
             old_groups=old_groups,
         )
         self.database.exec_sql(sql)
+    # 更改處方類別
+
+    def _add_charge_field(self):
+        items = ['自費藥費', '水藥費', '高貴藥費', '自費針灸費', '傷科調理費', '自費材料費', '自費診察費']
+
+        dict_groups_key = self.table_widget_dict_groups.field_value(0)
+        dict_groups = self.table_widget_dict_groups.field_value(2)
+        charge_field = self.table_widget_dict_groups.field_value(4)
+
+        try:
+            index = items.index(charge_field)
+        except ValueError:
+            index = 0
+
+        item, ok = QInputDialog.getItem(
+            self,
+            '{0}類別'.format(self.dict_type),
+            '請選擇「{0}類別」的自費批價欄位'.format(dict_groups),
+            items, index, False
+        )
+
+        if not ok:
+            return
+
+        sql = '''
+            UPDATE dict_groups
+            SET
+                DictGroupsTopLevel = "{charge_field}"
+            WHERE
+                DictGroupsKey = {dict_groups_key}
+        '''.format(
+            charge_field=item,
+            dict_groups_key=dict_groups_key,
+        )
+        self.database.exec_sql(sql)
+        self._read_dict_groups()
 
     # 新增處方
     def _add_drug(self):

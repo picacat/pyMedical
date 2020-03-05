@@ -304,7 +304,7 @@ def get_traditional_health_care_fee(database, ins_type, massager):
 
     sql = '''
             SELECT * FROM charge_settings WHERE ChargeType = "門診負擔" AND 
-            ItemName = "民俗調理費" AND InsType = "{0}"
+            ItemName = "傷科調理費" AND InsType = "{0}"
           '''.format(ins_type)
     try:
         row = database.select_record(sql)[0]
@@ -723,8 +723,9 @@ def calculate_ins_fee(database, system_settings, case_key):
 
 
 # 自費批價
-def get_self_fee(tab_list):
+def get_self_fee(database, tab_list):
     self_fee = {}
+    self_fee['diag_fee'] = 0.0
     self_fee['drug_fee'] = 0.0
     self_fee['herb_fee'] = 0.0
     self_fee['expensive_fee'] = 0.0
@@ -750,6 +751,7 @@ def get_self_fee(tab_list):
 
         self_fee['discount_fee'] += number_utils.get_integer(tab.ui.lineEdit_discount_fee.text())
         calculate_self_fee(
+            database,
             tab.ui.tableWidget_prescript,
             pres_days,
             self_fee,
@@ -759,7 +761,7 @@ def get_self_fee(tab_list):
 
 
 # 計算自費批價
-def calculate_self_fee(table_widget_prescript, pres_days, self_fee):
+def calculate_self_fee(database, table_widget_prescript, pres_days, self_fee):
     try:
         row_count = table_widget_prescript.rowCount()
     except RuntimeError:
@@ -777,18 +779,59 @@ def calculate_self_fee(table_widget_prescript, pres_days, self_fee):
 
         subtotal = get_subtotal_fee(amount, pres_days)
 
-        if medicine_type == '水藥':
-            self_fee['herb_fee'] += subtotal
-        elif medicine_type == '高貴':
-            self_fee['expensive_fee'] += subtotal
-        elif medicine_type == '穴道':
-            self_fee['acupuncture_fee'] += subtotal
-        elif medicine_type == '處置':
-            self_fee['massage_fee'] += subtotal
-        elif medicine_type == '器材':
-            self_fee['material_fee'] += subtotal
+        field = get_medicine_type_charge_field(database, medicine_type)
+        if field in [None, '']:
+            if medicine_type == '水藥':
+                charge_field = 'herb_fee'
+            elif medicine_type == '高貴':
+                charge_field = 'expensive_fee'
+            elif medicine_type == '穴道':
+                charge_field = 'acupuncture_fee'
+            elif medicine_type == '處置':
+                charge_field = 'massage_fee'
+            elif medicine_type == '器材':
+                charge_field = 'material_fee'
+            else:
+                charge_field = 'drug_fee'
         else:
-            self_fee['drug_fee'] += subtotal
+            if field == '自費藥費':
+                charge_field = 'drug_fee'
+            elif field == '水藥費':
+                charge_field = 'herb_fee'
+            elif field == '高貴藥費':
+                charge_field = 'expensive_fee'
+            elif field == '自費針灸費':
+                charge_field = 'acupuncture_fee'
+            elif field == '傷科調理費':
+                charge_field = 'massage_fee'
+            elif field == '自費材料費':
+                charge_field = 'material_fee'
+            elif field == '自費診察費':
+                charge_field = 'diag_fee'
+            else:
+                charge_field = 'drug_fee'
+
+        self_fee[charge_field] += subtotal
+
+
+def get_medicine_type_charge_field(database, medicine_type):
+    sql = '''
+        SELECT * FROM dict_groups
+        WHERE
+            DictGroupsType = "藥品類別" AND
+            DictGroupsName = "{medicine_type}"
+    '''.format(
+        medicine_type=medicine_type,
+    )
+
+    rows = database.select_record(sql)
+
+    if len(rows) <= 0:
+        return None
+
+    row = rows[0]
+
+    return string_utils.xstr(row['DictGroupsTopLevel'])
 
 
 # 計算處方金額小計
@@ -1038,8 +1081,8 @@ def set_regist_fee_basic_data(database):
     rows = [
         ('掛號費', '基本掛號費', '健保', '不分類', '不分類', '首次', 100, None),
         ('掛號費', '基本掛號費', '自費', '不分類', '不分類', '首次', 50, None),
-        ('掛號費', '民俗調理費', '健保', '不分類', '不分類', '首次', 50, None),
-        ('掛號費', '民俗調理費', '自費', '不分類', '不分類', '首次', 100, None),
+        ('掛號費', '傷科調理費', '健保', '不分類', '不分類', '首次', 50, None),
+        ('掛號費', '傷科調理費', '自費', '不分類', '不分類', '首次', 100, None),
         ('掛號費', '欠卡費', '健保', '不分類', '不分類', '首次', 500, None),
         ('掛號費', '內科掛號費', '健保', '基層醫療', '內科', '首次', 100, None),
         ('掛號費', '傷科首次掛號費', '健保', '基層醫療', '傷科治療', '首次', 100, None),
@@ -1200,6 +1243,45 @@ def get_discount_fee(system_settings, self_total_fee, discount_rate):
     discount_fee += number_utils.get_integer(total_fee - rounded_total_fee)
 
     return discount_fee
+
+
+# 計算折扣
+def get_amount(system_settings, amount, discount_rate):
+    if discount_rate == 100:
+        return amount
+
+    total_amount = amount - (amount * discount_rate / 100)
+    remainder = total_amount % 10  # 個位數
+    rounded_type = system_settings.field('自費折扣進位')
+    remainder_type = system_settings.field('自費折扣尾數')
+    rounded_total_fee = total_amount
+
+    if rounded_type == '四捨五入':
+        rounded_total_fee = round(total_amount, -1)
+    elif rounded_type == '無條件進位':
+        if remainder_type == '尾數為0':
+            rounded_total_fee = total_amount + (10 - remainder)
+        else:  # 尾數為0或5
+            if remainder in [0, 5]:  # 尾數剛好, 不用調整
+                rounded_total_fee = total_amount
+            elif remainder < 5:
+                rounded_total_fee = total_amount + (5 - remainder)
+            elif remainder > 5:
+                rounded_total_fee = total_amount + (10 - remainder)
+    elif rounded_type == '無條件捨去':
+        if remainder_type == '尾數為0':
+            rounded_total_fee = total_amount - remainder
+        else:
+            if remainder in [0, 5]:  # 尾數剛好, 不用調整
+                rounded_total_fee = total_amount
+            elif remainder < 5:
+                rounded_total_fee = total_amount - remainder
+            elif remainder > 5:
+                rounded_total_fee = total_amount - (remainder - 5)
+
+    amount_fee = number_utils.get_integer(total_amount - rounded_total_fee)
+
+    return amount_fee
 
 
 # 取得自費金額

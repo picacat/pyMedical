@@ -53,7 +53,7 @@ class StatisticsReturnRate(QtWidgets.QMainWindow):
     # 讀取病歷
     def open_dialog(self):
         dialog = dialog_statistics_return_rate.DialogStatisticsReturnRate(
-            self, self.database, self.system_settings
+            self, self.database, self.system_settings, '回診率統計',
         )
 
         if not dialog.exec_():

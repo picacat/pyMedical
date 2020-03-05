@@ -41,6 +41,7 @@ class DictDisease(QtWidgets.QMainWindow):
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_DICT_DISEASE, self)
         system_utils.set_css(self, self.system_settings)
+        system_utils.center_window(self)
         self.table_widget_dict_groups = table_widget.TableWidget(self.ui.tableWidget_dict_groups, self.database)
         self.table_widget_dict_groups.set_column_hidden([0])
         self.table_widget_dict_groups_name = table_widget.TableWidget(self.ui.tableWidget_dict_groups_name, self.database)
@@ -65,6 +66,7 @@ class DictDisease(QtWidgets.QMainWindow):
         self.ui.toolButton_remove_disease.clicked.connect(self._remove_disease)
         self.ui.toolButton_edit_disease.clicked.connect(self._edit_disease)
         self.ui.tableWidget_dict_disease.doubleClicked.connect(self._edit_disease)
+        self.ui.lineEdit_find_disease.textChanged.connect(self._find_disease)
 
     # 設定欄位寬度
     def _set_table_width(self):
@@ -312,6 +314,27 @@ class DictDisease(QtWidgets.QMainWindow):
         sql = 'SELECT * FROM icd10 WHERE ICD10Key = {0}'.format(key)
         row_data = self.database.select_record(sql)[0]
         self._set_dict_disease_data(self.ui.tableWidget_dict_disease.currentRow(), row_data)
+
+    def _find_disease(self):
+        keyword = self.ui.lineEdit_find_disease.text()
+
+        if keyword == '':
+            self.dict_groups_name_changed()
+        else:
+            sql = '''
+                SELECT * FROM icd10 WHERE 
+                (
+                    ICDCode LIKE "{keyword}%" OR 
+                    InputCode LIKE "{keyword}%" OR 
+                    ChineseName LIKE "%{keyword}%"
+                )
+            '''.format(
+                keyword=keyword
+            )
+            self.table_widget_dict_disease.set_db_data(sql, self._set_dict_disease_data)
+
+        self.ui.lineEdit_find_disease.setFocus(True)
+        self.ui.lineEdit_find_disease.setCursorPosition(len(keyword))
 
     # 主程式控制關閉此分頁
     def close_tab(self):

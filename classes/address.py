@@ -6,6 +6,7 @@ from __future__ import unicode_literals
 import re
 import six
 
+
 class Address(object):
     TOKEN_RE = re.compile('''
         (?:

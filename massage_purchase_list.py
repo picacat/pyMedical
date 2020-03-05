@@ -57,6 +57,7 @@ class MassagePurchaseList(QtWidgets.QMainWindow):
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_MASSAGE_PURCHASE_LIST, self)
         system_utils.set_css(self, self.system_settings)
+        system_utils.center_window(self)
         self.table_widget_purchase_list = table_widget.TableWidget(self.ui.tableWidget_purchase_list, self.database)
         self._set_table_width()
         self._set_tool_button()

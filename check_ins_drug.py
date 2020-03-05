@@ -58,7 +58,7 @@ class CheckInsDrug(QtWidgets.QMainWindow):
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_CHECK_INS_DRUG, self)
         system_utils.set_css(self, self.system_settings)
-        self.center()
+        system_utils.center_window(self)
         self._set_table_widget()
 
     def center(self):
@@ -74,8 +74,8 @@ class CheckInsDrug(QtWidgets.QMainWindow):
         self.table_widget_prescript.set_column_hidden([0, 1, 2])
         width = [
             100, 100, 100,
-            120, 80, 80, 100, 180,
-            120, 150, 180, 120, 200, 250,
+            130, 90, 90, 90, 200,
+            120, 150, 180, 130, 150, 250,
         ]
         self.table_widget_prescript.set_table_heading_width(width)
 

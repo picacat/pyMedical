@@ -62,11 +62,11 @@ class InsCheckApplyFee(QtWidgets.QMainWindow):
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_INS_CHECK_APPLY_FEE, self)
         system_utils.set_css(self, self.system_settings)
+        system_utils.center_window(self)
         self.ui.tableWidget_xml.setAlternatingRowColors(True)
         self.table_widget_error_message = table_widget.TableWidget(
             self.ui.tableWidget_error_message, self.database
         )
-        self.center()
         self._set_table_width()
 
     def center(self):

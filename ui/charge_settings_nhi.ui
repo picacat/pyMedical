@@ -70,6 +70,20 @@
               </widget>
              </item>
              <item>
+              <widget class="QToolButton" name="toolButton_export">
+               <property name="toolTip">
+                <string>匯出支付標準表JSON</string>
+               </property>
+               <property name="text">
+                <string>...</string>
+               </property>
+               <property name="icon">
+                <iconset>
+                 <normaloff>../icons/document-export.svg</normaloff>../icons/document-export.svg</iconset>
+               </property>
+              </widget>
+             </item>
+             <item>
               <spacer name="horizontalSpacer">
                <property name="orientation">
                 <enum>Qt::Horizontal</enum>
@@ -175,7 +189,7 @@
      <x>0</x>
      <y>0</y>
      <width>1173</width>
-     <height>24</height>
+     <height>27</height>
     </rect>
    </property>
   </widget>

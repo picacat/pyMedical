@@ -60,6 +60,7 @@ class IncomeList(QtWidgets.QMainWindow):
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_INCOME_LIST, self)
         system_utils.set_css(self, self.system_settings)
+        system_utils.center_window(self)
         self.table_widget_income = table_widget.TableWidget(self.ui.tableWidget_income, self.database)
         self.table_widget_income.set_column_hidden([0])
         self._set_table_width()
@@ -75,7 +76,7 @@ class IncomeList(QtWidgets.QMainWindow):
     # 設定欄位寬度
     def _set_table_width(self):
         width = [
-            100, 110, 45, 70, 80, 45, 80, 80, 80, 70, 50,
+            100, 130, 50, 75, 90, 50, 90, 90, 90, 80, 50,
             70, 80, 80, 70, 70, 80, 80, 80, 80, 80,
             80, 80,
         ]

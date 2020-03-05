@@ -50,9 +50,9 @@ class StatisticsInsPerformanceMedicalRecord(QtWidgets.QMainWindow):
 
     def _set_table_width(self):
         width = [
-            110,
-            85, 85, 85, 85, 85, 85, 85, 85, 85, 85, 85, 85, 85,
-            85, 85, 85, 85, 85, 85, 85, 85]
+            130,
+            85, 85, 85, 85, 85, 80, 80, 80, 80, 85, 85, 85, 85,
+        ]
         self.table_widget_medical_record.set_table_heading_width(width)
 
     # 設定信號

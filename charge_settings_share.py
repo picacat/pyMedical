@@ -39,6 +39,7 @@ class ChargeSettingsShare(QtWidgets.QMainWindow):
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_CHARGE_SETTINGS_SHARE, self)
         system_utils.set_css(self, self.system_settings)
+        system_utils.center_window(self)
         self.table_widget_diag_share = table_widget.TableWidget(self.ui.tableWidget_diag_share, self.database)
         self.table_widget_diag_share.set_column_hidden([0, 1])
         self.table_widget_drug_share = table_widget.TableWidget(self.ui.tableWidget_drug_share, self.database)

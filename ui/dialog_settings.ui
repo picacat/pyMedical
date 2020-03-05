@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1156</width>
+    <width>1234</width>
     <height>904</height>
    </rect>
   </property>
@@ -450,6 +450,16 @@
               <item>
                <widget class="QLabel" name="label_73">
                 <property name="text">
+                 <string>克, 最低劑量</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QSpinBox" name="spinBox_dosage_minimum"/>
+              </item>
+              <item>
+               <widget class="QLabel" name="label_81">
+                <property name="text">
                  <string>克</string>
                 </property>
                </widget>
@@ -468,6 +478,20 @@
                </spacer>
               </item>
              </layout>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="checkBox_pres_days_duplicated">
+              <property name="text">
+               <string>用藥重複檢查, 開藥當日也算一日 (例如：1/1開藥7日, 1/7開藥不算重複)</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="checkBox_check_injury_period">
+              <property name="text">
+               <string>檢查損傷診斷碼, 病歷發生 初期照護: 15日內 後續照護: 16-30日 , 後遺症: 超過30日</string>
+              </property>
+             </widget>
             </item>
            </layout>
           </widget>
@@ -2585,6 +2609,9 @@
               </item>
               <item row="0" column="1">
                <widget class="QSpinBox" name="spinBox_station_no">
+                <property name="alignment">
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
                 <property name="minimum">
                  <number>1</number>
                 </property>
@@ -2676,113 +2703,157 @@
           </widget>
          </item>
          <item>
-          <widget class="QGroupBox" name="groupBox_30">
-           <property name="title">
-            <string>外觀主題設定</string>
-           </property>
-           <property name="flat">
-            <bool>true</bool>
-           </property>
-           <layout class="QVBoxLayout" name="verticalLayout_41">
-            <item>
-             <layout class="QGridLayout" name="gridLayout_16">
+          <layout class="QHBoxLayout" name="horizontalLayout_21">
+           <item>
+            <widget class="QGroupBox" name="groupBox_30">
+             <property name="title">
+              <string>外觀主題設定</string>
+             </property>
+             <property name="flat">
+              <bool>true</bool>
+             </property>
+             <layout class="QVBoxLayout" name="verticalLayout_41">
+              <item>
+               <layout class="QGridLayout" name="gridLayout_16">
+                <item row="3" column="1">
+                 <widget class="QLabel" name="label_57">
+                  <property name="text">
+                   <string>外觀主題會在下次進入系統時生效</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="0">
+                 <widget class="QLabel" name="label_38">
+                  <property name="text">
+                   <string>外觀主題</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="0">
+                 <widget class="QLabel" name="label_61">
+                  <property name="text">
+                   <string>外觀顏色</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="2">
+                 <spacer name="horizontalSpacer_9">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>40</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+                <item row="1" column="1">
+                 <widget class="QComboBox" name="comboBox_color"/>
+                </item>
+                <item row="0" column="1">
+                 <widget class="QComboBox" name="comboBox_theme">
+                  <property name="minimumSize">
+                   <size>
+                    <width>200</width>
+                    <height>0</height>
+                   </size>
+                  </property>
+                 </widget>
+                </item>
+                <item row="2" column="0">
+                 <widget class="QLabel" name="label_80">
+                  <property name="text">
+                   <string>字型大小</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="2" column="1">
+                 <widget class="QSpinBox" name="spinBox_font_size">
+                  <property name="alignment">
+                   <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                  </property>
+                  <property name="minimum">
+                   <number>12</number>
+                  </property>
+                  <property name="maximum">
+                   <number>32</number>
+                  </property>
+                  <property name="value">
+                   <number>18</number>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item>
+            <widget class="QGroupBox" name="groupBox_33">
+             <property name="title">
+              <string>資料路徑設定</string>
+             </property>
+             <property name="flat">
+              <bool>true</bool>
+             </property>
+             <layout class="QGridLayout" name="gridLayout_19">
               <item row="0" column="1">
-               <widget class="QComboBox" name="comboBox_theme">
-                <property name="minimumSize">
-                 <size>
-                  <width>200</width>
-                  <height>0</height>
-                 </size>
-                </property>
-               </widget>
+               <widget class="QLineEdit" name="lineEdit_emr_path"/>
               </item>
               <item row="0" column="0">
-               <widget class="QLabel" name="label_38">
+               <widget class="QLabel" name="label_60">
                 <property name="text">
-                 <string>外觀主題</string>
+                 <string>電子病歷檔路徑</string>
                 </property>
                </widget>
               </item>
               <item row="0" column="2">
-               <spacer name="horizontalSpacer_9">
-                <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
-                </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>40</width>
-                  <height>20</height>
-                 </size>
-                </property>
-               </spacer>
-              </item>
-              <item row="2" column="1">
-               <widget class="QLabel" name="label_57">
+               <widget class="QToolButton" name="toolButton_emr_path">
                 <property name="text">
-                 <string>外觀主題會在下次進入系統時生效</string>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="0">
-               <widget class="QLabel" name="label_61">
-                <property name="text">
-                 <string>外觀顏色</string>
+                 <string>...</string>
                 </property>
                </widget>
               </item>
               <item row="1" column="1">
-               <widget class="QComboBox" name="comboBox_color"/>
+               <widget class="QLineEdit" name="lineEdit_clinic_dir"/>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="label_77">
+                <property name="text">
+                 <string>申報及備份路徑</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="2">
+               <widget class="QToolButton" name="toolButton_get_dir">
+                <property name="text">
+                 <string>...</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0">
+               <widget class="QLabel" name="label_82">
+                <property name="text">
+                 <string>影像資料檔路徑</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="1">
+               <widget class="QLineEdit" name="lineEdit_image_path"/>
+              </item>
+              <item row="2" column="2">
+               <widget class="QToolButton" name="toolButton_get_image_path">
+                <property name="text">
+                 <string>...</string>
+                </property>
+               </widget>
               </item>
              </layout>
-            </item>
-           </layout>
-          </widget>
-         </item>
-         <item>
-          <widget class="QGroupBox" name="groupBox_33">
-           <property name="title">
-            <string>資料路徑設定</string>
-           </property>
-           <property name="flat">
-            <bool>true</bool>
-           </property>
-           <layout class="QGridLayout" name="gridLayout_19">
-            <item row="0" column="0">
-             <widget class="QLabel" name="label_60">
-              <property name="text">
-               <string>電子病歷檔路徑</string>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="2">
-             <widget class="QToolButton" name="toolButton_emr_path">
-              <property name="text">
-               <string>...</string>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="1">
-             <widget class="QLineEdit" name="lineEdit_emr_path"/>
-            </item>
-            <item row="1" column="0">
-             <widget class="QLabel" name="label_77">
-              <property name="text">
-               <string>申報及備份路徑</string>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="1">
-             <widget class="QLineEdit" name="lineEdit_clinic_dir"/>
-            </item>
-            <item row="1" column="2">
-             <widget class="QToolButton" name="toolButton_get_dir">
-              <property name="text">
-               <string>...</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </widget>
+            </widget>
+           </item>
+          </layout>
          </item>
          <item>
           <widget class="QGroupBox" name="groupBox_32">

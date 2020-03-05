@@ -38,6 +38,7 @@ class DialogPulsePicker(QtWidgets.QDialog):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_DIALOG_PULSE_PICKER, self)
         # database.setFixedSize(database.size())  # non resizable dialog
         system_utils.set_css(self, self.system_settings)
+        system_utils.center_window(self)
 
     # 設定信號
     def _set_signal(self):

@@ -45,8 +45,10 @@ class Users(QtWidgets.QMainWindow):
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_USERS, self)
         system_utils.set_css(self, self.system_settings)
+        system_utils.center_window(self)
         self.table_widget_users = table_widget.TableWidget(self.ui.tableWidget_users, self.database)
-        self._set_table_width()
+        self.table_widget_users.set_column_hidden([0])
+        # self._set_table_width()
 
     # 設定信號
     def _set_signal(self):
@@ -82,11 +84,10 @@ class Users(QtWidgets.QMainWindow):
     def _set_table_width(self):
         width = [
             100,
-            80, 100, 100, 50, 120, 120, 100, 50, 180, 150, 80,
-            130, 130, 400, 250, 100, 120, 120, 120, 300,
+            80, 100, 130, 50, 130, 150, 100, 60, 200, 180, 120,
+            150, 150, 400, 250, 100, 120, 120, 120, 300,
         ]
         self.table_widget_users.set_table_heading_width(width)
-        self.table_widget_users.set_column_hidden([0])
 
     def _read_users(self):
         sql = '''

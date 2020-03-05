@@ -69,6 +69,7 @@ class ICRecordUpload(QtWidgets.QMainWindow):
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_IC_RECORD_UPLOAD, self)
         system_utils.set_css(self, self.system_settings)
+        system_utils.center_window(self)
         self.table_widget_medical_record = table_widget.TableWidget(
             self.ui.tableWidget_ic_record, self.database)
         self.table_widget_medical_record.set_column_hidden([0])

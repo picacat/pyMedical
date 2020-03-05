@@ -5,7 +5,7 @@ from PyQt5 import QtWidgets, QtGui, QtCore, QtPrintSupport
 from PyQt5.QtPrintSupport import QPrinter
 from libs import printer_utils
 from libs import system_utils
-from libs import case_utils
+from libs import string_utils
 
 
 # 健保處方箋格式5 6.5 x 2.5 inches
@@ -21,9 +21,9 @@ class PrintReceiptInsForm5:
         self.medicine_set = 1
 
         self.printer = printer_utils.get_printer(self.system_settings, '健保醫療收據印表機')
-        self.preview_dialog = QtPrintSupport.QPrintPreviewDialog(self.printer)
 
         self.current_print = None
+        self.additional = None
 
         self._set_ui()
         self._set_signal()
@@ -44,16 +44,36 @@ class PrintReceiptInsForm5:
     def _set_signal(self):
         pass
 
-    def print(self):
+    def _check_printing(self):
+        printing = True
+
+        if self.additional == '健保另包':
+            if printer_utils.is_additional_prescript(self.database, self.case_key):
+                printing = True
+            else:
+                printing = False
+
+        return printing
+
+    def print(self, additional=None):
+        self.additional = additional
+        if not self._check_printing():
+            return
+
         self.print_html(True)
 
-    def preview(self):
+    def preview(self, additional=None):
+        self.additional = additional
+        if not self._check_printing():
+            return
+
         geometry = QtWidgets.QApplication.desktop().screenGeometry()
 
-        self.preview_dialog.paintRequested.connect(self.print_html)
-        self.preview_dialog.resize(geometry.width(), geometry.height())  # for use in Linux
-        self.preview_dialog.setWindowState(QtCore.Qt.WindowMaximized)
-        self.preview_dialog.exec_()
+        preview_dialog = QtPrintSupport.QPrintPreviewDialog(self.printer)
+        preview_dialog.paintRequested.connect(self.print_html)
+        preview_dialog.resize(geometry.width(), geometry.height())  # for use in Linux
+        preview_dialog.setWindowState(QtCore.Qt.WindowMaximized)
+        preview_dialog.exec_()
 
     def print_html(self, printing=None):
         self.current_print = self.print_html
@@ -82,15 +102,12 @@ class PrintReceiptInsForm5:
         prescript_record = printer_utils.get_prescript_html(
             self.database, self.system_settings,
             self.case_key, self.medicine_set,
-            '費用收據', print_alias, print_total_dosage, blocks=2)
-        # prescript_record = printer_utils.get_prescript_block3_html(
-        #     database.database, database.system_settings,
-        #     database.massage_case_key, database.medicine_set,
-        #     '費用收據', print_alias=False, print_total_dosage=True, blocks=3)
+            '費用收據', print_alias, print_total_dosage, blocks=2, instruction=self.additional)
         instruction = printer_utils.get_instruction_html(
             self.database, self.system_settings, self.case_key, self.medicine_set
         )
         fees_record = printer_utils.get_ins_fees_html(self.database, self.case_key)
+        additional_label = printer_utils.get_additional_label(self.additional)
 
         html = '''
             <html>
@@ -118,6 +135,7 @@ class PrintReceiptInsForm5:
                   </tbody>
                 </table>
                 {instruction}
+                {additional_label}
               </body>
             </html>
         '''.format(
@@ -131,6 +149,7 @@ class PrintReceiptInsForm5:
             prescript=prescript_record,
             instruction=instruction,
             fees=fees_record,
+            additional_label=additional_label,
         )
 
         return html

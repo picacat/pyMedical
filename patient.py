@@ -57,6 +57,7 @@ class Patient(QtWidgets.QMainWindow):
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_PATIENT, self)
         system_utils.set_css(self, self.system_settings)
+        system_utils.center_window(self)
         self._set_combobox()
         self.ui.lineEdit_patient_key.setText(string_utils.xstr(self.database.get_last_auto_increment_key('patient')))
         self.ui.lineEdit_init_date.setText(date_utils.now_to_str())

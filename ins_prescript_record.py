@@ -58,6 +58,7 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_INS_PRESCRIPT_RECORD, self)
         system_utils.set_css(self, self.system_settings)
+        system_utils.center_window(self)
         self.table_widget_prescript = table_widget.TableWidget(self.ui.tableWidget_prescript, self.database)
         self.table_widget_prescript.set_column_hidden([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
         self.table_widget_treat = table_widget.TableWidget(self.ui.tableWidget_treat, self.database)
@@ -116,10 +117,13 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
         self.ui.checkBox_pharmacy.clicked.connect(self._set_pharmacy)
 
     def _set_permission(self):
-        if self.call_from == '醫師看診作業':
-            return
+        # if self.call_from == '醫師看診作業':
+        #     return
 
         if self.user_name == '超級使用者':
+            return
+
+        if personnel_utils.get_permission(self.database, '醫師看診作業', '病歷登錄', self.user_name) == 'Y':
             return
 
         if personnel_utils.get_permission(self.database, '病歷資料', '病歷修正', self.user_name) == 'Y':
@@ -146,6 +150,8 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
 
         self.ui.tableWidget_prescript.setEnabled(False)
         self.ui.tableWidget_treat.setEnabled(False)
+
+        self.ui.checkBox_pharmacy.setEnabled(False)
 
         for row_no in range(self.ui.tableWidget_prescript.rowCount()):
             for col_no in range(self.ui.tableWidget_prescript.columnCount()):
@@ -534,7 +540,11 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
                 row_no, item[0], QtWidgets.QTableWidgetItem(item[1])
             )
 
-            if item[0] in [prescript_utils.INS_PRESCRIPT_COL_NO['Unit'], prescript_utils.INS_PRESCRIPT_COL_NO['Info']]:
+            if item[0] in [
+                prescript_utils.INS_PRESCRIPT_COL_NO['Unit'],
+                prescript_utils.INS_PRESCRIPT_COL_NO['Instruction'],
+                prescript_utils.INS_PRESCRIPT_COL_NO['Info'],
+            ]:
                 self.ui.tableWidget_prescript.item(row_no, item[0]).setTextAlignment(
                     QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter)
             elif item[0] in [prescript_utils.INS_PRESCRIPT_COL_NO['Dosage']]:
@@ -713,7 +723,11 @@ class InsPrescriptRecord(QtWidgets.QMainWindow):
                 row_no, col_no).setTextAlignment(
                 QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
             )
-        elif col_no in [prescript_utils.INS_PRESCRIPT_COL_NO['Unit'], prescript_utils.INS_PRESCRIPT_COL_NO['Info']]:
+        elif col_no in [
+            prescript_utils.INS_PRESCRIPT_COL_NO['Unit'],
+            prescript_utils.INS_PRESCRIPT_COL_NO['Instruction'],
+            prescript_utils.INS_PRESCRIPT_COL_NO['Info'],
+        ]:
             self.ui.tableWidget_prescript.item(
                 row_no, col_no).setTextAlignment(
                 QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter

@@ -53,6 +53,12 @@ def set_default_data(database, table_name):
         set_charge_settings_default_data(database)
     elif table_name == 'icd10':
         set_icd10_default_data(database)
+    elif table_name == 'clinic':
+        set_dict_diagnostic_default_data(database)
+    elif table_name == 'medicine':
+        set_dict_medicine_default_data(database)
+    elif table_name == 'refcompound':
+        set_dict_compound_default_data(database)
 
 
 def set_system_settings_default_data(database):
@@ -89,6 +95,8 @@ def set_dict_groups_default_data(database):
     cvt_groups.cvt_disease_common(database)
     cvt_groups.cvt_disease_treat(database)
 
+    set_dict_diagnostic_groups_default_data(database)
+
 
 def set_charge_settings_default_data(database):
     from libs import charge_utils
@@ -98,6 +106,61 @@ def set_charge_settings_default_data(database):
     charge_utils.set_drug_share_basic_data(database)
     charge_utils.set_discount_basic_data(database)
     charge_utils.set_regist_fee_basic_data(database)
+
+
+def set_dict_diagnostic_default_data(database):
+    from PyQt5 import QtWidgets, QtCore
+    import json
+
+    file_name = './mysql/default/diagnostic.json'
+    field = [
+        'ClinicType', 'ClinicCode', 'InputCode', 'ClinicName', 'Position', 'Groups',
+    ]
+    with open(file_name, encoding='utf8') as json_file:
+        rows = json.load(json_file)
+        row_count = len(rows)
+        progress_dialog = QtWidgets.QProgressDialog(
+            '正在產生診察詞庫檔中, 請稍後...', '取消', 0, row_count, None
+        )
+        progress_dialog.setWindowModality(QtCore.Qt.WindowModal)
+        progress_dialog.setValue(0)
+        for row_no, row in zip(range(row_count), rows):
+            data = [
+                row['ClinicType'], row['ClinicCode'], row['InputCode'], row['ClinicName'],
+                row['Position'], row['Groups'],
+            ]
+            database.insert_record('clinic', field, data)
+            progress_dialog.setValue(row_no)
+
+        progress_dialog.setValue(row_count)
+
+
+def set_dict_diagnostic_groups_default_data(database):
+    from PyQt5 import QtWidgets, QtCore
+    import json
+
+    file_name = './mysql/default/diagnostic_groups.json'
+    field = [
+        'DictOrderNo', 'DictGroupsType', 'DictGroupsTopLevel', 'DictGroupsLevel2',
+        'DictGroupsName',
+    ]
+    with open(file_name, encoding='utf8') as json_file:
+        rows = json.load(json_file)
+        row_count = len(rows)
+        progress_dialog = QtWidgets.QProgressDialog(
+            '正在產生診察詞庫類別檔中, 請稍後...', '取消', 0, row_count, None
+        )
+        progress_dialog.setWindowModality(QtCore.Qt.WindowModal)
+        progress_dialog.setValue(0)
+        for row_no, row in zip(range(row_count), rows):
+            data = [
+                row['DictOrderNo'], row['DictGroupsType'], row['DictGroupsTopLevel'], row['DictGroupsLevel2'],
+                row['DictGroupsName'],
+            ]
+            database.insert_record('dict_groups', field, data)
+            progress_dialog.setValue(row_no)
+
+        progress_dialog.setValue(row_count)
 
 
 def set_icd10_default_data(database):
@@ -122,6 +185,62 @@ def set_icd10_default_data(database):
                 row['SpecialCode'], row['Groups'],
             ]
             database.insert_record('icd10', field, data)
+            progress_dialog.setValue(row_no)
+
+        progress_dialog.setValue(row_count)
+
+
+def set_dict_medicine_default_data(database):
+    from PyQt5 import QtWidgets, QtCore
+    import json
+
+    file_name = './mysql/default/medicine.json'
+    field = [
+        'MedicineKey',
+        'MedicineType', 'MedicineMode', 'MedicineCode', 'InputCode', 'InsCode', 'MedicineName',
+        'Unit', 'Description'
+    ]
+    with open(file_name, encoding='utf8') as json_file:
+        rows = json.load(json_file)
+        row_count = len(rows)
+        progress_dialog = QtWidgets.QProgressDialog(
+            '正在產生處方詞庫檔中, 請稍後...', '取消', 0, row_count, None
+        )
+        progress_dialog.setWindowModality(QtCore.Qt.WindowModal)
+        progress_dialog.setValue(0)
+        for row_no, row in zip(range(row_count), rows):
+            data = [
+                row['MedicineKey'],
+                row['MedicineType'], row['MedicineMode'], row['MedicineCode'], row['InputCode'],
+                row['InsCode'], row['MedicineName'], row['Unit'], row['Description'],
+            ]
+            database.insert_record('medicine', field, data)
+            progress_dialog.setValue(row_no)
+
+        progress_dialog.setValue(row_count)
+
+
+def set_dict_compound_default_data(database):
+    from PyQt5 import QtWidgets, QtCore
+    import json
+
+    file_name = './mysql/default/compound.json'
+    field = [
+        'CompoundKey', 'MedicineKey', 'Quantity', 'Unit',
+    ]
+    with open(file_name, encoding='utf8') as json_file:
+        rows = json.load(json_file)
+        row_count = len(rows)
+        progress_dialog = QtWidgets.QProgressDialog(
+            '正在產生成方詞庫檔中, 請稍後...', '取消', 0, row_count, None
+        )
+        progress_dialog.setWindowModality(QtCore.Qt.WindowModal)
+        progress_dialog.setValue(0)
+        for row_no, row in zip(range(row_count), rows):
+            data = [
+                row['CompoundKey'], row['MedicineKey'], row['Quantity'], row['Unit'],
+            ]
+            database.insert_record('refcompound', field, data)
             progress_dialog.setValue(row_no)
 
         progress_dialog.setValue(row_count)

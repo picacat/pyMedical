@@ -23,9 +23,9 @@ class PrintReceiptInsForm6:
         self.medicine_set = 1
 
         self.printer = printer_utils.get_printer(self.system_settings, '健保醫療收據印表機')
-        self.preview_dialog = QtPrintSupport.QPrintPreviewDialog(self.printer)
 
         self.current_print = None
+        self.additional = None
 
         self._set_ui()
         self._set_signal()
@@ -50,16 +50,36 @@ class PrintReceiptInsForm6:
     def _set_signal(self):
         pass
 
-    def print(self):
+    def _check_printing(self):
+        printing = True
+
+        if self.additional == '健保另包':
+            if printer_utils.is_additional_prescript(self.database, self.case_key):
+                printing = True
+            else:
+                printing = False
+
+        return printing
+
+    def print(self, additional=None):
+        self.additional = additional
+        if not self._check_printing():
+            return
+
         self.print_html(True)
 
-    def preview(self):
+    def preview(self, additional=None):
+        self.additional = additional
+        if not self._check_printing():
+            return
+
         geometry = QtWidgets.QApplication.desktop().screenGeometry()
 
-        self.preview_dialog.paintRequested.connect(self.print_html)
-        self.preview_dialog.resize(geometry.width(), geometry.height())  # for use in Linux
-        self.preview_dialog.setWindowState(QtCore.Qt.WindowMaximized)
-        self.preview_dialog.exec_()
+        preview_dialog = QtPrintSupport.QPrintPreviewDialog(self.printer)
+        preview_dialog.paintRequested.connect(self.print_html)
+        preview_dialog.resize(geometry.width(), geometry.height())  # for use in Linux
+        preview_dialog.setWindowState(QtCore.Qt.WindowMaximized)
+        preview_dialog.exec_()
 
     def print_html(self, printing=None):
         self.current_print = self.print_html
@@ -89,9 +109,9 @@ class PrintReceiptInsForm6:
         prescript_record = printer_utils.get_prescript_html2(
             self.database, self.system_settings,
             self.case_key, self.medicine_set,
-            '費用收據', print_alias, print_total_dosage, blocks=2)
+            '費用收據', print_alias, print_total_dosage, blocks=2, instruction=self.additional)
         instruction = printer_utils.get_instruction_html2(
-            self.database, self.system_settings, self.case_key, self.medicine_set
+            self.database, self.system_settings, self.case_key, self.medicine_set, self.additional
         )
 
         prescript_html = '''
@@ -180,7 +200,7 @@ class PrintReceiptInsForm6:
                 </tr>
                 <tr>
                   <td>欠卡金額</td>
-                  <td align="right">{total_share_fee}</td>
+                  <td align="right">{deposit_fee}</td>
                 </tr>
                 <tr>
                   <td>實收金額</td>
@@ -244,6 +264,8 @@ class PrintReceiptInsForm6:
 
         prescript_html = self._get_prescript_html(row)
         fees_html = self._get_ins_fees_html(row)
+        if self.additional is not None:
+            fees_html = ''
 
         html = '''
             <html>

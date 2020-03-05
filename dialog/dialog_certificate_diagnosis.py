@@ -284,7 +284,7 @@ class DialogCertificateDiagnosis(QtWidgets.QDialog):
         if self.ui.checkBox_import_symptom.isChecked():
            diagnosis += '\n{0}'.format(string_utils.get_str(row['Symptom'], 'utf8'))
 
-        diagnosis += '\n(以下空白)'
+        diagnosis += '(以下空白)'
 
         self.ui.textEdit_diagnosis.setText(diagnosis)
 
@@ -308,7 +308,7 @@ class DialogCertificateDiagnosis(QtWidgets.QDialog):
         )
 
         if ok and item:
-            item += '\n(以下空白)'
+            item += '(以下空白)'
             self.ui.textEdit_doctor_comment.setText(item)
 
     def _check_diagnosis_completed(self):

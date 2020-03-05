@@ -43,7 +43,7 @@ class Reservation(QtWidgets.QMainWindow):
         self.max_reservation_table_times = 4
         self.max_reservation_table_rows = 20
         self.table_header = ['時間', '診號', '姓名', 'reserve_key']
-        self.table_header_width = [70, 50, 100, 60]
+        self.table_header_width = [70, 50, 90, 60]
         self.tab_name = '預約一覽表'
 
         self.user_name = self.system_settings.field('使用者')
@@ -415,23 +415,30 @@ class Reservation(QtWidgets.QMainWindow):
                 col_no = (i-1) * len(self.table_header)
                 time = self.ui.tableWidget_reservation.item(row_no, col_no)
                 reserve_no = self.ui.tableWidget_reservation.item(row_no, col_no+1)
-                if time is not None and reserve_no is not None:
+                if time is not None and time.text() != '' and reserve_no is not None and reserve_no.text() != '':
                     self._insert_reservation_table(
                         period, weekday, doctor, row_no, col_no,
                         time.text(), reserve_no.text()
                     )
 
     def _remove_reservation_table(self, doctor, period, weekday):
+        if weekday is None:
+            weekday_condition = ''
+        else:
+            weekday_condition = 'AND Weekday = "{weekday}"'.format(
+                weekday=weekday,
+            )
+
         sql = '''
             DELETE FROM reservation_table
             WHERE
                 Doctor = "{doctor}" AND 
-                Period = "{period}" AND
-                Weekday = "{weekday}"
+                Period = "{period}"
+                {weekday_condition}
         '''.format(
             doctor=doctor,
             period=period,
-            weekday=weekday,
+            weekday_condition=weekday_condition,
         )
         self.database.exec_sql(sql)
 
@@ -580,6 +587,7 @@ class Reservation(QtWidgets.QMainWindow):
         patient_key = string_utils.xstr(row_data['PatientKey'])
         telephone = string_utils.xstr(row_data['Telephone'])
         cellphone = string_utils.xstr(row_data['Cellphone'])
+        time_stamp = string_utils.xstr(row_data['TimeStamp'])
         if string_utils.xstr(row_data['Source']) == '網路初診預約':
             patient_key = '網路初診'
             telephone = None
@@ -600,6 +608,7 @@ class Reservation(QtWidgets.QMainWindow):
             string_utils.xstr(row_data['Registrar']),
             telephone,
             cellphone,
+            time_stamp,
         ]
 
         for column in range(len(reservation_list_data)):
@@ -960,7 +969,7 @@ class Reservation(QtWidgets.QMainWindow):
             gender = None
 
         field = [
-            'Name', 'ID', 'Gender', 'Birthday', 'Telephone',
+            'Name', 'ID', 'Gender', 'Birthday', 'Telephone', 'InitDate',
         ]
         data = [
             string_utils.xstr(temp_patient_row['Name']),
@@ -968,6 +977,7 @@ class Reservation(QtWidgets.QMainWindow):
             gender,
             string_utils.xstr(temp_patient_row['Birthday']),
             string_utils.xstr(temp_patient_row['PhoneNo']),
+            date_utils.now_to_str(),
         ]
         new_patient_key = self.database.insert_record('patient', field, data)
 
@@ -1063,10 +1073,10 @@ class Reservation(QtWidgets.QMainWindow):
 
     def _set_calendar(self):
         for i in range(0, self.ui.tableWidget_calendar.columnCount()):
-            self.ui.tableWidget_calendar.setColumnWidth(i, 100)
+            self.ui.tableWidget_calendar.setColumnWidth(i, 107)
 
         for i in range(0, self.ui.tableWidget_calendar.rowCount()):
-            self.ui.tableWidget_calendar.setRowHeight(i, 108)
+            self.ui.tableWidget_calendar.setRowHeight(i, 107)
 
         calendar_list = {
             0:  [0, 0], 1:  [0, 1], 2:  [0, 2], 3:  [0, 3], 4:  [0, 4], 5:  [0, 5], 6:  [0, 6],
@@ -1236,7 +1246,10 @@ class Reservation(QtWidgets.QMainWindow):
         reservation_count = len(rows)
 
         if reservation_count > 0:
-            status = '預約: {0}人'.format(reservation_count)
+            status = '{period}: {count}人'.format(
+                period=period,
+                count=reservation_count,
+            )
 
         return status
 

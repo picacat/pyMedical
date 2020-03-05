@@ -79,9 +79,9 @@ class IncomeSelfPrescript(QtWidgets.QMainWindow):
     # 設定欄位寬度
     def _set_table_width(self):
         width = [
-            100, 120, 50, 70, 80, 50, 90, 60,
-            250, 50, 50, 50, 90, 90, 80, 80,
-            350,
+            100, 130, 50, 75, 90, 50, 90, 65,
+            250, 50, 50, 50, 90, 90, 90, 90,
+            300,
         ]
         self.table_widget_self_prescript.set_table_heading_width(width)
 

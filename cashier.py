@@ -7,8 +7,9 @@ from PyQt5.QtWidgets import QMessageBox, QPushButton
 import sys
 
 from classes import table_widget
+from classes import udp_socket_client
+
 from libs import ui_utils
-from libs import system_utils
 from libs import string_utils
 from libs import nhi_utils
 from libs import date_utils
@@ -42,6 +43,7 @@ class Cashier(QtWidgets.QMainWindow):
 
         self.user_name = self.system_settings.field('使用者')
         self.allow_refresh_wait_list = True
+        self.socket_client = udp_socket_client.UDPSocketClient()
 
         self._set_ui()
         self._set_signal()
@@ -102,6 +104,11 @@ class Cashier(QtWidgets.QMainWindow):
     def close_cashier(self):
         self.close_all()
         self.close_tab()
+
+    def _send_socket_data(self):
+        self.socket_client.send_data(
+            ','.join([self.system_settings.field('院所名稱'), self.program_name])
+        )
 
     def read_wait(self):
         if self.ui.radioButton_unpaid.isChecked():
@@ -390,13 +397,14 @@ class Cashier(QtWidgets.QMainWindow):
 
         self._save_records(wait_key, case_key)
         if sender_name == 'action_save':  # 批價列印
+            self._print_misc(case_key)
             self._print_prescription(case_key)
             self._print_receipt(case_key)
-            self._print_misc(case_key)
 
         if need_write_ic_card and ic_card is not None:
             ic_card.write_ic_medical_record(case_key, cshis_utils.NORMAL_CARD)
 
+        self._send_socket_data()
         self.read_wait()
         self.allow_refresh_wait_list = True
 

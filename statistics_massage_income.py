@@ -50,7 +50,7 @@ class StatisticsMassageIncome(QtWidgets.QMainWindow):
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_STATISTICS_MASSAGE_INCOME, self)
         system_utils.set_css(self, self.system_settings)
-        self.center()
+        system_utils.center_window(self)
         self.table_widget_massage_income = table_widget.TableWidget(
             self.ui.tableWidget_massage_income, self.database
         )

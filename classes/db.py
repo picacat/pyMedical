@@ -126,10 +126,18 @@ class Database:
     # 讀取記錄
     def select_record(self, sql, dictionary=True):
         cursor = self.get_cursor(dictionary)
+        rows = None
 
-        cursor.execute(sql)
-        rows = cursor.fetchall()
-        cursor.close()
+        try:
+            cursor.execute(sql)
+            rows = cursor.fetchall()
+        except ReferenceError:
+            pass
+        finally:
+            try:
+                cursor.close()
+            except ReferenceError:
+                pass
 
         return rows
 

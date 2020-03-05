@@ -134,6 +134,7 @@ class Registration(QtWidgets.QMainWindow):
         self.ui.tableWidget_wait_completed.doubleClicked.connect(self._modify_wait)
 
         self.ui.lineEdit_query.returnPressed.connect(self.query_patient)
+        self.ui.comboBox_reg_type.currentIndexChanged.connect(self._selection_changed)
         self.ui.comboBox_patient_share.currentIndexChanged.connect(self._selection_changed)
         self.ui.comboBox_patient_discount.currentIndexChanged.connect(self._selection_changed)
         self.ui.comboBox_ins_type.currentIndexChanged.connect(self._selection_changed)
@@ -374,7 +375,7 @@ class Registration(QtWidgets.QMainWindow):
         self.parent.open_patient_record(patient_key, '門診掛號')
 
     def _set_table_width(self):
-        width = [100, 100, 45, 70, 80, 45, 45, 45, 80, 80, 100, 50, 80, 30, 30, 80, 80, 80, 80, 80, 80]
+        width = [100, 100, 45, 70, 85, 45, 45, 50, 90, 90, 100, 50, 80, 30, 30, 80, 80, 80, 80, 80, 80]
         self.table_widget_wait.set_table_heading_width(width)
         width = [
             100, 100, 70, 90, 45, 50, 80, 100, 50, 65, 30, 30, 50, 60,
@@ -592,11 +593,6 @@ class Registration(QtWidgets.QMainWindow):
             self.ui.comboBox_massager,
             personnel_utils.get_personnel(self.database, '推拿師父'), None)
         self._set_combo_box_remark()
-        ui_utils.set_combo_box(
-            self.ui.comboBox_tour_area,
-            list(nhi_utils.TOUR_AREA_DICT.keys()),
-            None
-        )
         self.ui.comboBox_reg_type.setCurrentText(self.system_settings.field('掛號類別'))
         self.ui.comboBox_tour_area.setCurrentText(self.system_settings.field('巡迴區域'))
 
@@ -645,6 +641,8 @@ class Registration(QtWidgets.QMainWindow):
             self._set_regist_fee()
             self._set_diag_share_fee()
             self._set_deposit_fee()
+        elif sender_name == 'comboBox_reg_type':
+            self._check_tour()
         elif sender_name == 'comboBox_share_type':
             if self.ui.comboBox_share_type.currentText() == '職業傷害':
                 if self.ui.comboBox_injury_type.currentText() not in ['職業傷害', '職業病']:
@@ -1038,7 +1036,7 @@ class Registration(QtWidgets.QMainWindow):
             warning_message.append(message)
 
         message = registration_utils.check_prescription_finished(       # 檢查上次健保給藥是否服藥完畢
-            self.database, None, patient_key
+            self.database, self.system_settings, None, patient_key
         )
         if message is not None:
             warning_message.append(message)
@@ -1166,7 +1164,6 @@ class Registration(QtWidgets.QMainWindow):
 
     # 設定掛號資料
     def _set_registration_data(self, patient_key, medical_record=None):
-
         if medical_record is None:  # 門診掛號
             reg_type = self.system_settings.field('掛號類別')
             tour_area = self.system_settings.field('巡迴區域')
@@ -1184,7 +1181,7 @@ class Registration(QtWidgets.QMainWindow):
             room = self.system_settings.field('診療室')  # 取得預設診療室
             period = registration_utils.get_current_period(self.system_settings)
             doctor = registration_utils.get_doctor_schedule(self.database, room, period)  # 醫師要先取得，以便確定是否佔用預約號
-            self.ui.comboBox_tour_area.setCurrentText(self.system_settings.field('巡迴區域'))
+            self._check_tour()
 
             if doctor is None or doctor == '':
                 doctor_found = False
@@ -1250,6 +1247,31 @@ class Registration(QtWidgets.QMainWindow):
         self.ui.comboBox_period.setCurrentText(period)
         self.ui.comboBox_massager.setCurrentText(massager)
         self.ui.comboBox_remark.setCurrentText(remark)
+
+    def _check_tour(self):
+        if self.ui.comboBox_reg_type.currentText() not in nhi_utils.TOUR_TYPE:
+            self.ui.comboBox_tour_area.setCurrentIndex(0)
+            self.ui.comboBox_tour_area.setEnabled(False)
+            return
+
+        self.ui.comboBox_tour_area.setEnabled(True)
+        tour_area = []
+        if self.ui.comboBox_reg_type.currentText() == '巡迴偏遠':
+            tour_area = ['-- 資源不足 --'] + nhi_utils.TOUR_AREA_LEVEL['資源不足'] + \
+                        ['', '-- 一級偏遠 --'] + nhi_utils.TOUR_AREA_LEVEL['一級偏遠'] + \
+                        ['', '-- 二級偏遠 --'] + nhi_utils.TOUR_AREA_LEVEL['二級偏遠']
+        elif self.ui.comboBox_reg_type.currentText() == '巡迴山地':
+            tour_area = ['-- 山地鄉 --'] + nhi_utils.TOUR_AREA_LEVEL['山地鄉']
+        elif self.ui.comboBox_reg_type.currentText() == '巡迴離島':
+            tour_area = ['-- 一級離島 --'] + nhi_utils.TOUR_AREA_LEVEL['一級離島'] + \
+                        ['', '-- 二級離島 --'] + nhi_utils.TOUR_AREA_LEVEL['二級離島'] + \
+                        ['', '-- 三級離島 --'] + nhi_utils.TOUR_AREA_LEVEL['三級離島']
+
+        ui_utils.set_combo_box(
+            self.ui.comboBox_tour_area, tour_area, None
+        )
+
+        self.ui.comboBox_tour_area.setCurrentText(self.system_settings.field('巡迴區域'))
 
     # 設定掛號費
     def _set_regist_fee(self):
@@ -1420,7 +1442,13 @@ class Registration(QtWidgets.QMainWindow):
         self.ui.tableWidget_wait.removeRow(self.ui.tableWidget_wait.currentRow())
         if self.ui.tableWidget_wait.rowCount() <= 0:
             self._set_wait_tool_button(False)
-        self.socket_client.send_data('刪除掛號資料')
+
+        self._send_socket_data()
+
+    def _send_socket_data(self):
+        self.socket_client.send_data(
+            ','.join([self.system_settings.field('院所名稱'), self.program_name])
+        )
 
     # IC卡退掛
     def cancel_ic_card(self):
@@ -1548,7 +1576,7 @@ class Registration(QtWidgets.QMainWindow):
         self._reset_action_button_text()
         self.read_wait()
 
-        self.socket_client.send_data('新增掛號資料')
+        self._send_socket_data()
 
         sender_name = self.sender().objectName()
         if sender_name == 'action_save':

@@ -4,6 +4,7 @@
 
 from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtWidgets import QFileDialog
+import os
 
 from libs import ui_utils
 from libs import system_utils
@@ -61,20 +62,12 @@ class DialogSystemSettings(QtWidgets.QDialog):
         self.ui.spinBox_station_no.valueChanged.connect(self.spin_button_value_changed)
         self.ui.toolButton_emr_path.clicked.connect(self._get_emr_path)
         self.ui.toolButton_get_dir.clicked.connect(self._get_clinic_dir)
+        self.ui.toolButton_get_image_path.clicked.connect(self._get_image_path)
         self.ui.pushButton_detect_com_port.clicked.connect(self._detect_com_port)
         self.ui.radioButton_reg_normal.clicked.connect(self._set_tour_combo_box)
         self.ui.radioButton_reg_far.clicked.connect(self._set_tour_combo_box)
         self.ui.radioButton_reg_mountain.clicked.connect(self._set_tour_combo_box)
         self.ui.radioButton_reg_island.clicked.connect(self._set_tour_combo_box)
-
-    def _get_clinic_dir(self):
-        options = QFileDialog.DontResolveSymlinks | QFileDialog.ShowDirsOnly
-        directory = QFileDialog.getExistingDirectory(
-            self, "取得院所專屬資料夾",
-            '請選擇院所專用資料夾, 以供申報及備份使用', options=options
-        )
-        if directory:
-            self.ui.lineEdit_clinic_dir.setText(directory)
 
     def _set_tour_combo_box(self):
         self.ui.comboBox_tour_area.clear()
@@ -230,15 +223,17 @@ class DialogSystemSettings(QtWidgets.QDialog):
         self.ui.lineEdit_period1.setText(self.system_settings.field('早班時間'))
         self.ui.lineEdit_period2.setText(self.system_settings.field('午班時間'))
         self.ui.lineEdit_period3.setText(self.system_settings.field('晚班時間'))
-        self.ui.lineEdit_clinic_dir.setText(self.system_settings.field('資料路徑'))
         self.ui.spinBox_nurse.setValue(number_utils.get_integer(self.system_settings.field('護士人數')))
         self.ui.spinBox_pharmacist.setValue(number_utils.get_integer(self.system_settings.field('藥師人數')))
         self._set_check_box(self.ui.checkBox_pharmacy_fee, '申報藥事服務費')
         self._set_check_box(self.ui.checkBox_init_fee, '申報初診照護')
         self._set_check_box(self.ui.checkBox_acupuncture_cert, '針灸認證合格')
+        self._set_check_box(self.ui.checkBox_pres_days_duplicated, '當日用藥重複檢查')
+        self._set_check_box(self.ui.checkBox_check_injury_period, '檢查損傷診斷碼')
         self._set_date_edit(self.ui.dateEdit_acupuncture_date, '針灸認證合格日期')
         self.ui.comboBox_division.setCurrentText(self.system_settings.field('健保業務'))
         self.ui.spinBox_dosage_limitation.setValue(number_utils.get_integer(self.system_settings.field('劑量上限')))
+        self.ui.spinBox_dosage_minimum.setValue(number_utils.get_integer(self.system_settings.field('最低劑量')))
         self.ui.comboBox_resource.setCurrentText(self.system_settings.field('資源類別'))
         self.ui.comboBox_tour_area.setCurrentText(self.system_settings.field('巡迴區域'))
         self._set_radio_button(
@@ -442,12 +437,32 @@ class DialogSystemSettings(QtWidgets.QDialog):
                                ['診療', '掛號', '批價'],
                                '產生醫令簽章位置')
 
+    def _get_css_font_size(self):
+        css_file = os.path.join(
+            system_utils.BASE_DIR, system_utils.CSS_PATH, system_utils.get_css_file(self.system_settings)
+        )
+        s = open(css_file, 'r', encoding='utf-8').read()
+        font_size = 18
+        for i in range(12, 33):
+            _size = 'font-size: {0}px;'.format(i)
+            if s.find(_size) > 0:
+                font_size = i
+                break
+
+        return font_size
+
     def _read_misc(self):
         self.ui.spinBox_station_no.setValue(number_utils.get_integer(self.system_settings.field('工作站編號')))
         self.ui.lineEdit_position.setText(self.system_settings.field('工作站位置'))
         self.ui.comboBox_theme.setCurrentText(self.system_settings.field('外觀主題'))
         self.ui.comboBox_color.setCurrentText(self.system_settings.field('外觀顏色'))
+
+        font_size = self._get_css_font_size()
+        self.ui.spinBox_font_size.setValue(font_size)
+
         self.ui.lineEdit_emr_path.setText(self.system_settings.field('電子病歷交換檔輸出路徑'))
+        self.ui.lineEdit_clinic_dir.setText(self.system_settings.field('資料路徑'))
+        self.ui.lineEdit_image_path.setText(self.system_settings.field('影像檔路徑'))
         self._set_check_box(self.ui.checkBox_side_bar, '顯示側邊欄')
         self._set_radio_button(
             [
@@ -486,15 +501,17 @@ class DialogSystemSettings(QtWidgets.QDialog):
         self.system_settings.post('早班時間', self.ui.lineEdit_period1.text())
         self.system_settings.post('午班時間', self.ui.lineEdit_period2.text())
         self.system_settings.post('晚班時間', self.ui.lineEdit_period3.text())
-        self.system_settings.post('資料路徑', self.ui.lineEdit_clinic_dir.text())
         self.system_settings.post('護士人數', self.ui.spinBox_nurse.value())
         self.system_settings.post('藥師人數', self.ui.spinBox_pharmacist.value())
         self._save_check_box(self.ui.checkBox_pharmacy_fee, '申報藥事服務費')
         self._save_check_box(self.ui.checkBox_init_fee, '申報初診照護')
         self._save_check_box(self.ui.checkBox_acupuncture_cert, '針灸認證合格')
+        self._save_check_box(self.ui.checkBox_pres_days_duplicated, '當日用藥重複檢查')
+        self._save_check_box(self.ui.checkBox_check_injury_period, '檢查損傷診斷碼')
         self._save_date_edit(self.ui.dateEdit_acupuncture_date, '針灸認證合格日期')
         self.system_settings.post('健保業務', self.ui.comboBox_division.currentText())
         self.system_settings.post('劑量上限', self.ui.spinBox_dosage_limitation.value())
+        self.system_settings.post('最低劑量', self.ui.spinBox_dosage_minimum.value())
         self.system_settings.post('資源類別', self.ui.comboBox_resource.currentText())
         self.system_settings.post('巡迴區域', self.ui.comboBox_tour_area.currentText())
         self._save_radio_button(
@@ -697,7 +714,10 @@ class DialogSystemSettings(QtWidgets.QDialog):
         self.system_settings.post('外觀主題', self.ui.comboBox_theme.currentText())
         self.system_settings.post('外觀顏色', self.ui.comboBox_color.currentText())
         self.system_settings.post('電子病歷交換檔輸出路徑', self.ui.lineEdit_emr_path.text())
+        self.system_settings.post('資料路徑', self.ui.lineEdit_clinic_dir.text())
+        self.system_settings.post('影像檔路徑', self.ui.lineEdit_image_path.text())
         self._save_check_box(self.ui.checkBox_side_bar, '顯示側邊欄')
+        self._save_font_size()
         self._save_radio_button(
             [
                 self.ui.radioButton_single_instance,
@@ -707,17 +727,59 @@ class DialogSystemSettings(QtWidgets.QDialog):
             '醫療系統執行個體'
         )
 
+    def _save_font_size(self):
+        css_file = os.path.join(
+            system_utils.BASE_DIR, system_utils.CSS_PATH, system_utils.get_css_file(self.system_settings)
+        )
+        font_size = self._get_css_font_size()
+        if self.ui.spinBox_font_size.value() == font_size:
+            return
+
+        new_size = 'font-size: {0}px;'.format(self.ui.spinBox_font_size.value())
+
+        s = open(css_file, 'r', encoding='utf-8').read()
+        for i in range(12, 33):
+            font_size = 'font-size: {0}px;'.format(i)
+            if s.find(font_size) < 0:
+                continue
+
+            s = s.replace(font_size, new_size)
+
+            f = open(css_file, 'w', encoding='utf8')
+            f.write(s)
+            f.close()
+            break
+
     # 取得電子病歷輸出路徑
     def _get_emr_path(self):
         options = QFileDialog.DontResolveSymlinks | QFileDialog.ShowDirsOnly
         directory = QFileDialog.getExistingDirectory(
-            self, "QFileDialog.getExistingDirectory()",
-            self.ui.lineEdit_emr_path.text(), options = options
+            self, "選擇電子病歷交換檔路徑",
+            self.ui.lineEdit_emr_path.text(), options=options
         )
         if directory:
             self.ui.lineEdit_emr_path.setText(directory)
 
-    ####################################################################################################################
+    def _get_clinic_dir(self):
+        options = QFileDialog.DontResolveSymlinks | QFileDialog.ShowDirsOnly
+        directory = QFileDialog.getExistingDirectory(
+            self, "取得院所專屬資料夾",
+            '請選擇院所專用資料夾, 以供申報及備份使用', options=options
+        )
+        if directory:
+            self.ui.lineEdit_clinic_dir.setText(directory)
+
+    # 取得影像檔路徑
+    def _get_image_path(self):
+        options = QFileDialog.DontResolveSymlinks | QFileDialog.ShowDirsOnly
+        directory = QFileDialog.getExistingDirectory(
+            self, "選擇影像檔路徑",
+            self.ui.lineEdit_image_path.text(), options=options
+        )
+        if directory:
+            self.ui.lineEdit_image_path.setText(directory)
+
+    ###########################################################################################################
     # 讀取 check_box 的資料
     def _set_check_box(self, check_box, field):
         if self.system_settings.field(field) == 'Y':

@@ -2,7 +2,7 @@
 #coding: utf-8
 
 import re
-
+import unicodedata
 
 phonetic_table = {
     'ㄅ': '1', 'ㄆ': 'q', 'ㄇ': 'a', 'ㄈ': 'z',
@@ -51,6 +51,10 @@ def int_to_str(number):
     return number
 
 
+def remove_control_characters(string):
+    return "".join(ch for ch in string if unicodedata.category(ch)[0] != "C")
+
+
 # 更改欄位內容編碼 2015/01/22
 def get_str(in_string, encoding):
     if not in_string:
@@ -83,6 +87,36 @@ def xstr(string):
         return ''
 
     return str(string)
+
+
+def get_mask_name(name):
+    name = xstr(name)
+    if name == '':
+        return ''
+
+    mask_name_list = list(name)
+    mask_name_list[1] = '○'
+
+    mask_name = ''.join(mask_name_list)
+
+    return mask_name
+
+
+def get_mask_id(patient_id, length):
+    patient_id = xstr(patient_id)
+    if patient_id == '':
+        return ''
+
+    mask_id_list = list(patient_id)
+    for i, count in zip(range(len(mask_id_list)-1, -1, -1), range(len(mask_id_list))):
+        if count >= length:
+            break
+
+        mask_id_list[i] = '*'
+
+    mask_id = ''.join(mask_id_list)
+
+    return mask_id
 
 
 def remove_bom(string):

@@ -52,6 +52,11 @@
         </column>
         <column>
          <property name="text">
+          <string>影像</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
           <string>門診日期</string>
          </property>
         </column>
@@ -171,6 +176,11 @@
           <string>自費金額</string>
          </property>
         </column>
+        <column>
+         <property name="text">
+          <string>病患備註</string>
+         </property>
+        </column>
        </widget>
       </item>
      </layout>
@@ -249,6 +259,7 @@
    <addaction name="action_print_registration"/>
    <addaction name="action_print_prescript"/>
    <addaction name="action_print_receipt"/>
+   <addaction name="action_print_misc"/>
    <addaction name="separator"/>
    <addaction name="action_close"/>
   </widget>

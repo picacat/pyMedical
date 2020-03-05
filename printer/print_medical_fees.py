@@ -221,22 +221,25 @@ class PrintMedicalFees:
             )
 
             medical_record_html += '''
-                <table width="98%" cellspacing="0">
+                <font size="4">
+                <table width="100%" cellspacing="0">
                   <tbody>
                     {case}
                   </tbody>  
                 </table>
-                <table width="98%" cellspacing="0" style="font-weight: bold; background-color: lightgray">
+                <table width="100%" cellspacing="0" style="font-weight: bold; background-color: lightgray">
                   <tbody>
                     {prescript}
                   </tbody>
                 </table>        
-                <table width="98%" cellspacing="0">
+                <table width="100%" cellspacing="0">
                   <tbody>
                     {ins_fees_record}
                     {self_fees_record}
                   </tbody>  
                 </table>        
+                醫師: {doctor}
+                </font>
                 <hr>
             '''.format(
                 case=case_record,
@@ -244,6 +247,7 @@ class PrintMedicalFees:
                 ins_fees_record=ins_fees_record,
                 self_fees_record=self_fees_record,
                 instruction=instruction,
+                doctor=string_utils.xstr(row['Doctor']),
             )
 
         return medical_record_html

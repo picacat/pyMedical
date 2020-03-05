@@ -48,6 +48,7 @@ class MedicalRecordExamination(QtWidgets.QMainWindow):
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_MEDICAL_RECORD_EXAMINATION, self)
         system_utils.set_css(self, self.system_settings)
+        system_utils.center_window(self)
         self.table_widget_examination_item = table_widget.TableWidget(
             self.ui.tableWidget_examination_item, self.database
         )

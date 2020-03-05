@@ -61,6 +61,7 @@ class IncomeCashFlow(QtWidgets.QMainWindow):
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_INCOME_CASH_FLOW, self)
         system_utils.set_css(self, self.system_settings)
+        system_utils.center_window(self)
         self.table_widget_registration = table_widget.TableWidget(self.ui.tableWidget_registration, self.database)
         self.table_widget_registration.set_column_hidden([0])
         self.table_widget_charge = table_widget.TableWidget(self.ui.tableWidget_charge, self.database)
@@ -80,13 +81,13 @@ class IncomeCashFlow(QtWidgets.QMainWindow):
     def _set_table_width(self):
         width = [
             100,
-            110, 50, 75, 80, 50, 80, 100, 100, 80, 80, 90, 70, 70, 90, 90, 90, 100
+            130, 50, 75, 90, 50, 90, 100, 100, 80, 70, 90, 70, 70, 90, 90, 90, 90
         ]
         self.table_widget_registration.set_table_heading_width(width)
 
         width = [
             100,
-            110, 50, 75, 80, 50, 80, 100, 100, 70, 50, 100, 90, 90, 90, 80, 90, 100
+            130, 50, 75, 90, 50, 90, 100, 100, 80, 50, 90, 90, 90, 90, 70, 90, 90
         ]
         self.table_widget_charge.set_table_heading_width(width)
 

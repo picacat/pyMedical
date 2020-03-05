@@ -37,6 +37,7 @@ class DialogInputDisease(QtWidgets.QDialog):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_DIALOG_INPUT_DISEASE, self)
         self.setFixedSize(self.size())  # non resizable dialog
         system_utils.set_css(self, self.system_settings)
+        system_utils.center_window(self)
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setText('存檔')
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Cancel).setText('取消')
         self.table_widget_disease = table_widget.TableWidget(self.ui.tableWidget_disease, self.database)

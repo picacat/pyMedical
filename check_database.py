@@ -3,7 +3,7 @@
 
 
 from PyQt5 import QtWidgets, QtCore
-import os
+from libs import system_utils
 
 
 # 系統設定 2018.03.19
@@ -26,7 +26,7 @@ class CheckDatabase(QtWidgets.QDialog):
         pass
 
     def _set_ui(self):
-        self.center()
+        system_utils.center_window(self)
 
     def center(self):
         frame_geometry = self.frameGeometry()

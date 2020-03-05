@@ -18,8 +18,8 @@ from convert import convert
 from libs import ui_utils
 from libs import module_utils
 from libs import system_utils
-from libs import personnel_utils
 from libs import string_utils
+from libs import personnel_utils
 
 from dialog import dialog_system_settings
 from dialog import dialog_hosts
@@ -302,6 +302,8 @@ class PyMedical(QtWidgets.QMainWindow):
         self.ui.action_statistics_medicine.triggered.connect(self._open_subroutine)
         self.ui.action_statistics_ins_performance.triggered.connect(self._open_subroutine)
         self.ui.action_statistics_doctor_commission.triggered.connect(self._open_subroutine)
+        self.ui.action_statistics_ins_discount.triggered.connect(self._open_subroutine)
+        self.ui.action_statistics_multiple_performance.triggered.connect(self._open_subroutine)
 
         self.ui.action_ic_card.triggered.connect(self.open_ic_card)
         self.ui.action_show_side_bar.triggered.connect(self.switch_side_bar)
@@ -330,6 +332,7 @@ class PyMedical(QtWidgets.QMainWindow):
         )
         system_utils.set_background_image(self.ui.tab_home, self.system_settings)
         system_utils.set_css(self, self.system_settings)
+        system_utils.center_window(self)
         system_utils.set_theme(self.ui, self.system_settings)
 
     # 候診名單歸零
@@ -414,6 +417,9 @@ class PyMedical(QtWidgets.QMainWindow):
             '用藥統計',
             '健保申報業績',
             '醫師銷售業績統計',
+            '健保門診優惠統計',
+            '綜合業績報表',
+
             '養生館櫃台結帳',
             '消費資料查詢',
             '養生館統計',
@@ -594,15 +600,16 @@ class PyMedical(QtWidgets.QMainWindow):
         row = rows[0]
 
         position_list = personnel_utils.get_personnel(self.database, '醫師')
-        if (call_from == '醫師看診作業' and
-                self.system_settings.field('使用者') not in position_list):
-            system_utils.show_message_box(
-                QMessageBox.Critical,
-                '使用者非醫師',
-                '<font color="red"><h3>登入的使用者並非醫師, 無法進行病歷看診作業!</h3></font>',
-                '請重新以醫師身份登入系統.'
-            )
-            return
+        if call_from == '醫師看診作業' and self.user_name not in position_list:
+            if personnel_utils.get_permission(
+                    self.database, call_from, '非醫師病歷登錄', self.user_name) != 'Y':
+                system_utils.show_message_box(
+                    QMessageBox.Critical,
+                    '使用者非醫師',
+                    '<font color="red"><h3>登入的使用者並非醫師, 無法進行病歷看診作業!</h3></font>',
+                    '請重新以醫師身份登入系統.'
+                )
+                return
 
         tab_name = '{case_key}-{name}-{ins_type}病歷資料-{case_date}'.format(
             case_key=string_utils.xstr(row['CaseKey']),
@@ -828,6 +835,12 @@ class PyMedical(QtWidgets.QMainWindow):
 
             self.ui.action_statistics_doctor,
             self.ui.action_statistics_return_rate,
+            self.ui.action_statistics_medicine,
+            self.ui.action_statistics_ins_performance,
+            self.ui.action_statistics_doctor_commission,
+            self.ui.action_statistics_ins_performance,
+            self.ui.action_statistics_multiple_performance,
+
             self.ui.action_convert,
         ]
 
@@ -837,9 +850,7 @@ class PyMedical(QtWidgets.QMainWindow):
     # 設定權限
     def set_permission(self):
         self._authorize_all_permission()
-
         self._set_user_name()
-
         if self.user_name == '超級使用者':
             return
 
@@ -955,6 +966,16 @@ class PyMedical(QtWidgets.QMainWindow):
                 item.append(self.ui.action_statistics_doctor)
             elif string_utils.xstr(item[1]) == '執行回診率統計':
                 item.append(self.ui.action_statistics_return_rate)
+            elif string_utils.xstr(item[1]) == '執行用藥統計':
+                item.append(self.ui.action_statistics_medicine)
+            elif string_utils.xstr(item[1]) == '執行健保申報業績':
+                item.append(self.ui.action_statistics_ins_performance)
+            elif string_utils.xstr(item[1]) == '執行醫師銷售業績統計':
+                item.append(self.ui.action_statistics_doctor_commission)
+            elif string_utils.xstr(item[1]) == '執行健保門診優惠統計':
+                item.append(self.ui.action_statistics_ins_discount)
+            elif string_utils.xstr(item[1]) == '執行綜合業績統計':
+                item.append(self.ui.action_statistics_multiple_performance)
             else:
                 item.append(None)
 
@@ -973,14 +994,33 @@ class PyMedical(QtWidgets.QMainWindow):
 
     # 重新顯示病歷登錄候診名單
     def _refresh_waiting_data(self, data):
+        clinic_name = data.split(',')[0]
+        if clinic_name != self.system_settings.field('院所名稱'):  # 其他分院呼叫
+            return
+
         index = self.ui.tabWidget_window.currentIndex()
         current_tab_text = self.ui.tabWidget_window.tabText(index)
-        if current_tab_text in ['門診掛號', '醫師看診作業', '批價作業']:
-            tab = self.ui.tabWidget_window.currentWidget()
+        if current_tab_text not in ['門診掛號', '醫師看診作業', '批價作業']:
+            return
+
+        tab = self.ui.tabWidget_window.currentWidget()
+        call_from = data.split(',')[1]
+
+        if call_from in ['門診掛號']:
+            if current_tab_text in ['門診掛號']:
+                tab.refresh_wait()
+            elif current_tab_text in ['醫師看診作業']:
+                tab.read_wait()
+        elif call_from in ['醫師看診作業']:
             if current_tab_text in ['門診掛號', '批價作業']:
                 tab.refresh_wait()
-            else:
+            elif current_tab_text in ['醫師看診作業']:
                 tab.read_wait()
+        elif call_from in ['批價作業']:
+            if current_tab_text in ['批價作業']:
+                tab.refresh_wait()
+        else:
+            pass
 
     # 重新顯示狀態列
     def refresh_status_bar(self):
@@ -1041,7 +1081,7 @@ class PyMedical(QtWidgets.QMainWindow):
 
 # 主程式
 def main():
-    QtCore.QCoreApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling, True)
+    # QtCore.QCoreApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling, True)
     QtCore.QCoreApplication.setAttribute(QtCore.Qt.AA_UseHighDpiPixmaps, True)
     QtCore.QCoreApplication.setAttribute(QtCore.Qt.AA_Use96Dpi, True)
 
@@ -1104,6 +1144,7 @@ def main():
     py_medical.refresh_status_bar()
     py_medical.set_root_permission()
     py_medical.set_permission()
+
     py_medical.showMaximized()
 
     py_medical.check_ic_card()

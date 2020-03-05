@@ -16,7 +16,7 @@ from libs import system_utils
 from libs import nhi_utils
 
 
-# 候診名單 2018.01.31
+# 療程檢查 2018.01.31
 class CheckCourse(QtWidgets.QMainWindow):
     # 初始化
     def __init__(self, parent=None, *args):
@@ -53,7 +53,7 @@ class CheckCourse(QtWidgets.QMainWindow):
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_CHECK_COURSE, self)
         system_utils.set_css(self, self.system_settings)
-        self.center()
+        system_utils.center_window(self)
         self._set_table_widget()
 
     def center(self):
@@ -67,8 +67,8 @@ class CheckCourse(QtWidgets.QMainWindow):
         self.table_widget_errors = table_widget.TableWidget(self.ui.tableWidget_errors, self.database)
         self.table_widget_errors.set_column_hidden([0])
         width = [
-            100, 120, 60, 80, 80, 100, 70, 30, 100, 450, 100,
-            80, 80, 250,
+            100, 130, 60, 90, 90, 100, 80, 40, 100, 400, 100,
+            90, 80, 250,
         ]
         self.table_widget_errors.set_table_heading_width(width)
 
@@ -160,7 +160,7 @@ class CheckCourse(QtWidgets.QMainWindow):
             share_type = self.ui.tableWidget_errors.item(row_no, 5).text()
             card = self.ui.tableWidget_errors.item(row_no, 6).text()
             course = number_utils.get_integer(self.ui.tableWidget_errors.item(row_no, 7).text())
-            disease_code = self.ui.tableWidget_errors.item(row_no, 8).text()
+            disease_code = self.ui.tableWidget_errors.item(row_no, 8).text()[:6]
             treatment = self.ui.tableWidget_errors.item(row_no, 10).text()
 
             try:
@@ -169,7 +169,7 @@ class CheckCourse(QtWidgets.QMainWindow):
                 next_share_type = self.ui.tableWidget_errors.item(row_no+1, 5).text()
                 next_card = self.ui.tableWidget_errors.item(row_no+1, 6).text()
                 next_course = number_utils.get_integer(self.ui.tableWidget_errors.item(row_no+1, 7).text())
-                next_disease_code = self.ui.tableWidget_errors.item(row_no+1, 8).text()
+                next_disease_code = self.ui.tableWidget_errors.item(row_no+1, 8).text()[:6]
                 next_treatment = self.ui.tableWidget_errors.item(row_no+1, 10).text()
             except AttributeError:
                 next_case_date = None

@@ -50,7 +50,7 @@ class StatisticsDoctorSale(QtWidgets.QMainWindow):
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_STATISTICS_DOCTOR_SALE, self)
         system_utils.set_css(self, self.system_settings)
-        self.center()
+        system_utils.center_window(self)
         self.table_widget_doctor_sale = table_widget.TableWidget(
             self.ui.tableWidget_doctor_sale, self.database
         )
@@ -63,7 +63,7 @@ class StatisticsDoctorSale(QtWidgets.QMainWindow):
     def _set_table_width(self):
         width = [
             100,
-            110, 70, 85, 250, 50, 50, 50, 60, 85, 70, 70, 85
+            130, 70, 85, 230, 50, 50, 50, 60, 70, 70, 70, 85
         ]
         self.table_widget_doctor_sale.set_table_heading_width(width)
 

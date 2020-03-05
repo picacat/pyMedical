@@ -45,6 +45,7 @@ class DictDiagnostic(QtWidgets.QMainWindow):
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_DICT_DIAGNOSTIC, self)
         system_utils.set_css(self, self.system_settings)
+        system_utils.center_window(self)
         self.ui.tabWidget_diagnostic.addTab(
             dict_symptom.DictSymptom(self, *self.args), '主訴資料')
         self.ui.tabWidget_diagnostic.addTab(
@@ -63,6 +64,10 @@ class DictDiagnostic(QtWidgets.QMainWindow):
     # 設定信號
     def _set_signal(self):
         self.ui.action_close.triggered.connect(self.close_template)
+        self.ui.action_export_dict_diagnostic_groups_json.triggered.connect(
+            self._export_dict_diagnostic_groups_json
+        )
+        self.ui.action_export_dict_diagnostic_json.triggered.connect(self._export_dict_diagnostic_json)
         self.ui.action_export_disease_groups.triggered.connect(self._export_disease_groups)
         self.ui.action_export_disease_groups.triggered.connect(self._export_disease_groups)
         self.ui.action_export_icd10_json.triggered.connect(self._export_icd10_json)
@@ -146,6 +151,66 @@ class DictDiagnostic(QtWidgets.QMainWindow):
             self.database.exec_sql(sql)
 
         progress_dialog.setValue(row_count)
+
+    def _export_dict_diagnostic_groups_json(self):
+        options = QFileDialog.Options()
+        json_file_name, _ = QFileDialog.getSaveFileName(
+            self.parent,
+            "匯出診察類別JSON檔案", 'diagnostic_groups.json',
+            "json檔案 (*.json)",
+            options=options
+        )
+        if not json_file_name:
+            return
+
+        sql = '''
+            SELECT * FROM dict_groups
+            WHERE
+                DictGroupsType IN ("主訴", "舌診", "脈象", "辨證", "治則", "備註")
+            ORDER BY DictGroupsKey
+        '''
+        rows = self.database.select_record(sql)
+
+        json_data = db_utils.mysql_to_json(rows)
+        text_file = open(json_file_name, "w", encoding='utf8')
+        text_file.write(str(json_data))
+        text_file.close()
+
+        system_utils.show_message_box(
+            QMessageBox.Information,
+            'JSON資料匯出完成',
+            '<h3>{0}匯出完成.</h3>'.format(json_file_name),
+            'JSON 檔案格式.'
+        )
+
+    def _export_dict_diagnostic_json(self):
+        options = QFileDialog.Options()
+        json_file_name, _ = QFileDialog.getSaveFileName(
+            self.parent,
+            "匯出診察JSON檔案", 'diagnostic.json',
+            "json檔案 (*.json)",
+            options=options
+        )
+        if not json_file_name:
+            return
+
+        sql = '''
+            SELECT * FROM clinic
+            ORDER BY ClinicKey
+        '''
+        rows = self.database.select_record(sql)
+
+        json_data = db_utils.mysql_to_json(rows)
+        text_file = open(json_file_name, "w", encoding='utf8')
+        text_file.write(str(json_data))
+        text_file.close()
+
+        system_utils.show_message_box(
+            QMessageBox.Information,
+            'JSON資料匯出完成',
+            '<h3>{0}匯出完成.</h3>'.format(json_file_name),
+            'JSON 檔案格式.'
+        )
 
     def _export_icd10_json(self):
         options = QFileDialog.Options()

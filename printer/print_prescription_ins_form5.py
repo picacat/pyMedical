@@ -22,9 +22,9 @@ class PrintPrescriptionInsForm5:
         self.medicine_set = 1
 
         self.printer = printer_utils.get_printer(self.system_settings, '健保處方箋印表機')
-        self.preview_dialog = QtPrintSupport.QPrintPreviewDialog(self.printer)
 
         self.current_print = None
+        self.additional = None
 
         self._set_ui()
         self._set_signal()
@@ -45,16 +45,35 @@ class PrintPrescriptionInsForm5:
     def _set_signal(self):
         pass
 
-    def print(self):
-        self.print_html(True)
+    def _check_printing(self):
+        printing = True
 
-    def preview(self):
+        if self.additional == '健保另包':
+            if printer_utils.is_additional_prescript(self.database, self.case_key):
+                printing = True
+            else:
+                printing = False
+
+        return printing
+
+    def print(self, additional=None):
+        self.additional = additional
+        if not self._check_printing():
+            return
+
+        self.print_html(printing=True)
+
+    def preview(self, additional=None):
+        self.additional = additional
+        if not self._check_printing():
+            return
+
         geometry = QtWidgets.QApplication.desktop().screenGeometry()
-
-        self.preview_dialog.paintRequested.connect(self.print_html)
-        self.preview_dialog.resize(geometry.width(), geometry.height())  # for use in Linux
-        self.preview_dialog.setWindowState(QtCore.Qt.WindowMaximized)
-        self.preview_dialog.exec_()
+        preview_dialog = QtPrintSupport.QPrintPreviewDialog(self.printer)
+        preview_dialog.paintRequested.connect(self.print_html)
+        preview_dialog.resize(geometry.width(), geometry.height())  # for use in Linux
+        preview_dialog.setWindowState(QtCore.Qt.WindowMaximized)
+        preview_dialog.exec_()
 
     def print_html(self, printing=None):
         self.current_print = self.print_html
@@ -70,17 +89,15 @@ class PrintPrescriptionInsForm5:
         case_record = printer_utils.get_case_html_2(self.database, self.case_key, '健保')
         symptom_record = printer_utils.get_symptom_html(self.database, self.case_key, colspan=5)
         disease_record = printer_utils.get_disease(self.database, self.case_key)
-        # prescript_record = printer_utils.get_prescript_block3_html(
-        #     database.database, database.system_settings,
-        #     database.massage_case_key, database.medicine_set,
-        #     '處方箋', print_alias=False, print_total_dosage=True)
         prescript_record = printer_utils.get_prescript_html(
             self.database, self.system_settings,
             self.case_key, self.medicine_set,
-            '處方箋', print_alias=False, print_total_dosage=True, blocks=2)
+            '處方箋', print_alias=False, print_total_dosage=True, blocks=2, instruction=self.additional)
         instruction = printer_utils.get_instruction_html(
             self.database, self.system_settings, self.case_key, self.medicine_set
         )
+
+        additional_label = printer_utils.get_additional_label(self.additional)
 
         html = '''
             <html>
@@ -99,6 +116,7 @@ class PrintPrescriptionInsForm5:
                   </tbody>
                 </table>        
                 {instruction}
+                {additional_label}
               </body>
             </html>
         '''.format(
@@ -107,6 +125,7 @@ class PrintPrescriptionInsForm5:
             disease=disease_record,
             prescript=prescript_record,
             instruction=instruction,
+            additional_label=additional_label,
         )
 
         return html

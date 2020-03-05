@@ -57,7 +57,7 @@ class CheckInsTreat(QtWidgets.QMainWindow):
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_CHECK_INS_TREAT, self)
         system_utils.set_css(self, self.system_settings)
-        self.center()
+        system_utils.center_window(self)
         self._set_table_widget()
 
     def center(self):
@@ -72,8 +72,8 @@ class CheckInsTreat(QtWidgets.QMainWindow):
             self.ui.tableWidget_prescript, self.database)
         self.table_widget_prescript.set_column_hidden([0])
         width = [
-            100, 120, 80, 80, 120, 180, 80, 40,
-            120, 300, 150, 80, 250,
+            100, 130, 90, 90, 120, 180, 80, 50,
+            120, 300, 150, 90, 200,
         ]
         self.table_widget_prescript.set_table_heading_width(width)
 
@@ -96,12 +96,12 @@ class CheckInsTreat(QtWidgets.QMainWindow):
             SELECT
                 *
             FROM cases
-                LEFT JOIN presextend ON presextend.PrescriptKey = cases.CaseKey
             WHERE
                 (cases.CaseDate BETWEEN "{start_date}" AND "{end_date}") AND
                 (cases.InsType = "健保") AND
                 (Treatment IS NOT NULL AND Treatment != "") AND
                 ({apply_type_sql})
+            GROUP BY cases.CaseKey
             ORDER BY PatientKey, CaseDate
         '''.format(
             start_date=self.start_date,
@@ -199,12 +199,33 @@ class CheckInsTreat(QtWidgets.QMainWindow):
     def error_count(self):
         return self.errors
 
+    def _get_treat_signature(self, case_key):
+        sql = '''
+            SELECT Content FROM presextend
+            WHERE
+                PrescriptKey = {case_key} AND
+                ExtendType = "處置簽章"
+                LIMIT 1
+        '''.format(
+            case_key=case_key,
+        )
+
+        rows = self.database.select_record(sql)
+        if len(rows) <= 0:
+            return ''
+
+        row = rows[0]
+
+        return string_utils.xstr(row['Content'])
+
     def _insert_error_record(self, row_no, row, error_messages):
         row_no = self.ui.tableWidget_prescript.rowCount()
         self.ui.tableWidget_prescript.setRowCount(row_no + 1)
 
         case_key = string_utils.xstr(row['CaseKey'])
         treats = self._get_ins_treat(case_key)
+
+        treat_signature = self._get_treat_signature(case_key)
 
         medical_record = [
             case_key,
@@ -219,7 +240,7 @@ class CheckInsTreat(QtWidgets.QMainWindow):
             string_utils.xstr(row['Continuance']),
             string_utils.xstr(row['Treatment']),
             ','.join(treats),
-            string_utils.xstr(row['Content']),
+            treat_signature,
             string_utils.xstr(row['Doctor']),
             ', '.join(error_messages),
         ]

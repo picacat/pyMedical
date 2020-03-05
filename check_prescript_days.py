@@ -61,7 +61,7 @@ class CheckPrescriptDays(QtWidgets.QMainWindow):
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_CHECK_PRESCRIPT_DAYS, self)
         system_utils.set_css(self, self.system_settings)
-        self.center()
+        system_utils.center_window(self)
         self._set_table_widget()
 
     def center(self):
@@ -76,8 +76,8 @@ class CheckPrescriptDays(QtWidgets.QMainWindow):
             self.ui.tableWidget_medical_record, self.database)
         self.table_widget_medical_record.set_column_hidden([0])
         width = [
-            100, 120, 60, 80, 80, 100, 70, 30, 50, 100, 400, 100,
-            80, 80, 250,
+            100, 130, 60, 90, 90, 100, 80, 50, 50, 100, 400, 90,
+            70, 70, 230,
         ]
         self.table_widget_medical_record.set_table_heading_width(width)
 
@@ -178,10 +178,14 @@ class CheckPrescriptDays(QtWidgets.QMainWindow):
             last_patient_key = None
             last_prescript_days = 0
 
+        duplicated_days = self.duplicated_days
+        if self.system_settings.field('當日用藥重複檢查') == 'Y':
+            duplicated_days -= 1
+
         if patient_key == last_patient_key:
             duplicated_days = (last_case_date +
                                datetime.timedelta(
-                                   days=last_prescript_days + self.duplicated_days) -
+                                   days=last_prescript_days + duplicated_days) -
                                row['CaseDate'].date()).days
             if duplicated_days > 0:
                 error_message.append('給藥重複{0}日'.format(duplicated_days))

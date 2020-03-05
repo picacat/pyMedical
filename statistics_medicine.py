@@ -44,6 +44,7 @@ class StatisticsMedicine(QtWidgets.QMainWindow):
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_STATISTICS_MEDICINE, self)
         system_utils.set_css(self, self.system_settings)
+        system_utils.center_window(self)
 
     # 設定信號
     def _set_signal(self):
@@ -62,7 +63,7 @@ class StatisticsMedicine(QtWidgets.QMainWindow):
     # 讀取病歷
     def open_dialog(self):
         dialog = dialog_statistics_therapist.DialogStatisticsTherapist(
-            self, self.database, self.system_settings, '醫師',
+            self, self.database, self.system_settings, '用藥統計', '醫師',
         )
 
         if self.dialog_setting['dialog_executed']:

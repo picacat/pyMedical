@@ -941,6 +941,7 @@
    </attribute>
    <addaction name="action_past_history"/>
    <addaction name="action_patient"/>
+   <addaction name="action_capture_image"/>
    <addaction name="separator"/>
    <addaction name="action_reference"/>
    <addaction name="action_medical_record_collection"/>
@@ -1159,6 +1160,18 @@
    </property>
    <property name="shortcut">
     <string>F10</string>
+   </property>
+  </action>
+  <action name="action_capture_image">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/camera-photo.png</normaloff>../icons/camera-photo.png</iconset>
+   </property>
+   <property name="text">
+    <string>拍攝照片</string>
+   </property>
+   <property name="toolTip">
+    <string>拍攝照片</string>
    </property>
   </action>
  </widget>

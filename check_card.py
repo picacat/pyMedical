@@ -55,7 +55,7 @@ class CheckCard(QtWidgets.QMainWindow):
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_CHECK_CARD, self)
         system_utils.set_css(self, self.system_settings)
-        self.center()
+        system_utils.center_window(self)
         self._set_table_widget()
 
     def center(self):
@@ -69,8 +69,8 @@ class CheckCard(QtWidgets.QMainWindow):
         self.table_widget_errors = table_widget.TableWidget(self.ui.tableWidget_errors, self.database)
         self.table_widget_errors.set_column_hidden([0])
         width = [
-            100, 120, 60, 80, 80, 100, 70, 50, 100, 450, 100,
-            80, 60, 250,
+            100, 130, 60, 90, 90, 100, 80, 50, 100, 400, 100,
+            90, 60, 250,
         ]
         self.table_widget_errors.set_table_heading_width(width)
 
@@ -178,7 +178,11 @@ class CheckCard(QtWidgets.QMainWindow):
                 next_disease_code = None
                 next_treat_type = None
 
+            current_error_message = []
             error_message = []
+            if card == '自動取得':
+                current_error_message.append('未取得卡序')
+
             if next_card == '':
                 error_message.append('卡序空白')
 
@@ -252,22 +256,25 @@ class CheckCard(QtWidgets.QMainWindow):
                 else:   # 同療程
                     pass
 
+            if len(current_error_message) > 0:
+                self._set_error_message(row_no, current_error_message)
             if len(error_message) > 0:
-                self.errors += 1
-                self.ui.tableWidget_errors.setItem(
-                    row_no+1, 13,
-                    QtWidgets.QTableWidgetItem(
-                        ', '.join(error_message)
-                    )
-                )
-                try:
-                    self._set_row_color(row_no+1, 'red')
-                except AttributeError:
-                    pass
+                self._set_error_message(row_no+1, error_message)
 
             progress_dialog.setValue(row_no)
 
         progress_dialog.setValue(row_count)
+
+    def _set_error_message(self, row_no, error_message):
+        self.errors += 1
+
+        self.ui.tableWidget_errors.setItem(
+            row_no, 13, QtWidgets.QTableWidgetItem(', '.join(error_message))
+        )
+        try:
+            self._set_row_color(row_no, 'red')
+        except AttributeError:
+            pass
 
     def _set_row_color(self, row_no, color):
         for column_no in range(self.ui.tableWidget_errors.columnCount()):

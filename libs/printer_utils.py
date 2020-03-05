@@ -9,18 +9,21 @@ from printer.print_registration_form2 import *
 from printer.print_registration_form3 import *
 from printer.print_registration_form4 import *
 from printer.print_registration_form5 import *
+from printer.print_registration_form6 import *
 
 from printer.print_prescription_ins_form1 import *
 from printer.print_prescription_ins_form2 import *
 from printer.print_prescription_ins_form3 import *
 from printer.print_prescription_ins_form4 import *
 from printer.print_prescription_ins_form5 import *
+from printer.print_prescription_ins_form6 import *
 
 from printer.print_prescription_self_form1 import *
 from printer.print_prescription_self_form2 import *
 from printer.print_prescription_self_form3 import *
 from printer.print_prescription_self_form4 import *
 from printer.print_prescription_self_form5 import *
+from printer.print_prescription_self_form6 import *
 
 from printer.print_receipt_ins_form1 import *
 from printer.print_receipt_ins_form2 import *
@@ -28,6 +31,7 @@ from printer.print_receipt_ins_form3 import *
 from printer.print_receipt_ins_form4 import *
 from printer.print_receipt_ins_form5 import *
 from printer.print_receipt_ins_form6 import *
+from printer.print_receipt_ins_form7 import *
 
 from printer.print_receipt_self_form1 import *
 from printer.print_receipt_self_form2 import *
@@ -35,6 +39,7 @@ from printer.print_receipt_self_form3 import *
 from printer.print_receipt_self_form4 import *
 from printer.print_receipt_self_form5 import *
 from printer.print_receipt_self_form6 import *
+from printer.print_receipt_self_form7 import *
 
 from printer.print_misc_form5 import *
 
@@ -61,6 +66,7 @@ PRINT_REGISTRATION_FORM = {
     '03-3"套表掛號單': PrintRegistrationForm3,
     '04-2.5x3"熱感掛號單': PrintRegistrationForm4,
     '05-3"套表掛號單': PrintRegistrationForm5,
+    '06-3"套表掛號單': PrintRegistrationForm6,
 }
 
 PRINT_PRESCRIPTION_INS_FORM = {
@@ -69,6 +75,7 @@ PRINT_PRESCRIPTION_INS_FORM = {
     '03-3"健保處方箋': PrintPrescriptionInsForm3,
     '04-4"健保處方箋': PrintPrescriptionInsForm4,
     '05-2.5"健保處方箋': PrintPrescriptionInsForm5,
+    '06-A6健保處方箋': PrintPrescriptionInsForm6,
 }
 
 PRINT_PRESCRIPTION_SELF_FORM = {
@@ -77,6 +84,7 @@ PRINT_PRESCRIPTION_SELF_FORM = {
     '03-3"自費處方箋': PrintPrescriptionSelfForm3,
     '04-4"自費處方箋': PrintPrescriptionSelfForm4,
     '05-2.5"自費處方箋': PrintPrescriptionSelfForm5,
+    '06-A6健保處方箋': PrintPrescriptionSelfForm6,
 }
 
 PRINT_RECEIPT_INS_FORM = {
@@ -86,6 +94,7 @@ PRINT_RECEIPT_INS_FORM = {
     '04-4"健保醫療收據': PrintReceiptInsForm4,
     '05-2.5"健保醫療收據': PrintReceiptInsForm5,
     '06-3"友杏格式健保醫療收據': PrintReceiptInsForm6,
+    '07-A6健保醫療收據': PrintReceiptInsForm7,
 }
 
 PRINT_RECEIPT_SELF_FORM = {
@@ -95,6 +104,7 @@ PRINT_RECEIPT_SELF_FORM = {
     '04-4"自費醫療收據': PrintReceiptSelfForm4,
     '05-2.5"自費醫療收據': PrintReceiptSelfForm5,
     '06-3"友杏格式自費醫療收據': PrintReceiptSelfForm6,
+    '07-A6自費醫療收據': PrintReceiptSelfForm7,
 }
 
 PRINT_MISC_FORM = {
@@ -523,8 +533,59 @@ def get_self_prescript_html(database, system_setting, case_key):
     return prescript
 
 
+def get_instruction_condition(case_key, medicine_set, instruction=None):
+    instruction_condition = ''
+
+    if medicine_set == 1:
+        instruction_condition = '''
+            AND (
+                prescript.Instruction IS NULL OR
+                TRIM(prescript.Instruction) NOT IN("+", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10")
+            )
+        '''
+        if instruction == '健保另包':
+            instruction_condition = '''
+                AND (
+                    prescript.Instruction IS NOT NULL AND 
+                    TRIM(prescript.Instruction) = "+"
+                )
+            '''
+
+    elif medicine_set >= 2:
+        instruction_condition = '''
+            OR (
+                CaseKey = {case_key} AND
+                MedicineSet = 1 AND
+                TRIM(prescript.Instruction) = "{medicine_set}"
+            )
+        '''.format(
+            case_key=case_key,
+            medicine_set=medicine_set-1,
+        )
+
+    return instruction_condition
+
+
+def is_additional_prescript(database, case_key):
+    sql = '''
+        SELECT PrescriptKey FROM prescript
+        WHERE
+            CaseKey = {case_key} AND
+            MedicineSet = 1 AND
+            Instruction = "+"
+    '''.format(
+        case_key=case_key,
+    )
+    rows = database.select_record(sql)
+
+    if len(rows) > 0:
+        return True
+    else:
+        return False
+
+
 def get_prescript_html(database, system_setting, case_key, medicine_set,
-                       print_type, print_alias, print_total_dosage, blocks):
+                       print_type, print_alias, print_total_dosage, blocks, instruction=None):
     if medicine_set is None:
         prescript = '''
             <tr>
@@ -535,6 +596,8 @@ def get_prescript_html(database, system_setting, case_key, medicine_set,
         return prescript
 
     pres_days = case_utils.get_pres_days(database, case_key, medicine_set)
+    if pres_days <= 0 and instruction == '健保另包':
+        return ''
 
     sql = '''
         SELECT Treatment FROM cases
@@ -556,15 +619,17 @@ def get_prescript_html(database, system_setting, case_key, medicine_set,
             MedicineSet = {medicine_set} AND
             (prescript.MedicineName IS NOT NULL AND LENGTH(prescript.MedicineName) > 0)
             {treat_condition}
+            {instruction_condition}
         ORDER BY PrescriptNo, PrescriptKey
     '''.format(
         case_key=case_key,
         medicine_set=medicine_set,
         treat_condition=treat_condition,
+        instruction_condition=get_instruction_condition(case_key, medicine_set, instruction),
     )
 
     rows = database.select_record(sql)
-    if medicine_set == 1 and treatment in nhi_utils.INS_TREAT:
+    if medicine_set == 1 and treatment in nhi_utils.INS_TREAT and instruction != '健保另包':
         if treatment in nhi_utils.ACUPUNCTURE_TREAT:
             medicine_type = '穴道'
         else:
@@ -597,6 +662,10 @@ def get_prescript_html(database, system_setting, case_key, medicine_set,
             'dosage_width': 10,
             'total_dosage_width': 8,
             'separator_width': 1},
+        1: {'medicine_name_width': 50,
+            'dosage_width': 20,
+            'total_dosage_width': 10,
+            'separator_width': 4},
     }
 
     prescript = ''
@@ -650,7 +719,7 @@ def get_prescript_html(database, system_setting, case_key, medicine_set,
 
 
 def get_prescript_html2(database, system_setting, case_key, medicine_set,
-                       print_type, print_alias, print_total_dosage, blocks):
+                       print_type, print_alias, print_total_dosage, blocks, instruction=None):
     if medicine_set is None:
         prescript = '''
             <tr>
@@ -682,15 +751,17 @@ def get_prescript_html2(database, system_setting, case_key, medicine_set,
             MedicineSet = {medicine_set} AND
             (prescript.MedicineName IS NOT NULL AND LENGTH(prescript.MedicineName) > 0)
             {treat_condition}
+            {instruction_condition}
         ORDER BY PrescriptNo, PrescriptKey
     '''.format(
         case_key=case_key,
         medicine_set=medicine_set,
         treat_condition=treat_condition,
+        instruction_condition=get_instruction_condition(case_key, medicine_set, instruction),
     )
 
     rows = database.select_record(sql)
-    if medicine_set == 1 and treatment in nhi_utils.INS_TREAT:
+    if medicine_set == 1 and treatment in nhi_utils.INS_TREAT and instruction != '健保另包':
         if treatment in nhi_utils.ACUPUNCTURE_TREAT:
             medicine_type = '穴道'
         else:
@@ -778,7 +849,7 @@ def get_prescript_html2(database, system_setting, case_key, medicine_set,
 # 明醫
 def get_prescript_block3_html(
         database, system_setting, case_key, medicine_set, print_type,
-        print_alias, print_total_dosage, blocks=3):
+        print_alias, print_total_dosage, blocks=3, instruction=None):
     if medicine_set is None:
         prescript = '''
             <tr>
@@ -810,15 +881,17 @@ def get_prescript_block3_html(
             MedicineSet = {medicine_set} AND
             (prescript.MedicineName IS NOT NULL AND LENGTH(prescript.MedicineName) > 0)
             {treat_condition}
+            {instruction_condition}
         ORDER BY PrescriptNo, PrescriptKey
     '''.format(
         case_key=case_key,
         medicine_set=medicine_set,
         treat_condition=treat_condition,
+        instruction_condition=get_instruction_condition(case_key, medicine_set, instruction),
     )
 
     rows = database.select_record(sql)
-    if medicine_set == 1 and treatment in nhi_utils.INS_TREAT:
+    if medicine_set == 1 and treatment in nhi_utils.INS_TREAT and instruction != '健保另包':
         if treatment in nhi_utils.ACUPUNCTURE_TREAT:
             medicine_type = '穴道'
         else:
@@ -987,7 +1060,7 @@ def get_self_fees_html(database, case_key):
         </tr>
         <tr>  
           <td>針灸治療費:{acupuncture_fee}</td>
-          <td>民俗調理費:{massage_fee}</td>
+          <td>傷科處置費:{massage_fee}</td>
           <td>自費材料費:{material_fee}</td>
         </tr>
         <tr>  
@@ -1056,7 +1129,7 @@ def get_fees_html(database, case_key):
         </tr>
         <tr>  
           <td>自費針灸費:{acupuncture_fee}</td>
-          <td>民俗調理費:{massage_fee}</td>
+          <td>傷科處置費:{massage_fee}</td>
         </tr>
         <tr>  
           <td>合計金額:{self_total_fee}</td>
@@ -1166,9 +1239,10 @@ def get_instruction_html(database, system_settings, case_key, medicine_set):
         total_dosage = '{0:.1f}'.format(total_dosage)
 
         html = '''
-              醫師: {doctor} 調劑者: {doctor} 指示: 一日{package}包, 共{pres_days}日份 {instruction}服用 總量: {total_dosage}
+              醫師: {doctor} 調劑者: {doctor} 調劑日: {case_date} 指示: 一日{package}包, 共{pres_days}日份 {instruction}服用 總量: {total_dosage}
         '''.format(
             doctor=string_utils.xstr(row['Doctor']),
+            case_date=row['CaseDate'].date(),
             package=string_utils.xstr(packages),
             pres_days=string_utils.xstr(pres_days),
             instruction=instruction,
@@ -1184,7 +1258,7 @@ def get_instruction_html(database, system_settings, case_key, medicine_set):
     return html
 
 
-def get_instruction_html2(database, system_settings, case_key, medicine_set):
+def get_instruction_html2(database, system_settings, case_key, medicine_set, additional=None):
     sql = '''
         SELECT * FROM cases 
         WHERE 
@@ -1208,6 +1282,9 @@ def get_instruction_html2(database, system_settings, case_key, medicine_set):
     pres_days = case_utils.get_pres_days(database, case_key, medicine_set)
     packages = case_utils.get_packages(database, case_key, medicine_set)
     instruction = case_utils.get_instruction(database, case_key, medicine_set)
+    additional_label = ''
+    if additional is not None:
+        additional_label = '<b>「{0}」</b>'.format(additional)
 
     if pres_days > 0:
         _, total_dosage = case_utils.get_prescript_html_data(
@@ -1217,7 +1294,7 @@ def get_instruction_html2(database, system_settings, case_key, medicine_set):
         total_dosage = '{0:.1f}'.format(total_dosage)
 
         html = '''
-              藥日: {package}包 * {pres_days}天 {instruction} 總量: {total_dosage}<br>
+              藥日: {package}包 * {pres_days}天 {instruction} 總量: {total_dosage} {additional_label}<br>
               醫師: {doctor} 調劑者: {doctor} 調劑日: {case_date}<br>
         '''.format(
             doctor=string_utils.xstr(row['Doctor']),
@@ -1226,6 +1303,7 @@ def get_instruction_html2(database, system_settings, case_key, medicine_set):
             instruction=instruction,
             total_dosage=total_dosage,
             case_date=row['CaseDate'].date(),
+            additional_label=additional_label,
         )
     else:
         html = '''
@@ -1256,18 +1334,32 @@ def get_medicine_set_items(database, case_key, form_type, print_type='選擇列�
     '''.format(case_key)
 
     rows = database.select_record(sql)
-    if len(rows) <= 0:
-        return '{0}{1}'.format(ins_type, form_type), None
-    elif len(rows) == 1:
+    medicine_set_count = len(rows)
+
+    try:
         medicine_set = rows[0]['MedicineSet']
+    except IndexError:
+        medicine_set = None
+
+    items = ['全部{0}'.format(form_type)]
+    if ins_type == '健保' and medicine_set != 1:
+        if medicine_set_count == 0:
+            medicine_set_count = 1
+            medicine_set = 1
+        else:
+            medicine_set_count += 1
+            items.append('健保{0}'.format(form_type))
+
+    if medicine_set_count <= 0:
+        return '{0}{1}'.format(ins_type, form_type), None
+    elif medicine_set_count == 1:
         if medicine_set == 1:
             item = '健保{0}'.format(form_type)
         else:
             item = '自費{0}'.format(form_type)
 
-        return (item, medicine_set)
+        return item, medicine_set
 
-    items = ['全部{0}'.format(form_type)]
     for row in rows:
         medicine_set = row['MedicineSet']
         if medicine_set == 1:
@@ -1291,14 +1383,14 @@ def get_medicine_set_items(database, case_key, form_type, print_type='選擇列�
 
     if item == '全部{0}'.format(form_type):
         del items[0]
-        return (item, items)
+        return item, items
     elif item == '健保{0}'.format(form_type):
         medicine_set = 1
     else:
         medicine_set = number_utils.get_integer(item.split('自費{0}'.format(form_type))[1]) + 1
         item = '自費{0}'.format(form_type)
 
-    return (item, medicine_set)
+    return item, medicine_set
 
 
 # 取得列印健保或自費收據dialog
@@ -1418,8 +1510,10 @@ def print_ins_prescript(parent, database, system_settings, case_key,
 
     if print_type == 'print':
         print_prescription_form.print()
+        print_prescription_form.print('健保另包')
     else:
         print_prescription_form.preview()
+        print_prescription_form.preview('健保另包')
 
     del print_prescription_form
 
@@ -1483,10 +1577,20 @@ def print_ins_receipt(parent, database, system_settings, case_key,
 
     if print_type == 'print':
         print_receipt_form.print()
+        print_receipt_form.print('健保另包')
     else:
         print_receipt_form.preview()
+        print_receipt_form.preview('健保另包')
 
     del print_receipt_form
+
+
+def get_additional_label(additional):
+    additional_label = ''
+    if additional is not None:
+        additional_label = '<br><b>「{0}」</b>'.format(additional)
+
+    return additional_label
 
 
 # 列印自費醫療收據

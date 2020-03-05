@@ -36,6 +36,7 @@ import medical_record_fees
 import medical_record_registration
 import medical_record_family
 import medical_record_examination
+import medical_record_image
 import medical_record_check
 
 from dialog import dialog_diagnostic_picker
@@ -49,6 +50,7 @@ from dialog import dialog_medical_record_reference
 from dialog import dialog_medical_record_hosts
 from dialog import dialog_medical_record_collection
 from dialog import dialog_add_diagnostic_dict
+from dialog import dialog_medical_record_image
 
 if sys.platform == 'win32':
     from classes import cshis_win32 as cshis
@@ -58,6 +60,8 @@ else:
 
 # 病歷資料 2018.01.31
 class MedicalRecord(QtWidgets.QMainWindow):
+    program_name = '醫師看診作業'
+
     # 初始化
     def __init__(self, parent=None, *args):
         super(MedicalRecord, self).__init__(parent)
@@ -79,6 +83,7 @@ class MedicalRecord(QtWidgets.QMainWindow):
         self._init_tab()
         self.close_tab_warning = True
         self.user_name = self.system_settings.field('使用者')
+        self.socket_client = udp_socket_client.UDPSocketClient()
 
         if not self._read_data():
             return
@@ -135,6 +140,7 @@ class MedicalRecord(QtWidgets.QMainWindow):
         self.ui = ui_utils.load_ui_file(ui_file, self)
 
         system_utils.set_css(self, self.system_settings)
+        system_utils.center_window(self)
 
         self.add_tab_button = QtWidgets.QToolButton()
         self.add_tab_button.setIcon(QtGui.QIcon('./icons/document-new.svg'))
@@ -165,6 +171,13 @@ class MedicalRecord(QtWidgets.QMainWindow):
         self.tab_examination = medical_record_examination.MedicalRecordExamination(
             self, self.database, self.system_settings, self.patient_key, self.call_from)
         self.ui.tabWidget_medical.addTab(self.tab_examination, '檢驗報告')
+
+        self.tab_image = medical_record_image.MedicalRecordImage(
+            self, self.database, self.system_settings, self.case_key, self.patient_key)
+        self.ui.tabWidget_medical.addTab(self.tab_image, '病歷影像')
+        if self.tab_image.get_image_count() > 0:
+            self.ui.tabWidget_medical.setTabIcon(
+                self.ui.tabWidget_medical.indexOf(self.tab_image), ui_utils.ICON_STAR)
 
         self._set_event_filter()
 
@@ -296,6 +309,7 @@ class MedicalRecord(QtWidgets.QMainWindow):
         self.ui.action_reference.triggered.connect(self._open_medical_record_reference)
         self.ui.action_close.triggered.connect(self.close_medical_record)
         self.ui.action_patient.triggered.connect(self.modify_patient)
+        self.ui.action_capture_image.triggered.connect(self._capture_image)
         self.ui.action_append_self_medical_record.triggered.connect(self._append_new_self_medical_record)
         self.ui.action_open_hosts.triggered.connect(self._open_medical_record_hosts)
         self.ui.action_medical_record_collection.triggered.connect(self._open_medical_record_collection)
@@ -692,16 +706,22 @@ class MedicalRecord(QtWidgets.QMainWindow):
         self._set_misc()
 
     def _set_permission(self):
-        if self.call_from == '醫師看診作業':
+        # if self.call_from == '醫師看診作業':
+        #     return
+        if self.user_name == '超級使用者':
             return
 
-        if self.user_name == '超級使用者':
+        if personnel_utils.get_permission(self.database, '醫師看診作業', '病歷登錄', self.user_name) == 'Y':
             return
 
         if personnel_utils.get_permission(self.database, '病歷資料', '病歷修正', self.user_name) == 'Y':
             return
 
         self.ui.action_save.setEnabled(False)
+        self.ui.action_past_history.setEnabled(False)
+        self.ui.action_open_hosts.setEnabled(False)
+        self.ui.action_medical_record_collection.setEnabled(False)
+        self.ui.action_capture_image.setEnabled(False)
         self.ui.action_save_and_print.setEnabled(False)
         self.ui.action_save_and_print_prescript.setEnabled(False)
         self.ui.action_save_and_print_receipt.setEnabled(False)
@@ -743,6 +763,22 @@ class MedicalRecord(QtWidgets.QMainWindow):
         self.ui.tabWidget_prescript.setTabsClosable(False)
         self.ui.tabWidget_prescript.setMovable(False)
 
+        if personnel_utils.get_permission(
+                self.database, '病歷資料', '僅能修改主訴舌診脈象備註', self.user_name) == 'Y':
+            self.ui.toolButton_symptom.setEnabled(True)
+            self.ui.toolButton_today.setEnabled(True)
+            self.ui.toolButton_add_symptom_dict.setEnabled(True)
+            self.ui.checkBox_reference.setEnabled(True)
+
+            self.ui.toolButton_tongue.setEnabled(True)
+            self.ui.toolButton_pulse.setEnabled(True)
+            self.ui.toolButton_remark.setEnabled(True)
+
+            self.ui.textEdit_symptom.setReadOnly(False)
+            self.ui.textEdit_tongue.setReadOnly(False)
+            self.ui.textEdit_pulse.setReadOnly(False)
+            self.ui.textEdit_remark.setReadOnly(False)
+
     # 設定看診中
     def _set_in_progress(self, in_progress):
         wait_key = self._get_wait_key()
@@ -761,14 +797,7 @@ class MedicalRecord(QtWidgets.QMainWindow):
             wait_key=wait_key,
         )
         self.database.exec_sql(sql)
-
-        if in_progress == '"Y"':
-            progress_type = '診療中'
-        else:
-            progress_type = '診療結束'
-
-        socket_client = udp_socket_client.UDPSocketClient()
-        socket_client.send_data(progress_type)
+        self._send_socket_data()
 
     def _get_wait_key(self):
         sql = '''
@@ -1185,8 +1214,7 @@ class MedicalRecord(QtWidgets.QMainWindow):
         elif self.sender().text() == '存檔後選擇列印其他收據':
             self._print_misc(case_key, '選擇列印')
 
-        socket_client = udp_socket_client.UDPSocketClient()
-        socket_client.send_data('醫師看診作業完成')
+        self._send_socket_data()
 
         self.close_all()
         self.close_tab()
@@ -1339,7 +1367,7 @@ class MedicalRecord(QtWidgets.QMainWindow):
                     continue
 
                 medicine_name = medicine_name.text()
-                if '混合(科藥+自費藥' in medicine_name and self_pres_days != ins_pres_days:
+                if self.ins_type == '健保' and '混合(科藥+自費藥' in medicine_name and self_pres_days != ins_pres_days:
                     system_utils.show_message_box(
                         QMessageBox.Critical,
                         '給藥天數錯誤',
@@ -1451,9 +1479,9 @@ class MedicalRecord(QtWidgets.QMainWindow):
             case_key = self.case_key
 
         print_mode = '系統設定'
+        self._print_misc(case_key, print_mode)
         self._print_prescript(case_key, print_mode)
         self._print_receipt(case_key, print_mode)
-        self._print_misc(case_key, print_mode)
 
     # 列印處方
     def _print_prescript(self, case_key, print_mode):
@@ -1520,8 +1548,12 @@ class MedicalRecord(QtWidgets.QMainWindow):
             self._set_doctor_done()
             self._set_charge_done()
             self._set_wait_done()
-            socket_client = udp_socket_client.UDPSocketClient()
-            socket_client.send_data('醫師看診作業完成')
+            self._send_socket_data()
+
+    def _send_socket_data(self):
+        self.socket_client.send_data(
+            ','.join([self.system_settings.field('院所名稱'), self.program_name])
+        )
 
     def _set_doctor_done(self, case_key=None):
         if case_key is None:
@@ -1890,7 +1922,7 @@ class MedicalRecord(QtWidgets.QMainWindow):
     # 檢查上次健保給藥是否服藥完畢
     def _check_pres_days(self):
         message = registration_utils.check_prescription_finished(
-            self.database, self.case_key, self.patient_key
+            self.database, self.system_settings, self.case_key, self.patient_key
         )
         if message is not None:
             system_utils.show_message_box(
@@ -1967,3 +1999,23 @@ class MedicalRecord(QtWidgets.QMainWindow):
     def _open_reservation(self):
         doctor = self.tab_registration.ui.comboBox_doctor.currentText()
         self.parent.open_reservation(None, self.patient_key, doctor)
+
+    # 開啟病歷影像
+    def _capture_image(self):
+        if self.system_settings.field('影像檔路徑') in ['', None]:
+            system_utils.show_message_box(
+                QMessageBox.Critical,
+                '路徑未設定',
+                '<font size="4" color="red"><b>系統設定內的影像資料檔路徑未設定, 無法執行及讀取影像資料功能.</b></font>',
+                '請至系統設定->其他->設定影像資料檔路徑.'
+            )
+            return
+
+        dialog = dialog_medical_record_image.DialogMedicalRecordImage(
+            self, self.database, self.system_settings, self.case_key, self.patient_key
+        )
+        dialog.exec_()
+        dialog.deleteLater()
+
+        self.tab_image.read_images()
+

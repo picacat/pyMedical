@@ -51,14 +51,14 @@ class StatisticsDoctorIncome(QtWidgets.QMainWindow):
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_STATISTICS_DOCTOR_INCOME, self)
         system_utils.set_css(self, self.system_settings)
-        self.center()
+        system_utils.center_window(self)
         self.table_widget_doctor_income = table_widget.TableWidget(self.ui.tableWidget_doctor_income, self.database)
         self._set_table_width()
 
     def _set_table_width(self):
         width = [
-            110,
-            85, 85, 85, 85, 85, 85, 85, 85, 85,
+            130,
+            80, 80, 80, 80, 80, 80, 80, 90, 90,
         ]
         self.table_widget_doctor_income.set_table_heading_width(width)
 

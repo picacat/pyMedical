@@ -354,7 +354,7 @@ def check_card_yesterday(database, patient_key, course=None):
 
 
 # 檢查上次給藥是否用完
-def check_prescription_finished(database, case_key, patient_key, in_date=None):
+def check_prescription_finished(database, system_settings, case_key, patient_key, in_date=None):
     message = None
     if in_date is None:
         in_date = datetime.date.today()
@@ -389,7 +389,10 @@ def check_prescription_finished(database, case_key, patient_key, in_date=None):
         row = rows[0]
         prescription_days = number_utils.get_integer(row['Days'])
         last_prescription_date = row['CaseDate'].date()
-        days = (in_date - last_prescription_date).days  # 已服用天數 (給藥當日也算一日)
+        days = (in_date - last_prescription_date).days  # 已服用天數
+        if system_settings.field('當日用藥重複檢查') == 'Y':  # 給藥當日也算一日
+            days += 1
+
         remain_days = prescription_days - days  # 剩餘藥日
         if remain_days > 0:  # 藥還有剩
             message = '* 用藥檢查: {name}在{case_date}開了{pres_days}日藥, 到目前尚有{remain_days}日藥未服用完畢.'.format(

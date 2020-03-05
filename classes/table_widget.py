@@ -83,11 +83,9 @@ class TableWidget:
         if row_count % column_count > 0:
             total_row += 1
 
-        for row_no in range(0, total_row):
-            self.table_widget.setRowCount(
-                self.table_widget.rowCount() + 1
-            )
-            for col_no in range(0, column_count):
+        self.table_widget.setRowCount(total_row)
+        for row_no in range(total_row):
+            for col_no in range(column_count):
                 index = (row_no * column_count) + col_no
                 if index >= row_count:
                     break

@@ -42,26 +42,19 @@ class DialogMedicalRecordPastHistory(QtWidgets.QDialog):
     def close_all(self):
         pass
 
-    def center(self):
-        frame_geometry = self.frameGeometry()
-        screen = QtWidgets.QApplication.desktop().screenNumber(QtWidgets.QApplication.desktop().cursor().pos())
-        center_point = QtWidgets.QApplication.desktop().screenGeometry(screen).center()
-        frame_geometry.moveCenter(center_point)
-        self.move(frame_geometry.topLeft())
-
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_DIALOG_MEDICAL_RECORD_PAST_HISTORY, self)
         system_utils.set_css(self, self.system_settings)
+        system_utils.center_window(self)
         self.setFixedSize(self.size())  # non resizable dialog
-        self.center()
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setText('拷貝病歷')
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Cancel).setText('取消')
         self.table_widget_past_history = table_widget.TableWidget(self.ui.tableWidget_past_history, self.database)
         self.table_widget_simple_view = table_widget.TableWidget(self.ui.tableWidget_simple_view, self.database)
         self.table_widget_past_history.set_column_hidden([0])
         self._set_table_width()
-        if self.call_from == '病歷查詢':
+        if self.call_from in ['門診掛號', '病歷查詢']:
             self.ui.groupBox_copy_option.setVisible(False)
             self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setVisible(False)
             self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Cancel).setText('關閉')
@@ -70,7 +63,7 @@ class DialogMedicalRecordPastHistory(QtWidgets.QDialog):
 
     # 設定欄位寬度
     def _set_table_width(self):
-        width = [100, 125, 45, 80, 60, 30, 160, 35, 80, 60, 50]
+        width = [100, 125, 50, 90, 70, 30, 220, 35, 90, 80, 40]
         self.table_widget_past_history.set_table_heading_width(width)
 
     # 設定信號

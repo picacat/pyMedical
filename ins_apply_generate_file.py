@@ -260,9 +260,9 @@ class InsApplyGenerateFile(QtWidgets.QMainWindow):
         return message
 
     def _write_ins_record(self, row):
-        case_type = nhi_utils.get_case_type(self.database, row)
+        case_type = nhi_utils.get_case_type(self.database, self.system_settings, row)
 
-        special_code = nhi_utils.get_special_code(self.database, row['CaseKey'])
+        special_code = nhi_utils.get_special_code(self.database, self.system_settings, row['CaseKey'])
         pres_days = case_utils.get_pres_days(self.database, row['CaseKey'])
         treat_records = nhi_utils.get_treat_records(self.database, row)
         drug_fee = number_utils.get_integer(row['InterDrugFee'])
@@ -282,10 +282,14 @@ class InsApplyGenerateFile(QtWidgets.QMainWindow):
             self.database,
             self.system_settings,
             doctor_name,
+            string_utils.xstr(row['RegistType']),
             string_utils.xstr(row['TreatType']),
             number_utils.get_integer(row['DiagFee']),
         )
         diag_fee = charge_utils.get_ins_fee_from_ins_code(self.database, diag_code)
+        pharmacy_code = nhi_utils.get_pharmacy_code(
+            self.system_settings, row, pres_days,
+        )
         pharmacy_fee = number_utils.get_integer(row['PharmacyFee'])
         ins_total_fee = drug_fee + treat_fee + diag_fee + pharmacy_fee
         share_fee = (
@@ -347,10 +351,7 @@ class InsApplyGenerateFile(QtWidgets.QMainWindow):
             ),
             nhi_utils.get_pharmacist_id(self.database, self.system_settings, row),
             drug_fee, treat_fee, diag_code, diag_fee,
-            nhi_utils.get_pharmacy_code(
-                self.system_settings,
-                row, pres_days,
-            ),
+            pharmacy_code,
             pharmacy_fee, ins_total_fee, share_fee, ins_apply_fee,
             number_utils.get_integer(row['AgentFee']),
             number_utils.get_integer(row['PatientKey']),
@@ -417,8 +418,14 @@ class InsApplyGenerateFile(QtWidgets.QMainWindow):
 
         drug_fee = (number_utils.get_integer(ins_apply_row['DrugFee']) +
                     number_utils.get_integer(case_row['InterDrugFee']))
+        pharmacy_code = nhi_utils.get_pharmacy_code(
+            self.system_settings,
+            case_row, pres_days,
+            string_utils.xstr(ins_apply_row['PharmacyCode'])
+        )
         pharmacy_fee = (number_utils.get_integer(ins_apply_row['PharmacyFee']) +
                         number_utils.get_integer(case_row['PharmacyFee']))
+
         pharmacist_id = string_utils.xstr(ins_apply_row['PharmacistID'])
         if pharmacy_fee > 0 and pharmacist_id == '':
             pharmacist_id = nhi_utils.get_pharmacist_id(self.database, self.system_settings, case_row)
@@ -449,11 +456,7 @@ class InsApplyGenerateFile(QtWidgets.QMainWindow):
             pres_type,
             drug_fee,
             treat_fee,
-            nhi_utils.get_pharmacy_code(
-                self.system_settings,
-                case_row, pres_days,
-                string_utils.xstr(ins_apply_row['PharmacyCode'])
-            ),
+            pharmacy_code,
             pharmacy_fee,
             pharmacist_id,
             share_code,

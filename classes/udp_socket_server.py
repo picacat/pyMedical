@@ -12,6 +12,7 @@ class UDPSocketServer(QtCore.QThread):
     def __init__(self, parent=None):
         super(UDPSocketServer, self).__init__(parent)
         self.server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.server.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         self.buffer_size = 1024
         self.socket_connected = False
         self._init_socket_server()

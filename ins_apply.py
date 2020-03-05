@@ -76,6 +76,7 @@ class InsApply(QtWidgets.QMainWindow):
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_INS_APPLY, self)
         system_utils.set_css(self, self.system_settings)
+        system_utils.center_window(self)
 
     # 設定信號
     def _set_signal(self):
@@ -110,28 +111,29 @@ class InsApply(QtWidgets.QMainWindow):
             else:
                 dialog.ui.radioButton_reapply.setChecked(True)
 
-        apply_option = None
-        if dialog.exec_():
-            self.apply_year = number_utils.get_integer(dialog.ui.comboBox_year.currentText())
-            self.apply_month = number_utils.get_integer(dialog.ui.comboBox_month.currentText())
-            if dialog.ui.radioButton_apply.isChecked():
-                self.apply_type = '申報'  # 申報
-                self.apply_type_code = '1'
-            else:
-                self.apply_type = '補報'  # 補報
-                self.apply_type_code = '2'
+        if not dialog.exec_():
+            return
 
-            self.start_date = dialog.ui.dateEdit_start.date()
-            self.end_date = dialog.ui.dateEdit_end.date()
-            self.clinic_id = dialog.ui.lineEdit_clinic_id.text()
-            self.period = dialog.ui.comboBox_period.currentText()
-            self.ins_generate_date = dialog.ui.dateEdit_ins_generate_date.date()
-            self.apply_date = '{0:0>3}{1:0>2}'.format(self.apply_year-1911, self.apply_month)
+        self.apply_year = number_utils.get_integer(dialog.ui.comboBox_year.currentText())
+        self.apply_month = number_utils.get_integer(dialog.ui.comboBox_month.currentText())
+        if dialog.ui.radioButton_apply.isChecked():
+            self.apply_type = '申報'  # 申報
+            self.apply_type_code = '1'
+        else:
+            self.apply_type = '補報'  # 補報
+            self.apply_type_code = '2'
 
-            if dialog.ui.radioButton_ins_apply.isChecked():
-                apply_option = '健保申報'
-            else:
-                apply_option = '申報查詢'
+        self.start_date = dialog.ui.dateEdit_start.date()
+        self.end_date = dialog.ui.dateEdit_end.date()
+        self.clinic_id = dialog.ui.lineEdit_clinic_id.text()
+        self.period = dialog.ui.comboBox_period.currentText()
+        self.ins_generate_date = dialog.ui.dateEdit_ins_generate_date.date()
+        self.apply_date = '{0:0>3}{1:0>2}'.format(self.apply_year-1911, self.apply_month)
+
+        if dialog.ui.radioButton_ins_apply.isChecked():
+            apply_option = '健保申報'
+        else:
+            apply_option = '申報查詢'
 
         if apply_option == '健保申報':
             if self._generate_ins_data():
@@ -139,8 +141,8 @@ class InsApply(QtWidgets.QMainWindow):
                 self._adjust_ins_fee()
                 self._add_ins_apply_tab()
                 self._create_xml_file()
-                self._check_ins_xml_file()
-                self._check_tour()
+            else:
+                return
         elif apply_option == '申報查詢':
             self._calculate_ins_data()
             self._add_ins_apply_tab()
@@ -150,11 +152,11 @@ class InsApply(QtWidgets.QMainWindow):
             )
             if not os.path.isfile(xml_file_name):
                 self._create_xml_file()
-
-            self._check_ins_xml_file()
-            self._check_tour()
         else:
             pass
+
+        self._check_ins_xml_file()
+        self._check_tour()
 
         dialog.close_all()
         dialog.deleteLater()

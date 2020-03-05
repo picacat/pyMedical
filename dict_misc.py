@@ -35,6 +35,7 @@ class DictMisc(QtWidgets.QMainWindow):
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_DICT_MISC, self)
         system_utils.set_css(self, self.system_settings)
+        system_utils.center_window(self)
         self.ui.tabWidget_misc.addTab(
             dict_hosp.DictHosp(self, *self.args), '院所資料')
 

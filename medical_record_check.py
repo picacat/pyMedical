@@ -442,6 +442,10 @@ class MedicalRecordCheck(QtWidgets.QDialog):
         if not self._check_injury_treat():
             return False
 
+        if self.system_settings.field('檢查損傷診斷碼') == 'Y':
+            if not self._check_injury_disease_period():
+                return False
+
         if not self._check_dosage():
             return False
 
@@ -496,8 +500,11 @@ class MedicalRecordCheck(QtWidgets.QDialog):
                 error_message.append('{0} 劑量有誤'.format(medicine_name.text()))
 
         dosage_limitation = number_utils.get_integer(self.system_settings.field('劑量上限'))
+        minimum_dosage = number_utils.get_integer(self.system_settings.field('最低劑量'))
         if dosage_limitation is not None and 0 < dosage_limitation < total_dosage:  # 超過劑量上限
-            error_message.append('用藥超過劑量上限{0}克'.format(dosage_limitation))
+            error_message.append('用藥超過系統設定內的劑量上限{0}克'.format(dosage_limitation))
+        elif minimum_dosage is not None and 0 < total_dosage < minimum_dosage:  # 低於最低劑量
+            error_message.append('用藥少於系統設定內的最低劑量{0}克'.format(minimum_dosage))
 
         if len(error_message) > 0:
             system_utils.show_message_box(
@@ -809,6 +816,181 @@ class MedicalRecordCheck(QtWidgets.QDialog):
 
         return check_ok
 
+    # 檢查
+    def _check_injury_disease_period(self):
+        check_ok = True
+        error_message = []
+
+        try:
+            extension_code = self.disease_code1[6]  # 第七碼
+        except IndexError:
+            return check_ok
+
+        if extension_code not in ['A', 'D', 'S']:
+            return
+
+        if extension_code == 'A':  # 初期照護
+            message = self._check_extension_code_a()
+            if message is not None:
+                error_message.append(message)
+        elif extension_code == 'D':  # 後續照護
+            message = self._check_extension_code_d()
+            if message is not None:
+                error_message.append(message)
+        elif extension_code == 'S':  # 後續照護
+            message = self._check_extension_code_s()
+            if message is not None:
+                error_message.append(message)
+
+        if len(error_message) > 0:
+            msg_box = QMessageBox()
+            msg_box.setIcon(QMessageBox.Warning)
+            msg_box.setWindowTitle('損傷診斷碼檢查')
+            msg_box.setText(
+                '''
+                    <font size="4" color="red">
+                      <b>
+                        損傷診斷碼檢查提示如下:<br>
+                        <br>
+                        {0}
+                      </b>
+                    </font>
+                '''.format('<br>'.join(error_message)),
+            )
+            instruction = '''
+                請確定損傷發生日期與處置診斷碼是否相符.<br>
+                初期照護: 15日內<br>
+                後續照護: 16~30日內<br>
+                後遺症: 超過30日
+            '''
+            msg_box.setInformativeText(instruction)
+            msg_box.addButton(QPushButton("繼續存檔"), QMessageBox.YesRole)
+            msg_box.addButton(QPushButton("取消"), QMessageBox.NoRole)
+            save_file = msg_box.exec_()
+            if save_file == QMessageBox.RejectRole:
+                check_ok = False
+
+        return check_ok
+
+    def _check_extension_code_a(self):
+        sql = '''
+            SELECT 
+                CaseDate FROM cases 
+            WHERE
+                (CaseKey != {case_key}) AND
+                (PatientKey = {patient_key}) AND
+                (CaseDate < "{case_date}") AND
+                (InsType = "健保") AND
+                (DiseaseCode1 = "{disease_code1}")
+            ORDER BY CaseDate LIMIT 1
+        '''.format(
+            case_key=self.medical_record['CaseKey'],
+            patient_key=self.medical_record['PatientKey'],
+            case_date=self.medical_record['CaseDate'],
+            disease_code1=self.disease_code1,
+        )
+        rows = self.database.select_record(sql)
+        if len(rows) <= 0:
+            return None
+
+        first_case_date = rows[0]['CaseDate'].date()
+        case_date = self.medical_record['CaseDate'].date()
+        delta = (case_date - first_case_date).days
+        if delta > 30:
+            days, hint = 30, '後遺症'
+        elif delta > 15:
+            days, hint = 15, '後續照護'
+        else:
+            return None
+
+        message = '''
+            上次初期照護日期為{first_case_date}, 距離本次門診已超過{days}天, 應申報為{hint}
+        '''.format(
+            first_case_date=first_case_date,
+            days=days,
+            hint=hint,
+        )
+
+        return message
+
+    def _check_extension_code_d(self):
+        new_disease_code1 = self.disease_code1[:6] + 'A'  # 找出初診照護日期
+
+        sql = '''
+            SELECT 
+                CaseDate FROM cases 
+            WHERE
+                (CaseKey != {case_key}) AND
+                (PatientKey = {patient_key}) AND
+                (CaseDate < "{case_date}") AND
+                (InsType = "健保") AND
+                (DiseaseCode1 = "{disease_code1}")
+            ORDER BY CaseDate LIMIT 1
+        '''.format(
+            case_key=self.medical_record['CaseKey'],
+            patient_key=self.medical_record['PatientKey'],
+            case_date=self.medical_record['CaseDate'],
+            disease_code1=new_disease_code1,
+        )
+        rows = self.database.select_record(sql)
+        if len(rows) <= 0:
+            return '本次為損傷診斷首次, 應申報初診照護'
+
+        first_case_date = rows[0]['CaseDate'].date()
+        case_date = self.medical_record['CaseDate'].date()
+        delta = (case_date - first_case_date).days
+        if delta > 30:
+            message = '''
+                上次初期照護日期為{first_case_date}, 距離本次門診已超過30天, 應申報為後遺症
+            '''.format(first_case_date=first_case_date)
+        elif delta <= 15:
+            message = '''
+                上次初期照護日期為{first_case_date}, 距離本次門診尚未滿15天, 應申報為初診照護
+            '''.format(first_case_date=first_case_date)
+        else:
+            return None
+
+        return message
+
+    def _check_extension_code_s(self):
+        new_disease_code1 = self.disease_code1[:6] + 'A'  # 找出初診照護日期
+
+        sql = '''
+            SELECT 
+                CaseDate FROM cases 
+            WHERE
+                (CaseKey != {case_key}) AND
+                (PatientKey = {patient_key}) AND
+                (CaseDate < "{case_date}") AND
+                (InsType = "健保") AND
+                (DiseaseCode1 = "{disease_code1}")
+            ORDER BY CaseDate LIMIT 1
+        '''.format(
+            case_key=self.medical_record['CaseKey'],
+            patient_key=self.medical_record['PatientKey'],
+            case_date=self.medical_record['CaseDate'],
+            disease_code1=new_disease_code1,
+        )
+        rows = self.database.select_record(sql)
+        if len(rows) <= 0:
+            return '本次為損傷診斷首次, 應申報初診照護'
+
+        first_case_date = rows[0]['CaseDate'].date()
+        case_date = self.medical_record['CaseDate'].date()
+        delta = (case_date - first_case_date).days
+        if delta <= 15:
+            message = '''
+                上次初期照護日期為{first_case_date}, 距離本次門診尚未滿15天, 應申報為初診照護
+            '''.format(first_case_date=first_case_date)
+        elif delta <= 30:
+            message = '''
+                上次初期照護日期為{first_case_date}, 距離本次門診已超過15天但尚未滿30天, 應申報為後續照護
+            '''.format(first_case_date=first_case_date)
+        else:
+            return None
+
+        return message
+
     def _check_pres_days(self):
         check_ok = True
 
@@ -816,7 +998,7 @@ class MedicalRecordCheck(QtWidgets.QDialog):
             return check_ok
 
         message = registration_utils.check_prescription_finished(
-            self.database, self.medical_record['CaseKey'],
+            self.database, self.system_settings, self.medical_record['CaseKey'],
             self.patient_record['PatientKey'],
             self.medical_record['CaseDate']
         )

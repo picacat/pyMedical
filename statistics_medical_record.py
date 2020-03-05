@@ -61,7 +61,7 @@ class StatisticsMedicalRecord(QtWidgets.QMainWindow):
     # 讀取病歷
     def open_dialog(self):
         dialog = dialog_statistics_therapist.DialogStatisticsTherapist(
-            self, self.database, self.system_settings, '醫師',
+            self, self.database, self.system_settings, '病歷統計', '醫師',
         )
 
         if self.dialog_setting['dialog_executed']:

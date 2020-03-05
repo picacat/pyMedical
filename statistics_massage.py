@@ -63,7 +63,7 @@ class StatisticsMassage(QtWidgets.QMainWindow):
     # 讀取病歷
     def open_dialog(self):
         dialog = dialog_statistics_therapist.DialogStatisticsTherapist(
-            self, self.database, self.system_settings, '推拿師父',
+            self, self.database, self.system_settings, '養生館收入統計', '推拿師父',
         )
 
         if self.dialog_setting['dialog_executed']:

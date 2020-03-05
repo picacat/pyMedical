@@ -66,10 +66,10 @@ class InsApplyFeePerformance(QtWidgets.QMainWindow):
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_INS_APPLY_FEE_PERFORMANCE, self)
         system_utils.set_css(self, self.system_settings)
+        system_utils.center_window(self)
         self.ui.tableWidget_doctor_xml.setAlternatingRowColors(True)
         self.table_widget_doctor_xml = table_widget.TableWidget(self.ui.tableWidget_doctor_xml, self.database)
         self.table_widget_case_xml = table_widget.TableWidget(self.ui.tableWidget_case_xml, self.database)
-        self.center()
         self._set_table_width()
 
     def _set_table_width(self):

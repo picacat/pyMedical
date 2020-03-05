@@ -41,6 +41,7 @@ class DialogMedicalRecordCollection(QtWidgets.QDialog):
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_DIALOG_MEDICAL_RECORD_COLLECTION, self)
         system_utils.set_css(self, self.system_settings)
+        system_utils.center_window(self)
         self.setFixedSize(self.size())  # non resizable dialog
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setText('匯入病歷')
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Cancel).setText('取消')

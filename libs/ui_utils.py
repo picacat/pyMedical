@@ -7,6 +7,7 @@ from libs import string_utils
 
 ICON_NO = QtGui.QIcon('./icons/gtk-no.svg')
 ICON_OK = QtGui.QIcon('./icons/gtk-ok.svg')
+ICON_STAR = QtGui.QIcon('./icons/gtk-about.svg')
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname("__file__")))
 
@@ -24,6 +25,7 @@ UI_SELF_PRESCRIPT_RECORD = "self_prescript_record.ui"
 UI_INS_CARE_RECORD = "ins_care_record.ui"
 UI_MEDICAL_RECORD_RECENTLY_HISTORY = "medical_record_recently_history.ui"
 UI_MEDICAL_RECORD_REGISTRATION = "medical_record_registration.ui"
+UI_MEDICAL_RECORD_IMAGE = "medical_record_image.ui"
 UI_MEDICAL_RECORD_FEES = "medical_record_fees.ui"
 UI_MEDICAL_RECORD_LIST = "medical_record_list.ui"
 UI_MEDICAL_RECORD_FAMILY = "medical_record_family.ui"
@@ -79,6 +81,15 @@ UI_STATISTICS_DOCTOR_SALE = "statistics_doctor_sale.ui"
 UI_STATISTICS_DOCTOR_PERFORMANCE = "statistics_doctor_performance.ui"
 UI_STATISTICS_DOCTOR_COMMISSION = "statistics_doctor_commission.ui"
 UI_STATISTICS_DOCTOR_PROJECT_SALE = "statistics_doctor_project_sale.ui"
+UI_STATISTICS_INS_DISCOUNT = "statistics_ins_discount.ui"
+UI_STATISTICS_INS_DISCOUNT_REGIST_FEE = "statistics_ins_discount_regist_fee.ui"
+UI_STATISTICS_INS_DISCOUNT_DIAG_SHARE_FEE = "statistics_ins_discount_diag_share_fee.ui"
+UI_STATISTICS_INS_DISCOUNT_DRUG_SHARE_FEE = "statistics_ins_discount_drug_share_fee.ui"
+UI_STATISTICS_MULTIPLE_PERFORMANCE = "statistics_multiple_performance.ui"
+UI_STATISTICS_MULTIPLE_PERFORMANCE_WEEK_PERSON = "statistics_multiple_performance_week_person.ui"
+UI_STATISTICS_MULTIPLE_PERFORMANCE_WEEK_INCOME = "statistics_multiple_performance_week_income.ui"
+UI_STATISTICS_MULTIPLE_PERFORMANCE_WEEK_PROJECT = "statistics_multiple_performance_week_project.ui"
+UI_STATISTICS_MULTIPLE_PERFORMANCE_WEEK_DOCTOR = "statistics_multiple_performance_week_doctor.ui"
 
 UI_STATISTICS_INS_PERFORMANCE = "statistics_ins_performance.ui"
 UI_STATISTICS_INS_PERFORMANCE_MEDICAL_RECORD = "statistics_ins_performance_medical_record.ui"
@@ -126,6 +137,7 @@ UI_DIALOG_EDIT_DISEASE = "dialog_edit_disease.ui"
 UI_DIALOG_RICH_TEXT = "dialog_rich_text.ui"
 UI_DIALOG_COMMISSION = "dialog_commission.ui"
 UI_DIALOG_INS_LIST_EDIT = "dialog_ins_list_edit.ui"
+UI_DIALOG_MEDICAL_RECORD_IMAGE = "dialog_medical_record_image.ui"
 
 UI_DIALOG_MEDICAL_RECORD_LIST = "dialog_medical_record_list.ui"
 UI_DIALOG_MEDICAL_RECORD_PAST_HISTORY = "dialog_medical_record_past_history.ui"

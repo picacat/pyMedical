@@ -105,10 +105,13 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
         self.ui.lineEdit_discount_fee.textChanged.connect(self._discount_fee_changed)
 
     def _set_permission(self):
-        if self.call_from == '醫師看診作業':
-            return
+        # if self.call_from == '醫師看診作業':
+        #     return
 
         if self.user_name == '超級使用者':
+            return
+
+        if personnel_utils.get_permission(self.database, '醫師看診作業', '病歷登錄', self.user_name) == 'Y':
             return
 
         if personnel_utils.get_permission(self.database, '病歷資料', '病歷修正', self.user_name) == 'Y':
@@ -120,6 +123,8 @@ class SelfPrescriptRecord(QtWidgets.QMainWindow):
         self.ui.toolButton_show_costs.setEnabled(False)
         self.ui.toolButton_medicine_info.setEnabled(False)
         self.ui.toolButton_copy.setEnabled(False)
+        self.ui.toolButton_clear_medicine.setEnabled(False)
+        self.ui.toolButton_copy_to_ins.setEnabled(False)
 
         self.ui.comboBox_package.setEnabled(False)
         self.ui.comboBox_pres_days.setEnabled(False)

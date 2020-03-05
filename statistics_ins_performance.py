@@ -10,7 +10,7 @@ from dialog import dialog_ins_date_doctor
 import statistics_ins_performance_medical_record
 
 
-# 醫師統計 2019.05.02
+# 健保申報業績 2019.12.02
 class StatisticsInsPerformance(QtWidgets.QMainWindow):
     # 初始化
     def __init__(self, parent=None, *args):
@@ -42,6 +42,7 @@ class StatisticsInsPerformance(QtWidgets.QMainWindow):
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_STATISTICS_INS_PERFORMANCE, self)
         system_utils.set_css(self, self.system_settings)
+        system_utils.center_window(self)
 
     # 設定信號
     def _set_signal(self):
@@ -60,7 +61,7 @@ class StatisticsInsPerformance(QtWidgets.QMainWindow):
     # 讀取病歷
     def open_dialog(self):
         dialog = dialog_ins_date_doctor.DialogInsDateDoctor(
-            self, self.database, self.system_settings
+            self, self.database, self.system_settings, '健保申報業績',
         )
 
         if self.dialog_setting['dialog_executed']:

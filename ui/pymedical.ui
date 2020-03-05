@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>1234</width>
-    <height>924</height>
+    <height>953</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -479,6 +479,19 @@
         </widget>
        </item>
        <item>
+        <spacer name="verticalSpacer_3">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
         <spacer name="verticalSpacer">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
@@ -561,19 +574,6 @@
             </property>
            </spacer>
           </item>
-          <item>
-           <spacer name="horizontalSpacer_3">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
          </layout>
         </item>
         <item>
@@ -625,7 +625,7 @@
      <x>0</x>
      <y>0</y>
      <width>1234</width>
-     <height>25</height>
+     <height>27</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_registration">
@@ -715,6 +715,9 @@
     <addaction name="action_statistics_medicine"/>
     <addaction name="action_statistics_ins_performance"/>
     <addaction name="action_statistics_doctor_commission"/>
+    <addaction name="action_statistics_multiple_performance"/>
+    <addaction name="separator"/>
+    <addaction name="action_statistics_ins_discount"/>
    </widget>
    <widget class="QMenu" name="menu_massage">
     <property name="title">
@@ -1226,6 +1229,30 @@
    </property>
    <property name="toolTip">
     <string>系統日誌</string>
+   </property>
+  </action>
+  <action name="action_statistics_ins_discount">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/face-smile.png</normaloff>../icons/face-smile.png</iconset>
+   </property>
+   <property name="text">
+    <string>健保門診優惠統計</string>
+   </property>
+   <property name="toolTip">
+    <string>健保門診優惠統計</string>
+   </property>
+  </action>
+  <action name="action_statistics_multiple_performance">
+   <property name="icon">
+    <iconset>
+     <normaloff>../icons/trophy-gold.png</normaloff>../icons/trophy-gold.png</iconset>
+   </property>
+   <property name="text">
+    <string>綜合業績報表</string>
+   </property>
+   <property name="toolTip">
+    <string>綜合業績報表</string>
    </property>
   </action>
  </widget>

@@ -29,15 +29,17 @@ WAITING_LIST_COL_NO = {
     'Gender': 6,
     'Age': 7,
     'Room': 8,
-    'WaitTime': 9,
-    'RegistType': 10,
-    'ShareType': 11,
-    'TreatType': 12,
-    'Visit': 13,
-    'Card': 14,
-    'Course': 15,
-    'Massager': 16,
-    'Remark': 17,
+    'CaseTime': 9,
+    'WaitTime': 10,
+    'InsType': 11,
+    'RegistType': 12,
+    'ShareType': 13,
+    'TreatType': 14,
+    'Visit': 15,
+    'Card': 16,
+    'Course': 17,
+    'Massager': 18,
+    'Remark': 19,
 }
 
 
@@ -83,6 +85,7 @@ class WaitingList(QtWidgets.QMainWindow):
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_WAITING_LIST, self)
         system_utils.set_css(self, self.system_settings)
+        system_utils.center_window(self)
         self.table_widget_waiting_list = table_widget.TableWidget(self.ui.tableWidget_waiting_list, self.database)
         self.table_widget_waiting_list.set_column_hidden([
             WAITING_LIST_COL_NO['WaitKey'],
@@ -119,11 +122,15 @@ class WaitingList(QtWidgets.QMainWindow):
         if personnel_utils.get_permission(self.database, self.program_name, '病歷登錄', self.user_name) != 'Y':
             self.ui.action_medical_record.setEnabled(False)
 
+        if personnel_utils.get_permission(self.database, self.program_name, '非醫師病歷登錄', self.user_name) == 'Y':
+            self.ui.action_medical_record.setEnabled(True)
+
     def _set_table_width(self):
-        # width = [70, 70, 45,
-        #          70, 80, 40, 90, 40, 60, 60, 70, 50,
-        #          80, 80, 80, 60, 80, 40, 80, 220]
-        # database.table_widget_waiting_list.set_table_heading_width(width)
+        width = [100, 100,
+                 45, 45, 80, 100, 45, 85, 45, 60, 70, 50, 90,
+                 90, 90, 65, 90, 45, 80, 80, 220]
+        self.table_widget_waiting_list.set_table_heading_width(width)
+
         width = [220, 100]
         self.table_widget_statistics_list.set_table_heading_width(width)
 
@@ -144,20 +151,23 @@ class WaitingList(QtWidgets.QMainWindow):
         return room
 
     def read_wait(self):
-        sort = 'ORDER BY FIELD(Period, {0}), RegistNo'.format(str(nhi_utils.PERIOD)[1:-1])  # 預設為診號排序
+        order_script = 'ORDER BY FIELD(Period, {0}), RegistNo'.format(str(nhi_utils.PERIOD)[1:-1])  # 預設為診號排序
         if self.system_settings.field('看診排序') == '時間排序':
-            sort = 'ORDER BY CaseDate'
+            order_script = 'ORDER BY CaseDate'
 
-        room = self._get_room_script('wait')
+        room_script = self._get_room_script('wait')
 
         sql = '''
             SELECT wait.*, patient.Gender, patient.Birthday FROM wait 
                 LEFT JOIN patient ON wait.PatientKey = patient.PatientKey 
             WHERE 
                 DoctorDone = "False" 
-                {0}
-                {1}
-        '''.format(room, sort)
+                {room_script}
+                {order_script}
+        '''.format(
+            room_script=room_script,
+            order_script=order_script,
+        )
 
         self.table_widget_waiting_list.set_db_data(sql, self._set_table_data)
 
@@ -177,9 +187,16 @@ class WaitingList(QtWidgets.QMainWindow):
     def _set_table_data(self, row_no, row):
         registration_time = row['CaseDate'].strftime('%H:%M')
 
-        time_delta = datetime.datetime.now() - row['CaseDate']
-        wait_seconds = datetime.timedelta(seconds=time_delta.total_seconds())
-        wait_time = '{0}分'.format(wait_seconds.seconds // 60)
+        now = datetime.datetime.now()
+        case_date = row['CaseDate']
+        if now > case_date:
+            time_delta = now - case_date
+        else:
+            time_delta = case_date - now
+
+        wait_seconds = datetime.timedelta(seconds=time_delta.total_seconds()).seconds
+        wait_minutes = wait_seconds // 60
+        wait_time = '{0}分'.format(wait_minutes)
 
         age_year, age_month = date_utils.get_age(row['Birthday'], row['CaseDate'])
         if age_year is None:
@@ -251,7 +268,10 @@ class WaitingList(QtWidgets.QMainWindow):
 
     def open_medical_record(self):
         if (self.user_name != '超級使用者' and
-                personnel_utils.get_permission(self.database, self.program_name, '病歷登錄', self.user_name) != 'Y'):
+                personnel_utils.get_permission(
+                    self.database, self.program_name, '病歷登錄', self.user_name) != 'Y' and
+                personnel_utils.get_permission(
+                    self.database, self.program_name, '非醫師病歷登錄', self.user_name) != 'Y'):
             return
 
         self.tab_name = self.ui.tabWidget_waiting_list.tabText(
@@ -270,7 +290,7 @@ class WaitingList(QtWidgets.QMainWindow):
         start_date = datetime.datetime.now().strftime('%Y-%m-%d 00:00:00')
         end_date = datetime.datetime.now().strftime('%Y-%m-%d 23:59:59')
 
-        room = self._get_room_script('reserve')
+        room_script = self._get_room_script('reserve')
 
         sql = '''
             SELECT 
@@ -279,14 +299,15 @@ class WaitingList(QtWidgets.QMainWindow):
             FROM reserve
                 LEFT JOIN patient ON patient.PatientKey = reserve.PatientKey
             WHERE
-                ReserveDate BETWEEN "{0}" AND "{1}" AND
+                ReserveDate BETWEEN "{start_date}" AND "{end_date}" AND
                 Arrival = "False"
-                {2}
-            ORDER BY ReserveDate, FIELD(Period, {3}), ReserveNo
+                {room_script}
+            ORDER BY ReserveDate, FIELD(Period, {period_list}), ReserveNo
         '''.format(
-            start_date, end_date,
-            room,
-            str(nhi_utils.PERIOD)[1:-1]
+            start_date=start_date,
+            end_date=end_date,
+            room_script=room_script,
+            period_list=str(nhi_utils.PERIOD)[1:-1],
         )
 
         self.table_widget_reservation_list.set_db_data(sql, self._set_reservation_data)
@@ -405,11 +426,11 @@ class WaitingList(QtWidgets.QMainWindow):
             self._read_wait_completed()
 
     def _read_wait_completed(self):
-        sort_script = 'ORDER BY FIELD(cases.Period, {0}), cases.RegistNo'.format(str(nhi_utils.PERIOD)[1:-1])  # 預設為診號排序
+        order_script = 'ORDER BY FIELD(cases.Period, {0}), cases.RegistNo'.format(str(nhi_utils.PERIOD)[1:-1])  # 預設為診號排序
         room_script = self._get_room_script('cases')
 
         if self.system_settings.field('看診排序') == '時間排序':
-            sort_script = 'ORDER BY cases.CaseDate'
+            order_script = 'ORDER BY cases.CaseDate'
 
         sql = '''
             SELECT wait.*, patient.Gender, patient.Birthday, cases.* FROM wait 
@@ -419,10 +440,10 @@ class WaitingList(QtWidgets.QMainWindow):
                 cases.DoctorDone = "True" AND
                 cases.TreatType != "自購"
                 {room_script}
-                {sort_script}
+                {order_script}
         '''.format(
             room_script=room_script,
-            sort_script=sort_script,
+            order_script=order_script,
         )
 
         self.table_widget_wait_completed.set_db_data(sql, self._set_wait_completed_data)

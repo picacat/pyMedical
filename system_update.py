@@ -48,6 +48,7 @@ class SystemUpdate(QtWidgets.QDialog):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_SYSTEM_UPDATE, self)
         self.setFixedSize(self.size())  # non resizable dialog
         system_utils.set_css(self, self.system_settings)
+        system_utils.center_window(self)
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setText('開始更新')
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Cancel).setText('取消')
         self.ui.toolButton_open_file.clicked.connect(self._open_file)

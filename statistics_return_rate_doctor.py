@@ -46,6 +46,7 @@ class StatisticsReturnRateDoctor(QtWidgets.QMainWindow):
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_STATISTICS_RETURN_RATE_DOCTOR, self)
         system_utils.set_css(self, self.system_settings)
+        system_utils.center_window(self)
         self.table_widget_return_rate_doctor = table_widget.TableWidget(
             self.ui.tableWidget_return_rate_doctor, self.database)
         self._set_table_width()
@@ -54,7 +55,7 @@ class StatisticsReturnRateDoctor(QtWidgets.QMainWindow):
     def _set_table_width(self):
         width = [
             100,
-            110, 70, 90, 70, 90, 300, 90, 220, 140]
+            130, 70, 90, 70, 90, 340, 90, 140, 140]
         self.table_widget_return_rate_doctor.set_table_heading_width(width)
 
     # 設定信號

@@ -43,6 +43,7 @@ class StatisticsMedicalRecordDiseaseRank(QtWidgets.QMainWindow):
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_STATISTICS_MEDICAL_RECORD_DISEASE_RANK, self)
         system_utils.set_css(self, self.system_settings)
+        system_utils.center_window(self)
         self.table_widget_disease_rank = table_widget.TableWidget(
             self.ui.tableWidget_disease_rank, self.database
         )
@@ -55,7 +56,7 @@ class StatisticsMedicalRecordDiseaseRank(QtWidgets.QMainWindow):
     def _set_table_width(self):
         self.table_widget_disease_rank.set_table_heading_width([100, 350, 70])
         self.table_widget_medical_record.set_table_heading_width(
-            [100, 110, 50, 80, 90, 110, 90]
+            [100, 130, 50, 80, 90, 90, 90]
         )
 
     # 設定信號

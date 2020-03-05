@@ -58,6 +58,7 @@ class DialogMassageReservation(QtWidgets.QDialog):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_DIALOG_MASSAGE_RESERVATION, self)
         # database.setFixedSize(database.size())  # non resizable dialog
         system_utils.set_css(self, self.system_settings)
+        system_utils.center_window(self)
         button_ok = self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok)
         button_ok.setText('確定')
         button_ok.setEnabled(False)

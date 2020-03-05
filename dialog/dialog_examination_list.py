@@ -40,6 +40,7 @@ class DialogExaminationList(QtWidgets.QDialog):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_DIALOG_EXAMINATION_LIST, self)
         self.setFixedSize(self.size())  # non resizable dialog
         system_utils.set_css(self, self.system_settings)
+        system_utils.center_window(self)
         self.ui.dateEdit_start_date.setDate(datetime.datetime.now())
         self.ui.dateEdit_end_date.setDate(datetime.datetime.now())
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setText('確定')

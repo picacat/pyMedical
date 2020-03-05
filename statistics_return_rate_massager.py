@@ -46,6 +46,7 @@ class StatisticsReturnRateMassager(QtWidgets.QMainWindow):
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_STATISTICS_RETURN_RATE_MASSAGER, self)
         system_utils.set_css(self, self.system_settings)
+        system_utils.center_window(self)
         self.table_widget_return_rate_massager = table_widget.TableWidget(
             self.ui.tableWidget_return_rate_massager, self.database)
         self._set_table_width()
@@ -54,7 +55,7 @@ class StatisticsReturnRateMassager(QtWidgets.QMainWindow):
     def _set_table_width(self):
         width = [
             100,
-            110, 70, 90, 70, 90, 200, 90, 300, 150]
+            130, 70, 90, 70, 90, 200, 90, 300, 150]
         self.table_widget_return_rate_massager.set_table_heading_width(width)
 
     # 設定信號

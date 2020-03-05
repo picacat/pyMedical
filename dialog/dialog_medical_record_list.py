@@ -59,6 +59,17 @@ class DialogMedicalRecordList(QtWidgets.QDialog):
 
         self.ui.radioButton_all_patient.clicked.connect(self._set_patient)
         self.ui.radioButton_assigned_patient.clicked.connect(self._set_patient)
+        self.ui.groupBox_advance_search.toggled.connect(self._group_box_advance_search_clicked)
+
+    def _group_box_advance_search_clicked(self):
+        if self.ui.groupBox_advance_search.isChecked():
+            self.ui.radioButton_all_patient.setEnabled(True)
+        else:
+            self.ui.radioButton_assigned_patient.setChecked(True)
+            if self.ui.radioButton_all_date.isChecked():
+                self.ui.radioButton_all_patient.setEnabled(False)
+            else:
+                self.ui.radioButton_all_patient.setEnabled(True)
 
     # 設定comboBox
     def _set_combo_box(self):
@@ -108,13 +119,19 @@ class DialogMedicalRecordList(QtWidgets.QDialog):
         self.ui.dateEdit_end_date.setEnabled(enabled)
         self.ui.comboBox_period.setEnabled(enabled)
 
+        if self.ui.groupBox_advance_search.isChecked():
+            self.ui.radioButton_all_patient.setEnabled(True)
+        else:
+            self.ui.radioButton_all_patient.setEnabled(enabled)
+
     # 設定 mysql script
     def get_sql(self):
         start_date = self.ui.dateEdit_start_date.date().toString('yyyy-MM-dd 00:00:00')
         end_date = self.ui.dateEdit_end_date.date().toString('yyyy-MM-dd 23:59:59')
+        symptom_list = self.ui.lineEdit_symptom.text().split()
         medicine_list = self.ui.lineEdit_medicine_name.text().split()
 
-        script = '''
+        sql = '''
             SELECT 
                 cases.CaseKey, DATE_FORMAT(cases.CaseDate, '%Y-%m-%d %H:%i') AS CaseDate, 
                 DoctorDate, ChargeDate, 
@@ -123,13 +140,15 @@ class DialogMedicalRecordList(QtWidgets.QDialog):
                 PresDays1, PresDays2, DiseaseCode1, DiseaseName1,
                 cases.Doctor, cases.Massager, cases.Room, RegistFee, SDiagShareFee, SDrugShareFee,
                 cases.DoctorDone, cases.ChargeDone,
-                TotalFee, patient.Gender, patient.Birthday, wait.InProgress
+                TotalFee, 
+                patient.Gender, patient.Birthday, patient.Remark AS PatientRemark,
+                wait.InProgress
             FROM cases
                 LEFT JOIN patient ON patient.PatientKey = cases.PatientKey
                 LEFT JOIN wait ON wait.CaseKey = cases.CaseKey
         '''
-        if len(medicine_list) > 0:
-            script += ' LEFT JOIN prescript ON prescript.CaseKey = cases.CaseKey '
+        if self.ui.groupBox_advance_search.isChecked() and len(medicine_list) > 0:
+            sql += ' LEFT JOIN prescript ON prescript.CaseKey = cases.CaseKey '
 
         condition = []
         if self.ui.radioButton_range_date.isChecked():
@@ -162,7 +181,15 @@ class DialogMedicalRecordList(QtWidgets.QDialog):
         if doctor != '全部':
             condition.append('cases.Doctor = "{0}"'.format(doctor))
 
-        if len(medicine_list) > 0:
+        if self.ui.groupBox_advance_search.isChecked() and len(symptom_list) > 0:
+            symptom_condition = []
+            for symptom in symptom_list:
+                symptom_condition.append('cases.Symptom LIKE "%{0}%"'.format(symptom))
+
+            symptom_condition = '({0})'.format(' AND '.join(symptom_condition))
+            condition.append(symptom_condition)
+
+        if self.ui.groupBox_advance_search.isChecked() and len(medicine_list) > 0:
             medicine_condition = []
             for medicine in medicine_list:
                 medicine_condition.append('prescript.MedicineName LIKE "%{0}%"'.format(medicine))
@@ -182,23 +209,23 @@ class DialogMedicalRecordList(QtWidgets.QDialog):
                 condition.append('cases.PatientKey = {0}'.format(patient_key))
 
         if len(condition) > 0:
-            script += 'WHERE {condition}'.format(
+            sql += 'WHERE {condition}'.format(
                 condition=' AND '.join(condition),
             )
 
-        if len(medicine_list) > 0:
-            script += ' GROUP BY cases.CaseKey HAVING COUNT(cases.CaseKey) >= {0} '.format(len(medicine_list))
+        if self.ui.groupBox_advance_search.isChecked() and len(medicine_list) > 0:
+            sql += ' GROUP BY cases.CaseKey HAVING COUNT(cases.CaseKey) >= {0} '.format(len(medicine_list))
 
-        script += '''
+        sql += '''
             ORDER BY DATE(cases.CaseDate), FIELD(cases.Period, {period}), cases.RegistNo, cases.Room
         '''.format(
             period=str(nhi_utils.PERIOD)[1:-1],
         )
 
-        if self.ui.radioButton_all_date.isChecked() and self.ui.lineEdit_patient_key.text() == '':
-            script = ''
+        # if self.ui.radioButton_all_date.isChecked() and self.ui.lineEdit_patient_key.text() == '':
+        #     script = ''
 
-        return script
+        return sql
 
     def accepted_button_clicked(self):
         pass

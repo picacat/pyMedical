@@ -252,17 +252,17 @@ USAGE = {
 CHARGE_TYPE = ['診察費', '藥費', '調劑費', '處置費', '檢驗費', '照護費']
 COURSE_TYPE = ['首次', '療程']
 ABNORMAL_CARD_WITH_HINT = [
-    'A010 讀卡機設備故障',
+    'A010 讀卡機故障',
     'A020 網路故障',
-    'A030 讀卡機安全模組故障',
+    'A030 安全模組故障',
     'B000 健保卡讀取不良',
     'C000 停電',
     'C001 例外就醫',
     'C002 18歲以下兒少',
-    'C003 弱勢民眾安心就醫',
-    'D000 醫療軟體系統當機',
-    'D010 醫療院所電腦當機',
-    'E000 健保暑資訊系統當機',
+    'C003 弱勢民眾就醫',
+    'D000 醫療軟體當機',
+    'D010 醫療電腦當機',
+    'E000 健保署系統當機',
     'E001 控卡名單已簽切結書',
     'F000 巡迴醫療無法上網',
     'G000 新特約醫事機構',
@@ -719,7 +719,7 @@ def get_treat_code(database, case_key):
     return treat_code
 
 
-def get_case_type(database, row):
+def get_case_type(database, system_settings, row):
     injury = string_utils.xstr(row['Injury'])
     treat_type = string_utils.xstr(row['TreatType'])
     course = number_utils.get_integer(row['Continuance'])
@@ -727,8 +727,9 @@ def get_case_type(database, row):
     regist_type = string_utils.xstr(row['RegistType'])
     treatment = string_utils.xstr(row['Treatment'])
     pres_days = case_utils.get_pres_days(database, row['CaseKey'])
+    resource = system_settings.field('資源類別')
 
-    if regist_type in TOUR_TYPE:  # 巡迴醫療
+    if regist_type in TOUR_TYPE or resource == '資源不足開業':  # 巡迴醫療
         case_type = '25'
     elif treat_type in IMPROVE_CARE_TREAT:  # 加強照護
         case_type = '22'
@@ -783,7 +784,7 @@ def get_diag_share_code(database, share_type, treatment, course, case_row=None):
 
 
 # 取得專案代碼
-def get_special_code(database, case_key):
+def get_special_code(database, system_settings, case_key):
     special_code_list = []
     sql = '''
             SELECT RegistType, TreatType, Treatment, SpecialCode FROM cases WHERE
@@ -803,10 +804,11 @@ def get_special_code(database, case_key):
         special_code_list = special_code_list + [None] * (4 - len(special_code_list))
         return special_code_list
 
-    if regist_type in TOUR_TYPE:
+    if system_settings.field('資源類別') == '資源不足開業':
+        special_code_list.append('C7')
+    elif regist_type in TOUR_TYPE:
         special_code_list.append('C6')
-
-    if treat_type == '長期臥床':
+    elif treat_type == '長期臥床':
         special_code_list.append('J1')
     elif treat_type == '遠洋漁業':
         special_code_list.append('J2')
@@ -839,15 +841,27 @@ def get_visit(database, row):
         return '初診照護'
 
     visit_year = 2  # 2年內無看診
-    first_visit_year_range = row['CaseDate'].replace(year=row['CaseDate'].year - visit_year)
+
+    try:
+        first_visit_year_range = row['CaseDate'].replace(year=row['CaseDate'].year - visit_year)
+    except ValueError:
+        if row['CaseDate'].day == 29:
+            first_visit_year_range = row['CaseDate'].replace(year=row['CaseDate'].year - visit_year, day=28)
+        else:
+            return None
 
     sql = '''
         SELECT CaseKey FROM cases
         WHERE
             InsType = "健保" AND
-            CaseKey = {0} AND
-            CaseDate > "{1}"
-    '''.format(row['CaseKey'], first_visit_year_range)
+            PatientKey = {patient_key} AND
+            CaseKey != {case_key} AND
+            CaseDate > "{first_visit_year_range}"
+    '''.format(
+        patient_key=row['PatientKey'],
+        case_key=row['CaseKey'],
+        first_visit_year_range=first_visit_year_range,
+    )
     rows = database.select_record(sql)
     if len(rows) <= 0:  # 2年內無看診
         return '初診照護'
@@ -885,20 +899,24 @@ def get_pharmacist_id(database, system_settings, row):
     return pharmacist_id
 
 
-def get_diag_code(database, system_settings, doctor_name, treat_type, diag_fee):
-    diag_code = None
-
+def get_diag_code(database, system_settings, doctor_name, regist_type, treat_type, diag_fee):
     if diag_fee <= 0:
-        return diag_code
+        return None
 
-    if treat_type in CARE_TREAT and treat_type != '兒童鼻炎':  # 兒童過敏性鼻炎可申報診察費
-        return diag_code
+    if treat_type in CARE_TREAT and treat_type != '兒童鼻炎':  # 特殊照護且非兒童過敏性鼻炎不可申報診察費
+        return None
 
     nurse = number_utils.get_integer(system_settings.field('護士人數'))
-    if nurse > 0:
-        diag_code = 'A01'  # 診察費第一段有護士
+    if regist_type in TOUR_MOUNTAIN_ISLAND:  # 山地離島診察費
+        if nurse > 0:
+            diag_code = 'A09'  # 診察費第一段有護士
+        else:
+            diag_code = 'A10'  # 診察費第一段無護士
     else:
-        diag_code = 'A02'  # 診察費第一段無護士
+        if nurse > 0:
+            diag_code = 'A01'  # 診察費第一段有護士
+        else:
+            diag_code = 'A02'  # 診察費第一段無護士
 
     position = personnel_utils.get_personnel_field_value(database, doctor_name, 'Position')
     if position == '支援醫師':

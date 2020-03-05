@@ -4,12 +4,13 @@
 import sys
 
 from PyQt5 import QtWidgets, QtCore
-from PyQt5.QtWidgets import QMessageBox, QPushButton
+from PyQt5.QtWidgets import QMessageBox, QPushButton, QFileDialog
 from libs import ui_utils
 from libs import string_utils
 from libs import nhi_utils
 from libs import charge_utils
 from libs import system_utils
+from libs import db_utils
 from classes import table_widget
 from dialog import dialog_input_nhi
 
@@ -41,6 +42,7 @@ class ChargeSettingsNHI(QtWidgets.QMainWindow):
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_CHARGE_SETTINGS_NHI, self)
         system_utils.set_css(self, self.system_settings)
+        system_utils.center_window(self)
         self.table_widget_nhi = table_widget.TableWidget(self.ui.tableWidget_nhi, self.database)
         self.table_widget_nhi.set_column_hidden([0])
         self._set_table_width()
@@ -50,6 +52,7 @@ class ChargeSettingsNHI(QtWidgets.QMainWindow):
         self.ui.toolButton_nhi_add.clicked.connect(self._nhi_add)
         self.ui.toolButton_nhi_delete.clicked.connect(self._nhi_delete)
         self.ui.toolButton_nhi_edit.clicked.connect(self._nhi_edit)
+        self.ui.toolButton_export.clicked.connect(self._export_data)
         self.ui.tableWidget_nhi.doubleClicked.connect(self._nhi_edit)
 
     # 設定欄位寬度
@@ -214,6 +217,37 @@ class ChargeSettingsNHI(QtWidgets.QMainWindow):
         key = self.table_widget_nhi.field_value(0)
         self.database.delete_record('charge_settings', 'ChargeSettingsKey', key)
         self.ui.tableWidget_nhi.removeRow(self.ui.tableWidget_nhi.currentRow())
+
+    def _export_data(self):
+        options = QFileDialog.Options()
+        json_file_name, _ = QFileDialog.getSaveFileName(
+            self.parent,
+            "匯出支付標準JSON檔案", 'nhi_payment.json',
+            "json檔案 (*.json)",
+            options=options
+        )
+        if not json_file_name:
+            return
+
+        sql = '''
+            SELECT * FROM charge_settings
+            WHERE
+                ChargeType IN("診察費", "藥費", "調劑費", "處置費", "照護費")
+            ORDER BY ChargeSettingsKey
+        '''
+        rows = self.database.select_record(sql)
+
+        json_data = db_utils.mysql_to_json(rows)
+        text_file = open(json_file_name, "w", encoding='utf8')
+        text_file.write(str(json_data))
+        text_file.close()
+
+        system_utils.show_message_box(
+            QMessageBox.Information,
+            'JSON資料匯出完成',
+            '<h3>{0}匯出完成.</h3>'.format(json_file_name),
+            'JSON 檔案格式.'
+        )
 
 
 # 主程式

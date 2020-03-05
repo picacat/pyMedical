@@ -54,6 +54,7 @@ class MedicalRecordRegistration(QtWidgets.QMainWindow):
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_MEDICAL_RECORD_REGISTRATION, self)
         system_utils.set_css(self, self.system_settings)
+        system_utils.center_window(self)
         self.table_widget_prescript_sign = table_widget.TableWidget(
             self.ui.tableWidget_prescript_sign, self.database)
         self._set_combo_box()
@@ -177,9 +178,10 @@ class MedicalRecordRegistration(QtWidgets.QMainWindow):
             self.ui.comboBox_cashier,
             personnel_utils.get_personnel(self.database, '全部'), None,
         )
+
         ui_utils.set_combo_box(
             self.ui.comboBox_doctor,
-            personnel_utils.get_personnel(self.database, '醫師'), None,
+            personnel_utils.get_personnel(self.database, '全部醫師'), None,
         )
         ui_utils.set_combo_box(
             self.ui.comboBox_pharmacist,
@@ -239,11 +241,12 @@ class MedicalRecordRegistration(QtWidgets.QMainWindow):
         self.ui.comboBox_tour_area.setCurrentText(string_utils.xstr(row['TourArea']))
 
     def _set_personnel(self, row):
-        self.ui.comboBox_registrar.setCurrentText(string_utils.xstr(row['Register']))
-        self.ui.comboBox_cashier.setCurrentText(string_utils.xstr(row['Cashier']))
-        self.ui.comboBox_doctor.setCurrentText(string_utils.xstr(row['Doctor']))
-        self.ui.comboBox_pharmacist.setCurrentText(string_utils.xstr(row['Pharmacist']))
-        self.ui.comboBox_massager.setCurrentText(string_utils.xstr(row['Massager']))
+        system_utils.set_combo_box_item(self.ui.comboBox_registrar, string_utils.xstr(row['Register']))
+        system_utils.set_combo_box_item(self.ui.comboBox_cashier, string_utils.xstr(row['Cashier']))
+        system_utils.set_combo_box_item(self.ui.comboBox_pharmacist, string_utils.xstr(row['Pharmacist']))
+        system_utils.set_combo_box_item(self.ui.comboBox_massager, string_utils.xstr(row['Massager']))
+        system_utils.set_combo_box_item(self.ui.comboBox_doctor, string_utils.xstr(row['Doctor']))
+
         if row['DesignatedDoctor'] == 'True':
             self.ui.checkBox_designated_doctor.setChecked(True)
         if row['DesignatedMassager'] == 'True':

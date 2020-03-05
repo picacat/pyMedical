@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>545</width>
-    <height>677</height>
+    <height>708</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -314,27 +314,46 @@
     </widget>
    </item>
    <item>
-    <widget class="QGroupBox" name="groupBox_4">
+    <widget class="QGroupBox" name="groupBox_advance_search">
      <property name="title">
       <string>進階搜尋</string>
      </property>
      <property name="flat">
       <bool>true</bool>
      </property>
+     <property name="checkable">
+      <bool>true</bool>
+     </property>
+     <property name="checked">
+      <bool>false</bool>
+     </property>
      <layout class="QGridLayout" name="gridLayout_4">
-      <item row="0" column="0">
+      <property name="sizeConstraint">
+       <enum>QLayout::SetDefaultConstraint</enum>
+      </property>
+      <item row="1" column="1">
+       <widget class="QLineEdit" name="lineEdit_medicine_name">
+        <property name="clearButtonEnabled">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
        <widget class="QLabel" name="label">
         <property name="text">
          <string>內含處方</string>
         </property>
        </widget>
       </item>
-      <item row="0" column="1">
-       <widget class="QLineEdit" name="lineEdit_medicine_name">
-        <property name="clearButtonEnabled">
-         <bool>true</bool>
+      <item row="0" column="0">
+       <widget class="QLabel" name="label_2">
+        <property name="text">
+         <string>內含主訴</string>
         </property>
        </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QLineEdit" name="lineEdit_symptom"/>
       </item>
      </layout>
     </widget>

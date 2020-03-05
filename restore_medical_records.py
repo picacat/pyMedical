@@ -38,6 +38,7 @@ class RestoreMedicalRecords(QtWidgets.QMainWindow):
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_RESTORE_MEDICAL_RECORDS, self)
         system_utils.set_css(self, self.system_settings)
+        system_utils.center_window(self)
         self.table_widget_medical_records = table_widget.TableWidget(
             self.ui.tableWidget_medical_records, self.database
         )

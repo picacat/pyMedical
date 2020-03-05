@@ -99,6 +99,7 @@ class InsApplyCalculate(QtWidgets.QMainWindow):
             'doctor_id': None,
             'diag_days': 0,
             'total_count': 0,
+            'total_diag_count': 0,
             'diag_count': 0,
             'treat_count': 0,
             'treat_drug': 0,
@@ -138,6 +139,9 @@ class InsApplyCalculate(QtWidgets.QMainWindow):
         )
         progress_dialog.setValue(2)
 
+        doctor_data['total_diag_count'] = self._get_total_diag_count(
+            doctor_data['doctor_id']
+        )
         doctor_data['diag_count'] = self._get_diag_count(
             doctor_data['doctor_id']
         )
@@ -329,22 +333,52 @@ class InsApplyCalculate(QtWidgets.QMainWindow):
 
         return treat_drug
 
+    # 計算總診察費人次
+    def _get_total_diag_count(self, doctor_id):
+        sql = '''
+            SELECT CaseKey1, CaseKey2, CaseKey3, CaseKey4, CaseKey5, CaseKey6
+            FROM insapply 
+            WHERE
+                ApplyDate = "{apply_date}" AND
+                ApplyType = "{apply_type}" AND
+                ApplyPeriod = "{apply_period}" AND
+                ClinicID = "{clinic_id}" AND
+                DoctorID = "{doctor_id}" AND
+                DiagFee > 0
+        '''.format(
+            apply_date=self.apply_date,
+            apply_type=self.apply_type_code,
+            apply_period=self.period,
+            clinic_id=self.clinic_id,
+            doctor_id=doctor_id,
+            exclude_diag_adjust=tuple(nhi_utils.EXCLUDE_DIAG_ADJUST),
+        )
+
+        rows = self.database.select_record(sql)
+        total_diag_count = len(rows)
+
+        return total_diag_count
+
     # 計算診察費人次, 特定照護-30不列入計算
     def _get_diag_count(self, doctor_id):
         sql = '''
             SELECT CaseKey1, CaseKey2, CaseKey3, CaseKey4, CaseKey5, CaseKey6
             FROM insapply 
             WHERE
-                ApplyDate = "{0}" AND
-                ApplyType = "{1}" AND
-                ApplyPeriod = "{2}" AND
-                ClinicID = "{3}" AND
-                DoctorID = "{4}" AND
+                ApplyDate = "{apply_date}" AND
+                ApplyType = "{apply_type}" AND
+                ApplyPeriod = "{apply_period}" AND
+                ClinicID = "{clinic_id}" AND
+                DoctorID = "{doctor_id}" AND
                 DiagFee > 0 AND
-                CaseType NOT IN {5}
+                CaseType NOT IN {exclude_diag_adjust}
         '''.format(
-            self.apply_date, self.apply_type_code, self.period, self.clinic_id,
-            doctor_id, tuple(nhi_utils.EXCLUDE_DIAG_ADJUST)
+            apply_date=self.apply_date,
+            apply_type=self.apply_type_code,
+            apply_period=self.period,
+            clinic_id=self.clinic_id,
+            doctor_id=doctor_id,
+            exclude_diag_adjust=tuple(nhi_utils.EXCLUDE_DIAG_ADJUST),
         )
 
         rows = self.database.select_record(sql)
@@ -488,17 +522,7 @@ class InsApplyCalculate(QtWidgets.QMainWindow):
             ins_calculated_row['diag_section4'] = 0
             ins_calculated_row['diag_section5'] = 0
 
-            diag_days = ins_calculated_row['diag_days']
-            diag_section1_limit = diag_days * nhi_utils.DIAG_SECTION1
-            diag_section2_limit = diag_days * (nhi_utils.DIAG_SECTION2 - nhi_utils.DIAG_SECTION1)
-            diag_section3_limit = diag_days * (nhi_utils.DIAG_SECTION3 - nhi_utils.DIAG_SECTION2)
-            diag_section4_limit = diag_days * (nhi_utils.DIAG_SECTION4 - nhi_utils.DIAG_SECTION3)
-
             diag_count = ins_calculated_row['diag_count']
-            # 這部分不確定是否要依據合理門診量計算
-            # if diag_count >= diag_section1_limit:
-            #     ins_calculated_row['diag_section1'] = diag_section1_limit
-            #     diag_count -= diag_section1_limit
             if diag_count <= section1_balance:
                 ins_calculated_row['diag_section1'] = diag_count
                 diag_count = 0
@@ -511,9 +535,6 @@ class InsApplyCalculate(QtWidgets.QMainWindow):
             if diag_count <= 0:
                 continue
 
-            # if diag_count >= diag_section2_limit:
-            #     ins_calculated_row['diag_section2'] = diag_section2_limit
-            #     diag_count -= diag_section2_limit
             if diag_count <= section2_balance:
                 ins_calculated_row['diag_section2'] = diag_count
                 diag_count = 0
@@ -526,9 +547,6 @@ class InsApplyCalculate(QtWidgets.QMainWindow):
             if diag_count <= 0:
                 continue
 
-            # if diag_count >= diag_section3_limit:
-            #     ins_calculated_row['diag_section3'] = diag_section3_limit
-            #     diag_count -= diag_section3_limit
             if diag_count <= section3_balance:
                 ins_calculated_row['diag_section3'] = diag_count
                 diag_count = 0
@@ -541,9 +559,6 @@ class InsApplyCalculate(QtWidgets.QMainWindow):
             if diag_count <= 0:
                 continue
 
-            # if diag_count >= diag_section4_limit:
-            #     ins_calculated_row['diag_section4'] = diag_section4_limit
-            #     diag_count -= diag_section4_limit
             if diag_count <= section4_balance:
                 ins_calculated_row['diag_section4'] = diag_count
                 diag_count = 0

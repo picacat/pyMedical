@@ -27,7 +27,6 @@ class Login(QtWidgets.QDialog):
 
         self._set_ui()
         self._set_signal()
-        self.center()
 
     # 設定GUI
     def _set_ui(self):
@@ -35,8 +34,8 @@ class Login(QtWidgets.QDialog):
 
         self.setFixedSize(self.size())  # non resizable dialog
         system_utils.set_css(self, self.system_settings)
+        system_utils.center_window(self)
         self._set_combo_box()
-        self.center()
         self.ui.label_login_error.setVisible(False)
         self._display_info()
         system_utils.set_login_image(self.ui, self.system_settings)

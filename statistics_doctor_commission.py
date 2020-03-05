@@ -41,18 +41,11 @@ class StatisticsDoctorCommission(QtWidgets.QMainWindow):
     def close_all(self):
         pass
 
-    def center(self):
-        frame_geometry = self.frameGeometry()
-        screen = QtWidgets.QApplication.desktop().screenNumber(QtWidgets.QApplication.desktop().cursor().pos())
-        center_point = QtWidgets.QApplication.desktop().screenGeometry(screen).center()
-        frame_geometry.moveCenter(center_point)
-        self.move(frame_geometry.topLeft())
-
     # 設定GUI
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_STATISTICS_DOCTOR_COMMISSION, self)
         system_utils.set_css(self, self.system_settings)
-        self.center()
+        system_utils.center_window(self)
         self.table_widget_self_prescript = table_widget.TableWidget(
             self.ui.tableWidget_self_prescript, self.database
         )
@@ -63,7 +56,7 @@ class StatisticsDoctorCommission(QtWidgets.QMainWindow):
     def _set_table_width(self):
         width = [
             100,
-            120, 50, 50, 70, 80, 50, 50,
+            130, 50, 50, 70, 80, 50, 50,
             250, 50, 50, 90, 50, 90, 90,
             60, 90, 80, 110, 110,
             100,
@@ -213,19 +206,23 @@ class StatisticsDoctorCommission(QtWidgets.QMainWindow):
             dosage = number_utils.get_float(row['Dosage'])
             if dosage <= 0:
                 dosage = 1
-            price = number_utils.get_float(row['Price'])
-            amount = number_utils.get_float(row['Amount'])
+
+            price = number_utils.round_up(number_utils.get_float(row['Price']))
+            amount = number_utils.round_up(number_utils.get_float(row['Amount']))
+
             if amount <= 0:
                 amount = price * dosage
 
+            discount_rate = case_utils.get_discount_rate(self.database, case_key, medicine_set)
             subtotal = charge_utils.get_subtotal_fee(amount, pres_days)
+            discount_fee = charge_utils.get_discount_fee(self.system_settings, subtotal, discount_rate)
+            subtotal -= discount_fee
 
             prescript_row_no += 1
             self.ui.tableWidget_self_prescript.setRowCount(
                 self.ui.tableWidget_self_prescript.rowCount() + 1
             )
 
-            discount_rate = case_utils.get_discount_rate(self.database, case_key, medicine_set)
             medicine_commission_rate = charge_utils.get_commission_rate(self.database, row['MedicineKey'], doctor)
             if discount_rate >= 90:
                 commission_rate = 100

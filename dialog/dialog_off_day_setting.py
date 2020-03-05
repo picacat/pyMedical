@@ -44,6 +44,7 @@ class DialogOffDaySetting(QtWidgets.QDialog):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_DIALOG_OFF_DAY_SETTING, self)
         # database.setFixedSize(database.size())  # non resizable dialog
         system_utils.set_css(self, self.system_settings)
+        system_utils.center_window(self)
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Close).setText('關閉')
         self.ui.dateEdit_off_date.setDate(datetime.datetime.now().date())
 

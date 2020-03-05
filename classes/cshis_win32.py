@@ -19,6 +19,8 @@ from libs import prescript_utils
 from libs import string_utils
 from libs import nhi_utils
 
+CURRENT_DIR = os.path.abspath(os.path.join(os.path.dirname("__file__")))
+
 
 # 健保ICD卡 2018.03.31
 class CSHIS:
@@ -26,7 +28,8 @@ class CSHIS:
         self.database = database
         self.ic_com_port = number_utils.get_integer(system_settings.field('健保卡讀卡機連接埠')) - 1  # com1=0, com2=1, com3=2,...
         try:
-            self.cshis = ctypes.windll.LoadLibrary('CsHis.dll')
+            cshis_file_name = os.path.join(CURRENT_DIR, 'CsHis.dll')
+            self.cshis = ctypes.windll.LoadLibrary(cshis_file_name)
         except:
             self.cshis = None
 

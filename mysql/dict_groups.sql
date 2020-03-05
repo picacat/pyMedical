@@ -2,6 +2,7 @@
 CREATE TABLE IF NOT EXISTS dict_groups
 (
 	DictGroupsKey	    INT	AUTO_INCREMENT NOT NULL,	# 索引鍵
+	DictOrderNo 	    VARCHAR(10),					# 排序編號
 	DictGroupsType	    VARCHAR(20),					# 群組類別: 主訴, 舌診, 病名, 藥品, 處置
 
 	DictGroupsTopLevel	VARCHAR(20),				# 上層類別名稱: 主訴: 內科, 傷科, 婦科, 兒科, 處方: 單方, 複方, 病名: 呼吸道

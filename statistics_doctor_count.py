@@ -45,12 +45,13 @@ class StatisticsDoctorCount(QtWidgets.QMainWindow):
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_STATISTICS_DOCTOR_COUNT, self)
         system_utils.set_css(self, self.system_settings)
+        system_utils.center_window(self)
         self.table_widget_doctor_count = table_widget.TableWidget(self.ui.tableWidget_doctor_count, self.database)
         self._set_table_width()
 
     def _set_table_width(self):
         width = [
-            110,
+            130,
             85, 85, 85, 85, 85, 85, 85, 85, 85, 85, 85, 85, 85,
             85, 85, 85, 85, 85, 85, 85, 85]
         self.table_widget_doctor_count.set_table_heading_width(width)

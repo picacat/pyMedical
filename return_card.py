@@ -59,6 +59,7 @@ class ReturnCard(QtWidgets.QMainWindow):
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_RETURN_CARD, self)
         system_utils.set_css(self, self.system_settings)
+        system_utils.center_window(self)
         self.table_widget_return_card = table_widget.TableWidget(self.ui.tableWidget_return_card, self.database)
         self.table_widget_return_card.set_column_hidden([0, 1])
         self._set_table_width()
@@ -102,7 +103,7 @@ class ReturnCard(QtWidgets.QMainWindow):
 
     # 設定欄位寬度
     def _set_table_width(self):
-        width = [80, 80, 80, 80, 130, 130, 150, 200, 200, 60, 80, 40, 100, 100, 80, 70]
+        width = [80, 90, 90, 90, 130, 150, 180, 130, 220, 60, 90, 50, 110, 110, 90, 70]
         self.table_widget_return_card.set_table_heading_width(width)
 
     # 列印欠卡收據

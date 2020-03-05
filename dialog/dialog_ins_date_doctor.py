@@ -8,10 +8,11 @@ import calendar
 
 from libs import ui_utils
 from libs import system_utils
-from libs import nhi_utils
+from libs import personnel_utils
+from libs import string_utils
 
 
-# 病歷查詢視窗
+# 統計日期及醫師
 class DialogInsDateDoctor(QtWidgets.QDialog):
     # 初始化
     def __init__(self, parent=None, *args):
@@ -19,10 +20,14 @@ class DialogInsDateDoctor(QtWidgets.QDialog):
         self.parent = parent
         self.database = args[0]
         self.system_settings = args[1]
+        self.call_from = args[2]
+
         self.ui = None
+        self.user_name = self.system_settings.field('使用者')
 
         self._set_ui()
         self._set_signal()
+        self._set_permission()
 
     # 解構
     def __del__(self):
@@ -37,6 +42,7 @@ class DialogInsDateDoctor(QtWidgets.QDialog):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_DIALOG_INS_DATE_DOCTOR, self)
         self.setFixedSize(self.size())  # non resizable dialog
         system_utils.set_css(self, self.system_settings)
+        system_utils.center_window(self)
         self.ui.dateEdit_start_date.setDate(datetime.datetime.now())
         self.ui.dateEdit_end_date.setDate(datetime.datetime.now())
         self._set_combo_box()
@@ -53,6 +59,26 @@ class DialogInsDateDoctor(QtWidgets.QDialog):
     def _set_signal(self):
         self.ui.buttonBox.accepted.connect(self.accepted_button_clicked)
         self.ui.dateEdit_start_date.dateChanged.connect(self._start_date_changed)
+
+    def _set_permission(self):
+        if self.user_name == '超級使用者':
+            return
+
+        self._set_calculate_doctor_permission()
+
+    def _set_calculate_doctor_permission(self):
+        if personnel_utils.get_permission(self.database, self.call_from, '統計全部醫師', self.user_name) == 'Y':
+            return
+
+        for i in range(self.ui.comboBox_doctor.count()-1, -1, -1):
+            doctor_name = self.ui.comboBox_doctor.itemText(i)
+            doctor_name = string_utils.replace_ascii_char([','], doctor_name)
+            if doctor_name == '全部':
+                self.ui.comboBox_doctor.removeItem(i)
+                continue
+
+            if self.user_name != doctor_name:
+                self.ui.comboBox_doctor.removeItem(i)
 
     def _start_date_changed(self):
         year = self.ui.dateEdit_start_date.date().year()

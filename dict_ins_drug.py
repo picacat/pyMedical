@@ -16,6 +16,7 @@ from libs import system_utils
 from libs import ui_utils
 from libs import nhi_utils
 from libs import string_utils
+from libs import dropbox_utils
 from pyexcel_ods3 import get_data
 
 
@@ -54,6 +55,7 @@ class DictInsDrug(QtWidgets.QMainWindow):
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_DICT_INS_DRUG, self)
         system_utils.set_css(self, self.system_settings)
+        system_utils.center_window(self)
         self.table_widget_medicine = table_widget.TableWidget(
             self.ui.tableWidget_medicine, self.database
         )
@@ -277,7 +279,10 @@ class DictInsDrug(QtWidgets.QMainWindow):
 
     def _write_ins_drug(self, medicine_type, rows, progress_bar):
         ins_code_no = self._get_field_number(rows[0], '藥品代碼')
-        drug_name_no = self._get_field_number(rows[0], '藥品名稱')
+        drug_name_no = self._get_field_number(rows[0], '基準方名')
+        if drug_name_no is None:
+            drug_name_no = self._get_field_number(rows[0], '藥品名稱')
+
         drug_type_no = self._get_field_number(rows[0], '劑型')
         supplier_no = self._get_field_number(rows[0], '製造廠名稱')
         valid_date_no = self._get_field_number(rows[0], '有效期間')
@@ -316,7 +321,7 @@ class DictInsDrug(QtWidgets.QMainWindow):
             if col_name == field_name:
                 return col_no
 
-        return 0
+        return None
 
     def _close_ins_drug(self):
         self.close_all()
@@ -486,48 +491,11 @@ class DictInsDrug(QtWidgets.QMainWindow):
         self._read_medicine()
         self._filter_medicine()
 
-    @staticmethod
-    def _message_box(title, message, hint):
-        msg_box = QMessageBox()
-        msg_box.setIcon(QMessageBox.Information)
-        msg_box.setWindowTitle(title)
-        msg_box.setText(message)
-        msg_box.setInformativeText(hint)
-        msg_box.setStandardButtons(QMessageBox.NoButton)
-
-        return msg_box
-
-    def _download_file_thread(self, out_queue, download_file_name, url):
-        QtCore.QCoreApplication.processEvents()
-
-        u = urllib.request.urlopen(url)
-        data = u.read()
-        u.close()
-        with open(download_file_name, "wb") as f:
-            f.write(data)
-
-        out_queue.put(download_file_name)
-
-    # 取得安全簽章
-    def _download_drug_file(self, file_name, url):
+    def _update_drug(self, medicine_type, file_name, url):
         title = '下載健保藥品更新檔'
         message = '<font size="4" color="red"><b>正在下載健保藥品更新檔, 請稍後...</b></font>'
         hint = '正在與更新檔資料庫連線, 會花費一些時間.'
-        msg_box = self._message_box(title, message, hint)
-        msg_box.show()
-
-        msg_queue = Queue()
-        QtCore.QCoreApplication.processEvents()
-
-        t = Thread(target=self._download_file_thread, args=(msg_queue, file_name, url))
-        t.start()
-        download_file_name = msg_queue.get()
-        msg_box.close()
-
-        return download_file_name
-
-    def _update_drug(self, medicine_type, file_name, url):
-        file_name = self._download_drug_file(file_name, url)
+        file_name = dropbox_utils.download_dropbox_file(file_name, url, title, message, hint)
 
         sql = '''
             DELETE FROM drug
@@ -559,6 +527,8 @@ class DictInsDrug(QtWidgets.QMainWindow):
             'drug2.ods',
             'https://www.dropbox.com/s/yhdxk52tod05e81/drug2.ods?dl=1',
         )
+
+        self._read_medicine()
 
         system_utils.show_message_box(
             QMessageBox.Information,

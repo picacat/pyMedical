@@ -49,6 +49,7 @@ class MedicalRecordFees(QtWidgets.QMainWindow):
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_MEDICAL_RECORD_FEES, self)
         system_utils.set_css(self, self.system_settings)
+        system_utils.center_window(self)
         self.table_widget_ins_fees = table_widget.TableWidget(self.ui.tableWidget_ins_fees, self.database)
         self.table_widget_cash_fees = table_widget.TableWidget(self.ui.tableWidget_cash_fees, self.database)
         self.ui.tableWidget_ins_fees.resizeRowsToContents()
@@ -80,10 +81,13 @@ class MedicalRecordFees(QtWidgets.QMainWindow):
         system_utils.set_keyboard_layout('英文')
 
     def _set_permission(self):
-        if self.call_from == '醫師看診作業':
-            return
+        # if self.call_from == '醫師看診作業':
+        #     return
 
         if self.user_name == '超級使用者':
+            return
+
+        if personnel_utils.get_permission(self.database, '醫師看診作業', '病歷登錄', self.user_name) == 'Y':
             return
 
         if personnel_utils.get_permission(self.database, '病歷資料', '病歷修正', self.user_name) == 'Y':
@@ -354,9 +358,9 @@ class MedicalRecordFees(QtWidgets.QMainWindow):
         self._adjust_table_widget_align()
 
     def get_total_fee(self):
-        self_fee = charge_utils.get_self_fee(self.parent.tab_list)
+        self_fee = charge_utils.get_self_fee(self.database, self.parent.tab_list)
 
-        diag_fee = charge_utils.get_table_widget_item_fee(self.ui.tableWidget_cash_fees, 5, 0)
+        self_fee['diag_fee'] = number_utils.round_up(self_fee['diag_fee'])
         self_fee['drug_fee'] = number_utils.round_up(self_fee['drug_fee'])
         self_fee['herb_fee'] = number_utils.round_up(self_fee['herb_fee'])  # 四捨五入
         self_fee['expensive_fee'] = number_utils.round_up(self_fee['expensive_fee'])
@@ -366,7 +370,7 @@ class MedicalRecordFees(QtWidgets.QMainWindow):
         self_fee['discount_fee'] = number_utils.round_up(self_fee['discount_fee'])
 
         self_total_fee = number_utils.get_integer(
-            diag_fee +
+            self_fee['diag_fee'] +
             self_fee['drug_fee'] +
             self_fee['herb_fee'] +
             self_fee['expensive_fee'] +
@@ -383,8 +387,9 @@ class MedicalRecordFees(QtWidgets.QMainWindow):
         if check_box_disable_calculate.isChecked():  # 鎖定批價
             return
 
-        self_fee = charge_utils.get_self_fee(tab_list)
+        self_fee = charge_utils.get_self_fee(self.database, tab_list)
 
+        self_fee['diag_fee'] = number_utils.round_up(self_fee['diag_fee'])
         self_fee['drug_fee'] = number_utils.round_up(self_fee['drug_fee'])
         self_fee['herb_fee'] = number_utils.round_up(self_fee['herb_fee'])  # 四捨五入
         self_fee['expensive_fee'] = number_utils.round_up(self_fee['expensive_fee'])
@@ -394,6 +399,7 @@ class MedicalRecordFees(QtWidgets.QMainWindow):
         self_fee['discount_fee'] = number_utils.round_up(self_fee['discount_fee'])
 
         self_fees = [
+            [5, self_fee['diag_fee']],
             [6, self_fee['drug_fee']],
             [7, self_fee['herb_fee']],
             [8, self_fee['expensive_fee']],

@@ -59,6 +59,7 @@ class PurchaseList(QtWidgets.QMainWindow):
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_PURCHASE_LIST, self)
         system_utils.set_css(self, self.system_settings)
+        system_utils.center_window(self)
         self.table_widget_purchase_list = table_widget.TableWidget(self.ui.tableWidget_purchase_list, self.database)
         self._set_table_width()
         self._set_tool_button()
@@ -130,6 +131,7 @@ class PurchaseList(QtWidgets.QMainWindow):
 
         self.ui.label_data_period.setText('資料期間: {0} 至 {1}'.format(start_date, end_date))
         self.table_widget_purchase_list.set_db_data(sql, self._set_table_data)
+        self._calculate_total()
         self._set_tool_button()
 
     def read_purchase_today(self):
@@ -150,6 +152,7 @@ class PurchaseList(QtWidgets.QMainWindow):
             start_date, end_date,
         )
         self.table_widget_purchase_list.set_db_data(sql, self._set_table_data)
+        self._calculate_total()
         self._set_tool_button()
 
     def _set_tool_button(self):
@@ -224,6 +227,46 @@ class PurchaseList(QtWidgets.QMainWindow):
 
         return ', '.join(content)
 
+    def _calculate_total(self):
+        row_count = self.ui.tableWidget_purchase_list.rowCount()
+        self_total_fee, discount_fee, total_fee = 0, 0, 0
+
+        for row_no in range(row_count):
+            self_total_fee += number_utils.get_integer(
+                self.ui.tableWidget_purchase_list.item(row_no, 6).text()
+            )
+            discount_fee += number_utils.get_integer(
+                self.ui.tableWidget_purchase_list.item(row_no, 7).text()
+            )
+            total_fee += number_utils.get_integer(
+                self.ui.tableWidget_purchase_list.item(row_no, 8).text()
+            )
+
+        total_record = [
+            None, None, None, None,
+            '合計',
+            None,
+            string_utils.xstr(self_total_fee),
+            string_utils.xstr(discount_fee),
+            string_utils.xstr(total_fee),
+        ]
+
+        self.ui.tableWidget_purchase_list.setRowCount(row_count+1)
+
+        font = QtGui.QFont()
+        font.setBold(True)
+        for col_no in range(len(total_record)):
+            self.ui.tableWidget_purchase_list.setItem(
+                row_count, col_no,
+                QtWidgets.QTableWidgetItem(total_record[col_no])
+            )
+            if col_no in [6, 7, 8]:
+                self.ui.tableWidget_purchase_list.item(
+                    row_count, col_no).setTextAlignment(
+                    QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
+                )
+            self.ui.tableWidget_purchase_list.item(row_count, col_no).setFont(font)
+
     def delete_purchase(self):
         name = self.table_widget_purchase_list.field_value(4)
         msg_box = QMessageBox()
@@ -256,6 +299,7 @@ class PurchaseList(QtWidgets.QMainWindow):
         row = self.database.select_record(sql)[0]
         current_row = self.ui.tableWidget_purchase_list.currentRow()
         self._set_table_data(current_row, row)
+        self._calculate_total()
 
     # 輸入購物資料
     def _purchase(self):
@@ -307,3 +351,4 @@ class PurchaseList(QtWidgets.QMainWindow):
             '<h3>自購藥報表{0}匯出完成.</h3>'.format(excel_file_name),
             'Microsoft Excel 格式.'
         )
+

@@ -127,11 +127,16 @@ def cvt_tongue_groups(database, source_db, progress_bar):
     for row in rows:
         progress_bar.setValue(progress_bar.value() + 1)
 
-        if row['Groups'] is None:
+        try:
+            groups = row['Groups']
+        except KeyError:
+            groups = row['groups']
+
+        if groups is None:
             continue
 
         dict_groups_type = '舌診'
-        dict_groups_name = str(row['Groups'])
+        dict_groups_name = str(groups)
 
         if dict_groups_name.find('舌') > 0:
             dict_groups_top_level = '舌質'

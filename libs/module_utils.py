@@ -43,6 +43,9 @@ from statistics_medicine import *
 from statistics_ins_performance import *
 from statistics_doctor_performance import *
 from statistics_doctor_commission import *
+from statistics_ins_discount import *
+from statistics_multiple_performance import *
+
 from massage_registration import *
 from massage_purchase_list import *
 from massage_purchase import *
@@ -96,6 +99,8 @@ module_dict = {
     '用藥統計': StatisticsMedicine,
     '健保申報業績': StatisticsInsPerformance,
     '醫師銷售業績統計': StatisticsDoctorPerformance,
+    '健保門診優惠統計': StatisticsInsDiscount,
+    '綜合業績報表': StatisticsMultiplePerformance,
 
     '資料回復': RestoreRecords,
 

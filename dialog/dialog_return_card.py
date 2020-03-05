@@ -52,6 +52,7 @@ class DialogReturnCard(QtWidgets.QDialog):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_DIALOG_RETURN_CARD, self)
         self.setFixedSize(self.size())  # non resizable dialog
         system_utils.set_css(self, self.system_settings)
+        system_utils.center_window(self)
         self._set_combo_box()
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setText('還卡')
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Cancel).setText('取消')

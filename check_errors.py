@@ -57,7 +57,7 @@ class CheckErrors(QtWidgets.QMainWindow):
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_CHECK_ERRORS, self)
         system_utils.set_css(self, self.system_settings)
-        self.center()
+        system_utils.center_window(self)
         self._set_table_widget()
 
     def center(self):
@@ -73,8 +73,8 @@ class CheckErrors(QtWidgets.QMainWindow):
         self.table_widget_errors = table_widget.TableWidget(self.ui.tableWidget_errors, self.database)
         self.table_widget_errors.set_column_hidden([0])
         width = [
-            100, 120, 60, 80, 80, 120, 120, 100, 80, 100,
-            80, 60, 60, 60, 60, 60, 60, 60, 280,
+            100, 130, 60, 90, 90, 130, 150, 100, 80, 100,
+            90, 70, 60, 70, 70, 90, 90, 90, 400,
         ]
         self.table_widget_errors.set_table_heading_width(width)
 
@@ -259,9 +259,14 @@ class CheckErrors(QtWidgets.QMainWindow):
         if row['RegistType'] in nhi_utils.TOUR_FAR and row['TourArea'] is None:
             error_messages.append('巡迴醫療無巡迴地區')
 
+        period = string_utils.xstr(row['Period'])
         card = string_utils.xstr(row['Card'])
         course = number_utils.get_integer(row['Continuance'])
         seq_number = case_utils.extract_security_xml(row['Security'], '健保卡序')
+
+        if period not in ['早班', '午班', '晚班']:
+            error_messages.append('班別有誤')
+
         if card == '':
             error_messages.append('卡序空白')
         elif card == '欠卡':
@@ -434,7 +439,6 @@ class CheckErrors(QtWidgets.QMainWindow):
         if dislocate_fee != ins_fee['dislocate_fee']:
             error_messages.append('脫臼費有誤')
         if diag_share_fee != ins_fee['diag_share_fee']:
-            print(reg_type, diag_share_fee, ins_fee['diag_share_fee'])
             error_messages.append('門診負擔有誤')
         if drug_share_fee != ins_fee['drug_share_fee']:
             error_messages.append('藥品負擔有誤')

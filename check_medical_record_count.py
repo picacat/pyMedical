@@ -4,6 +4,7 @@
 import sys
 
 from PyQt5 import QtWidgets, QtGui, QtCore
+import datetime
 
 from classes import table_widget
 
@@ -59,7 +60,7 @@ class CheckMedicalRecordCount(QtWidgets.QMainWindow):
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_CHECK_MEDICAL_RECORD_COUNT, self)
         system_utils.set_css(self, self.system_settings)
-        self.center()
+        system_utils.center_window(self)
         self._set_table_widget()
         self.ui.label_treat_limit.setText(
             '針傷次數限制: {0}次'.format(self.treat_limit)
@@ -67,6 +68,10 @@ class CheckMedicalRecordCount(QtWidgets.QMainWindow):
         self.ui.label_diag_limit.setText(
             '首次次數限制: {0}次'.format(self.diag_limit)
         )
+        start_date = date_utils.str_to_date(self.start_date)
+        last_month = (start_date - datetime.timedelta(days=1)).replace(day=1)  # 上個月1日
+        self.ui.dateEdit_start_date.setDate(last_month)
+        self.ui.dateEdit_end_date.setDate(date_utils.str_to_date(self.end_date))
 
     def center(self):
         frame_geometry = self.frameGeometry()
@@ -95,6 +100,9 @@ class CheckMedicalRecordCount(QtWidgets.QMainWindow):
         self.ui.tableWidget_medical_record_diag.doubleClicked.connect(self.open_medical_record)
         self.ui.tableWidget_patient_treat.itemSelectionChanged.connect(self._patient_treat_changed)
         self.ui.tableWidget_patient_diag.itemSelectionChanged.connect(self._patient_diag_changed)
+        self.ui.dateEdit_start_date.dateChanged.connect(self._read_medical_record_treat_by_patient)
+        self.ui.dateEdit_end_date.dateChanged.connect(self._read_medical_record_treat_by_patient)
+
         self.ui.toolButton_treat_unapply.clicked.connect(self._set_treat_apply)
         self.ui.toolButton_treat_apply.clicked.connect(self._set_treat_apply)
         self.ui.toolButton_diag_unapply.clicked.connect(self._set_diag_apply)
@@ -129,6 +137,9 @@ class CheckMedicalRecordCount(QtWidgets.QMainWindow):
                 self.ui.tableWidget_patient_diag.rowCount())
 
     def _check_medical_record_treat(self):
+        self._read_medical_record_treat(self.start_date, self.end_date, self.treat_limit)
+
+    def _read_medical_record_treat(self, start_date, end_date, treat_limit):
         apply_type_sql = nhi_utils.get_apply_type_sql(self.apply_type)
 
         sql = '''
@@ -138,15 +149,16 @@ class CheckMedicalRecordCount(QtWidgets.QMainWindow):
             WHERE
                 (CaseDate BETWEEN "{start_date}" AND "{end_date}") AND
                 (cases.InsType = "健保") AND
+                (cases.Card IS NOT NULL) AND (LENGTH(cases.Card) > 0) AND (cases.Card != "欠卡") AND
                 (Treatment IS NOT NULL) AND
                 ({apply_type_sql})
             GROUP BY PatientKey
             HAVING COUNT(PatientKey) > {treat_limit}
         '''.format(
-            start_date=self.start_date,
-            end_date=self.end_date,
+            start_date=start_date,
+            end_date=end_date,
             apply_type_sql=apply_type_sql,
-            treat_limit=self.treat_limit,
+            treat_limit=treat_limit,
         )
 
         self.table_widget_patient_treat.set_db_data(sql, self._set_patient_treat_data)
@@ -181,7 +193,7 @@ class CheckMedicalRecordCount(QtWidgets.QMainWindow):
             WHERE
                 (CaseDate BETWEEN "{start_date}" AND "{end_date}") AND
                 (cases.InsType = "健保") AND
-                (Card != "欠卡") AND 
+                (cases.Card IS NOT NULL) AND (LENGTH(cases.Card) > 0) AND (cases.Card != "欠卡") AND 
                 ((Continuance IS NULL) OR (Continuance <= 1)) AND
                 ({apply_type_sql})
             GROUP BY PatientKey
@@ -216,20 +228,23 @@ class CheckMedicalRecordCount(QtWidgets.QMainWindow):
                 )
 
     def _patient_treat_changed(self):
+        self._read_medical_record_treat_by_patient()
+
+    def _read_medical_record_treat_by_patient(self):
         patient_key = self.table_widget_patient_treat.field_value(0)
+        start_date = self.ui.dateEdit_start_date.date().toString('yyyy-MM-dd 00:00:00')
+        end_date = self.ui.dateEdit_end_date.date().toString('yyyy-MM-dd 23:59:59')
 
         sql = '''
-            SELECT 
-               *
-            FROM cases 
+            SELECT * FROM cases 
             WHERE
                 (PatientKey = {0}) AND
                 (CaseDate BETWEEN "{1}" AND "{2}") AND
                 (cases.InsType = "健保") AND
-                (Card != "欠卡") AND 
-                (Treatment IS NOT NULL)
+                (cases.Card IS NOT NULL) AND (LENGTH(cases.Card) > 0) AND (cases.Card != "欠卡") AND 
+                (Treatment IS NOT NULL) AND (LENGTH(Treatment) > 0)
             ORDER BY CaseDate
-        '''.format(patient_key, self.start_date, self.end_date)
+        '''.format(patient_key, start_date, end_date)
 
         self.table_widget_medical_record_treat.set_db_data(
             sql, self._set_medical_record_treat_data)
@@ -287,7 +302,7 @@ class CheckMedicalRecordCount(QtWidgets.QMainWindow):
                 (PatientKey = {0}) AND
                 (CaseDate BETWEEN "{1}" AND "{2}") AND
                 (cases.InsType = "健保") AND
-                (Card != "欠卡") AND 
+                (cases.Card IS NOT NULL) AND (LENGTH(cases.Card) > 0) AND (cases.Card != "欠卡") AND
                 ((Continuance IS NULL) OR (Continuance <= 1))
             ORDER BY CaseDate
         '''.format(patient_key, self.start_date, self.end_date)
@@ -343,11 +358,20 @@ class CheckMedicalRecordCount(QtWidgets.QMainWindow):
                 )
 
     def _set_medical_record_treat_color(self):
-        for row in range(self.treat_limit, self.ui.tableWidget_medical_record_treat.rowCount()):
-            self.ui.tableWidget_medical_record_treat.setCurrentCell(row, 1)
-            self.table_widget_medical_record_treat.set_row_color(row, QtGui.QColor('red'))
-            if self.table_widget_medical_record_treat.field_value(1) == '不申報':
-                self.table_widget_medical_record_treat.set_row_color(row, QtGui.QColor('darkGray'))
+        record_count = 0
+        for row_no in range(self.ui.tableWidget_medical_record_treat.rowCount()):
+            case_date = self.ui.tableWidget_medical_record_treat.item(row_no, 2).text()
+            if (datetime.datetime.strptime(case_date, '%Y-%m-%d') <
+                    datetime.datetime.strptime(self.start_date, '%Y-%m-%d %H:%M:%S')):
+                self.table_widget_medical_record_treat.set_row_color(row_no, QtGui.QColor('darkGray'))
+            else:
+                record_count += 1
+
+            if record_count > self.treat_limit:
+                self.table_widget_medical_record_treat.set_row_color(row_no, QtGui.QColor('red'))
+            apply_type = self.ui.tableWidget_medical_record_treat.item(row_no, 1).text()
+            if apply_type == '不申報':
+                self.table_widget_medical_record_treat.set_row_color(row_no, QtGui.QColor('darkGray'))
 
     def _set_medical_record_diag_color(self):
         for row in range(self.diag_limit, self.ui.tableWidget_medical_record_diag.rowCount()):

@@ -121,10 +121,39 @@ class DialogPermission(QtWidgets.QDialog):
             check_box = QtWidgets.QCheckBox(self.ui.tableWidget_permission)
             check_box.setChecked(False)
             check_box.setStyleSheet('margin:auto')
+            check_box.clicked.connect(self._check_exclude)
             self.ui.tableWidget_permission.setCellWidget(row_no, 2, check_box)
 
             if '執行' in self.ui.tableWidget_permission.item(row_no, 1).text():
                 self._set_row_font(row_no)
+
+    def _check_exclude(self):
+        row_no = self.ui.tableWidget_permission.currentRow()
+        item_type = self.ui.tableWidget_permission.item(row_no, 0).text()
+        item_name = self.ui.tableWidget_permission.item(row_no, 1).text()
+        check_box = self.ui.tableWidget_permission.cellWidget(row_no, 2)
+
+        if item_type == '醫師看診作業' and item_name == '病歷登錄':
+            if check_box.isChecked():
+                self._set_permission_item('醫師看診作業', '非醫師病歷登錄', False)
+        elif item_type == '醫師看診作業' and item_name == '非醫師病歷登錄':
+            if check_box.isChecked():
+                self._set_permission_item('醫師看診作業', '病歷登錄', False)
+
+        if item_type == '病歷資料' and item_name == '病歷修正':
+            if check_box.isChecked():
+                self._set_permission_item('病歷資料', '僅能修改主訴舌診脈象備註', False)
+        elif item_type == '病歷資料' and item_name == '僅能修改主訴舌診脈象備註':
+            if check_box.isChecked():
+                self._set_permission_item('病歷資料', '病歷修正', False)
+
+    def _set_permission_item(self, item_type, item_name, checked):
+        for row_no in range(self.ui.tableWidget_permission.rowCount()):
+            current_item_type = self.ui.tableWidget_permission.item(row_no, 0).text()
+            current_item_name = self.ui.tableWidget_permission.item(row_no, 1).text()
+            if current_item_type == item_type and current_item_name == item_name:
+                check_box = self.ui.tableWidget_permission.cellWidget(row_no, 2)
+                check_box.setChecked(checked)
 
     def _set_row_font(self, row_no):
         font = QtGui.QFont()
@@ -145,6 +174,10 @@ class DialogPermission(QtWidgets.QDialog):
         for row_no in range(self.ui.tableWidget_permission.rowCount()):
             check_box = self.ui.tableWidget_permission.cellWidget(row_no, 2)
             check_box.setChecked(checked)
+
+            if checked:
+                self.ui.tableWidget_permission.setCurrentCell(row_no, 0)
+                self._check_exclude()
 
     def _read_permission_data(self):
         for row_no in range(self.ui.tableWidget_permission.rowCount()):

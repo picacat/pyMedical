@@ -51,7 +51,7 @@ class DialogPastHistory(QtWidgets.QDialog):
         self.table_widget_past_history.set_column_hidden([0, 1])
 
         system_utils.set_css(self, self.system_settings)
-        system_utils.set_theme(self.ui, self.system_settings)
+        system_utils.center_window(self)
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setText('關閉')
 
     # 設定信號

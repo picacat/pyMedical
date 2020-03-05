@@ -41,7 +41,7 @@ class DialogImportMedicalRecord(QtWidgets.QDialog):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_DIALOG_IMPORT_MEDICAL_RECORD, self)
         # database.setFixedSize(database.size())  # non resizable dialog
         system_utils.set_css(self, self.system_settings)
-        self.center()
+        system_utils.center_window(self)
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setText('匯入資料庫')
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Cancel).setText('取消')
 

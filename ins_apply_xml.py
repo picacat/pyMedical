@@ -10,6 +10,7 @@ from lxml import etree as ET
 import os
 
 from libs import date_utils
+from libs import charge_utils
 from libs import string_utils
 from libs import nhi_utils
 from libs import number_utils
@@ -268,6 +269,15 @@ class InsApplyXML(QtWidgets.QMainWindow):
             d36.text = string_utils.xstr(row['DiagFee'])
 
         pharmacy_code = nhi_utils.extract_pharmacy_code(string_utils.xstr(row['PharmacyCode']))
+        if string_utils.xstr(row['CaseType']) == '30':  # 腦血管疾病
+            default_pharmacy_fee = charge_utils.get_ins_pharmacy_fee(
+                self.database, self.system_settings,
+                number_utils.get_integer(row['DrugFee']),
+                '申報',
+            )
+            if number_utils.get_integer(row['PharmacyFee']) > default_pharmacy_fee:
+                pharmacy_code = ''
+
         if string_utils.xstr(pharmacy_code) != '':
             d37 = ET.SubElement(dbody, 'd37')
             d37.text = string_utils.xstr(pharmacy_code)

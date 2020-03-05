@@ -136,7 +136,12 @@ def now_to_str():
 
 
 def str_to_date(in_date):
-    return datetime.datetime.strptime(in_date, "%Y-%m-%d").date()
+    try:
+        date = datetime.datetime.strptime(in_date, "%Y-%m-%d").date()
+    except ValueError:
+        date = datetime.datetime.strptime(in_date, "%Y-%m-%d %H:%M:%S").date()
+
+    return date
 
 
 # 取得現在日期

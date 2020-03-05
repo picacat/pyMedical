@@ -43,6 +43,7 @@ class StatisticsMedicalRecordDiagTimeLength(QtWidgets.QMainWindow):
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_STATISTICS_MEDICAL_RECORD_DIAG_TIME_LENGTH, self)
         system_utils.set_css(self, self.system_settings)
+        system_utils.center_window(self)
         self.table_widget_medical_record = table_widget.TableWidget(
             self.ui.tableWidget_medical_record, self.database
         )
@@ -52,7 +53,7 @@ class StatisticsMedicalRecordDiagTimeLength(QtWidgets.QMainWindow):
     def _set_table_width(self):
         width = [
             100,
-            120, 70, 90, 60, 90, 90, 90, 90, 90, 90, 90]
+            130, 70, 90, 60, 90, 90, 90, 90, 90, 90, 90]
         self.table_widget_medical_record.set_table_heading_width(width)
 
     # 設定信號
@@ -213,7 +214,7 @@ class StatisticsMedicalRecordDiagTimeLength(QtWidgets.QMainWindow):
         self.chartView = QtChart.QChartView(chart)
         self.chartView.setRenderHint(QtGui.QPainter.Antialiasing)
 
-        self.chartView.setFixedWidth(650)
+        self.chartView.setFixedWidth(630)
         self.ui.verticalLayout_chart.addWidget(self.chartView)
 
     def _plot_charge_time_cost_chart(self):

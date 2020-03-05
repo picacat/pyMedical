@@ -11,6 +11,7 @@ from libs import system_utils
 from libs import ui_utils
 from libs import string_utils
 from libs import dialog_utils
+from libs import dropbox_utils
 
 
 #  用藥指示 2019.07.11
@@ -50,6 +51,7 @@ class DictHosp(QtWidgets.QMainWindow):
         self.ui.toolButton_add_hosp.clicked.connect(self._add_hosp)
         self.ui.toolButton_remove_hosp.clicked.connect(self._remove_hosp)
         self.ui.toolButton_import.clicked.connect(self._import_hosp)
+        self.ui.toolButton_download.clicked.connect(self._update_hosp)
         self.ui.lineEdit_query.textChanged.connect(self._query_hosp)
 
     # 設定欄位寬度
@@ -136,6 +138,22 @@ class DictHosp(QtWidgets.QMainWindow):
         self.database.delete_record('hosp', 'HospKey', key)
         self.ui.tableWidget_dict_hosp.removeRow(self.ui.tableWidget_dict_hosp.currentRow())
 
+    def _update_hosp(self):
+        title = '下載健保特約醫師機構名冊檔'
+        message = '<font size="4" color="red"><b>正在下載健保健保特約醫事機構名冊檔, 請稍後...</b></font>'
+        hint = '正在與更新檔資料庫連線, 會花費一些時間.'
+        filename = 'hospbsc.txt'
+        url = 'https://www.dropbox.com/s/i7326uv1l8lo2zs/hospbsc.txt?dl=1'
+        dropbox_utils.download_dropbox_file(filename, url, title, message, hint)
+
+        self._import_hosp_file(filename)
+        system_utils.show_message_box(
+            QMessageBox.Information,
+            '線上更新醫事機構名冊',
+            '<font size="4" color="blue"><b>最新版本的醫事機構名冊已更新完成.</b></font>',
+            '恭喜您! 現在已經是最新的醫事機構名冊資料檔'
+        )
+
     def _import_hosp(self):
         options = QFileDialog.Options()
 
@@ -148,6 +166,9 @@ class DictHosp(QtWidgets.QMainWindow):
         if not file_name:
             return
 
+        self._import_hosp_file(file_name)
+
+    def _import_hosp_file(self, file_name):
         with open(file_name, encoding='utf16', newline='') as f:
             for i, l in enumerate(f):
                 pass
@@ -173,24 +194,33 @@ class DictHosp(QtWidgets.QMainWindow):
                     break
 
                 row_no += 1
-
                 try:
-                    telephone = '{area_code}-{telephone}'.format(
-                        area_code=row['電話區域號碼 '],
-                        telephone=row['電話號碼'],
-                    )
-                except KeyError:
-                    telephone = row['電話號碼']
-
-                data = [
-                    row['醫事機構代碼'],
-                    row['醫事機構名稱'],
-                    telephone,
-                    row['機構地址'],
-                ]
-                self.database.insert_record('hospid', fields, data)
+                    self._insert_hosp_row(fields, row)
+                except:
+                    pass
 
             progress_dialog.setValue(row_count)
 
         self._read_hosp()
+
+    def _insert_hosp_row(self, fields, row):
+        if string_utils.xstr(row['機構地址']) == '' and string_utils.xstr(telephone = row['電話號碼']) == '':
+            return
+
+        try:
+            telephone = '{area_code}-{telephone}'.format(
+                area_code=row['電話區域號碼 '],
+                telephone=row['電話號碼'],
+            )
+        except KeyError:
+            telephone = row['電話號碼']
+
+        data = [
+            row['醫事機構代碼'],
+            row['醫事機構名稱'],
+            telephone,
+            row['機構地址'],
+        ]
+
+        self.database.insert_record('hospid', fields, data)
 

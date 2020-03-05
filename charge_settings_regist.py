@@ -40,6 +40,7 @@ class ChargeSettingsRegist(QtWidgets.QMainWindow):
     def _set_ui(self):
         self.ui = ui_utils.load_ui_file(ui_utils.UI_CHARGE_SETTINGS_REGIST, self)
         system_utils.set_css(self, self.system_settings)
+        system_utils.center_window(self)
         self.table_widget_regist_fee = table_widget.TableWidget(self.ui.tableWidget_regist_fee, self.database)
         self.table_widget_regist_fee.set_column_hidden([0, 1])
         self.table_widget_discount = table_widget.TableWidget(self.ui.tableWidget_discount, self.database)
